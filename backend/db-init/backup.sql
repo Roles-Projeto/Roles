@@ -35,7 +35,7 @@ CREATE TABLE `avaliacoes` (
   KEY `fk_estabelecimento` (`estabelecimento_id`),
   CONSTRAINT `avaliacoes_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`),
   CONSTRAINT `avaliacoes_ibfk_2` FOREIGN KEY (`estabelecimento_id`) REFERENCES `estabelecimentos` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -202,6 +202,40 @@ INSERT INTO `eventos` VALUES (2,'Pecuária de Goiânia','Festivais','Festival de
 UNLOCK TABLES;
 
 --
+-- Table structure for table `favoritos`
+--
+
+DROP TABLE IF EXISTS `favoritos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `favoritos` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `usuario_id` int NOT NULL,
+  `evento_id` varchar(64) NOT NULL,
+  `titulo` varchar(255) DEFAULT NULL,
+  `categoria` varchar(100) DEFAULT NULL,
+  `data` varchar(100) DEFAULT NULL,
+  `local` varchar(255) DEFAULT NULL,
+  `preco` varchar(50) DEFAULT NULL,
+  `imagem` text,
+  `url` text,
+  `criado_em` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_usuario_evento` (`usuario_id`,`evento_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `favoritos`
+--
+
+LOCK TABLES `favoritos` WRITE;
+/*!40000 ALTER TABLE `favoritos` DISABLE KEYS */;
+INSERT INTO `favoritos` VALUES (1,1,'3','BTS WORLD TOUR ARIRANG','Shows e Música','qui., 29 de out.','Morumbi','R$ 320,00','http://localhost:3000/uploads/1778701623825.gif','http://127.0.0.1:5502/frontend/detalheseventos/detalheevento.html?id=3','2026-06-07 20:54:27');
+/*!40000 ALTER TABLE `favoritos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `ingressos`
 --
 
@@ -246,7 +280,7 @@ CREATE TABLE `login_historico` (
   `navegador` varchar(100) DEFAULT NULL,
   `criado_em` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -255,7 +289,7 @@ CREATE TABLE `login_historico` (
 
 LOCK TABLES `login_historico` WRITE;
 /*!40000 ALTER TABLE `login_historico` DISABLE KEYS */;
-INSERT INTO `login_historico` VALUES (1,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 13:08:50'),(2,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 13:12:09'),(3,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 19:27:13'),(4,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 19:37:28'),(5,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 19:37:53'),(6,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 19:39:59'),(7,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 20:17:47');
+INSERT INTO `login_historico` VALUES (1,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 13:08:50'),(2,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 13:12:09'),(3,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 19:27:13'),(4,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 19:37:28'),(5,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 19:37:53'),(6,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 19:39:59'),(7,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 20:17:47'),(8,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 20:45:59'),(9,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 20:51:11'),(10,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-06 22:14:30'),(11,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-07 20:31:53'),(12,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-07 20:41:40'),(13,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-07 20:54:20'),(14,1,'::ffff:172.19.0.1','Chrome — Desktop','Chrome','2026-06-08 00:10:15');
 /*!40000 ALTER TABLE `login_historico` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -377,7 +411,7 @@ CREATE TABLE `visitas` (
   `nota` tinyint DEFAULT '0',
   `criado_em` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -386,7 +420,7 @@ CREATE TABLE `visitas` (
 
 LOCK TABLES `visitas` WRITE;
 /*!40000 ALTER TABLE `visitas` DISABLE KEYS */;
-INSERT INTO `visitas` VALUES (1,1,'BTS WORLD TOUR ARIRANG','Morumbi','2026-06-06',0,'2026-06-06 19:49:18'),(2,1,'BTS WORLD TOUR ARIRANG','Morumbi','2026-06-06',0,'2026-06-06 20:03:49'),(3,1,'Feira de Tecnologia FutureTech',NULL,'2026-06-06',0,'2026-06-06 20:03:57'),(4,1,'Feira de Tecnologia FutureTech',NULL,'2026-06-06',0,'2026-06-06 20:04:43');
+INSERT INTO `visitas` VALUES (1,1,'BTS WORLD TOUR ARIRANG','Morumbi','2026-06-06',0,'2026-06-06 19:49:18'),(2,1,'BTS WORLD TOUR ARIRANG','Morumbi','2026-06-06',0,'2026-06-06 20:03:49'),(3,1,'Feira de Tecnologia FutureTech',NULL,'2026-06-06',0,'2026-06-06 20:03:57'),(4,1,'Feira de Tecnologia FutureTech',NULL,'2026-06-06',0,'2026-06-06 20:04:43'),(5,1,'Feira de Tecnologia FutureTech',NULL,'2026-06-07',0,'2026-06-07 20:31:54'),(6,1,'Brasa & Tradição Churrascaria',' Brasa & Tradição Churrascaria','2026-06-07',0,'2026-06-07 20:50:52'),(7,1,'Cinema ao Ar Livre',NULL,'2026-06-07',0,'2026-06-07 20:51:03'),(8,1,'BTS WORLD TOUR ARIRANG','Morumbi','2026-06-07',0,'2026-06-07 20:55:58'),(9,1,'Burger do Cerrado','Burger do Cerrado','2026-06-08',0,'2026-06-08 00:05:31'),(10,1,'Burger do Cerrado','Burger do Cerrado','2026-06-08',0,'2026-06-08 00:07:32'),(11,1,'Burger do Cerrado','Burger do Cerrado','2026-06-08',0,'2026-06-08 00:07:41'),(12,1,'Burger do Cerrado','Burger do Cerrado','2026-06-08',0,'2026-06-08 00:09:05'),(13,1,'Burger do Cerrado','Burger do Cerrado','2026-06-08',0,'2026-06-08 00:10:54');
 /*!40000 ALTER TABLE `visitas` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -399,4 +433,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-06 20:31:18
+-- Dump completed on 2026-06-08  0:12:17

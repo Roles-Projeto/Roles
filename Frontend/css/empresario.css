@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* ====================================================================== */
 /* VARIÁVEIS GLOBAIS                                                       */
 /* ====================================================================== */
@@ -12,7 +19,7 @@
     --color-success: #4CAF50;
     --color-quote: #999;
     --color-divider: #383747;
-    --font-family: 'Poppins', sans-serif;
+    --font-family: 'Inter', sans-serif;
 }
 
 body {
@@ -25,7 +32,7 @@ body {
 /* ====================================================================== */
 .empresario-page {
     font-size: 62.5%;
-    font-family: var(--font-family);
+    font-family: 'Inter', sans-serif;
     line-height: 1.6;
     color: var(--color-text-dark);
 }

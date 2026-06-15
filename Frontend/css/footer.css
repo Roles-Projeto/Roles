@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* ── Footer ─────────────────────────────────────────── */
 /* IMPORTANTE: não há regras fora de .roles-footer-main  */
 /* para não vazar estilos para outras páginas.           */
@@ -12,7 +19,7 @@
     background-color: var(--fc-bg);
     padding: 4rem 2rem 0;
     color: var(--fc-light);
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 /* Reset scoped — só afeta filhos do footer */

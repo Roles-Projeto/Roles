@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* =========================
    IMPORTS
 ========================= */
@@ -43,7 +50,7 @@
    BODY / FUNDO
 ========================= */
 body {
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   color: var(--text-primary);
   min-height: 100vh;
   background: var(--grad-bg);
@@ -182,7 +189,7 @@ body::after {
   background: var(--surface);
   border-radius: var(--radius-md);
   padding: 13px 16px;
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
@@ -254,7 +261,7 @@ body::after {
   padding: 13px 16px;
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--border);
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 400;
   color: var(--text-primary);
@@ -408,7 +415,7 @@ body::after {
   border-radius: var(--radius-md);
   background: var(--grad-primary);
   color: white;
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -606,7 +613,7 @@ body::after {
   padding: 14px 20px;
   border: none;
   border-radius: var(--radius-md);
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 15px;
   font-weight: 700;
   color: white;
@@ -647,7 +654,7 @@ body::after {
   border: 1.5px solid rgba(124, 58, 237, 0.20);
   background: #f5f0ff;
   color: var(--primary);
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -675,7 +682,7 @@ body::after {
 .container #reenviarCodigo {
   background: none;
   border: none;
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: var(--primary);
@@ -819,7 +826,7 @@ body::after {
     border: 1.5px solid rgba(124,58,237,0.20);
     background: #f5f0ff;
     color: #5b0ea6;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 14px; font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -840,7 +847,7 @@ body::after {
     background: #f9f7ff;
     color: #0f0720;
     width: 100%; outline: none;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     transition: all 0.2s;
 }
 #modalCodigo #codigo:focus {
@@ -852,7 +859,7 @@ body::after {
 #modalCodigo .btn-verificar {
     width: 100%; padding: 14px 20px;
     border: none; border-radius: 16px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 15px; font-weight: 700;
     color: white; cursor: pointer;
     background: linear-gradient(145deg,#1a0a3d 0%,#5b0ea6 45%,#7c3aed 100%);
@@ -882,7 +889,7 @@ body::after {
 #reenviarCodigo {
     background: none;
     border: none;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 13px;
     font-weight: 600;
     color: #5b0ea6;

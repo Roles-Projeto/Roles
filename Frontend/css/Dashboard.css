@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* ════════════════════════════════════════════
    DASHBOARD.CSS — ROLÊS
    Fundo branco · Tema roxo · Poppins
@@ -32,7 +39,7 @@
   --tr:      all .2s ease;
 }
 
-body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden; }
+body { font-family: 'Inter', sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden; }
 
 /* ════ LAYOUT ════ */
 .main-content { display:flex; justify-content:center; padding:50px 32px 60px; }
@@ -50,7 +57,7 @@ body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text)
   display:inline-flex; align-items:center; gap:7px;
   background:var(--p); color:#fff;
   border:none; padding:9px 16px; border-radius:var(--r-sm);
-  font-size:13px; font-weight:600; font-family:'Poppins',sans-serif;
+  font-size:13px; font-weight:600; font-family: 'Inter', sans-serif;
   cursor:pointer; transition:var(--tr);
 }
 .btn-quick:hover { background:#6d28d9; transform:translateY(-1px); box-shadow:0 4px 14px rgba(124,58,237,.3); }
@@ -65,7 +72,7 @@ body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text)
   background:#fff; color:var(--text-2);
   border:1.5px solid var(--border);
   padding:9px 16px; border-radius:var(--r-sm);
-  font-size:13px; font-weight:600; font-family:'Poppins',sans-serif;
+  font-size:13px; font-weight:600; font-family: 'Inter', sans-serif;
   cursor:pointer; transition:var(--tr);
 }
 .btn-export:hover { border-color:var(--p); color:var(--p); box-shadow:0 2px 8px rgba(124,58,237,.12); }
@@ -81,7 +88,7 @@ body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text)
 .alert-inner { display:flex; align-items:center; gap:10px; flex:1; font-size:13px; color:var(--text-2); }
 .alert-inner svg { color:var(--p); flex-shrink:0; }
 .alert-inner strong { color:var(--p); }
-.alert-link { background:none; border:none; color:var(--p); font-size:13px; font-weight:600; cursor:pointer; font-family:'Poppins',sans-serif; padding:0; }
+.alert-link { background:none; border:none; color:var(--p); font-size:13px; font-weight:600; cursor:pointer; font-family: 'Inter', sans-serif; padding:0; }
 .alert-close { background:none; border:none; color:var(--text-3); font-size:14px; cursor:pointer; flex-shrink:0; transition:var(--tr); }
 .alert-close:hover { color:var(--red); }
 
@@ -96,7 +103,7 @@ body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text)
   display:inline-flex; align-items:center; gap:7px;
   border:none; background:transparent;
   padding:9px 16px; border-radius:9px;
-  font-size:13px; font-weight:500; font-family:'Poppins',sans-serif;
+  font-size:13px; font-weight:500; font-family: 'Inter', sans-serif;
   color:var(--text-3); cursor:pointer; transition:var(--tr);
   position:relative;
 }
@@ -167,7 +174,7 @@ body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text)
 .period-btn {
   background:transparent; border:1px solid var(--border);
   padding:4px 10px; border-radius:6px;
-  font-size:12px; font-weight:600; font-family:'Poppins',sans-serif;
+  font-size:12px; font-weight:600; font-family: 'Inter', sans-serif;
   color:var(--text-3); cursor:pointer; transition:var(--tr);
 }
 .period-btn.active { background:var(--p); color:#fff; border-color:var(--p); }
@@ -184,7 +191,7 @@ body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text)
 .panel-header h3 { font-size:15px; font-weight:700; }
 .panel-header p  { font-size:12px; color:var(--text-3); margin-top:2px; }
 .panel-divider   { height:1px; background:var(--border); margin:22px 0; }
-.link-btn { background:none; border:none; color:var(--p); font-size:13px; font-weight:600; cursor:pointer; font-family:'Poppins',sans-serif; white-space:nowrap; }
+.link-btn { background:none; border:none; color:var(--p); font-size:13px; font-weight:600; cursor:pointer; font-family: 'Inter', sans-serif; white-space:nowrap; }
 
 /* Sales feed */
 .sales-feed { display:flex; flex-direction:column; }
@@ -240,7 +247,7 @@ body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text)
   display:inline-flex; align-items:center; gap:6px;
   background:var(--text); color:#fff; border:none;
   padding:9px 18px; border-radius:var(--r-sm);
-  font-size:13px; font-weight:600; font-family:'Poppins',sans-serif;
+  font-size:13px; font-weight:600; font-family: 'Inter', sans-serif;
   cursor:pointer; transition:var(--tr);
 }
 .btn-create:hover { background:var(--p); transform:translateY(-1px); box-shadow:0 4px 12px rgba(124,58,237,.3); }
@@ -288,7 +295,7 @@ body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text)
   display:inline-flex; align-items:center; justify-content:center; gap:6px;
   padding:10px 8px; background:#fff; border:1px solid var(--border);
   border-radius:var(--r-sm); font-size:12px; font-weight:600;
-  font-family:'Poppins',sans-serif; color:var(--text); cursor:pointer; transition:var(--tr);
+  font-family: 'Inter', sans-serif; color:var(--text); cursor:pointer; transition:var(--tr);
 }
 .ev-btn:hover { background:#f9fafb; transform:translateY(-1px); box-shadow:0 3px 8px rgba(0,0,0,.07); }
 .ev-btn:active { transform:scale(.97); }
@@ -319,12 +326,12 @@ body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text)
 .modal-qty { display:flex; gap:14px; margin-bottom:22px; }
 .qf { flex:1; }
 .qf label { font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:.05em; display:block; margin-bottom:6px; }
-.qf input { width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:var(--r-sm); font-size:14px; font-family:'Poppins',sans-serif; }
+.qf input { width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:var(--r-sm); font-size:14px; font-family: 'Inter', sans-serif; }
 .qf input:disabled { background:#f9fafb; color:var(--text-3); }
 .modal-foot { display:flex; justify-content:flex-end; gap:10px; }
-.btn-save-m { background:linear-gradient(135deg,var(--p-light),var(--p)); color:#fff; border:none; padding:10px 22px; border-radius:var(--r-sm); font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; transition:var(--tr); }
+.btn-save-m { background:linear-gradient(135deg,var(--p-light),var(--p)); color:#fff; border:none; padding:10px 22px; border-radius:var(--r-sm); font-size:13px; font-weight:600; font-family: 'Inter', sans-serif; cursor:pointer; transition:var(--tr); }
 .btn-save-m:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(124,58,237,.35); }
-.btn-cancel-m { background:#f3f4f6; color:var(--text-2); border:none; padding:10px 22px; border-radius:var(--r-sm); font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; transition:var(--tr); }
+.btn-cancel-m { background:#f3f4f6; color:var(--text-2); border:none; padding:10px 22px; border-radius:var(--r-sm); font-size:13px; font-weight:600; font-family: 'Inter', sans-serif; cursor:pointer; transition:var(--tr); }
 .btn-cancel-m:hover { background:#e5e7eb; }
 
 /* ════ SEARCH / FILTER ════ */
@@ -334,10 +341,10 @@ body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text)
   padding:8px 12px; background:#fff; min-width:240px;
 }
 .search-box svg { color:var(--text-3); flex-shrink:0; }
-.search-box input { border:none; outline:none; font-size:13px; font-family:'Poppins',sans-serif; flex:1; }
+.search-box input { border:none; outline:none; font-size:13px; font-family: 'Inter', sans-serif; flex:1; }
 .filter-sel {
   padding:8px 12px; border:1px solid var(--border); border-radius:var(--r-sm);
-  font-size:13px; font-family:'Poppins',sans-serif; color:var(--text-2);
+  font-size:13px; font-family: 'Inter', sans-serif; color:var(--text-2);
   background:#fff; cursor:pointer; outline:none;
 }
 
@@ -359,7 +366,7 @@ body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text)
 .notif-filters { display:flex; gap:6px; margin-bottom:20px; flex-wrap:wrap; }
 .nf-btn {
   padding:7px 16px; border-radius:20px; border:1px solid var(--border);
-  background:#fff; font-size:12px; font-weight:600; font-family:'Poppins',sans-serif;
+  background:#fff; font-size:12px; font-weight:600; font-family: 'Inter', sans-serif;
   color:var(--text-3); cursor:pointer; transition:var(--tr);
 }
 .nf-btn:hover { border-color:var(--p); color:var(--p); }

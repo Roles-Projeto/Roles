@@ -8,7 +8,9 @@ if (!document.getElementById("login-form") && !document.getElementById("forgotPa
     throw new Error("Login.js carregado fora do contexto correto.");
 }
 
-function mostrarNotificacao(elementId, mensagem, tipo = "erro") {
+let notificacaoTimeout = null;
+
+function mostrarNotificacao(elementId, mensagem, tipo = "erro", persistente = false) {
     const el = document.getElementById(elementId);
     const icones = {
         sucesso: "fa-circle-check",
@@ -16,22 +18,30 @@ function mostrarNotificacao(elementId, mensagem, tipo = "erro") {
         aviso: "fa-triangle-exclamation"
     };
 
+    if (notificacaoTimeout) {
+        clearTimeout(notificacaoTimeout);
+        notificacaoTimeout = null;
+    }
+
     el.className = `notificacao ativa ${tipo}`;
     el.innerHTML = `<i class="fa-solid ${icones[tipo]}"></i><span>${mensagem}</span>`;
 
-    setTimeout(() => {
-        el.className = "notificacao";
-    }, 5000);
+    if (!persistente) {
+        notificacaoTimeout = setTimeout(() => {
+            el.className = "notificacao";
+            notificacaoTimeout = null;
+        }, 5000);
+    }
 }
 
-const clienteBtn    = document.getElementById("cliente-btn");
+const clienteBtn = document.getElementById("cliente-btn");
 const empresarioBtn = document.getElementById("empresario-btn");
-const mainText      = document.getElementById("main-text");
-const subText       = document.getElementById("sub-text");
-const form          = document.getElementById("login-form");
-const inputEmail    = document.getElementById("email");
+const mainText = document.getElementById("main-text");
+const subText = document.getElementById("sub-text");
+const form = document.getElementById("login-form");
+const inputEmail = document.getElementById("email");
 const inputPassword = document.getElementById("password");
-const headerIframe  = document.getElementById("site-header");
+const headerIframe = document.getElementById("site-header");
 
 /* ==================================================
 ================ HEADER LOGIN ========================
@@ -60,14 +70,14 @@ if (clienteBtn && empresarioBtn) {
         clienteBtn.classList.add("active");
         empresarioBtn.classList.remove("active");
         mainText.textContent = "Encontre os melhores lugares para sair e se divertir";
-        subText.textContent  = "Entre rapidamente com";
+        subText.textContent = "Entre rapidamente com";
     });
 
     empresarioBtn.addEventListener("click", () => {
         empresarioBtn.classList.add("active");
         clienteBtn.classList.remove("active");
         mainText.textContent = "Cadastre seu estabelecimento e aumente sua visibilidade";
-        subText.textContent  = "Entre rapidamente com";
+        subText.textContent = "Entre rapidamente com";
     });
 
 }
@@ -135,21 +145,21 @@ if (form) {
 
                 mostrarNotificacao(
                     "notificacaoLogin",
-                    `🔒 Conta bloqueada por ${minutos} minuto(s). Tente novamente mais tarde ou redefina sua senha.`,
-                    "erro"
+                    `Conta bloqueada por ${minutos} minuto(s). Tente novamente mais tarde ou redefina sua senha.`,
+                    "erro",
+                    true   // persistente — não desaparece
                 );
-
                 // Desabilita o botão de login durante o bloqueio
                 const btnEntrar = form.querySelector("button[type='submit']");
                 if (btnEntrar) {
-                    btnEntrar.disabled      = true;
+                    btnEntrar.disabled = true;
                     btnEntrar.style.opacity = "0.5";
-                    btnEntrar.style.cursor  = "not-allowed";
+                    btnEntrar.style.cursor = "not-allowed";
 
                     setTimeout(() => {
-                        btnEntrar.disabled      = false;
+                        btnEntrar.disabled = false;
                         btnEntrar.style.opacity = "";
-                        btnEntrar.style.cursor  = "";
+                        btnEntrar.style.cursor = "";
                         mostrarNotificacao(
                             "notificacaoLogin",
                             "Bloqueio encerrado. Você já pode tentar novamente.",
@@ -161,9 +171,8 @@ if (form) {
                 // Destaca o link de recuperação de senha
                 const forgotLink = document.getElementById("forgotPasswordLink");
                 if (forgotLink) {
-                    forgotLink.style.fontWeight = "bold";
-                    forgotLink.style.color      = "#e53e3e";
-                    forgotLink.textContent      = "⚠️ Redefinir minha senha";
+                    forgotLink.classList.add("destaque-recuperacao");
+                    forgotLink.textContent = "Redefinir minha senha";
                 }
 
             } else {
@@ -220,7 +229,7 @@ if (btnCadastrar) {
 ================================================== */
 
 const togglePassword = document.getElementById("togglePassword");
-const password       = document.getElementById("password");
+const password = document.getElementById("password");
 
 if (togglePassword && password) {
 
@@ -229,17 +238,17 @@ if (togglePassword && password) {
             togglePassword.classList.add("show");
         } else {
             togglePassword.classList.remove("show");
-            password.type            = "password";
+            password.type = "password";
             togglePassword.textContent = "visibility";
         }
     });
 
     togglePassword.addEventListener("click", () => {
         if (password.type === "password") {
-            password.type              = "text";
+            password.type = "text";
             togglePassword.textContent = "visibility_off";
         } else {
-            password.type              = "password";
+            password.type = "password";
             togglePassword.textContent = "visibility";
         }
     });
@@ -251,9 +260,9 @@ if (togglePassword && password) {
 ================================================== */
 
 const forgotPasswordLink = document.getElementById("forgotPasswordLink");
-const forgotPasswordBox  = document.getElementById("forgotPasswordBox");
-const backToLogin        = document.getElementById("backToLogin");
-const loginContent       = document.getElementById("loginContent");
+const forgotPasswordBox = document.getElementById("forgotPasswordBox");
+const backToLogin = document.getElementById("backToLogin");
+const loginContent = document.getElementById("loginContent");
 
 if (forgotPasswordLink) {
     forgotPasswordLink.addEventListener("click", (e) => {
@@ -299,7 +308,7 @@ if (sendRecoveryBtn) {
 
             if (response.ok) {
                 mostrarNotificacao("notificacaoRecuperar", "Código enviado para seu e-mail.", "sucesso");
-                document.getElementById("etapaEmail").style.display    = "none";
+                document.getElementById("etapaEmail").style.display = "none";
                 document.getElementById("etapaRedefinir").style.display = "flex";
             } else {
                 mostrarNotificacao("notificacaoRecuperar", data.erro, "erro");
@@ -324,8 +333,8 @@ if (redefinirSenhaBtn) {
 
     redefinirSenhaBtn.addEventListener("click", async () => {
 
-        const email     = document.getElementById("recoveryEmail").value.trim();
-        const codigo    = document.getElementById("codigoRecuperacao").value.trim();
+        const email = document.getElementById("recoveryEmail").value.trim();
+        const codigo = document.getElementById("codigoRecuperacao").value.trim();
         const novaSenha = document.getElementById("novaSenha").value;
 
         if (!email || !codigo || !novaSenha) {
@@ -347,15 +356,15 @@ if (redefinirSenhaBtn) {
 
                 mostrarNotificacao("notificacaoRecuperar", "Senha redefinida com sucesso!", "sucesso");
 
-                document.getElementById("recoveryEmail").value          = "";
-                document.getElementById("codigoRecuperacao").value      = "";
-                document.getElementById("novaSenha").value              = "";
-                document.getElementById("etapaEmail").style.cssText     = "display: none !important";
+                document.getElementById("recoveryEmail").value = "";
+                document.getElementById("codigoRecuperacao").value = "";
+                document.getElementById("novaSenha").value = "";
+                document.getElementById("etapaEmail").style.cssText = "display: none !important";
                 document.getElementById("etapaRedefinir").style.cssText = "display: none !important";
 
                 setTimeout(() => {
-                    document.getElementById("etapaEmail").style.cssText     = "";
-                    document.getElementById("etapaRedefinir").style.cssText  = "";
+                    document.getElementById("etapaEmail").style.cssText = "";
+                    document.getElementById("etapaRedefinir").style.cssText = "";
                     forgotPasswordBox.classList.remove("active");
                     loginContent.style.display = "block";
                 }, 2000);

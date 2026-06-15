@@ -145,6 +145,18 @@ body {
     background: var(--bg);
 }
 
+#forgotPasswordLink.destaque-recuperacao {
+    font-weight: 600;
+    color: #6c3dff;
+    text-decoration: underline;
+    text-decoration-color: rgba(108, 61, 255, 0.4);
+    transition: color 0.2s ease;
+}
+
+#forgotPasswordLink.destaque-recuperacao:hover {
+    color: #5429e0;
+}
+
 /* ════════════════════════════════════════
    CARD — login-box
 ════════════════════════════════════════ */

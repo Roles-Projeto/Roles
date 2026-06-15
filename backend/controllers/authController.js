@@ -1,9 +1,15 @@
-"use strict";
+﻿"use strict";
 
 const bcrypt     = require("bcrypt");
 const jwt        = require("jsonwebtoken");
 const db         = require("../db/db_config");
 const nodemailer = require("nodemailer");
+
+/* ════════════════════════════════════════
+   CONSTANTES DE LIMITE DE TENTATIVAS
+════════════════════════════════════════ */
+const MAX_TENTATIVAS   = 4;   // bloqueia na 4ª tentativa errada
+const BLOQUEIO_MINUTOS = 30;  // tempo de bloqueio em minutos
 
 /* ════════════════════════════════════════
    EMAIL
@@ -65,6 +71,7 @@ exports.loginUsuario = async (req, res) => {
     return res.status(400).json({ erro: "Preencha email e senha." });
 
   try {
+    // ── 1. Busca o usuário ─────────────────────────────
     const results = await db.query(
       "SELECT * FROM usuarios WHERE email = ?", [email]
     );
@@ -73,14 +80,103 @@ exports.loginUsuario = async (req, res) => {
 
     const usuario = results[0];
 
+    // ── 2. Verifica se está bloqueado ──────────────────
+    if (usuario.bloqueado_ate && new Date(usuario.bloqueado_ate) > new Date()) {
+      const minutosRestantes = Math.ceil(
+        (new Date(usuario.bloqueado_ate) - new Date()) / 60000
+      );
+      return res.status(429).json({
+        erro: "Conta bloqueada temporariamente.",
+        bloqueado: true,
+        minutosRestantes,
+        mensagem: `Muitas tentativas incorretas. Tente novamente em ${minutosRestantes} minuto(s) ou entre em contato com o suporte para reaver seu acesso.`,
+        suporte: true,
+      });
+    }
+
+    // ── 3. Conta não verificada ────────────────────────
     if (!usuario.verificado)
       return res.status(403).json({
         erro: "Conta não verificada. Verifique o código enviado por email.",
       });
 
+    // ── 4. Verifica a senha ────────────────────────────
     const senhaValida = await bcrypt.compare(senha, usuario.senha);
-    if (!senhaValida)
-      return res.status(400).json({ erro: "Senha incorreta." });
+
+    if (!senhaValida) {
+      const novasTentativas = (usuario.tentativas_login || 0) + 1;
+      const restantes = MAX_TENTATIVAS - novasTentativas;
+
+      if (novasTentativas >= MAX_TENTATIVAS) {
+        // ── Bloqueia por 30 minutos ──
+        await db.query(
+          `UPDATE usuarios
+           SET tentativas_login = ?, bloqueado_ate = DATE_ADD(NOW(), INTERVAL ? MINUTE),
+               ultima_tentativa = NOW()
+           WHERE id = ?`,
+          [novasTentativas, BLOQUEIO_MINUTOS, usuario.id]
+        );
+
+        // ── Envia e-mail de aviso ──
+        enviarEmail(
+          email,
+          "Conta bloqueada por tentativas incorretas — Rolês",
+          `
+          <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;
+                      padding:32px;background:#f9f9f9;border-radius:12px;">
+            <h2 style="color:#e53e3e;">⚠️ Conta bloqueada temporariamente</h2>
+            <p>Olá, <strong>${usuario.nome_completo}</strong>!</p>
+            <p>Detectamos <strong>${MAX_TENTATIVAS} tentativas incorretas</strong>
+               de acesso à sua conta.</p>
+            <div style="background:#fff;border-radius:8px;padding:16px;
+                        margin:16px 0;border-left:4px solid #e53e3e;">
+              <p><strong>Conta bloqueada por:</strong> ${BLOQUEIO_MINUTOS} minutos</p>
+              <p><strong>Data/Hora:</strong> ${new Date().toLocaleString("pt-BR",
+                { timeZone: "America/Sao_Paulo" })}</p>
+            </div>
+            <p>Se foi você, aguarde ${BLOQUEIO_MINUTOS} minutos e tente novamente,
+               ou <a href="${process.env.FRONTEND_URL}/recuperar-senha"
+               style="color:#6c3dff;">redefina sua senha</a>.</p>
+            <p>Se <strong>não foi você</strong>, entre em contato com nosso
+               <a href="${process.env.FRONTEND_URL}/contato" style="color:#6c3dff;">
+               suporte</a> imediatamente.</p>
+            <p style="color:#999;font-size:12px;margin-top:24px;">
+              Rolês — Sua plataforma de eventos</p>
+          </div>
+          `
+        ).catch(() => {});
+
+        return res.status(429).json({
+          erro: "Conta bloqueada temporariamente.",
+          bloqueado: true,
+          minutosRestantes: BLOQUEIO_MINUTOS,
+          mensagem: `Você atingiu o limite de ${MAX_TENTATIVAS} tentativas. Conta bloqueada por ${BLOQUEIO_MINUTOS} minutos. Você pode redefinir sua senha ou contatar o suporte.`,
+          suporte: true,
+        });
+      }
+
+      // ── Ainda tem tentativas ──
+      await db.query(
+        `UPDATE usuarios
+         SET tentativas_login = ?, ultima_tentativa = NOW()
+         WHERE id = ?`,
+        [novasTentativas, usuario.id]
+      );
+
+      return res.status(400).json({
+        erro: "Senha incorreta.",
+        tentativasRestantes: restantes,
+        mensagem: `Senha incorreta. Você ainda tem ${restantes} tentativa(s) antes do bloqueio.`,
+      });
+    }
+
+    // ── 5. Login bem-sucedido — reseta tentativas ──────
+    await db.query(
+      `UPDATE usuarios
+       SET tentativas_login = 0, bloqueado_ate = NULL, ultima_tentativa = NULL
+       WHERE id = ?`,
+      [usuario.id]
+    ).catch(() => {});
 
     const token = jwt.sign(
       { id: usuario.id, email: usuario.email, role: usuario.role },
@@ -88,20 +184,20 @@ exports.loginUsuario = async (req, res) => {
       { expiresIn: "2h" }
     );
 
-    // ── Dados do dispositivo ──
+    // ── Dados do dispositivo ───────────────────────────
     const ua             = req.headers["user-agent"] || "";
     const ip             = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "—";
     const navegador      = detectarNavegador(ua);
     const dispositivo    = detectarDispositivo(ua);
     const dispositivoStr = `${navegador} — ${dispositivo}`;
 
-    // ── Salva no histórico ──
+    // ── Salva no histórico ─────────────────────────────
     await db.query(
       "INSERT INTO login_historico (usuario_id, ip, dispositivo, navegador) VALUES (?, ?, ?, ?)",
       [usuario.id, ip, dispositivoStr, navegador]
     ).catch(() => {});
 
-    // ── Verifica se é dispositivo novo ──
+    // ── Verifica se é dispositivo novo ─────────────────
     const historicoAnterior = await db.query(
       `SELECT id FROM login_historico
        WHERE usuario_id = ? AND dispositivo = ?
@@ -109,36 +205,33 @@ exports.loginUsuario = async (req, res) => {
       [usuario.id, dispositivoStr]
     ).catch(() => []);
 
-    // Se só tem 1 registro = o que acabou de inserir = dispositivo novo
-    const isNovoDispositivo = Array.isArray(historicoAnterior) && historicoAnterior.length === 1;
+    const isNovoDispositivo =
+      Array.isArray(historicoAnterior) && historicoAnterior.length === 1;
 
-    // ── Verifica preferência de alerta do usuário ──
-    const prefs = await db.query(
-      "SELECT alerta_novo_dispositivo FROM usuarios WHERE id = ?",
-      [usuario.id]
-    ).catch(() => []);
+    // ── Alerta de dispositivo novo ─────────────────────
+    const alertaAtivo = usuario.alerta_novo_dispositivo !== 0;
 
-    const alertaAtivo = prefs[0]?.alerta_novo_dispositivo !== 0;
-
-    // ── Envia e-mail se for dispositivo novo e alerta ativo ──
     if (isNovoDispositivo && usuario.email && alertaAtivo) {
       const agora = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
       enviarEmail(
         usuario.email,
         "Novo acesso a sua conta Roles",
         `
-        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#f9f9f9;border-radius:12px;">
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;
+                    padding:32px;background:#f9f9f9;border-radius:12px;">
           <h2 style="color:#6c3dff;">Novo dispositivo detectado</h2>
           <p>Olá, <strong>${usuario.nome_completo}</strong>!</p>
           <p>Detectamos um acesso à sua conta a partir de um novo dispositivo:</p>
-          <div style="background:#fff;border-radius:8px;padding:16px;margin:16px 0;border-left:4px solid #6c3dff;">
+          <div style="background:#fff;border-radius:8px;padding:16px;
+                      margin:16px 0;border-left:4px solid #6c3dff;">
             <p><strong>Dispositivo:</strong> ${dispositivoStr}</p>
             <p><strong>IP:</strong> ${ip}</p>
             <p><strong>Data/Hora:</strong> ${agora}</p>
           </div>
           <p>Se foi você, pode ignorar este e-mail.</p>
           <p>Se não foi você, acesse sua conta e altere sua senha imediatamente.</p>
-          <p style="color:#999;font-size:12px;margin-top:24px;">Rolês — Sua plataforma de eventos</p>
+          <p style="color:#999;font-size:12px;margin-top:24px;">
+            Rolês — Sua plataforma de eventos</p>
         </div>
         `
       ).catch(() => {});
@@ -158,6 +251,28 @@ exports.loginUsuario = async (req, res) => {
   } catch (err) {
     console.error("❌ loginUsuario:", err);
     res.status(500).json({ erro: "Erro no servidor.", detalhes: err.message });
+  }
+};
+
+/* ════════════════════════════════════════
+   DESBLOQUEAR CONTA (via Admin/Suporte)
+   POST /auth/desbloquear
+════════════════════════════════════════ */
+exports.desbloquearConta = async (req, res) => {
+  const { email } = req.body;
+  if (!email)
+    return res.status(400).json({ erro: "Email é obrigatório." });
+
+  try {
+    await db.query(
+      `UPDATE usuarios
+       SET tentativas_login = 0, bloqueado_ate = NULL, ultima_tentativa = NULL
+       WHERE email = ?`,
+      [email]
+    );
+    res.json({ mensagem: `Conta ${email} desbloqueada com sucesso.` });
+  } catch (err) {
+    res.status(500).json({ erro: "Erro ao desbloquear conta.", detalhes: err.message });
   }
 };
 

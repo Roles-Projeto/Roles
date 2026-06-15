@@ -1,74 +1,74 @@
-// quemsomos.js
+document.addEventListener("DOMContentLoaded", function () {
 
-(function () {
+    const anoAtual = new Date().getFullYear();
 
-    // ─── CONTADOR ANIMADO ─────────────────────────────
-    // Quando os números chegarem do backend, substitua os
-    // valores abaixo e a animação vai rodar automaticamente.
+    const footerHTML = `
+    <footer class="roles-footer-main">
+        <div class="roles-footer-wrapper">
 
-    const stats = [
-        { id: 'stat-estabelecimentos', value: 0, suffix: '+' },
-        { id: 'stat-usuarios',         value: 0, suffix: '+' },
-        { id: 'stat-avaliacoes',       value: 0, suffix: '+' },
-        { id: 'stat-eventos',          value: 0, suffix: '+' },
-    ];
+            <div class="roles-footer-column">
+                <div class="roles-footer-logo">Rolês</div>
+                <p class="roles-footer-description">
+                    Seu guia definitivo para encontrar os melhores lugares para sair e se divertir na cidade!
+                </p>
+                <div class="roles-footer-social">
+                    <a href="#" aria-label="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" aria-label="Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" aria-label="TikTok">
+                        <i class="fab fa-tiktok"></i>
+                    </a>
+                </div>
+            </div>
 
-    function animateCounter(el, target, suffix, duration = 1200) {
-        if (target === 0) { el.textContent = '0+'; return; }
-        const start    = performance.now();
-        const startVal = 0;
+            <div class="roles-footer-column">
+                <h4 class="roles-footer-title">Explore</h4>
+                <ul>
+                    <li><a href="/frontend/locais/locais.html">Todos os Locais</a></li>
+                    <li><a href="/frontend/eventos/eventos.html">Todos os Eventos</a></li>
+                    <li><a href="#">Baixar App</a></li>
+                </ul>
+            </div>
 
-        function step(now) {
-            const elapsed  = now - start;
-            const progress = Math.min(elapsed / duration, 1);
-            const eased    = 1 - Math.pow(1 - progress, 3);
-            const current  = Math.round(startVal + (target - startVal) * eased);
-            el.textContent = current.toLocaleString('pt-BR') + suffix;
-            if (progress < 1) requestAnimationFrame(step);
-        }
+            <div class="roles-footer-column">
+                <h4 class="roles-footer-title">Empresa</h4>
+                <ul>
+                    <li><a href="/frontend/quemSomos/quemsomos.html">Quem somos</a></li>
+                    <li><a href="/frontend/Contato/contato.html">Contato</a></li>
+                    <li><a href="/frontend/Cadastro/cadastro.html">Cadastrar Local</a></li>
+                    <li><a href="/frontend/empresario/empresario.html">Para empresas</a></li>
+                    <li><a href="/frontend/termodeuso/termoDeUso.html">Termo de Uso</a></li>
+                </ul>
+            </div>
 
-        requestAnimationFrame(step);
+            <div class="roles-footer-column roles-footer-contact">
+                <h4 class="roles-footer-title">Contato</h4>
+                <p class="roles-footer-contact-line">Goiânia, GO</p>
+                <p class="roles-footer-contact-line">
+                    <a href="mailto:roles.suporte@gmail.com">roles.suporte@gmail.com</a>
+                </p>
+                <p class="roles-footer-contact-line">(62) 0000-1234</p>
+            </div>
+
+        </div>
+
+        <div class="roles-footer-bottom">
+            <p class="roles-footer-copy">&copy; ${anoAtual} Rolês. Todos os direitos reservados.</p>
+            <nav class="roles-footer-legal" aria-label="Links legais">
+                <a href="/frontend/termodeuso/termodeuso.html">Privacidade</a>
+                <a href="/frontend/termodeuso/termodeuso.html">Termos</a>
+            </nav>
+        </div>
+    </footer>
+    `;
+
+    const existingFooter = document.querySelector('footer');
+    if (existingFooter) {
+        existingFooter.outerHTML = footerHTML;
+    } else {
+        document.body.insertAdjacentHTML('beforeend', footerHTML);
     }
-
-    // Intersection Observer — anima só quando a seção entrar na tela
-    const statsSection = document.querySelector('.qs-stats');
-
-    if (statsSection) {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    stats.forEach(({ id, value, suffix }) => {
-                        const el = document.getElementById(id);
-                        if (el) animateCounter(el, value, suffix);
-                    });
-                    observer.disconnect();
-                }
-            });
-        }, { threshold: 0.3 });
-
-        observer.observe(statsSection);
-    }
-
-    // ─── FADE-IN NAS SEÇÕES ───────────────────────────
-    // Adiciona classe .visible quando o elemento entra na viewport
-    const fadeEls = document.querySelectorAll(
-        '.qs-hist-grid, .qs-val, .qs-proj-card, .qs-equipe, .qs-closing-inner'
-    );
-
-    if ('IntersectionObserver' in window) {
-        const fadeObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('qs-visible');
-                    fadeObserver.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.12 });
-
-        fadeEls.forEach(el => {
-            el.classList.add('qs-fade');
-            fadeObserver.observe(el);
-        });
-    }
-
-})();
+});

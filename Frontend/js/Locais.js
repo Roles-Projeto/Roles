@@ -39,8 +39,7 @@
     let quantidadeVisiveis = 0;
     const CARDS_POR_PAGINA = 6;
 
-    // Guarda todos os cards e os filtrados para reusar no "Ver Mais"
-    let todosCards   = [];
+    let todosCards     = [];
     let cardsFiltrados = [];
 
     // =========================================================
@@ -164,7 +163,6 @@
         container.style.visibility = 'hidden';
         const estabelecimentos = await fetchEstabelecimentos();
 
-        // Remove cards estáticos do HTML antes de inserir os dinâmicos
         container.querySelectorAll('.card').forEach(c => c.remove());
 
         if (estabelecimentos.length > 0) {
@@ -190,7 +188,7 @@
             if (!msg) {
                 msg = document.createElement('div');
                 msg.id = ID;
-                msg.style.cssText = "text-align:center;padding:40px;color:#888;font-family:Poppins,sans-serif;";
+                msg.style.cssText = "text-align:center;padding:40px;color:#888;font-family:'DM Sans',sans-serif;";
                 msg.innerHTML = `<p>Nenhum local encontrado para esta busca.</p>`;
                 document.getElementById('cards-container-locais')?.after(msg);
             }
@@ -218,7 +216,6 @@
         const tNorm = norm(termoAtual);
         const cNorm = norm(categoriaAtual);
 
-        // Filtra
         cardsFiltrados = todosCards.filter(card => {
             const texto   = textoDoCard(card);
             const catCard = norm(card.getAttribute('data-categoria-card') || '');
@@ -226,7 +223,6 @@
                    (cNorm === 'todos' || catCard === cNorm);
         });
 
-        // Ordena
         if (ordenacaoAtual === 'melhor-avaliados') {
             cardsFiltrados.sort((a, b) =>
                 (parseFloat(b.getAttribute('data-nota'))     || 0) -
@@ -237,10 +233,8 @@
                 (parseInt(a.getAttribute('data-avaliacoes')) || 0));
         }
 
-        // Reordena no DOM
         cardsFiltrados.forEach(card => container.appendChild(card));
 
-        // Reseta paginação e renderiza
         quantidadeVisiveis = CARDS_POR_PAGINA;
         renderizarPagina();
 
@@ -249,30 +243,37 @@
     }
 
     // =========================================================
-    // RENDERIZAR PÁGINA (igual ao Evento.js)
+    // RENDERIZAR PÁGINA
     // =========================================================
     function renderizarPagina() {
-        // Esconde todos
         todosCards.forEach(card => card.style.display = 'none');
-
-        // Mostra acumulado até quantidadeVisiveis
         cardsFiltrados.slice(0, quantidadeVisiveis).forEach(card => card.style.display = '');
-
-        atualizarBotaoVerMais();
+        atualizarBotoes();
     }
 
-    function atualizarBotaoVerMais() {
-        const btn = document.getElementById('btn-ver-mais');
-        if (!btn) return;
+    // =========================================================
+    // VER MAIS / VER MENOS
+    // =========================================================
+    function atualizarBotoes() {
+        const btnMais  = document.getElementById('btn-ver-mais');
+        const btnMenos = document.getElementById('btn-ver-menos');
+        if (!btnMais || !btnMenos) return;
 
         const restantes = cardsFiltrados.length - quantidadeVisiveis;
-        if (restantes <= 0) {
-            btn.style.display = 'none';
-            return;
+
+        if (restantes > 0) {
+            btnMais.style.display = 'inline-flex';
+            btnMais.innerHTML = `<i class="fa-solid fa-chevron-down"></i> Ver Mais`;
+        } else {
+            btnMais.style.display = 'none';
         }
 
-        btn.style.display = 'inline-flex';
-        btn.innerHTML = `<i class="fa-solid fa-rotate"></i> Ver Mais ${Math.min(restantes, CARDS_POR_PAGINA)}`;
+        if (quantidadeVisiveis > CARDS_POR_PAGINA) {
+            btnMenos.style.display = 'inline-flex';
+            btnMenos.innerHTML = `<i class="fa-solid fa-chevron-up"></i> Ver Menos`;
+        } else {
+            btnMenos.style.display = 'none';
+        }
     }
 
     // =========================================================
@@ -292,27 +293,34 @@
             menu.style.cssText = `
                 position: absolute;
                 background: #fff;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+                border: 1.5px solid #e5e2f0;
+                border-radius: 10px;
+                box-shadow: 0 8px 28px rgba(60,30,140,0.14);
                 z-index: 999;
-                min-width: 180px;
+                min-width: 200px;
                 overflow: hidden;
-                font-family: Poppins, sans-serif;
+                font-family: 'DM Sans', sans-serif;
             `;
 
             itens.forEach(item => {
                 const op = document.createElement('div');
                 op.textContent = item.label;
                 op.style.cssText = `
-                    padding: 10px 16px;
+                    padding: 11px 18px;
                     font-size: 13px;
-                    color: #333;
+                    font-weight: 600;
+                    color: #4b4660;
                     cursor: pointer;
-                    transition: background 0.15s;
+                    transition: background 0.15s, color 0.15s;
                 `;
-                op.addEventListener('mouseenter', () => op.style.background = '#f5f5f5');
-                op.addEventListener('mouseleave', () => op.style.background = '');
+                op.addEventListener('mouseenter', () => {
+                    op.style.background = '#f5f3ff';
+                    op.style.color = '#5b21b6';
+                });
+                op.addEventListener('mouseleave', () => {
+                    op.style.background = '';
+                    op.style.color = '#4b4660';
+                });
                 op.addEventListener('click', (e) => {
                     e.stopPropagation();
                     onSelect(item);
@@ -399,6 +407,17 @@
             btnVerMais.addEventListener('click', () => {
                 quantidadeVisiveis += CARDS_POR_PAGINA;
                 renderizarPagina();
+            });
+        }
+
+        // Botão Ver Menos
+        const btnVerMenos = document.getElementById('btn-ver-menos');
+        if (btnVerMenos) {
+            btnVerMenos.addEventListener('click', () => {
+                quantidadeVisiveis = CARDS_POR_PAGINA;
+                renderizarPagina();
+                const container = document.querySelector('.content-container1');
+                if (container) window.scrollTo({ top: container.offsetTop - 120, behavior: 'smooth' });
             });
         }
     }

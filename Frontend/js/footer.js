@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     <li><a href="/frontend/Contato/contato.html">Contato</a></li>
                     <li><a href="/frontend/Cadastro/cadastro.html">Cadastrar Local</a></li>
                     <li><a href="/frontend/empresario/empresario.html">Para empresas</a></li>
-                    <li><a href="/frontend/termodeuso/termodeuso.html">Termo de Uso</a></li>
+                    <li><a href="/frontend/termodeuso/termoDeUso.html">Termo de Uso</a></li>
                 </ul>
             </div>
 

@@ -45,20 +45,11 @@ a { text-decoration: none; }
   position: absolute;
   inset: 0;
   background:
-    /* Atmosfera geral roxa nos cantos */
     radial-gradient(ellipse at 15% 50%, rgba(109, 40, 217, 0.22) 0%, transparent 50%),
     radial-gradient(ellipse at 85% 30%, rgba(88, 28, 135, 0.18) 0%, transparent 45%),
-
-    /* Luz lateral esquerda — profundidade */
     radial-gradient(ellipse 35% 60% at 10% 85%, rgba(124, 58, 237, 0.55) 0%, transparent 70%),
-
-    /* Luz lateral direita — profundidade */
     radial-gradient(ellipse 35% 60% at 90% 85%, rgba(124, 58, 237, 0.55) 0%, transparent 70%),
-
-    /* Núcleo central intenso — embaixo dos cards */
     radial-gradient(ellipse 55% 30% at 50% 100%, rgba(180, 100, 255, 1.0) 0%, rgba(149, 76, 255, 0.85) 20%, rgba(109, 40, 217, 0.55) 50%, transparent 75%),
-
-    /* Halo largo e suave por cima do núcleo */
     radial-gradient(ellipse 100% 55% at 50% 100%, rgba(109, 40, 217, 0.45) 0%, rgba(88, 28, 135, 0.25) 45%, transparent 70%);
   pointer-events: none;
   z-index: 0;
@@ -98,7 +89,7 @@ a { text-decoration: none; }
 }
 
 /* ==================================================
-   CARROSSEL SYMPLA-STYLE
+   CARROSSEL
 ================================================== */
 .carousel-container {
   width: 100%;
@@ -111,9 +102,6 @@ a { text-decoration: none; }
   height: 420px;
 }
 
-/* ==================================================
-   GLOW ROXO — FUNDO DO CARROSSEL
-================================================== */
 .carousel-container::before {
   content: "";
   position: absolute;
@@ -135,7 +123,6 @@ a { text-decoration: none; }
   position: relative;
 }
 
-/* Cada card posicionado absolutamente via JS */
 .carousel-card {
   position: absolute;
   width: 740px;
@@ -174,11 +161,7 @@ a { text-decoration: none; }
   left: 0;
   right: 0;
   padding: 24px 20px 16px;
-  background: linear-gradient(
-    to top,
-    rgba(0,0,0,0.75) 0%,
-    transparent 100%
-  );
+  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
   color: #fff;
 }
 
@@ -194,7 +177,6 @@ a { text-decoration: none; }
   letter-spacing: 0.3px;
 }
 
-/* Botões nav */
 .carousel-btn {
   position: absolute;
   top: 50%;
@@ -432,29 +414,39 @@ a { text-decoration: none; }
   transform: scale(1.05);
 }
 
-.tag, .tag-evento {
+/* ─── TAGS / BADGES — padrão gradiente roxo ─── */
+.tag,
+.tag-evento {
   position: absolute;
   top: 12px;
   left: 12px;
-  padding: 4px 12px;
-  border-radius: 100px;
-  font-size: 11px;
-  font-weight: 700;
+  background: linear-gradient(135deg, #4c1d95, #7c3aed);
   color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 4px 13px;
+  border-radius: 99px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 10px rgba(91,33,182,0.40);
   z-index: 10;
-  letter-spacing: 0.3px;
+  pointer-events: none;
 }
 
-.tag-bar        { background: #a855f7; }
-.tag-restaurante{ background: #f97316; }
-.tag-balada     { background: #374151; }
-.tag-standup    { background: #ec4899; }
-.tag-comedy     { background: #ec4899; }
-.tag-show       { background: #2563eb; }
-.tag-musica     { background: #7c3aed; }
-.tag-danca      { background: #16a34a; }
-.tag-happy-hour { background: #f59e0b; }
-.tag-brunch     { background: #db2777; }
+/* Todas as variantes herdam o gradiente padrão */
+.tag-bar,
+.tag-restaurante,
+.tag-balada,
+.tag-standup,
+.tag-comedy,
+.tag-show,
+.tag-musica,
+.tag-danca,
+.tag-happy-hour,
+.tag-brunch {
+  background: linear-gradient(135deg, #4c1d95, #7c3aed);
+  box-shadow: 0 2px 10px rgba(91,33,182,0.40);
+}
 
 .card-content,
 .evento-content {
@@ -705,7 +697,6 @@ footer iframe { min-height: 22rem; display: block; }
 @media (max-width: 1024px) {
   .populares-grid,
   .eventos-grid { grid-template-columns: repeat(2, 1fr); }
-
   .carousel-card { width: 500px; height: 300px; }
   .carousel-container { height: 360px; }
 }
@@ -714,25 +705,19 @@ footer iframe { min-height: 22rem; display: block; }
   .section-categorias { padding: 40px 0; }
   .categorias-carousel { padding: 0 44px; }
   .card-categoria { flex: 0 0 120px; height: 112px; }
-
   .section-populares,
   .section-eventos { padding: 40px 0; }
-
   .populares-grid,
   .eventos-grid {
     grid-template-columns: 1fr;
     gap: 18px;
     padding: 0 16px;
   }
-
   .card-image-wrap,
   .evento-imagem-wrap { height: 200px; }
-
   .faq { padding: 50px 16px; }
   .faq-question { font-size: 13px; padding: 16px 18px; }
-
   .login-iframe { height: min(85vh, 500px); }
-
   .carousel-card { width: 340px; height: 220px; }
   .carousel-container { height: 280px; }
 }
@@ -740,27 +725,20 @@ footer iframe { min-height: 22rem; display: block; }
 @media (max-width: 540px) {
   .h1 { font-size: 26px; }
   .p1 { font-size: 14px; }
-
   .categorias-carousel { padding: 0 38px; }
   .card-categoria { flex: 0 0 100px; height: 100px; }
   .card-categoria .icon { width: 36px; height: 36px; font-size: 15px; }
   .card-categoria h3 { font-size: 11px; }
-
   .section-title { font-size: 22px; }
   .section-subtitle { font-size: 13px; padding: 0 12px; }
-
   .card-content h3, .evento-content h3 { font-size: 15px; }
   .card-content, .evento-content { padding: 14px 16px 18px; }
-
   .btn-ver-todos { padding: 12px 28px; font-size: 14px; }
-
   .faq-question { font-size: 12px; padding: 14px 16px; }
   .faq-answer p { padding: 0 16px 16px; font-size: 12px; }
   .faq-header h2 { font-size: 22px; }
-
   .login-modal-content { max-width: 100%; }
   .login-iframe { height: 85vh; }
-
   .carousel-card { width: 260px; height: 180px; }
   .carousel-container { height: 230px; }
 }
@@ -805,6 +783,4 @@ footer iframe { min-height: 22rem; display: block; }
   pointer-events: none;
 }
 
-.badge-em-alta i {
-  font-size: 10px;
-}
+.badge-em-alta i { font-size: 10px; }

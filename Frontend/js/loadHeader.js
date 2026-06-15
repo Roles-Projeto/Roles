@@ -117,7 +117,7 @@ function initHeader() {
             e.preventDefault();
             // ✅ 'temDashboard' incluído para limpar o cache
             ['userIsLoggedIn','profilePhotoUrl','profileName','profileEmail',
-             'userRole','token','admin_token','temDashboard']
+             'userRole','token','admin_token','temDashboard','userId','userType']
                 .forEach(k => localStorage.removeItem(k));
             alternarEstadoHeader(false);
             window.location.href = '/frontend/login/logout.html';

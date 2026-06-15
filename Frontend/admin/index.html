@@ -164,6 +164,8 @@ tbody tr:hover td{background:var(--accent-light);}
 .login-headline{font-size:38px;font-weight:700;letter-spacing:-1.5px;line-height:1.15;color:#fff;margin-bottom:14px;}
 .login-sub{font-size:14px;color:var(--sidebar-text-dim);line-height:1.6;max-width:320px;}
 .login-logo-left{margin-bottom:36px;}
+.login-back{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface2);border:1px solid var(--border-md);color:var(--text-2);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;border-radius:6px;transition:all .12s;text-decoration:none;margin-top:14px;width:fit-content;}
+.login-back:hover{color:var(--text);border-color:var(--border-strong);background:var(--surface3);}
 .login-right{width:440px;flex-shrink:0;height:100%;background:var(--surface);display:flex;align-items:center;justify-content:center;padding:48px;}
 .login-box{width:100%;max-width:340px;}
 .login-logo{display:flex;align-items:center;margin-bottom:36px;}
@@ -320,6 +322,7 @@ tbody tr:hover td{background:var(--accent-light);}
         <div class="fld"><label>Senha</label><input type="password" id="li-senha" placeholder="••••••••" autocomplete="current-password"/></div>
         <button class="btn-enter" onclick="doLogin()">Entrar no painel</button>
         <div class="login-err" id="li-err">Credenciais inválidas ou sem permissão.</div>
+        <a class="login-back" href="/frontend/index.html"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5"/></svg>Voltar ao site</a>
       </div>
     </div>
   </div>

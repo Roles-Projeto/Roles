@@ -254,6 +254,77 @@ document.addEventListener("DOMContentLoaded", () => {
     carregarEventosProximos();
 
     /* ==================================================
+================= LOCAIS POPULARES ==================
+================================================== */
+
+async function carregarLocaisPopulares() {
+    const grid = document.querySelector(".populares-grid");
+    if (!grid) return;
+
+    try {
+        const res    = await fetch(`${window.API_BASE}/estabelecimentos`);
+        const locais = await res.json();
+
+        if (!locais || locais.length === 0) {
+            grid.innerHTML = '<p style="text-align:center;padding:40px;color:#888;">Nenhum local encontrado.</p>';
+            return;
+        }
+
+        grid.innerHTML = "";
+
+        locais.slice(0, 6).forEach(local => {
+
+            let imagem = '/frontend/imagens/1º imagem cad.png';
+if (local.img_capa && local.img_capa.startsWith('data:')) {
+    imagem = local.img_capa;
+} else if (local.img_capa) {
+    imagem = local.img_capa.startsWith('http')
+        ? local.img_capa
+        : `${window.API_BASE}${local.img_capa.startsWith('/') ? '' : '/'}${local.img_capa}`;
+} else if (local.img_logo && local.img_logo.startsWith('data:')) {
+    imagem = local.img_logo;
+} else if (local.img_logo) {
+    imagem = local.img_logo.startsWith('http')
+        ? local.img_logo
+        : `${window.API_BASE}${local.img_logo.startsWith('/') ? '' : '/'}${local.img_logo}`;
+}
+
+            const categoria = local.tipo || 'Local';
+            const tagClass  = categoria.toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/\s+/g, '-')
+                .split('-')[0];
+
+            const card = document.createElement('a');
+            card.href                    = `/frontend/detalheslocais/detalheslocais.html?id=${local.id}`;
+            card.className               = 'card-local';
+            card.dataset.categoriaCard   = tagClass;
+            card.innerHTML = `
+                <div class="card-image-wrap">
+                    <img src="${imagem}"
+                         alt="${local.nome}"
+                         onerror="this.onerror=null;this.src='/frontend/imagens/1º imagem cad.png'">
+                    <span class="tag tag-${tagClass}">${categoria}</span>
+                </div>
+                <div class="card-content">
+                    <h3>${local.nome}</h3>
+                    <p class="evento-local">
+                        <i class="fas fa-map-marker-alt"></i>
+                        ${local.bairro || ''}${local.cidade ? ' — ' + local.cidade : ''}
+                    </p>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+    } catch (err) {
+        console.error('❌ Erro ao carregar locais populares:', err);
+    }
+}
+
+carregarLocaisPopulares();
+
+    /* ==================================================
     ================= CARROSSEL CATEGORIAS =============
     ================================================== */
 

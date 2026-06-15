@@ -142,6 +142,36 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "AVISO - Aplicado com erros, verifique o log acima"
 }
 
+# 5.5 AJUSTA AS SEQUENCES (corrige erro de duplicate key após restore)
+Write-Host "Ajustando sequences..."
+
+$seqSql = @"
+SELECT setval(pg_get_serial_sequence('usuarios', 'id'), COALESCE((SELECT MAX(id) FROM usuarios), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('estabelecimentos', 'id'), COALESCE((SELECT MAX(id) FROM estabelecimentos), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('eventos', 'id'), COALESCE((SELECT MAX(id) FROM eventos), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('tipos_ingresso', 'id'), COALESCE((SELECT MAX(id) FROM tipos_ingresso), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('pedidos', 'id'), COALESCE((SELECT MAX(id) FROM pedidos), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('ingressos', 'id'), COALESCE((SELECT MAX(id) FROM ingressos), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('visitas', 'id'), COALESCE((SELECT MAX(id) FROM visitas), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('login_historico', 'id'), COALESCE((SELECT MAX(id) FROM login_historico), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('avaliacoes', 'id'), COALESCE((SELECT MAX(id) FROM avaliacoes), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('contatos', 'id'), COALESCE((SELECT MAX(id) FROM contatos), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('contato_respostas', 'id'), COALESCE((SELECT MAX(id) FROM contato_respostas), 0) + 1, false);
+"@
+
+$seqFile = "fix_sequences.sql"
+Set-Content -Path $seqFile -Value $seqSql -Encoding utf8
+
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" $SUPABASE_URL -f $seqFile
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "OK - Sequences ajustadas com sucesso!"
+} else {
+    Write-Host "AVISO - Erro ao ajustar sequences, verifique o log acima"
+}
+
+Remove-Item $seqFile -ErrorAction SilentlyContinue
+
 # 5. APLICA ROW LEVEL SECURITY
 Write-Host "Aplicando Row Level Security..."
 

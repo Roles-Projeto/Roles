@@ -46,7 +46,7 @@ function aplicarImagemHero(categoria) {
 }
 
 // =========================================================
-// DROPDOWN CUSTOMIZADO — igual ao locais.js
+// DROPDOWN CUSTOMIZADO
 // =========================================================
 function criarDropdown(botao, itens, onSelect) {
   function fecharDropdown() {
@@ -58,7 +58,7 @@ function criarDropdown(botao, itens, onSelect) {
     e.stopPropagation();
     const jaAberto = document.getElementById('dropdown-aberto');
     fecharDropdown();
-    if (jaAberto) return; // clicou no mesmo botão: só fecha
+    if (jaAberto) return;
 
     botao.classList.add('aberto');
 
@@ -98,7 +98,6 @@ function criarDropdown(botao, itens, onSelect) {
       op.addEventListener('click', (e) => {
         e.stopPropagation();
         onSelect(item);
-        // Atualiza label do botão mantendo o ícone
         botao.childNodes[0].textContent = item.label + ' ';
         fecharDropdown();
       });
@@ -122,7 +121,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   aplicarImagemHero('todas');
 
   const container          = document.getElementById("eventosContainer");
-  const btnCarregar        = document.getElementById("carregarMais");
   const EVENTOS_POR_PAGINA = 6;
   let eventosFiltrados     = [];
   let quantidadeVisiveis   = EVENTOS_POR_PAGINA;
@@ -169,7 +167,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       { label: 'Workshop',            valor: 'workshop'    },
     ], (item) => {
       filtroCategoria = item.valor;
-      // Sincroniza as pills
       document.querySelectorAll('.pill').forEach(p => {
         p.classList.remove('active');
         if (p.getAttribute('data-cat') === item.valor) p.classList.add('active');
@@ -270,7 +267,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // -------------------------------------------------------
-  // FILTRAR POR DATA (utilitário)
+  // FILTRAR POR DATA
   // -------------------------------------------------------
   function dentroDoFiltroData(dataStr) {
     if (filtroData === 'todas' || !dataStr) return true;
@@ -322,15 +319,32 @@ document.addEventListener("DOMContentLoaded", async () => {
       card.style.display = i < quantidadeVisiveis ? "flex" : "none";
     });
     atualizarContador();
-    atualizarBotaoCarregar();
+    atualizarBotoes();
   }
 
-  function atualizarBotaoCarregar() {
-    if (!btnCarregar) return;
+  // -------------------------------------------------------
+  // VER MAIS / VER MENOS
+  // -------------------------------------------------------
+  function atualizarBotoes() {
+    const btnMais  = document.getElementById('carregarMais');
+    const btnMenos = document.getElementById('verMenos');
+    if (!btnMais || !btnMenos) return;
+
     const restantes = eventosFiltrados.length - quantidadeVisiveis;
-    if (restantes <= 0) { btnCarregar.style.display = "none"; return; }
-    btnCarregar.style.display = "inline-flex";
-    btnCarregar.innerHTML = `<i class="fa-solid fa-rotate"></i> Ver Mais ${Math.min(restantes, EVENTOS_POR_PAGINA)} `;
+
+    if (restantes > 0) {
+      btnMais.style.display = 'inline-flex';
+      btnMais.innerHTML = `<i class="fa-solid fa-chevron-down"></i> Ver Mais`;
+    } else {
+      btnMais.style.display = 'none';
+    }
+
+    if (quantidadeVisiveis > EVENTOS_POR_PAGINA) {
+      btnMenos.style.display = 'inline-flex';
+      btnMenos.innerHTML = `<i class="fa-solid fa-chevron-up"></i> Ver Menos`;
+    } else {
+      btnMenos.style.display = 'none';
+    }
   }
 
   function atualizarContador() {
@@ -338,10 +352,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (el) el.textContent = eventosFiltrados.length || document.querySelectorAll(".evento-card").length;
   }
 
-  if (btnCarregar) {
-    btnCarregar.addEventListener("click", () => {
+  const btnCarregarEl = document.getElementById('carregarMais');
+  const btnVerMenosEl = document.getElementById('verMenos');
+
+  if (btnCarregarEl) {
+    btnCarregarEl.addEventListener('click', () => {
       quantidadeVisiveis += EVENTOS_POR_PAGINA;
       renderizarPagina();
+    });
+  }
+
+  if (btnVerMenosEl) {
+    btnVerMenosEl.addEventListener('click', () => {
+      quantidadeVisiveis = EVENTOS_POR_PAGINA;
+      renderizarPagina();
+      const lista = document.querySelector('.eventos-lista');
+      if (lista) window.scrollTo({ top: lista.offsetTop - 120, behavior: 'smooth' });
     });
   }
 
@@ -354,7 +380,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
       pill.classList.add("active");
       filtroCategoria = pill.getAttribute("data-cat") || "todas";
-      // Sincroniza o botão dropdown de categoria
       const btnCatEl = document.getElementById('btnDropdownCategoria');
       if (btnCatEl) {
         const labels = {

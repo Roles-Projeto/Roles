@@ -39,7 +39,7 @@ router.get("/dashboard", authAdmin, (req, res) => {
     const total = Object.keys(queries).length;
 
     for (const [chave, sql] of Object.entries(queries)) {
-        connection.query(sql, (err, rows) => {
+        connection.query(sql, [], (err, rows) => {
             resultados[chave] = err ? 0 : rows[0].total;
             concluidos++;
             if (concluidos === total) res.json(resultados);
@@ -53,6 +53,7 @@ router.get("/dashboard", authAdmin, (req, res) => {
 router.get("/usuarios", authAdmin, (req, res) => {
     connection.query(
         "SELECT id, nome_completo, email, telefone, role, verificado, criado_em FROM usuarios ORDER BY criado_em DESC",
+        [],
         (err, rows) => {
             if (err) return res.status(500).json({ erro: err.message });
             res.json(rows);
@@ -104,6 +105,7 @@ router.delete("/usuarios/:id", authAdmin, (req, res) => {
 router.get("/estabelecimentos", authAdmin, (req, res) => {
     connection.query(
         "SELECT id, nome, tipo, cidade, estado, avaliacoes, nota, visibilidade, criado_em FROM estabelecimentos ORDER BY criado_em DESC",
+        [],
         (err, rows) => {
             if (err) return res.status(500).json({ erro: err.message });
             res.json(rows);
@@ -140,6 +142,7 @@ router.delete("/estabelecimentos/:id", authAdmin, (req, res) => {
 router.get("/eventos", authAdmin, (req, res) => {
     connection.query(
         "SELECT * FROM eventos ORDER BY criado_em DESC",
+        [],
         (err, rows) => {
             if (err) return res.status(500).json({ erro: err.message });
             res.json(rows);
@@ -185,6 +188,7 @@ router.get("/ingressos", authAdmin, (req, res) => {
          FROM ingressos i
          LEFT JOIN eventos e ON e.id = i.evento_id
          ORDER BY i.id DESC`,
+        [],
         (err, rows) => {
             if (err) return res.status(500).json({ erro: err.message });
             res.json(rows);
@@ -223,6 +227,7 @@ router.delete("/ingressos/:id", authAdmin, (req, res) => {
 router.get("/mensagens", authAdmin, (req, res) => {
     connection.query(
         "SELECT * FROM contatos ORDER BY criado_em DESC",
+        [],
         (err, rows) => {
             if (err) return res.status(500).json({ erro: err.message });
             res.json(rows);
@@ -344,6 +349,7 @@ router.get("/avaliacoes", authAdmin, (req, res) => {
          FROM avaliacoes a
          LEFT JOIN estabelecimentos e ON e.id = a.estabelecimento_id
          ORDER BY a.created_at DESC`,
+        [],
         (err, rows) => {
             if (err) return res.status(500).json({ erro: err.message });
             res.json(rows);
@@ -372,7 +378,8 @@ router.delete("/avaliacoes/:id", authAdmin, (req, res) => {
                         if (!err3 && r[0]) {
                             connection.query(
                                 "UPDATE estabelecimentos SET nota = ?, avaliacoes = ? WHERE id = ?",
-                                [parseFloat(r[0].media || 0).toFixed(1), r[0].total, estId]
+                                [parseFloat(r[0].media || 0).toFixed(1), r[0].total, estId],
+                                () => {}
                             );
                         }
                         res.json({ mensagem: "Avaliação deletada com sucesso." });
@@ -384,5 +391,3 @@ router.delete("/avaliacoes/:id", authAdmin, (req, res) => {
 });
 
 module.exports = router;
-
-

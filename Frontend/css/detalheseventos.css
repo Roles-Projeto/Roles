@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
 
 :root {
@@ -20,7 +27,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   background: var(--bg);
   color: var(--text-dark);
   font-size: 14px;
@@ -131,7 +138,7 @@ body {
 }
 
 .titulo-evento {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 2.4rem;
   font-weight: 400;
   line-height: 1.2;
@@ -165,7 +172,7 @@ body {
   padding: 12px 18px;
 }
 .label-preco { font-size: 11px; color: rgba(255,255,255,0.70); font-weight: 500; margin-bottom: 2px; }
-.valor-minimo { font-family: 'DM Sans', sans-serif; font-size: 1.8rem; font-weight: 800; color: #fff; line-height: 1; letter-spacing: -0.5px; }
+.valor-minimo { font-family: 'Inter', sans-serif; font-size: 1.8rem; font-weight: 800; color: #fff; line-height: 1; letter-spacing: -0.5px; }
 .por-pessoas  { font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 2px; }
 
 /* ═══════════════════════════════════════
@@ -206,7 +213,7 @@ body {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--p700);
@@ -349,7 +356,7 @@ body {
   border: 1.5px solid var(--p200);
   border-radius: var(--radius-sm);
   padding: 8px 18px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px; font-weight: 600;
   cursor: pointer; min-width: 110px;
   transition: all 0.2s;
@@ -455,7 +462,7 @@ body {
   color: #fff; border: none;
   border-radius: var(--radius-sm);
   padding: 14px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 15px; font-weight: 800;
   cursor: pointer;
   box-shadow: 0 4px 18px rgba(91,33,182,0.35);

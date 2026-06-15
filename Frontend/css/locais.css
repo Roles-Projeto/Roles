@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
 
 :root {
@@ -26,7 +33,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: var(--bg-gray);
   color: var(--text-dark);
   font-size: 14px;
@@ -137,7 +144,7 @@ body {
   background: transparent;
   color: #fff;
   font-size: 14px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   outline: none;
   padding: 0;
 }
@@ -187,7 +194,7 @@ body {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   background-color: var(--purple-50);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: var(--purple-700);
@@ -229,7 +236,7 @@ body {
   border-radius: 99px;
   border: 1.5px solid var(--border);
   background: var(--bg-card);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: var(--text-mid);
@@ -425,7 +432,7 @@ body {
   padding: 9px 18px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 700;
   box-shadow: 0 4px 16px rgba(91,33,182,0.32);
@@ -454,7 +461,7 @@ body {
   padding: 12px 30px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 600;
   transition: all 0.2s;

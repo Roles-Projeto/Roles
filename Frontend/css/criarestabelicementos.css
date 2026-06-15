@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap');
 
 :root {
@@ -22,7 +29,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     background-color: var(--bg-gray);
     margin: 0;
     color: var(--text-dark);
@@ -77,7 +84,7 @@ body {
     z-index: 100;
     backdrop-filter: blur(8px);
 }
-.main-header h1 { font-family: 'DM Sans', sans-serif; font-size: 22px; font-weight: 300; color: var(--text-mid); margin: 0 0 14px 0; letter-spacing: -0.3px; }
+.main-header h1 { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 300; color: var(--text-mid); margin: 0 0 14px 0; letter-spacing: -0.3px; }
 .main-header h1 strong { font-weight: 700; color: var(--text-dark); }
 
 /* ─── BARRA DE PROGRESSO ─── */
@@ -92,7 +99,7 @@ body {
 @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ─── TÍTULOS ─── */
-.section-title { font-family: 'DM Serif Display', serif; color: var(--purple-main); font-size: 24px; font-weight: 400; margin: 0 0 6px 0; letter-spacing: -0.3px; }
+.section-title { font-family: 'Inter', sans-serif; color: var(--purple-main); font-size: 24px; font-weight: 400; margin: 0 0 6px 0; letter-spacing: -0.3px; }
 .section-subtitle { color: var(--text-light); font-size: 13.5px; margin-bottom: 32px; font-weight: 400; }
 
 /* ─── INPUTS E LABELS ─── */
@@ -107,7 +114,7 @@ textarea {
     width: 100%; padding: 11px 14px;
     border: 1.5px solid var(--border-color); border-radius: var(--radius-sm);
     font-size: 14px; color: var(--text-dark); outline: none; box-sizing: border-box;
-    font-family: 'DM Sans', sans-serif; background: #fdfcff;
+    font-family: 'Inter', sans-serif; background: #fdfcff;
     transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 input::placeholder, textarea::placeholder { color: #c4b5fd; }
@@ -157,13 +164,13 @@ input:disabled { background: #f5f3ff; border-color: #e5e2f0; cursor: not-allowed
 .separador-horario { font-size: 12px; color: var(--text-light); white-space: nowrap; }
 .icon-input { position: relative; display: flex; align-items: center; }
 .icon-input i { position: absolute; left: 11px; color: #c4b5fd; font-size: 13px; pointer-events: none; }
-.icon-input input[type="time"] { padding: 9px 11px 9px 32px; border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); font-size: 13.5px; width: 120px; box-sizing: border-box; transition: 0.2s; font-family: 'DM Sans', sans-serif; background: #fdfcff; color: var(--text-dark); }
+.icon-input input[type="time"] { padding: 9px 11px 9px 32px; border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); font-size: 13.5px; width: 120px; box-sizing: border-box; transition: 0.2s; font-family: 'Inter', sans-serif; background: #fdfcff; color: var(--text-dark); }
 .icon-input input[type="time"]:focus { outline: none; border-color: var(--purple-main); box-shadow: 0 0 0 3px rgba(124,58,237,0.1); background: white; }
 
 /* ─── EDITOR / DESCRIÇÃO ─── */
 .editor-container { border: 1.5px solid var(--border-color); border-radius: var(--radius); overflow: hidden; transition: border-color 0.2s; }
 .editor-container:focus-within { border-color: var(--purple-main); box-shadow: 0 0 0 3px rgba(124,58,237,0.1); }
-.editor-area { width: 100%; min-height: 220px; padding: 20px; border: none; resize: vertical; font-family: 'DM Sans', sans-serif; font-size: 14.5px; outline: none; box-sizing: border-box; color: var(--text-dark); background: #fdfcff; line-height: 1.7; }
+.editor-area { width: 100%; min-height: 220px; padding: 20px; border: none; resize: vertical; font-family: 'Inter', sans-serif; font-size: 14.5px; outline: none; box-sizing: border-box; color: var(--text-dark); background: #fdfcff; line-height: 1.7; }
 
 /* ─── FEATURES / COMODIDADES ─── */
 .features-section { border-top: 1.5px solid var(--border-color); padding-top: 26px; margin-top: 8px; }
@@ -182,7 +189,7 @@ input:disabled { background: #f5f3ff; border-color: #e5e2f0; cursor: not-allowed
 
 .ticket-item { border: 1.5px solid var(--border-color); border-radius: var(--radius); padding: 26px; background: white; position: relative; box-shadow: var(--shadow-sm); }
 .ticket-item h4 { margin-bottom: 10px; color: var(--purple-main); font-size: 15px; font-weight: 600; }
-.ticket-item input, .ticket-item textarea, .ticket-item select { width: 100%; padding: 9px 12px; margin-top: 6px; margin-bottom: 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); font-family: 'DM Sans', sans-serif; font-size: 14px; box-sizing: border-box; background: #fdfcff; color: var(--text-dark); }
+.ticket-item input, .ticket-item textarea, .ticket-item select { width: 100%; padding: 9px 12px; margin-top: 6px; margin-bottom: 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); font-family: 'Inter', sans-serif; font-size: 14px; box-sizing: border-box; background: #fdfcff; color: var(--text-dark); }
 .ticket-item label { margin-top: 8px; margin-bottom: 0; }
 .ticket-item p { font-size: 13px; color: var(--text-light); margin: 0 0 16px; }
 
@@ -234,18 +241,18 @@ input:checked + .slider:before { transform: translateX(18px); }
 .label-normal { font-weight: 400 !important; margin-bottom: 0 !important; color: var(--text-mid) !important; cursor: pointer; text-transform: none !important; letter-spacing: 0 !important; }
 
 /* ─── BOTÕES ─── */
-.btn-primary { background: linear-gradient(135deg, var(--purple-main), #a855f7); color: white; border: none; padding: 12px 28px; border-radius: var(--radius-sm); font-weight: 600; font-size: 14px; cursor: pointer; box-shadow: 0 4px 16px rgba(124,58,237,0.3); transition: all 0.22s ease; letter-spacing: 0.2px; display: inline-flex; align-items: center; gap: 8px; font-family: 'DM Sans', sans-serif; }
+.btn-primary { background: linear-gradient(135deg, var(--purple-main), #a855f7); color: white; border: none; padding: 12px 28px; border-radius: var(--radius-sm); font-weight: 600; font-size: 14px; cursor: pointer; box-shadow: 0 4px 16px rgba(124,58,237,0.3); transition: all 0.22s ease; letter-spacing: 0.2px; display: inline-flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; }
 .btn-primary:hover { background: linear-gradient(135deg, var(--purple-dark), var(--purple-main)); box-shadow: 0 6px 24px rgba(124,58,237,0.4); transform: translateY(-1px); }
 .btn-primary:active { transform: translateY(0); }
 .btn-success { background: transparent; border: none; cursor: pointer; padding: 8px; transition: opacity 0.2s; }
 .btn-success:hover { opacity: 0.7; }
-.btn-outline { background: white; border: 1.5px solid var(--purple-main); color: var(--purple-main); padding: 10px 24px; border-radius: var(--radius-sm); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+.btn-outline { background: white; border: 1.5px solid var(--purple-main); color: var(--purple-main); padding: 10px 24px; border-radius: var(--radius-sm); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
 .btn-outline:hover { background: var(--purple-light); }
-.btn-editar { background: transparent; border: 1.5px solid var(--purple-main); color: var(--purple-main); padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-left: 6px; font-family: 'DM Sans', sans-serif; }
+.btn-editar { background: transparent; border: 1.5px solid var(--purple-main); color: var(--purple-main); padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-left: 6px; font-family: 'Inter', sans-serif; }
 .btn-editar:hover { background: var(--purple-light); }
-.btn-excluir { background: transparent; border: 1.5px solid #ef4444; color: #ef4444; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-left: 6px; font-family: 'DM Sans', sans-serif; }
+.btn-excluir { background: transparent; border: 1.5px solid #ef4444; color: #ef4444; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-left: 6px; font-family: 'Inter', sans-serif; }
 .btn-excluir:hover { background: #fff1f2; }
-.btn-ticket-action { background: white; border: 1.5px solid var(--purple-main); color: var(--purple-main); padding: 11px 22px; border-radius: 99px; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.22s; box-shadow: 0 2px 10px rgba(124,58,237,0.1); font-family: 'DM Sans', sans-serif; }
+.btn-ticket-action { background: white; border: 1.5px solid var(--purple-main); color: var(--purple-main); padding: 11px 22px; border-radius: 99px; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.22s; box-shadow: 0 2px 10px rgba(124,58,237,0.1); font-family: 'Inter', sans-serif; }
 .btn-ticket-action:hover { background: var(--purple-light); box-shadow: 0 4px 14px rgba(124,58,237,0.2); transform: translateY(-1px); }
 
 /* ─── STEPS ─── */
@@ -256,7 +263,7 @@ input:checked + .slider:before { transform: translateX(18px); }
 /* ─── MODAL ─── */
 .modal { display: none; position: fixed; inset: 0; background: rgba(30,27,46,0.55); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 999; }
 .modal-content { background: white; padding: 36px; border-radius: var(--radius); width: 500px; max-width: 92%; box-shadow: 0 24px 80px rgba(90,60,160,0.2); max-height: 82vh; overflow-y: auto; animation: fadeSlide 0.25s ease both; }
-.modal-content h2 { margin: 0 0 22px; font-family: 'DM Serif Display', serif; font-size: 22px; font-weight: 400; color: var(--text-dark); }
+.modal-content h2 { margin: 0 0 22px; font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 400; color: var(--text-dark); }
 .modal-content h3 { font-size: 14px; color: var(--text-mid); margin: 18px 0 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; font-weight: 600; }
 .modal-content p { font-size: 13.5px; color: var(--text-mid); margin: 6px 0; line-height: 1.6; }
 .modal-content ul { margin: 4px 0; padding-left: 18px; }

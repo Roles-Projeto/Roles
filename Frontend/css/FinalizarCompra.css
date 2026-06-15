@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* ============================================
    VARIÁVEIS DE DESIGN
 ============================================ */
@@ -32,7 +39,7 @@
    GERAL
 ============================================ */
 body {
-    font-family: 'Poppins', Arial, sans-serif;
+    font-family: 'Inter', sans-serif;
     margin: 0;
     background: linear-gradient(160deg, #F5F3FF 0%, #F9FAFB 60%);
     display: flex;
@@ -160,7 +167,7 @@ header {
     font-size: 14px;
     box-sizing: border-box;
     color: var(--gray-800);
-    font-family: 'Poppins', Arial, sans-serif;
+    font-family: 'Inter', sans-serif;
     transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
 }
 
@@ -253,7 +260,7 @@ header {
     border: none;
     background: transparent;
     color: var(--gray-500);
-    font-family: 'Poppins', Arial, sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -636,7 +643,7 @@ header {
     font-weight: 700;
     cursor: pointer;
     transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
-    font-family: 'Poppins', Arial, sans-serif;
+    font-family: 'Inter', sans-serif;
     letter-spacing: 0.2px;
     box-shadow: 0 4px 14px rgba(124,58,237,0.35);
 }

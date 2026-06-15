@@ -1,9 +1,16 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* ==================================================
    RESET E BASE
 ================================================== */
 .header-main * { box-sizing: border-box; }
 
-body { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
 header { margin: 0; padding: 0; z-index: 100; }
 
 /* ==================================================
@@ -61,7 +68,7 @@ header { margin: 0; padding: 0; z-index: 100; }
     outline: none;
     flex: 1;
     font-size: 14px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     color: #1a1a1a;
 }
 
@@ -100,7 +107,7 @@ header { margin: 0; padding: 0; z-index: 100; }
     padding: 8px 12px;
     cursor: pointer;
     font-size: 13px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     white-space: nowrap;
     color: #333;
 }
@@ -313,7 +320,7 @@ header { margin: 0; padding: 0; z-index: 100; }
     font-weight: 500;
     color: #4b5563;
     cursor: pointer;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     transition: color 0.2s;
     text-decoration: none;
 }
@@ -451,7 +458,7 @@ header { margin: 0; padding: 0; z-index: 100; }
     border-radius: 8px; margin-bottom: 15px;
 }
 .search-box i { color: #999; margin-right: 8px; }
-.search-box input { border: none; background: transparent; outline: none; width: 100%; font-family: 'Poppins', sans-serif; }
+.search-box input { border: none; background: transparent; outline: none; width: 100%; font-family: 'Inter', sans-serif; }
 
 .use-location {
     display: flex; align-items: center; gap: 10px;
@@ -576,7 +583,7 @@ header { margin: 0; padding: 0; z-index: 100; }
         border-radius: 20px;
         padding: 8px 14px;
         font-size: 13px;
-        font-family: 'Poppins', sans-serif;
+        font-family: 'Inter', sans-serif;
         outline: none;
         transition: background 0.2s, box-shadow 0.2s;
     }
@@ -595,7 +602,7 @@ header { margin: 0; padding: 0; z-index: 100; }
         white-space: nowrap;
         cursor: pointer;
         border: none;
-        font-family: 'Poppins', sans-serif;
+        font-family: 'Inter', sans-serif;
         display: flex;
         align-items: center;
         gap: 4px;

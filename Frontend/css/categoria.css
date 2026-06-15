@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 *,
@@ -7,7 +14,7 @@
 }
 
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     padding: 0;
     margin: 0;
     background: #f7f7fb !important;
@@ -137,7 +144,7 @@ main {
 }
 
 .categoria-info h1 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 3rem;
     font-weight: 800;
     margin: 0;
@@ -211,7 +218,7 @@ main {
     background: none;
     border: none;
     padding: 12px 20px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 13px;
     font-weight: 600;
     color: #b0b0c0;
@@ -238,7 +245,7 @@ main {
     background: #faf9ff;
     border: 1.5px solid #e8e4f8;
     padding: 8px 16px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 11.5px;
     font-weight: 600;
     color: #7b6cb0;
@@ -458,7 +465,7 @@ main {
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     transition: all 0.2s;
     letter-spacing: 0.02em;
     box-shadow: 0 4px 12px rgba(93,63,211,0.25);
@@ -622,7 +629,7 @@ main {
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     transition: all 0.2s;
     letter-spacing: 0.02em;
 }
@@ -643,7 +650,7 @@ main {
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     transition: all 0.2s;
     letter-spacing: 0.02em;
     box-shadow: 0 4px 12px rgba(93,63,211,0.25);

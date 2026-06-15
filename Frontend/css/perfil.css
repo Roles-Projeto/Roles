@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* ═══════════════════════════════════════════
    DESIGN TOKENS — mesmos do projeto
 ═══════════════════════════════════════════ */
@@ -32,7 +39,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     background: var(--bg-page);
     color: var(--text-dark);
     min-height: 100vh;
@@ -41,8 +48,8 @@ body {
 
 a { color: var(--primary); text-decoration: none; }
 ul { list-style: none; }
-button { font-family: 'Poppins', sans-serif; cursor: pointer; }
-input, select, textarea { font-family: 'Poppins', sans-serif; }
+button { font-family: 'Inter', sans-serif; cursor: pointer; }
+input, select, textarea { font-family: 'Inter', sans-serif; }
 
 /* ═══════════════════════════════════════════
    PAGE LAYOUT — grid lateral + conteúdo

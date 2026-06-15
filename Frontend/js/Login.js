@@ -23,41 +23,31 @@ function mostrarNotificacao(elementId, mensagem, tipo = "erro") {
         el.className = "notificacao";
     }, 5000);
 }
-const clienteBtn = document.getElementById("cliente-btn");
+
+const clienteBtn    = document.getElementById("cliente-btn");
 const empresarioBtn = document.getElementById("empresario-btn");
-
-const mainText = document.getElementById("main-text");
-const subText = document.getElementById("sub-text");
-
-const form = document.getElementById("login-form");
-
-const inputEmail = document.getElementById("email");
+const mainText      = document.getElementById("main-text");
+const subText       = document.getElementById("sub-text");
+const form          = document.getElementById("login-form");
+const inputEmail    = document.getElementById("email");
 const inputPassword = document.getElementById("password");
-
-const headerIframe = document.getElementById("site-header");
+const headerIframe  = document.getElementById("site-header");
 
 /* ==================================================
 ================ HEADER LOGIN ========================
 ================================================== */
 
 function enviarLoginParaHeader(name, email, userType, photoUrl) {
-
     if (headerIframe && headerIframe.contentWindow) {
-
         headerIframe.contentWindow.postMessage({
             action: "LOGIN_SUCCESS",
             newName: name,
             newEmail: email,
-            newPicUrl:
-                photoUrl ||
-                "https://i.imgur.com/default-placeholder.png",
+            newPicUrl: photoUrl || "https://i.imgur.com/default-placeholder.png",
             userType: userType
         }, "*");
-
         console.log("Mensagem enviada para iframe");
-
     }
-
 }
 
 /* ==================================================
@@ -67,29 +57,17 @@ function enviarLoginParaHeader(name, email, userType, photoUrl) {
 if (clienteBtn && empresarioBtn) {
 
     clienteBtn.addEventListener("click", () => {
-
         clienteBtn.classList.add("active");
         empresarioBtn.classList.remove("active");
-
-        mainText.textContent =
-            "Encontre os melhores lugares para sair e se divertir";
-
-        subText.textContent =
-            "Entre rapidamente com";
-
+        mainText.textContent = "Encontre os melhores lugares para sair e se divertir";
+        subText.textContent  = "Entre rapidamente com";
     });
 
     empresarioBtn.addEventListener("click", () => {
-
         empresarioBtn.classList.add("active");
         clienteBtn.classList.remove("active");
-
-        mainText.textContent =
-            "Cadastre seu estabelecimento e aumente sua visibilidade";
-
-        subText.textContent =
-            "Entre rapidamente com";
-
+        mainText.textContent = "Cadastre seu estabelecimento e aumente sua visibilidade";
+        subText.textContent  = "Entre rapidamente com";
     });
 
 }
@@ -108,35 +86,24 @@ if (form) {
         const senha = inputPassword.value;
 
         if (!email || !senha) {
-
             mostrarNotificacao("notificacaoLogin", "Preencha todos os campos.", "aviso");
-
             return;
-
         }
 
         try {
 
-            const response = await fetch(
-                `${API_URL}/usuarios/login`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        email,
-                        senha
-                    })
-                }
-            );
+            const response = await fetch(`${API_URL}/usuarios/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, senha })
+            });
 
             const data = await response.json();
-
             console.log("📩 Backend:", data);
 
             if (response.ok) {
 
+                // ── Login bem-sucedido ──
                 localStorage.setItem("userIsLoggedIn", "true");
                 localStorage.setItem("userType", "usuario");
                 localStorage.setItem("userId", data.id);
@@ -153,7 +120,6 @@ if (form) {
                 }
 
                 localStorage.setItem("profileEmail", email);
-
                 enviarLoginParaHeader(nome, email, "usuario", foto);
 
                 if (window.parent && window.parent !== window) {
@@ -162,17 +128,74 @@ if (form) {
                     window.location.href = "../index.html";
                 }
 
+            } else if (response.status === 429 && data.bloqueado) {
+
+                // ── Conta bloqueada ──
+                const minutos = data.minutosRestantes || 30;
+
+                mostrarNotificacao(
+                    "notificacaoLogin",
+                    `🔒 Conta bloqueada por ${minutos} minuto(s). Tente novamente mais tarde ou redefina sua senha.`,
+                    "erro"
+                );
+
+                // Desabilita o botão de login durante o bloqueio
+                const btnEntrar = form.querySelector("button[type='submit']");
+                if (btnEntrar) {
+                    btnEntrar.disabled      = true;
+                    btnEntrar.style.opacity = "0.5";
+                    btnEntrar.style.cursor  = "not-allowed";
+
+                    setTimeout(() => {
+                        btnEntrar.disabled      = false;
+                        btnEntrar.style.opacity = "";
+                        btnEntrar.style.cursor  = "";
+                        mostrarNotificacao(
+                            "notificacaoLogin",
+                            "Bloqueio encerrado. Você já pode tentar novamente.",
+                            "aviso"
+                        );
+                    }, minutos * 60 * 1000);
+                }
+
+                // Destaca o link de recuperação de senha
+                const forgotLink = document.getElementById("forgotPasswordLink");
+                if (forgotLink) {
+                    forgotLink.style.fontWeight = "bold";
+                    forgotLink.style.color      = "#e53e3e";
+                    forgotLink.textContent      = "⚠️ Redefinir minha senha";
+                }
+
             } else {
 
-                mostrarNotificacao("notificacaoLogin", data.erro || "Email ou senha incorretos.", "erro");
+                // ── Senha errada — mostra tentativas restantes ──
+                const tentativas = data.tentativasRestantes;
+
+                if (tentativas !== undefined) {
+                    mostrarNotificacao(
+                        "notificacaoLogin",
+                        `Senha incorreta. Você tem ${tentativas} tentativa(s) restante(s) antes do bloqueio.`,
+                        "aviso"
+                    );
+
+                    inputPassword.style.borderColor = "#e53e3e";
+                    setTimeout(() => {
+                        inputPassword.style.borderColor = "";
+                    }, 3000);
+
+                } else {
+                    mostrarNotificacao(
+                        "notificacaoLogin",
+                        data.erro || "Email ou senha incorretos.",
+                        "erro"
+                    );
+                }
 
             }
 
         } catch (err) {
-
             console.error(err);
             mostrarNotificacao("notificacaoLogin", "Não foi possível conectar ao servidor.", "erro");
-
         }
 
     });
@@ -186,14 +209,10 @@ if (form) {
 const btnCadastrar = document.getElementById("btnCadastrar");
 
 if (btnCadastrar) {
-
     btnCadastrar.addEventListener("click", (e) => {
-
         e.preventDefault();
         window.parent.location.href = "/Frontend/Cadastro/cadastro.html";
-
     });
-
 }
 
 /* ==================================================
@@ -201,32 +220,28 @@ if (btnCadastrar) {
 ================================================== */
 
 const togglePassword = document.getElementById("togglePassword");
-const password = document.getElementById("password");
+const password       = document.getElementById("password");
 
 if (togglePassword && password) {
 
     password.addEventListener("input", () => {
-
         if (password.value.length > 0) {
             togglePassword.classList.add("show");
         } else {
             togglePassword.classList.remove("show");
-            password.type = "password";
+            password.type            = "password";
             togglePassword.textContent = "visibility";
         }
-
     });
 
     togglePassword.addEventListener("click", () => {
-
         if (password.type === "password") {
-            password.type = "text";
+            password.type              = "text";
             togglePassword.textContent = "visibility_off";
         } else {
-            password.type = "password";
+            password.type              = "password";
             togglePassword.textContent = "visibility";
         }
-
     });
 
 }
@@ -241,26 +256,18 @@ const backToLogin        = document.getElementById("backToLogin");
 const loginContent       = document.getElementById("loginContent");
 
 if (forgotPasswordLink) {
-
     forgotPasswordLink.addEventListener("click", (e) => {
-
         e.preventDefault();
         loginContent.style.display = "none";
         forgotPasswordBox.classList.add("active");
-
     });
-
 }
 
 if (backToLogin) {
-
     backToLogin.addEventListener("click", () => {
-
         forgotPasswordBox.classList.remove("active");
         loginContent.style.display = "block";
-
     });
-
 }
 
 /* ==================================================
@@ -282,14 +289,11 @@ if (sendRecoveryBtn) {
 
         try {
 
-            const response = await fetch(
-                `${API_URL}/usuarios/recuperar-senha`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email })
-                }
-            );
+            const response = await fetch(`${API_URL}/usuarios/recuperar-senha`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email })
+            });
 
             const data = await response.json();
 
@@ -302,10 +306,8 @@ if (sendRecoveryBtn) {
             }
 
         } catch (err) {
-
             console.log(err);
             mostrarNotificacao("notificacaoRecuperar", "Erro ao enviar o código.", "erro");
-
         }
 
     });
@@ -333,14 +335,11 @@ if (redefinirSenhaBtn) {
 
         try {
 
-            const response = await fetch(
-                `${API_URL}/usuarios/redefinir-senha`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, codigo, novaSenha })
-                }
-            );
+            const response = await fetch(`${API_URL}/usuarios/redefinir-senha`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, codigo, novaSenha })
+            });
 
             const data = await response.json();
 
@@ -348,15 +347,15 @@ if (redefinirSenhaBtn) {
 
                 mostrarNotificacao("notificacaoRecuperar", "Senha redefinida com sucesso!", "sucesso");
 
-                document.getElementById("recoveryEmail").value       = "";
-                document.getElementById("codigoRecuperacao").value   = "";
-                document.getElementById("novaSenha").value           = "";
-                document.getElementById("etapaEmail").style.cssText    = "display: none !important";
+                document.getElementById("recoveryEmail").value          = "";
+                document.getElementById("codigoRecuperacao").value      = "";
+                document.getElementById("novaSenha").value              = "";
+                document.getElementById("etapaEmail").style.cssText     = "display: none !important";
                 document.getElementById("etapaRedefinir").style.cssText = "display: none !important";
 
                 setTimeout(() => {
-                    document.getElementById("etapaEmail").style.cssText    = "";
-                    document.getElementById("etapaRedefinir").style.cssText = "";
+                    document.getElementById("etapaEmail").style.cssText     = "";
+                    document.getElementById("etapaRedefinir").style.cssText  = "";
                     forgotPasswordBox.classList.remove("active");
                     loginContent.style.display = "block";
                 }, 2000);
@@ -366,10 +365,8 @@ if (redefinirSenhaBtn) {
             }
 
         } catch (err) {
-
             console.log(err);
             mostrarNotificacao("notificacaoRecuperar", "Erro ao redefinir a senha.", "erro");
-
         }
 
     });

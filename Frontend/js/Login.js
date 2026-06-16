@@ -276,6 +276,25 @@ if (backToLogin) {
     backToLogin.addEventListener("click", () => {
         forgotPasswordBox.classList.remove("active");
         loginContent.style.display = "block";
+
+        // Reabilita o botão de login caso esteja bloqueado
+        const btnEntrar = form && form.querySelector("button[type='submit']");
+        if (btnEntrar) {
+            btnEntrar.disabled = false;
+            btnEntrar.style.opacity = "";
+            btnEntrar.style.cursor = "";
+        }
+
+        // Remove notificação de bloqueio persistente
+        const notif = document.getElementById("notificacaoLogin");
+        if (notif) notif.className = "notificacao";
+
+        // Remove destaque do link de recuperação
+        const forgotLink = document.getElementById("forgotPasswordLink");
+        if (forgotLink) {
+            forgotLink.classList.remove("destaque-recuperacao");
+            forgotLink.textContent = "Esqueci minha senha";
+        }
     });
 }
 
@@ -367,8 +386,22 @@ if (redefinirSenhaBtn) {
                     document.getElementById("etapaRedefinir").style.cssText = "";
                     forgotPasswordBox.classList.remove("active");
                     loginContent.style.display = "block";
-                }, 2000);
 
+                    // Reabilita botão e limpa notificação de bloqueio
+                    const btnEntrar = form && form.querySelector("button[type='submit']");
+                    if (btnEntrar) {
+                        btnEntrar.disabled = false;
+                        btnEntrar.style.opacity = "";
+                        btnEntrar.style.cursor = "";
+                    }
+                    const notif = document.getElementById("notificacaoLogin");
+                    if (notif) notif.className = "notificacao";
+                    const forgotLink = document.getElementById("forgotPasswordLink");
+                    if (forgotLink) {
+                        forgotLink.classList.remove("destaque-recuperacao");
+                        forgotLink.textContent = "Esqueci minha senha";
+                    }
+                }, 2000);
             } else {
                 mostrarNotificacao("notificacaoRecuperar", data.erro, "erro");
             }

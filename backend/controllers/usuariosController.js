@@ -345,7 +345,7 @@ async function redefinirSenha(req, res) {
 
     const senhaHash = await bcrypt.hash(novaSenha, 10);
     await connection.query(
-      "UPDATE usuarios SET senha = ?, codigo_recuperacao = NULL, codigo_expira_em = NULL WHERE email = ?",
+      "UPDATE usuarios SET senha = ?, codigo_recuperacao = NULL, codigo_expira_em = NULL, tentativas_login = 0, bloqueado_ate = NULL WHERE email = ?",
       [senhaHash, email]
     );
     res.json({ mensagem: "Senha redefinida com sucesso!" });

@@ -205,7 +205,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   function criarCard(evento) {
     const article = document.createElement("article");
     article.classList.add("evento-card");
-    article.setAttribute("data-categoria", (evento.assunto || "").toLowerCase());
+   const mapCategoria = {
+  'festas': 'festa', 'festa': 'festa',
+  'shows': 'show', 'show': 'show',
+  'festivais': 'festival', 'festival': 'festival',
+  'gastronomia': 'gastronomia',
+  'workshop': 'workshop', 'workshops': 'workshop',
+};
+const catNormalizada = mapCategoria[(evento.assunto || "").toLowerCase()] || (evento.assunto || "").toLowerCase();
+article.setAttribute("data-categoria", catNormalizada);
     article.setAttribute("data-nome",      evento.nome);
     article.setAttribute("data-id",        evento.id);
     article.setAttribute("data-data",      evento.data_inicio || "");

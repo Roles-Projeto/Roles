@@ -18,12 +18,9 @@
 
         <!-- CABEÇALHO DA BUSCA -->
         <section class="busca-hero">
-
-            <!-- BOTÃO VOLTAR — fora do container, colado à esquerda -->
             <button class="busca-voltar" onclick="history.back()">
                 <i class="fas fa-arrow-left"></i> Voltar
             </button>
-
             <div class="busca-hero-inner container">
                 <p class="busca-label">Resultados para</p>
                 <h1 class="busca-titulo" id="buscaTitulo">"..."</h1>
@@ -138,20 +135,43 @@
         let todosEventos  = [];
         let todosLocais   = [];
 
+        // -------------------------------------------------------
+        // FORMATAR DATA (igual ao Evento.js)
+        // -------------------------------------------------------
+        function formatarData(dataStr) {
+            if (!dataStr) return '-';
+            const d     = new Date(dataStr);
+            const dias  = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+            const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+            return `${dias[d.getDay()]}, ${d.getDate()} de ${meses[d.getMonth()]}`;
+        }
+
+        // -------------------------------------------------------
+        // CRIAR CARD EVENTO — layout completo igual ao Evento.js
+        // -------------------------------------------------------
         function criarCardEvento(evento) {
-            const data = evento.data_inicio
-                ? new Date(evento.data_inicio).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
-                : '';
-            const hora = evento.hora_inicio ? evento.hora_inicio.slice(0, 5) : '';
+            const dataFormatada = formatarData(evento.data_inicio);
+            const hora          = evento.hora_inicio ? evento.hora_inicio.slice(0, 5) : '';
+            const isGratuito    = !evento.preco_minimo || parseFloat(evento.preco_minimo) === 0;
+            const preco         = isGratuito ? 'Gratuito' : `R$ ${parseFloat(evento.preco_minimo).toFixed(2)}`;
+
             let imagem = '/frontend/imagens/1º imagem cad.png';
             if (evento.imagem) {
                 imagem = evento.imagem.startsWith('http')
                     ? evento.imagem
                     : `${window.API_BASE}${evento.imagem.startsWith('/') ? '' : '/'}${evento.imagem}`;
             }
-            const card = document.createElement('a');
-            card.href      = `/frontend/detalheseventos/detalheevento.html?id=${evento.id}`;
-            card.className = 'card-evento';
+
+            const btnAcao = isGratuito
+                ? `<a href="/frontend/detalheseventos/presencaconfirmada.html" class="btn-confirmar-busca">
+                       <i class="fas fa-check"></i> Confirmar
+                   </a>`
+                : `<a href="/frontend/detalheseventos/detalheevento.html?id=${evento.id}" class="btn-comprar-busca">
+                       <i class="fas fa-ticket-alt"></i> Comprar
+                   </a>`;
+
+            const card = document.createElement('article');
+            card.className = 'card-evento-busca';
             card.innerHTML = `
                 <div class="evento-imagem-wrap">
                     <img src="${imagem}" alt="${evento.nome}"
@@ -160,18 +180,37 @@
                 </div>
                 <div class="evento-content">
                     <h3>${evento.nome}</h3>
-                    <div class="evento-data-local">
-                        <p><i class="fas fa-calendar-alt"></i> ${data}${hora ? ' - ' + hora : ''}</p>
+                    <p class="evento-descricao">${evento.descricao || ''}</p>
+                    <div class="evento-meta-group">
+                        <p class="evento-meta">
+                            <i class="fas fa-calendar-alt"></i> ${dataFormatada}
+                            ${hora ? `&nbsp;<i class="fas fa-clock"></i> ${hora}` : ''}
+                        </p>
+                        <p class="evento-meta">
+                            <i class="fas fa-map-marker-alt"></i>
+                            ${evento.local_nome || ''}${evento.cidade ? ' — ' + evento.cidade : ''}
+                        </p>
+                        <p class="evento-meta">
+                            <i class="fas fa-heart"></i> 0 pessoas interessadas
+                        </p>
                     </div>
-                    <p class="evento-local">
-                        <i class="fas fa-map-marker-alt"></i>
-                        ${evento.local_nome || ''}${evento.cidade ? ' — ' + evento.cidade : ''}
-                    </p>
+                    <div class="evento-card-footer">
+                        <span class="evento-preco ${isGratuito ? 'gratuito' : ''}">${preco}</span>
+                        <div class="evento-acoes">
+                            <a href="/frontend/detalheseventos/detalheevento.html?id=${evento.id}" class="btn-detalhes-busca">
+                                <i class="fas fa-circle-info"></i> Detalhes
+                            </a>
+                            ${btnAcao}
+                        </div>
+                    </div>
                 </div>
             `;
             return card;
         }
 
+        // -------------------------------------------------------
+        // CRIAR CARD LOCAL
+        // -------------------------------------------------------
         function criarCardLocal(local) {
             let imagem = '/frontend/imagens/1º imagem cad.png';
             if (local.img_capa) {

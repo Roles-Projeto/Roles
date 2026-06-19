@@ -37,7 +37,7 @@ function initHeader() {
     loadPersistentData();
 
     // ----------------------------------------------------------
-    // BOTÃO PAINEL ADMIN (visível só para admins)
+    // BOTÃO PAINEL ADMIN
     // ----------------------------------------------------------
     function injetarBotaoAdmin() {
         let role = localStorage.getItem('userRole');
@@ -100,8 +100,6 @@ function initHeader() {
     const logado = localStorage.getItem('userIsLoggedIn') === 'true';
     alternarEstadoHeader(logado);
 
-    // ✅ Controla visibilidade do link Dashboard
-    // (função definida em auth.js — carregado antes deste arquivo)
     if (typeof controlarLinkDashboard === 'function') {
         controlarLinkDashboard();
     }
@@ -115,7 +113,6 @@ function initHeader() {
 
         logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            // ✅ 'temDashboard' incluído para limpar o cache
             ['userIsLoggedIn','profilePhotoUrl','profileName','profileEmail',
              'userRole','token','admin_token','temDashboard','userId','userType']
                 .forEach(k => localStorage.removeItem(k));
@@ -241,27 +238,44 @@ function initHeader() {
     }
 
     // ----------------------------------------------------------
-    // DROPDOWN DE BUSCA
+    // BUSCA COM SUGESTÕES DA API
     // ----------------------------------------------------------
-    const searchInput   = document.getElementById('search-input');
-    const searchWrapper = document.getElementById('search-bar-wrapper');
-    const suggestionsBox= document.getElementById('search-suggestions');
-    const btnBuscar     = document.getElementById('btn-buscar');
+    const searchInput    = document.getElementById('search-input');
+    const searchWrapper  = document.getElementById('search-bar-wrapper');
+    const suggestionsBox = document.getElementById('search-suggestions');
+    const btnBuscar      = document.getElementById('btn-buscar');
 
     const CHAVE_RECENTES = 'buscasRecentes';
     const MAX_RECENTES   = 5;
-    const MAX_SUGESTOES  = 6;
+    const MAX_SUGESTOES  = 4; // máximo por tipo (eventos e locais)
 
-    const icones = {
-        'show':'fa-music','música':'fa-music','festa':'fa-glass-cheers',
-        'bar':'fa-cocktail','restaurante':'fa-utensils','teatro':'fa-theater-masks',
-        'esporte':'fa-futbol','balada':'fa-music','stand-up':'fa-microphone',
-        'arte':'fa-palette','default':'fa-calendar-alt',
-    };
-    const getIcone = (cat) => icones[(cat||'').toLowerCase()] || icones['default'];
-    const norm = (s) => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-    function getRecentes() { try { return JSON.parse(localStorage.getItem(CHAVE_RECENTES)) || []; } catch { return []; } }
+    // Cache para não buscar toda vez na API
+    let cacheEventos = null;
+    let cacheLocais  = null;
+
+    async function carregarDados() {
+        try {
+            if (!cacheEventos) {
+                const res = await fetch(`${window.API_BASE}/eventos`);
+                cacheEventos = await res.json();
+            }
+            if (!cacheLocais) {
+                const res = await fetch(`${window.API_BASE}/estabelecimentos`);
+                cacheLocais = await res.json();
+            }
+        } catch (e) {
+            console.error('Erro ao carregar dados para busca:', e);
+        }
+    }
+
+    // Carrega em background assim que o header inicia
+    carregarDados();
+
+    function getRecentes() {
+        try { return JSON.parse(localStorage.getItem(CHAVE_RECENTES)) || []; } catch { return []; }
+    }
     function salvarRecente(termo) {
         if (!termo.trim()) return;
         let r = getRecentes().filter(x => norm(x) !== norm(termo));
@@ -269,107 +283,275 @@ function initHeader() {
         localStorage.setItem(CHAVE_RECENTES, JSON.stringify(r.slice(0, MAX_RECENTES)));
     }
     function removerRecente(termo) {
-        localStorage.setItem(CHAVE_RECENTES, JSON.stringify(getRecentes().filter(x => norm(x) !== norm(termo))));
-    }
-
-    function lerCardsDaPagina() {
-        const itens = [];
-        document.querySelectorAll('.card-local, .card-evento, .card').forEach(card => {
-            const nome      = card.querySelector('h3')?.textContent.trim() || '';
-            const local     = card.querySelector('.evento-local, .local')?.textContent.trim() || '';
-            const tagEl     = card.querySelector('[class*="tag"]');
-            const categoria = tagEl?.textContent.trim() || card.getAttribute('data-categoria-card') || '';
-            const data      = card.querySelector('.evento-data-local p, .local-meta p')?.textContent.trim() || '';
-            if (nome) itens.push({ nome, local, categoria, data });
-        });
-        return itens;
-    }
-
-    function filtrarSugestoes(termo) {
-        const t = norm(termo);
-        return lerCardsDaPagina()
-            .filter(i => norm(i.nome).includes(t) || norm(i.categoria).includes(t) || norm(i.local).includes(t))
-            .slice(0, MAX_SUGESTOES);
+        localStorage.setItem(CHAVE_RECENTES, JSON.stringify(
+            getRecentes().filter(x => norm(x) !== norm(termo))
+        ));
     }
 
     function destacar(txt, termo) {
         if (!termo) return txt;
-        return txt.replace(new RegExp(`(${termo.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi'),'<mark>$1</mark>');
+        return txt.replace(
+            new RegExp(`(${termo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+            '<mark>$1</mark>'
+        );
     }
 
     const abrirDropdown  = () => suggestionsBox?.classList.add('active');
     const fecharDropdown = () => suggestionsBox?.classList.remove('active');
 
+    // Renderiza buscas recentes (campo vazio)
     function renderVazio() {
         if (!suggestionsBox) return;
         const recentes = getRecentes();
         if (!recentes.length) { fecharDropdown(); return; }
-        suggestionsBox.innerHTML = `<div class="sug-section-title"><span>Buscas recentes</span></div><ul class="sug-list" id="sug-recentes-list"></ul>`;
+
+        suggestionsBox.innerHTML = `
+            <div class="sug-section-title"><span>Buscas recentes</span></div>
+            <ul class="sug-list" id="sug-recentes-list"></ul>
+        `;
         const ul = suggestionsBox.querySelector('#sug-recentes-list');
         recentes.forEach(termo => {
             const li = document.createElement('li');
             li.className = 'sug-item sug-recente';
-            li.innerHTML = `<div class="sug-left"><i class="fas fa-clock-rotate-left sug-icon-recente"></i><span class="sug-texto">${termo}</span></div><button class="sug-remover" aria-label="Remover"><i class="fas fa-times"></i></button>`;
-            li.querySelector('.sug-left').addEventListener('click', () => { if (searchInput) searchInput.value = termo; fecharDropdown(); dispararBusca(); });
-            li.querySelector('.sug-remover').addEventListener('click', (e) => { e.stopPropagation(); removerRecente(termo); renderVazio(); });
+            li.innerHTML = `
+                <div class="sug-left">
+                    <i class="fas fa-clock-rotate-left sug-icon-recente"></i>
+                    <span class="sug-texto">${termo}</span>
+                </div>
+                <button class="sug-remover" aria-label="Remover"><i class="fas fa-times"></i></button>
+            `;
+            li.querySelector('.sug-left').addEventListener('click', () => {
+                if (searchInput) searchInput.value = termo;
+                fecharDropdown();
+                irParaBusca(termo);
+            });
+            li.querySelector('.sug-remover').addEventListener('click', (e) => {
+                e.stopPropagation();
+                removerRecente(termo);
+                renderVazio();
+            });
             ul.appendChild(li);
         });
         abrirDropdown();
     }
 
-    function renderSugestoes(termo) {
+    // Renderiza sugestões com dados da API
+    async function renderSugestoes(termo) {
         if (!suggestionsBox) return;
-        const resultados = filtrarSugestoes(termo);
+
+        await carregarDados();
+
+        const t = norm(termo);
+
+        const eventos = (cacheEventos || [])
+            .filter(e => norm(e.nome).includes(t) || norm(e.assunto || '').includes(t))
+            .slice(0, MAX_SUGESTOES);
+
+        const locais = (cacheLocais || [])
+            .filter(l => norm(l.nome).includes(t) || norm(l.tipo || '').includes(t))
+            .slice(0, MAX_SUGESTOES);
+
         suggestionsBox.innerHTML = '';
-        if (resultados.length) {
+
+        const temResultados = eventos.length > 0 || locais.length > 0;
+
+        // ── SEÇÃO EVENTOS ──
+        if (eventos.length > 0) {
             const secTitle = document.createElement('div');
             secTitle.className = 'sug-section-title';
-            secTitle.innerHTML = '<span>Sugestões</span>';
+            secTitle.innerHTML = '<span>Eventos</span>';
             suggestionsBox.appendChild(secTitle);
+
             const ul = document.createElement('ul');
             ul.className = 'sug-list';
-            resultados.forEach(item => {
+
+            eventos.forEach(evento => {
+                const data = evento.data_inicio
+                    ? new Date(evento.data_inicio).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+                    : '';
                 const li = document.createElement('li');
                 li.className = 'sug-item sug-evento';
-                li.innerHTML = `<div class="sug-left"><div class="sug-icon-evento"><i class="fas ${getIcone(item.categoria)}"></i></div><div class="sug-info"><span class="sug-nome">${destacar(item.nome,termo)}</span><span class="sug-meta">${item.categoria?`<span class="sug-badge">${item.categoria}</span>`:''} ${item.local?`<i class="fas fa-map-marker-alt"></i>${item.local}`:''}</span></div></div><i class="fas fa-arrow-up-left sug-completar"></i>`;
-                li.querySelector('.sug-left').addEventListener('click', () => { if (searchInput) searchInput.value = item.nome; salvarRecente(item.nome); fecharDropdown(); dispararBusca(); });
-                li.querySelector('.sug-completar').addEventListener('click', (e) => { e.stopPropagation(); if (searchInput) searchInput.value = item.nome; searchInput?.focus(); renderSugestoes(item.nome); });
+                li.innerHTML = `
+                    <div class="sug-left">
+                        <div class="sug-icon-evento"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="sug-info">
+                            <span class="sug-nome">${destacar(evento.nome, termo)}</span>
+                            <span class="sug-meta">
+                                ${evento.assunto ? `<span class="sug-badge">${evento.assunto}</span>` : ''}
+                                ${data ? `<i class="fas fa-calendar"></i>${data}` : ''}
+                            </span>
+                        </div>
+                    </div>
+                    <i class="fas fa-arrow-up-left sug-completar"></i>
+                `;
+                li.querySelector('.sug-left').addEventListener('click', () => {
+                    salvarRecente(evento.nome);
+                    fecharDropdown();
+                    window.location.href = `/frontend/detalheseventos/detalheevento.html?id=${evento.id}`;
+                });
+                li.querySelector('.sug-completar').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (searchInput) searchInput.value = evento.nome;
+                    searchInput?.focus();
+                    renderSugestoes(evento.nome);
+                });
                 ul.appendChild(li);
             });
+
             suggestionsBox.appendChild(ul);
+
+            // Botão "Ver mais eventos"
+            const btnVerMaisEventos = document.createElement('div');
+            btnVerMaisEventos.className = 'sug-ver-mais';
+            btnVerMaisEventos.innerHTML = `
+                <i class="fas fa-calendar-alt"></i>
+                <span>Ver todos os eventos com <strong>"${termo}"</strong></span>
+                <i class="fas fa-chevron-right sug-chevron"></i>
+            `;
+            btnVerMaisEventos.addEventListener('click', () => {
+                salvarRecente(termo);
+                fecharDropdown();
+                irParaBusca(termo, 'eventos');
+            });
+            suggestionsBox.appendChild(btnVerMaisEventos);
         }
-        const rodape = document.createElement('div');
-        rodape.className = 'sug-rodape';
-        rodape.innerHTML = `<i class="fas fa-search"></i><span>Buscar por <strong>"${termo}"</strong></span>`;
-        rodape.addEventListener('click', () => { salvarRecente(termo); fecharDropdown(); dispararBusca(); });
-        suggestionsBox.appendChild(rodape);
+
+        // ── SEÇÃO LOCAIS ──
+        if (locais.length > 0) {
+            const secTitle2 = document.createElement('div');
+            secTitle2.className = 'sug-section-title';
+            secTitle2.style.borderTop = eventos.length > 0 ? '1px solid #f0f0f0' : 'none';
+            secTitle2.style.paddingTop = eventos.length > 0 ? '10px' : '10px';
+            secTitle2.innerHTML = '<span>Locais</span>';
+            suggestionsBox.appendChild(secTitle2);
+
+            const ul2 = document.createElement('ul');
+            ul2.className = 'sug-list';
+
+            locais.forEach(local => {
+                const li = document.createElement('li');
+                li.className = 'sug-item sug-evento';
+                li.innerHTML = `
+                    <div class="sug-left">
+                        <div class="sug-icon-evento"><i class="fas fa-map-marker-alt"></i></div>
+                        <div class="sug-info">
+                            <span class="sug-nome">${destacar(local.nome, termo)}</span>
+                            <span class="sug-meta">
+                                ${local.tipo ? `<span class="sug-badge">${local.tipo}</span>` : ''}
+                                ${local.bairro ? `<i class="fas fa-map-marker-alt"></i>${local.bairro}` : ''}
+                            </span>
+                        </div>
+                    </div>
+                    <i class="fas fa-arrow-up-left sug-completar"></i>
+                `;
+                li.querySelector('.sug-left').addEventListener('click', () => {
+                    salvarRecente(local.nome);
+                    fecharDropdown();
+                    window.location.href = `/frontend/detalheslocais/detalheslocais.html?id=${local.id}`;
+                });
+                li.querySelector('.sug-completar').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (searchInput) searchInput.value = local.nome;
+                    searchInput?.focus();
+                    renderSugestoes(local.nome);
+                });
+                ul2.appendChild(li);
+            });
+
+            suggestionsBox.appendChild(ul2);
+
+            // Botão "Ver mais locais"
+            const btnVerMaisLocais = document.createElement('div');
+            btnVerMaisLocais.className = 'sug-ver-mais';
+            btnVerMaisLocais.innerHTML = `
+                <i class="fas fa-store"></i>
+                <span>Ver todos os locais com <strong>"${termo}"</strong></span>
+                <i class="fas fa-chevron-right sug-chevron"></i>
+            `;
+            btnVerMaisLocais.addEventListener('click', () => {
+                salvarRecente(termo);
+                fecharDropdown();
+                irParaBusca(termo, 'locais');
+            });
+            suggestionsBox.appendChild(btnVerMaisLocais);
+        }
+
+        // Nenhum resultado — mostra rodapé de busca geral
+        if (!temResultados) {
+            const rodape = document.createElement('div');
+            rodape.className = 'sug-rodape';
+            rodape.innerHTML = `<i class="fas fa-search"></i><span>Buscar por <strong>"${termo}"</strong></span>`;
+            rodape.addEventListener('click', () => {
+                salvarRecente(termo);
+                fecharDropdown();
+                irParaBusca(termo);
+            });
+            suggestionsBox.appendChild(rodape);
+        }
+
         abrirDropdown();
     }
 
-    if (searchInput) {
-        searchInput.addEventListener('focus', () => { const t = searchInput.value.trim(); if (t.length < 2) renderVazio(); else renderSugestoes(t); });
-        searchInput.addEventListener('input', () => { const t = searchInput.value.trim(); dispararFiltroDireto(t); if (t.length < 2) renderVazio(); else renderSugestoes(t); });
-        searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { salvarRecente(searchInput.value.trim()); fecharDropdown(); dispararBusca(); }
-            if (e.key === 'Escape') fecharDropdown();
-        });
+    // Redireciona para página de busca
+    function irParaBusca(termo, tipo = '') {
+        salvarRecente(termo);
+        const params = new URLSearchParams({ q: termo });
+        if (tipo) params.set('tipo', tipo);
+        window.location.href = `/frontend/busca/busca.html?${params.toString()}`;
     }
 
-    document.addEventListener('click', (e) => { if (searchWrapper && !searchWrapper.contains(e.target)) fecharDropdown(); });
-    btnBuscar?.addEventListener('click', () => { if (searchInput?.value.trim()) salvarRecente(searchInput.value.trim()); fecharDropdown(); dispararBusca(); });
-
+    // Dispara filtro na home (sem redirecionar)
     function dispararFiltroDireto(termo) {
         window.dispatchEvent(new CustomEvent('roles:filtrar', { detail: { termo: termo.trim() } }));
     }
 
     function dispararBusca() {
         const termo  = searchInput?.value.trim() || '';
-        const cidade = localStorage.getItem('cidade') || 'Minha localização';
-        localStorage.setItem('filtrosRoles', JSON.stringify({ termo, cidade }));
-        const naHome = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
-        if (naHome) dispararFiltroDireto(termo);
-        else window.location.href = '/frontend/index.html';
+        const naHome = window.location.pathname.endsWith('index.html')
+            || window.location.pathname === '/'
+            || window.location.pathname.endsWith('/Frontend/index.html');
+
+        if (naHome) {
+            dispararFiltroDireto(termo);
+        } else {
+            irParaBusca(termo);
+        }
     }
+
+    // Eventos do input
+    if (searchInput) {
+        searchInput.addEventListener('focus', () => {
+            const t = searchInput.value.trim();
+            if (t.length < 2) renderVazio();
+            else renderSugestoes(t);
+        });
+
+        searchInput.addEventListener('input', () => {
+            const t = searchInput.value.trim();
+            dispararFiltroDireto(t);
+            if (t.length < 2) renderVazio();
+            else renderSugestoes(t);
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                salvarRecente(searchInput.value.trim());
+                fecharDropdown();
+                dispararBusca();
+            }
+            if (e.key === 'Escape') fecharDropdown();
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (searchWrapper && !searchWrapper.contains(e.target)) fecharDropdown();
+    });
+
+    btnBuscar?.addEventListener('click', () => {
+        if (searchInput?.value.trim()) salvarRecente(searchInput.value.trim());
+        fecharDropdown();
+        dispararBusca();
+    });
 
     window.dispararBusca = dispararBusca;
 }

@@ -250,6 +250,68 @@ function simularPagamento(forma_pagamento) {
     return "aprovado";
 }
 
+// ====================================================
+// REENVIAR E-MAIL DO INGRESSO
+// POST /pedidos/:id/reenviar-email
+// ====================================================
+async function reenviarEmailIngresso(req, res) {
+    const { id } = req.params;
+
+    try {
+        const rows = await db.query(`
+            SELECT
+                p.id            AS pedido_id,
+                p.usuario_id,
+                p.valor_total,
+                p.forma_pagamento,
+                p.status,
+                e.nome          AS nome_evento,
+                e.data_inicio,
+                e.local_nome,
+                e.cidade,
+                u.nome_completo,
+                u.email,
+                (SELECT titulo FROM ingressos WHERE evento_id = p.evento_id LIMIT 1) AS tipo_ingresso
+            FROM pedidos p
+            JOIN eventos  e ON e.id = p.evento_id
+            JOIN usuarios u ON u.id = p.usuario_id
+            WHERE p.id = ?
+            LIMIT 1
+        `, [id]);
+
+        const d = rows[0];
+        if (!d) return res.status(404).json({ erro: "Pedido não encontrado." });
+        if (!d.email) return res.status(400).json({ erro: "Usuário sem e-mail cadastrado." });
+
+        const dataEvt    = new Date(d.data_inicio);
+        const codigo_qr  = `ROLES-PEDIDO-${d.pedido_id}-USUARIO-${d.usuario_id}`;
+
+        const { enviarEmailIngresso } = require("../services/emailService");
+
+        await enviarEmailIngresso({
+            nomeCliente:     d.nome_completo,
+            emailCliente:    d.email,
+            pedido_id:       d.pedido_id,
+            nomeEvento:      d.nome_evento,
+            dataEvento:      dataEvt.toLocaleDateString("pt-BR"),
+            horaEvento:      dataEvt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+            localEvento:     `${d.local_nome}, ${d.cidade}`,
+            nomeIngresso:    d.tipo_ingresso || "Ingresso",
+            quantidade:      1,
+            subtotal:        d.valor_total,
+            taxaServico:     d.valor_total * 0.10,
+            totalPago:       d.valor_total * 1.10,
+            forma_pagamento: d.forma_pagamento,
+            ingressos:       [{ tipo: d.tipo_ingresso || "Ingresso", codigo_qr }],
+        });
+
+        res.json({ mensagem: "E-mail reenviado com sucesso." });
+
+    } catch (err) {
+        console.error("❌ Erro ao reenviar e-mail:", err);
+        res.status(500).json({ erro: "Erro ao reenviar e-mail.", detalhe: err.message });
+    }
+}
 module.exports = {
     listarEventos,
     detalheEvento,
@@ -257,4 +319,5 @@ module.exports = {
     meusIngressos,
     validarQRCode,
     detalheIngresso,
+    reenviarEmailIngresso,   // ← novo
 };

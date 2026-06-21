@@ -174,6 +174,7 @@ function initHeader() {
     // CARD DE CIDADE
     // ----------------------------------------------------------
     const cityBtn    = document.querySelector('.city-btn');
+    const cityBtnMobile = document.getElementById('cityBtnMobile');
     const cityCard   = document.getElementById('city-card');
     const overlay    = document.getElementById('city-overlay');
     const closeCard  = document.getElementById('close-card');
@@ -188,18 +189,21 @@ function initHeader() {
     const fecharCard = () => { if (cityCard) cityCard.style.display = 'none';  if (overlay) overlay.style.display = 'none';  };
 
     function selecionarCidade(nome) {
-        if (cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${nome}`;
-        localStorage.setItem('cidade', nome);
-        fecharCard();
-    }
+    if (cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${nome}`;
+    if (cityBtnMobile) cityBtnMobile.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${nome}`;
+    localStorage.setItem('cidade', nome);
+    fecharCard();
+}
 
     cityBtn?.addEventListener('click', abrirCard);
+    cityBtnMobile?.addEventListener('click', abrirCard);
     closeCard?.addEventListener('click', fecharCard);
     overlay?.addEventListener('click', fecharCard);
     cityItems.forEach(i => i.addEventListener('click', () => selecionarCidade(i.dataset.city)));
 
     const savedCity = localStorage.getItem('cidade');
     if (savedCity && cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${savedCity}`;
+    if (savedCity && cityBtnMobile) cityBtnMobile.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${savedCity}`;
 
     citySearch?.addEventListener('input', () => {
         const val = citySearch.value.toLowerCase();
@@ -247,6 +251,34 @@ function initHeader() {
     const searchWrapper = document.getElementById('search-bar-wrapper');
     const suggestionsBox= document.getElementById('search-suggestions');
     const btnBuscar     = document.getElementById('btn-buscar');
+    const searchInputMobile = document.getElementById('search-input-mobile');
+
+    // ----------------------------------------------------------
+// BOTÃO LUPA MOBILE (abre/fecha a barra de busca mobile)
+// ----------------------------------------------------------
+const searchToggleBtn = document.getElementById('searchToggleBtn');
+const searchBarMobile = document.getElementById('searchBarMobile');
+
+if (searchToggleBtn && searchBarMobile) {
+    searchToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        searchBarMobile.classList.toggle('open');
+        searchToggleBtn.classList.toggle('active');
+        if (searchBarMobile.classList.contains('open')) {
+            searchInputMobile?.focus();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (
+            !searchBarMobile.contains(e.target) &&
+            !searchToggleBtn.contains(e.target)
+        ) {
+            searchBarMobile.classList.remove('open');
+            searchToggleBtn.classList.remove('active');
+        }
+    });
+}
 
     const CHAVE_RECENTES = 'buscasRecentes';
     const MAX_RECENTES   = 5;
@@ -354,6 +386,33 @@ function initHeader() {
             if (e.key === 'Escape') fecharDropdown();
         });
     }
+
+    if (searchInputMobile) {
+
+    searchInputMobile.addEventListener('input', () => {
+        dispararFiltroDireto(searchInputMobile.value);
+    });
+
+    searchInputMobile.addEventListener('keydown', (e) => {
+
+        if (e.key === 'Enter') {
+
+            const termo = searchInputMobile.value.trim();
+
+            localStorage.setItem(
+                'filtrosRoles',
+                JSON.stringify({
+                    termo,
+                    cidade: localStorage.getItem('cidade') || 'Minha localização'
+                })
+            );
+
+            dispararFiltroDireto(termo);
+        }
+
+    });
+
+}
 
     document.addEventListener('click', (e) => { if (searchWrapper && !searchWrapper.contains(e.target)) fecharDropdown(); });
     btnBuscar?.addEventListener('click', () => { if (searchInput?.value.trim()) salvarRecente(searchInput.value.trim()); fecharDropdown(); dispararBusca(); });

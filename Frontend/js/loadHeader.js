@@ -17,20 +17,20 @@ function initHeader() {
     // ----------------------------------------------------------
     function loadPersistentData() {
         const photoUrl = localStorage.getItem('profilePhotoUrl');
-        const name     = localStorage.getItem('profileName');
-        const email    = localStorage.getItem('profileEmail');
+        const name = localStorage.getItem('profileName');
+        const email = localStorage.getItem('profileEmail');
 
-        const headerPic    = document.getElementById('profile-pic-header');
+        const headerPic = document.getElementById('profile-pic-header');
         const dropdownName = document.querySelector('.dropdown-menu .user-info strong');
-        const dropdownEmail= document.querySelector('.dropdown-menu .user-info span');
-        const dropdownImg  = document.querySelector('.dropdown-menu .user-info img');
+        const dropdownEmail = document.querySelector('.dropdown-menu .user-info span');
+        const dropdownImg = document.querySelector('.dropdown-menu .user-info img');
 
         const defaultAvatar = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23ede9ff'/%3E%3Ccircle cx='20' cy='16' r='7' fill='%236C1DCE'/%3E%3Cellipse cx='20' cy='34' rx='12' ry='8' fill='%236C1DCE'/%3E%3C/svg%3E`;
 
         const avatarUrl = photoUrl || defaultAvatar;
-        if (headerPic)     headerPic.src = avatarUrl;
-        if (dropdownImg)   dropdownImg.src = avatarUrl;
-        if (name  && dropdownName)  dropdownName.textContent  = name;
+        if (headerPic) headerPic.src = avatarUrl;
+        if (dropdownImg) dropdownImg.src = avatarUrl;
+        if (name && dropdownName) dropdownName.textContent = name;
         if (email && dropdownEmail) dropdownEmail.textContent = email;
     }
 
@@ -48,7 +48,7 @@ function initHeader() {
                     const payload = JSON.parse(atob(token.split('.')[1]));
                     role = payload.role;
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
         if (role !== 'admin') return;
 
@@ -78,8 +78,8 @@ function initHeader() {
     // ESTADO LOGADO / NÃO LOGADO
     // ----------------------------------------------------------
     function alternarEstadoHeader(logado) {
-        const naoLogado    = document.getElementById('header-nao-logado');
-        const logadoDiv    = document.getElementById('header-logado');
+        const naoLogado = document.getElementById('header-nao-logado');
+        const logadoDiv = document.getElementById('header-logado');
         const hamburgerBtn = document.getElementById('hamburger-btn');
 
         if (!naoLogado || !logadoDiv) return;
@@ -113,8 +113,8 @@ function initHeader() {
 
         logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            ['userIsLoggedIn','profilePhotoUrl','profileName','profileEmail',
-             'userRole','token','admin_token','temDashboard','userId','userType']
+            ['userIsLoggedIn', 'profilePhotoUrl', 'profileName', 'profileEmail',
+                'userRole', 'token', 'admin_token', 'temDashboard', 'userId', 'userType']
                 .forEach(k => localStorage.removeItem(k));
             alternarEstadoHeader(false);
             window.location.href = '/frontend/login/logout.html';
@@ -170,19 +170,19 @@ function initHeader() {
     // ----------------------------------------------------------
     // CARD DE CIDADE
     // ----------------------------------------------------------
-    const cityBtn    = document.querySelector('.city-btn');
-    const cityCard   = document.getElementById('city-card');
-    const overlay    = document.getElementById('city-overlay');
-    const closeCard  = document.getElementById('close-card');
+    const cityBtn = document.querySelector('.city-btn');
+    const cityCard = document.getElementById('city-card');
+    const overlay = document.getElementById('city-overlay');
+    const closeCard = document.getElementById('close-card');
     const citySearch = document.getElementById('city-search');
-    const useLocation= document.getElementById('use-location');
-    const cityItems  = document.querySelectorAll('.city-list li');
+    const useLocation = document.getElementById('use-location');
+    const cityItems = document.querySelectorAll('.city-list li');
 
     if (cityCard) document.body.appendChild(cityCard);
-    if (overlay)  document.body.appendChild(overlay);
+    if (overlay) document.body.appendChild(overlay);
 
-    const abrirCard  = () => { if (cityCard) cityCard.style.display = 'block'; if (overlay) overlay.style.display = 'block'; };
-    const fecharCard = () => { if (cityCard) cityCard.style.display = 'none';  if (overlay) overlay.style.display = 'none';  };
+    const abrirCard = () => { if (cityCard) cityCard.style.display = 'block'; if (overlay) overlay.style.display = 'block'; };
+    const fecharCard = () => { if (cityCard) cityCard.style.display = 'none'; if (overlay) overlay.style.display = 'none'; };
 
     function selecionarCidade(nome) {
         if (cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${nome}`;
@@ -240,20 +240,20 @@ function initHeader() {
     // ----------------------------------------------------------
     // BUSCA COM SUGESTÕES DA API
     // ----------------------------------------------------------
-    const searchInput    = document.getElementById('search-input');
-    const searchWrapper  = document.getElementById('search-bar-wrapper');
+    const searchInput = document.getElementById('search-input');
+    const searchWrapper = document.getElementById('search-bar-wrapper');
     const suggestionsBox = document.getElementById('search-suggestions');
-    const btnBuscar      = document.getElementById('btn-buscar');
+    const btnBuscar = document.getElementById('btn-buscar');
 
     const CHAVE_RECENTES = 'buscasRecentes';
-    const MAX_RECENTES   = 5;
-    const MAX_SUGESTOES  = 4; // máximo por tipo (eventos e locais)
+    const MAX_RECENTES = 5;
+    const MAX_SUGESTOES = 4; // máximo por tipo (eventos e locais)
 
     const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
     // Cache para não buscar toda vez na API
     let cacheEventos = null;
-    let cacheLocais  = null;
+    let cacheLocais = null;
 
     async function carregarDados() {
         try {
@@ -296,7 +296,7 @@ function initHeader() {
         );
     }
 
-    const abrirDropdown  = () => suggestionsBox?.classList.add('active');
+    const abrirDropdown = () => suggestionsBox?.classList.add('active');
     const fecharDropdown = () => suggestionsBox?.classList.remove('active');
 
     // Renderiza buscas recentes (campo vazio)
@@ -501,22 +501,18 @@ function initHeader() {
     }
 
     // Dispara filtro na home (sem redirecionar)
+    // Dispara filtro na home (sem redirecionar)
     function dispararFiltroDireto(termo) {
         window.dispatchEvent(new CustomEvent('roles:filtrar', { detail: { termo: termo.trim() } }));
     }
 
     function dispararBusca() {
-        const termo  = searchInput?.value.trim() || '';
-        const naHome = window.location.pathname.endsWith('index.html')
-            || window.location.pathname === '/'
-            || window.location.pathname.endsWith('/Frontend/index.html');
-
-        if (naHome) {
-            dispararFiltroDireto(termo);
-        } else {
-            irParaBusca(termo);
-        }
+        const termo = searchInput?.value.trim() || '';
+        irParaBusca(termo);
     }
+
+    // Eventos do input
+
 
     // Eventos do input
     if (searchInput) {
@@ -528,7 +524,7 @@ function initHeader() {
 
         searchInput.addEventListener('input', () => {
             const t = searchInput.value.trim();
-            dispararFiltroDireto(t);
+
             if (t.length < 2) renderVazio();
             else renderSugestoes(t);
         });
@@ -552,6 +548,4 @@ function initHeader() {
         fecharDropdown();
         dispararBusca();
     });
-
-    window.dispararBusca = dispararBusca;
 }

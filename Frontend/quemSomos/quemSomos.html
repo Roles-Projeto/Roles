@@ -1,281 +1,484 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quem Somos | Rolês</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/frontend/css/footer.css">
-    <link rel="stylesheet" href="/frontend/css/quemsomos.css">
-</head>
-<body>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/frontend/css/footer.css" />
+    <link rel="stylesheet" href="/frontend/css/quemsomos.css" />
+  </head>
+  <body>
     <header>
-        <div id="header-container"></div>
+      <div id="header-container"></div>
     </header>
 
     <main>
+      <!-- HERO -->
+      <section class="qs-hero">
+        <div class="qs-hero-grid"></div>
+        <div class="qs-hero-glow"></div>
+        <button
+          type="button"
+          class="qs-back-btn"
+          onclick="window.history.back()"
+        >
+          <i class="fa-solid fa-arrow-left"></i>
+          Voltar
+        </button>
+        <div class="qs-hero-inner">
+          <div class="qs-tag">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+              />
+            </svg>
+            Quem somos
+          </div>
+          <h1 class="qs-h1">Sobre o <em>Rolês</em></h1>
+          <p class="qs-sub">
+            Somos a plataforma que conecta pessoas aos melhores lugares para
+            sair e se divertir. Cada saída, uma experiência inesquecível.
+          </p>
+        </div>
+      </section>
 
-        <!-- HERO -->
-        <section class="qs-hero">
-            <div class="qs-hero-grid"></div>
-            <div class="qs-hero-glow"></div>
-            <div class="qs-hero-inner">
-                <div class="qs-tag">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                    Quem somos
-                </div>
-                <h1 class="qs-h1">Sobre o <em>Rolês</em></h1>
-                <p class="qs-sub">Somos a plataforma que conecta pessoas aos melhores lugares para sair e se divertir. Cada saída, uma experiência inesquecível.</p>
+      <!-- NOSSA HISTÓRIA -->
+      <section class="qs-sec qs-sec--white">
+        <div class="qs-sec-inner">
+          <p class="qs-sec-label">Nossa história</p>
+          <div class="qs-hist-grid">
+            <div class="qs-hist-left">
+              <p>
+                O Rolês nasceu de uma necessidade real: encontrar informações
+                confiáveis sobre onde sair para se divertir. Em 2025, um grupo
+                de estudantes decidiu transformar essa dificuldade em uma
+                solução.
+              </p>
+              <p>
+                A ideia surgiu da nossa própria experiência como usuários.
+                Encontrávamos dificuldade para descobrir novos lugares, comparar
+                opções e acessar informações confiáveis em um único lugar.
+                Informações desencontradas, avaliações inconsistentes e a falta
+                de transparência mostraram que existia um problema real a ser
+                resolvido.
+              </p>
+              <p>
+                Hoje, o Rolês conecta pessoas aos melhores lugares e
+                experiências da região, reunindo informações confiáveis para que
+                cada escolha seja feita com mais segurança e praticidade,
+                tornando a descoberta de novos destinos mais simples,
+                transparente e acessível para todos.
+              </p>
             </div>
-        </section>
-
-        <!-- NOSSA HISTÓRIA -->
-        <section class="qs-sec qs-sec--white">
-            <div class="qs-sec-inner">
-                <p class="qs-sec-label">Nossa história</p>
-                <div class="qs-hist-grid">
-                    <div class="qs-hist-left">
-                        <p>O Rolês nasceu de uma necessidade real: encontrar informações confiáveis sobre onde sair para se divertir. Em 2025, um grupo de estudantes decidiu transformar essa dificuldade em uma solução.</p>
-                        <p>A ideia surgiu da nossa própria experiência como usuários. Encontrávamos dificuldade para descobrir novos lugares, comparar opções e acessar informações confiáveis em um único lugar. Informações desencontradas, avaliações inconsistentes e a falta de transparência mostraram que existia um problema real a ser resolvido.</p>
-                        <p>Hoje, o Rolês conecta pessoas aos melhores lugares e experiências da região, reunindo informações confiáveis para que cada escolha seja feita com mais segurança e praticidade, tornando a descoberta de novos destinos mais simples, transparente e acessível para todos.</p>
-                    </div>
-                    <div class="qs-hist-right">
-                        <div class="qs-hi">
-                            <span class="qs-hi-num">01</span>
-                            <div>
-                                <p class="qs-hi-title">Nascemos em Goiânia</p>
-                                <p class="qs-hi-text">Projeto criado por estudantes para resolver um problema local e real.</p>
-                            </div>
-                        </div>
-                        <div class="qs-hi">
-                            <span class="qs-hi-num">02</span>
-                            <div>
-                                <p class="qs-hi-title">Fundado em 2025</p>
-                                <p class="qs-hi-text">Uma ideia que virou produto real, construído com dedicação.</p>
-                            </div>
-                        </div>
-                        <div class="qs-hi">
-                            <span class="qs-hi-num">03</span>
-                            <div>
-                                <p class="qs-hi-title">Feito com propósito</p>
-                                <p class="qs-hi-text">Cada decisão pensada para melhorar a vida social das pessoas.</p>
-                            </div>
-                        </div>
-                        <div class="qs-hi">
-                            <span class="qs-hi-num">04</span>
-                            <div>
-                                <p class="qs-hi-title">Crescendo todo dia</p>
-                                <p class="qs-hi-text">Mais locais, mais eventos, mais pessoas descobrindo a cidade.</p>
-                            </div>
-                        </div>
-                    </div>
+            <div class="qs-hist-right">
+              <div class="qs-hi">
+                <span class="qs-hi-num">01</span>
+                <div>
+                  <p class="qs-hi-title">Nascemos em Goiânia</p>
+                  <p class="qs-hi-text">
+                    Projeto criado por estudantes para resolver um problema
+                    local e real.
+                  </p>
                 </div>
+              </div>
+              <div class="qs-hi">
+                <span class="qs-hi-num">02</span>
+                <div>
+                  <p class="qs-hi-title">Fundado em 2025</p>
+                  <p class="qs-hi-text">
+                    Uma ideia que virou produto real, construído com dedicação.
+                  </p>
+                </div>
+              </div>
+              <div class="qs-hi">
+                <span class="qs-hi-num">03</span>
+                <div>
+                  <p class="qs-hi-title">Feito com propósito</p>
+                  <p class="qs-hi-text">
+                    Cada decisão pensada para melhorar a vida social das
+                    pessoas.
+                  </p>
+                </div>
+              </div>
+              <div class="qs-hi">
+                <span class="qs-hi-num">04</span>
+                <div>
+                  <p class="qs-hi-title">Crescendo todo dia</p>
+                  <p class="qs-hi-text">
+                    Mais locais, mais eventos, mais pessoas descobrindo a
+                    cidade.
+                  </p>
+                </div>
+              </div>
             </div>
-        </section>
+          </div>
+        </div>
+      </section>
 
-        <!-- NÚMEROS -->
-        <section class="qs-stats">
-            <div class="qs-stats-inner">
-                <div class="qs-stats-head">
-                    <h2>Números que nos orgulham</h2>
-                    <p>Crescendo com a confiança da nossa comunidade</p>
-                </div>
-                <div class="qs-stats-grid">
-                    <div class="qs-stat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="1.8"
-                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                            <polyline points="9 22 9 12 15 12 15 22"/>
-                        </svg>
-                        <div class="qs-stat-num" id="stat-estabelecimentos">0+</div>
-                        <div class="qs-stat-label">Estabelecimentos cadastrados</div>
-                    </div>
-                    <div class="qs-stat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="1.8"
-                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
-                        <div class="qs-stat-num" id="stat-usuarios">0+</div>
-                        <div class="qs-stat-label">Usuários ativos</div>
-                    </div>
-                    <div class="qs-stat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="1.8"
-                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                        </svg>
-                        <div class="qs-stat-num" id="stat-avaliacoes">0+</div>
-                        <div class="qs-stat-label">Avaliações registradas</div>
-                    </div>
-                    <div class="qs-stat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="1.8"
-                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                        </svg>
-                        <div class="qs-stat-num" id="stat-eventos">0+</div>
-                        <div class="qs-stat-label">Eventos marcados</div>
-                    </div>
-                </div>
+      <!-- NÚMEROS -->
+      <section class="qs-stats">
+        <div class="qs-stats-inner">
+          <div class="qs-stats-head">
+            <h2>Números que nos orgulham</h2>
+            <p>Crescendo com a confiança da nossa comunidade</p>
+          </div>
+          <div class="qs-stats-grid">
+            <div class="qs-stat">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+              <div class="qs-stat-num" id="stat-estabelecimentos">0+</div>
+              <div class="qs-stat-label">Estabelecimentos cadastrados</div>
             </div>
-        </section>
-
-        <!-- NOSSOS VALORES -->
-        <section class="qs-sec qs-sec--bg">
-            <div class="qs-sec-inner">
-                <p class="qs-sec-label">Nossos valores</p>
-                <div class="qs-val-grid">
-                    <div class="qs-val">
-                        <div class="qs-val-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="qs-val-title">Paixão pela vida social</p>
-                            <p class="qs-val-text">Acreditamos que sair e se divertir é essencial para o bem-estar, saúde mental e conexão genuína entre pessoas.</p>
-                        </div>
-                    </div>
-                    <div class="qs-val">
-                        <div class="qs-val-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="qs-val-title">Comunidade unida</p>
-                            <p class="qs-val-text">Conectamos quem busca experiências autênticas com estabelecimentos locais que merecem ser descobertos.</p>
-                        </div>
-                    </div>
-                    <div class="qs-val">
-                        <div class="qs-val-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="qs-val-title">Confiança e segurança</p>
-                            <p class="qs-val-text">Informações verificadas, avaliações reais e um ambiente seguro para todos que usam a plataforma.</p>
-                        </div>
-                    </div>
-                    <div class="qs-val">
-                        <div class="qs-val-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="qs-val-title">Qualidade garantida</p>
-                            <p class="qs-val-text">Só recomendamos o que é genuinamente bom — avaliações honestas para as melhores decisões.</p>
-                        </div>
-                    </div>
-                </div>
+            <div class="qs-stat">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <div class="qs-stat-num" id="stat-usuarios">0+</div>
+              <div class="qs-stat-label">Usuários ativos</div>
             </div>
-        </section>
-
-        <!-- O PROJETO -->
-        <section class="qs-sec qs-sec--bg" style="padding-top: 0;">
-            <div class="qs-sec-inner">
-                <p class="qs-sec-label">O projeto</p>
-                <div class="qs-proj-cols">
-                    <div class="qs-proj-card">
-                        <span class="qs-proj-tag">O que é</span>
-                        <p class="qs-proj-title">Uma plataforma para quem curte sair</p>
-                        <p class="qs-proj-text">Bares, restaurantes e eventos em um só lugar, com avaliações reais de quem já esteve lá. Chega de perder tempo em lugares que decepcionam.</p>
-                    </div>
-                    <div class="qs-proj-card qs-proj-card--highlight">
-                        <span class="qs-proj-tag">Como funciona</span>
-                        <p class="qs-proj-title">Simples, rápido e confiável</p>
-                        <p class="qs-proj-text">Busque, filtre, leia avaliações honestas e confirme presença em eventos — tudo em poucos toques.</p>
-                    </div>
-                    <div class="qs-proj-card">
-                        <span class="qs-proj-tag">Para quem é</span>
-                        <p class="qs-proj-title">Para quem quer aproveitar o tempo livre</p>
-                        <p class="qs-proj-text">Descubra novos bares, eventos culturais ou simplesmente onde o rolê está acontecendo agora.</p>
-                    </div>
-                </div>
-
-                <!-- EQUIPE -->
-                <div class="qs-equipe">
-                    <div class="qs-equipe-txt">
-                        <h3>Feito por quem vive o rolê</h3>
-                        <p>Somos um time de estudantes apaixonados por tecnologia e pela vida social. Cada integrante trouxe uma habilidade única — do design à infraestrutura, da ideia ao produto final.</p>
-                    </div>
-                    <div class="qs-equipe-tags">
-                        <div class="qs-eq-tag">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-                            </svg>
-                            <span>Desenvolvimento</span>
-                        </div>
-                        <div class="qs-eq-tag">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <circle cx="13.5" cy="6.5" r="2.5"/><path d="M17 22H3v-1a6 6 0 0 1 6-6h2"/>
-                                <path d="M16 16l2 2 4-4"/>
-                            </svg>
-                            <span>Design</span>
-                        </div>
-                        <div class="qs-eq-tag">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <polyline points="9 11 12 14 22 4"/>
-                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                            </svg>
-                            <span>Qualidade</span>
-                        </div>
-                        <div class="qs-eq-tag">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <ellipse cx="12" cy="5" rx="9" ry="3"/>
-                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-                            </svg>
-                            <span>Dados</span>
-                        </div>
-                    </div>
-                </div>
+            <div class="qs-stat">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                />
+              </svg>
+              <div class="qs-stat-num" id="stat-avaliacoes">0+</div>
+              <div class="qs-stat-label">Avaliações registradas</div>
             </div>
-        </section>
-
-        <!-- FRASE FINAL -->
-        <section class="qs-closing">
-            <div class="qs-closing-glow"></div>
-            <div class="qs-closing-inner">
-                <div class="qs-closing-bar"></div>
-                <h2>Por uma vida com mais <em>Rolês</em></h2>
-                <p>Mais facilidade, mais diversão, mais alegria, mais cultura, mais lazer.</p>
+            <div class="qs-stat">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+              <div class="qs-stat-num" id="stat-eventos">0+</div>
+              <div class="qs-stat-label">Eventos marcados</div>
             </div>
-        </section>
+          </div>
+        </div>
+      </section>
 
+      <!-- NOSSOS VALORES -->
+      <section class="qs-sec qs-sec--bg">
+        <div class="qs-sec-inner">
+          <p class="qs-sec-label">Nossos valores</p>
+          <div class="qs-val-grid">
+            <div class="qs-val">
+              <div class="qs-val-icon">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p class="qs-val-title">Paixão pela vida social</p>
+                <p class="qs-val-text">
+                  Acreditamos que sair e se divertir é essencial para o
+                  bem-estar, saúde mental e conexão genuína entre pessoas.
+                </p>
+              </div>
+            </div>
+            <div class="qs-val">
+              <div class="qs-val-icon">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </div>
+              <div>
+                <p class="qs-val-title">Comunidade unida</p>
+                <p class="qs-val-text">
+                  Conectamos quem busca experiências autênticas com
+                  estabelecimentos locais que merecem ser descobertos.
+                </p>
+              </div>
+            </div>
+            <div class="qs-val">
+              <div class="qs-val-icon">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+              </div>
+              <div>
+                <p class="qs-val-title">Confiança e segurança</p>
+                <p class="qs-val-text">
+                  Informações verificadas, avaliações reais e um ambiente seguro
+                  para todos que usam a plataforma.
+                </p>
+              </div>
+            </div>
+            <div class="qs-val">
+              <div class="qs-val-icon">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <polygon
+                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p class="qs-val-title">Qualidade garantida</p>
+                <p class="qs-val-text">
+                  Só recomendamos o que é genuinamente bom — avaliações honestas
+                  para as melhores decisões.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- O PROJETO -->
+      <section class="qs-sec qs-sec--bg" style="padding-top: 0">
+        <div class="qs-sec-inner">
+          <p class="qs-sec-label">O projeto</p>
+          <div class="qs-proj-cols">
+            <div class="qs-proj-card">
+              <span class="qs-proj-tag">O que é</span>
+              <p class="qs-proj-title">Uma plataforma para quem curte sair</p>
+              <p class="qs-proj-text">
+                Bares, restaurantes e eventos em um só lugar, com avaliações
+                reais de quem já esteve lá. Chega de perder tempo em lugares que
+                decepcionam.
+              </p>
+            </div>
+            <div class="qs-proj-card qs-proj-card--highlight">
+              <span class="qs-proj-tag">Como funciona</span>
+              <p class="qs-proj-title">Simples, rápido e confiável</p>
+              <p class="qs-proj-text">
+                Busque, filtre, leia avaliações honestas e confirme presença em
+                eventos — tudo em poucos toques.
+              </p>
+            </div>
+            <div class="qs-proj-card">
+              <span class="qs-proj-tag">Para quem é</span>
+              <p class="qs-proj-title">
+                Para quem quer aproveitar o tempo livre
+              </p>
+              <p class="qs-proj-text">
+                Descubra novos bares, eventos culturais ou simplesmente onde o
+                rolê está acontecendo agora.
+              </p>
+            </div>
+          </div>
+
+          <!-- EQUIPE -->
+          <div class="qs-equipe">
+            <div class="qs-equipe-txt">
+              <h3>Feito por quem vive o rolê</h3>
+              <p>
+                Somos um time de estudantes apaixonados por tecnologia e pela
+                vida social. Cada integrante trouxe uma habilidade única — do
+                design à infraestrutura, da ideia ao produto final.
+              </p>
+            </div>
+            <div class="qs-equipe-tags">
+              <div class="qs-eq-tag">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="16 18 22 12 16 6" />
+                  <polyline points="8 6 2 12 8 18" />
+                </svg>
+                <span>Desenvolvimento</span>
+              </div>
+              <div class="qs-eq-tag">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="13.5" cy="6.5" r="2.5" />
+                  <path d="M17 22H3v-1a6 6 0 0 1 6-6h2" />
+                  <path d="M16 16l2 2 4-4" />
+                </svg>
+                <span>Design</span>
+              </div>
+              <div class="qs-eq-tag">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="9 11 12 14 22 4" />
+                  <path
+                    d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
+                  />
+                </svg>
+                <span>Qualidade</span>
+              </div>
+              <div class="qs-eq-tag">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <ellipse cx="12" cy="5" rx="9" ry="3" />
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                </svg>
+                <span>Dados</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FRASE FINAL -->
+      <section class="qs-closing">
+        <div class="qs-closing-glow"></div>
+        <div class="qs-closing-inner">
+          <div class="qs-closing-bar"></div>
+          <h2>Por uma vida com mais <em>Rolês</em></h2>
+          <p>
+            Mais facilidade, mais diversão, mais alegria, mais cultura, mais
+            lazer.
+          </p>
+        </div>
+      </section>
     </main>
 
     <footer><div id="footer-container"></div></footer>
@@ -284,6 +487,5 @@
     <script src="/frontend/js/footer.js" defer></script>
     <script src="/frontend/js/loadHeader.js"></script>
     <script src="/frontend/js/qemsomos.js"></script>
-
-</body>
+  </body>
 </html>

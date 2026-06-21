@@ -487,20 +487,71 @@ body {
 }
 .beneficio-item i { color: var(--green); font-size: 13px; }
 
-/* ═══════════════════════════════════════
-   RESPONSIVO
-═══════════════════════════════════════ */
 @media (max-width: 900px) {
   .conteudo-evento { flex-direction: column; padding: 0 16px; gap: 20px; }
-  .compra-ingresso { position: static; flex: none; width: 100%; order: -1; }
+
+  /* "Desempacota" pra reordenar cada card individualmente */
+  .detalhes-evento { display: contents; }
+  .detalhes-evento > * { width: 100%; }
+
+  .ingressos-disponiveis { order: 1; }
+  .compra-ingresso { position: static; flex: none; width: 100%; order: 2; }
+  .sobre-evento { order: 3; }
+  .organizador { order: 4; }
+  .card-transparencia { order: 5; }
+  .avaliacoes { order: 6; }
+
   .informacoes-extras { flex-direction: column; gap: 16px; }
+
+  .banner-evento {
+    height: auto;
+    min-height: 320px;
+    justify-content: flex-end;
+    padding: 70px 16px 0;
+  }
+
+  .informacoes-cabecalho,
+  .preco-cabecalho {
+    position: static;
+    left: auto; right: auto; bottom: auto;
+    margin: 0;
+  }
+
+  .informacoes-cabecalho {
+    background: rgba(15, 0, 40, 0.55);
+    backdrop-filter: blur(6px);
+    border-radius: 14px 14px 0 0;
+    padding: 16px 18px 12px;
+  }
+
+  .preco-cabecalho {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(15, 0, 40, 0.78);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid rgba(255,255,255,0.12);
+    border-radius: 0 0 14px 14px;
+    padding: 12px 18px;
+  }
+  .label-preco, .por-pessoas { margin: 0; }
+
   .titulo-evento { font-size: 1.8rem; }
-  .informacoes-cabecalho { right: 20px; bottom: 80px; }
-  .preco-cabecalho { right: 16px; bottom: 16px; }
 }
 
 @media (max-width: 600px) {
-  .banner-evento { min-height: 360px; height: 52vh; }
+  .banner-evento { padding-top: 64px; min-height: 290px; }
+  .informacoes-cabecalho { padding: 14px 16px 10px; }
+  .preco-cabecalho { padding: 10px 16px; }
   .titulo-evento { font-size: 1.5rem; }
+
   .card-informacoes, .card-garantia-ingresso, .ingressos-disponiveis { padding: 20px 16px; }
+
+  .opcao-ingresso { flex-direction: column; align-items: stretch; gap: 10px; }
+  .acao-opcao { flex-direction: row; justify-content: space-between; align-items: center; width: 100%; }
+  .botao-selecionar { min-width: 0; }
+
+  .perfil-organizador { flex-wrap: wrap; }
+  .botao-ver-perfil { width: 100%; justify-content: center; margin-top: 4px; }
 }

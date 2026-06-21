@@ -167,39 +167,3 @@
     </ul>
 
 </div>
-
-<script src="/frontend/js/config.js"></script>
-    <script>
-    // Toggle da busca mobile
-    const searchToggleBtn = document.getElementById('searchToggleBtn');
-    const searchBarMobile = document.getElementById('searchBarMobile');
-    const cityBtnMobile   = document.getElementById('cityBtnMobile');
-    const cityOverlay     = document.getElementById('city-overlay');
-    const cityCard        = document.getElementById('city-card');
-
-    if (searchToggleBtn && searchBarMobile) {
-        searchToggleBtn.addEventListener('click', () => {
-            const isOpen = searchBarMobile.classList.toggle('open');
-            searchToggleBtn.classList.toggle('active', isOpen);
-            if (isOpen) {
-                document.getElementById('search-input-mobile').focus();
-            }
-        });
-    }
-
-    // Botão de cidade mobile abre o mesmo card de localização
-    if (cityBtnMobile && cityCard && cityOverlay) {
-        cityBtnMobile.addEventListener('click', () => {
-            cityCard.style.display   = 'block';
-            cityOverlay.style.display = 'block';
-        });
-    }
-
-    // Sincroniza cidade selecionada entre desktop e mobile
-    document.addEventListener('citySelected', (e) => {
-        const citySpanMobile = document.getElementById('selectedCityMobile');
-        if (citySpanMobile && e.detail) {
-            citySpanMobile.textContent = e.detail;
-        }
-    });
-</script>

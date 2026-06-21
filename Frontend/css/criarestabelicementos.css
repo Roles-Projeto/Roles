@@ -1,4 +1,3 @@
-
 h1, h2, h3, h4,
 .logo, .kicker, .nav-logo {
     font-family: 'Space Grotesk', sans-serif;
@@ -271,15 +270,107 @@ input:checked + .slider:before { transform: translateX(18px); }
 .modal-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 26px; gap: 12px; }
 
 /* ─── RESPONSIVO ─── */
+
+/* Base: evita rolagem horizontal e imagens estourando a tela em qualquer breakpoint */
+html { -webkit-text-size-adjust: 100%; }
+body { overflow-x: hidden; }
+img { max-width: 100%; }
+
+/* Tablets (≤1024px): reduz respiro lateral sem quebrar o layout em colunas */
+@media (max-width: 1024px) {
+    .container { padding: 0 20px; }
+    .card { padding: 36px 32px; }
+}
+
+/* Tablets pequenos e celulares grandes (≤768px) */
 @media (max-width: 768px) {
-    .card { padding: 26px 20px; }
     .main-header { padding: 16px 22px; }
+    .main-header h1 { font-size: 19px; margin-bottom: 12px; }
+
+    .container { margin: 20px auto; padding: 0 16px; }
+    .card { padding: 26px 20px; border-radius: 12px; }
+
+    .section-title { font-size: 20px; }
+    .section-subtitle { margin-bottom: 24px; }
+
     .row { flex-direction: column; gap: 0; }
     .col-3, .col-9 { flex: 1; }
-    .horario-dia-row { flex-direction: column; align-items: flex-start; gap: 12px; }
-    .horario-inputs { flex-wrap: wrap; }
-    .config-row { flex-direction: column; align-items: flex-start; }
-    .ticket-selection { flex-direction: column; }
-    .btn-ticket-action { justify-content: center; }
+
+    /* Upload: empilha a caixa e as instruções, caixa ocupa a largura toda */
+    .upload-content { flex-direction: column; align-items: stretch; gap: 14px; }
+    .upload-box { width: 100%; height: 150px; }
+
+    /* Galeria: 2 colunas em vez de 4 */
     .gallery-upload-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* Horários: empilha toggle e horários, inputs de hora ocupam a largura toda */
+    .horario-dia-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .dia-toggle { width: 100%; min-width: 0; }
+    .horario-inputs { flex-wrap: wrap; width: 100%; }
+    .icon-input { flex: 1; min-width: 110px; }
+    .icon-input input[type="time"] { width: 100%; }
+
+    /* Comodidades: cards menores por linha */
+    .features-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+
+    /* Cardápio: empilha switch de exibição e seletor de moeda */
+    .config-row { flex-direction: column; align-items: flex-start; }
+    .nomenclature-group { width: 100%; }
+    .select-small { width: 100% !important; }
+
+    /* Pratos em destaque: botões de ação em coluna e ocupando a largura */
+    .ticket-selection { flex-direction: column; }
+    .btn-ticket-action { justify-content: center; width: 100%; }
+    .ticket-item { padding: 20px; }
+    .prato-resumo { flex-wrap: wrap; gap: 8px; }
+
+    /* Visibilidade: opções em coluna */
+    .radio-group { flex-direction: column; gap: 10px; }
+    .radio-label { width: 100%; }
+
+    /* Modal: menos padding e ações empilhadas */
+    .modal-content { padding: 24px; width: 94%; }
+    .modal-actions { flex-direction: column-reverse; gap: 10px; }
+    .modal-actions button { width: 100%; justify-content: center; }
+
+    .step-navigation { margin-bottom: 50px; }
+}
+
+/* Celulares pequenos (≤480px) */
+@media (max-width: 480px) {
+    .main-header { padding: 14px 16px; }
+    .main-header h1 { font-size: 17px; }
+    .step-indicator { font-size: 11px; }
+
+    .container { margin: 14px auto; padding: 0 12px; }
+    .card { padding: 20px 16px; }
+
+    .section-title { font-size: 18px; }
+    .section-subtitle { font-size: 12.5px; margin-bottom: 20px; }
+
+    label, .label-heading { font-size: 11.5px; }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="datetime-local"],
+    select,
+    textarea { padding: 10px 12px; font-size: 13.5px; }
+
+    .editor-area { min-height: 160px; }
+
+    .gallery-upload-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+    .features-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .feature-check { padding: 9px 10px; font-size: 12.5px; }
+
+    .ticket-item { padding: 16px; }
+    .prato-resumo { flex-direction: column; align-items: flex-start; }
+
+    /* Botões principais e navegação entre etapas ocupam a largura toda, empilhados */
+    .btn-primary, .btn-outline { width: 100%; justify-content: center; padding: 12px 20px; }
+    .step-navigation { flex-direction: column-reverse; gap: 10px; }
+    .step-navigation button { width: 100%; }
+
+    .modal-content { padding: 18px; }
+    .modal-content h2 { font-size: 19px; }
 }

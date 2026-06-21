@@ -456,16 +456,57 @@ body {
 @media (max-width: 900px) {
   .grade-principal { flex-direction: column; }
   .coluna-sidebar { width: 100%; }
-  .perfil-header { flex-direction: column; gap: 18px; }
+  .perfil-header { flex-direction: column; gap: 18px; margin-top: -40px; }
   .perfil-header-actions { width: 100%; justify-content: flex-start; }
   .avaliacoes-resumo { flex-direction: column; align-items: flex-start; }
+  .perfil-banner { height: 180px; }
 }
+
 @media (max-width: 600px) {
-  .abas-nav { overflow-x: auto; gap: 0; }
-  .aba { padding: 10px 12px; font-size: 12px; }
-  .evento-proximo-card { flex-direction: column; }
+  .container { padding: 0 14px; }
+
+  .abas-nav { overflow-x: auto; gap: 0; -webkit-overflow-scrolling: touch; }
+  .aba { padding: 10px 12px; font-size: 12px; white-space: nowrap; }
+
+  .evento-proximo-card { flex-direction: column; align-items: stretch; }
   .evento-proximo-card img { width: 100%; height: 160px; }
   .btn-ver-detalhes { width: 100%; justify-content: center; }
+
   .perfil-header { padding: 20px; }
   .perfil-header-left { flex-direction: column; }
+  .avatar-wrap { align-self: center; }
+  .nome-row { justify-content: center; text-align: center; }
+  .perfil-desc { text-align: center; max-width: none; }
+  .stats-row { justify-content: center; }
+
+  .perfil-header-actions { flex-direction: column; }
+  .btn-mensagem, .btn-seguir { width: 100%; justify-content: center; }
+
+  .avaliacoes-resumo { padding: 18px; }
+  .nota-grande { align-self: center; }
+
+  .share-btns { flex-direction: column; }
+  .share-btn { width: 100%; justify-content: center; }
+
+  .evento-passado-card { flex-wrap: wrap; }
+  .ep-nota { margin-left: 54px; }
+}
+
+@media (max-width: 420px) {
+  .perfil-banner { height: 150px; }
+  .btn-voltar { top: 14px; left: 14px; padding: 7px 14px; font-size: 12px; }
+
+  .perfil-header { margin-top: -32px; padding: 16px; }
+  .avatar { width: 72px; height: 72px; }
+  .nome-row h1 { font-size: 18px; }
+  .stat-chip { font-size: 12px; padding: 5px 10px; }
+
+  .nota-num { font-size: 36px; }
+  .estrelas-grandes { font-size: 16px; }
+
+  .form-avaliacao { padding: 16px; }
+  .star-picker i { font-size: 22px; }
+
+  .ep-preco { font-size: 14px; }
+  .ep-icone { width: 36px; height: 36px; font-size: 13px; }
 }

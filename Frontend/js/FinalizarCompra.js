@@ -534,7 +534,7 @@ async function finalizarCompra(forma_pagamento) {
             forma_pagamento,
         }));
 
-        window.location.href = "../ResumoDaCompra/CompraConfirmada.html";
+        window.location.href = "confirmacao.html";
 
     } catch (err) {
         console.error("❌ Erro na requisição:", err);

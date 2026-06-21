@@ -396,20 +396,144 @@ body { font-family: 'Inter', sans-serif; background:var(--bg); color:var(--text)
   flex-shrink:0; align-self:flex-start; margin-top:2px;
 }
 
+/* ════ BOTÃO VOLTAR ════ */
+.btn-voltar-dash {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 99px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  transition: var(--tr);
+  margin-bottom: 16px;
+  width: fit-content;
+}
+.btn-voltar-dash:hover {
+  border-color: var(--p);
+  color: var(--p);
+  background: var(--p-bg);
+}
+.btn-voltar-dash svg { flex-shrink: 0; }
+
+@media (max-width: 768px) {
+  .btn-voltar-dash {
+    font-size: 12px;
+    padding: 7px 14px;
+  }
+}
+
 /* ════ RESPONSIVO ════ */
-@media (max-width:1100px) { .charts-row { grid-template-columns:1fr; } .bottom-row { grid-template-columns:1fr; } }
+
+@media (max-width:1100px) {
+  .charts-row { grid-template-columns:1fr; }
+  .bottom-row { grid-template-columns:1fr; }
+}
+
 @media (max-width:768px) {
   .main-content { padding:120px 16px 48px; }
+
+  /* Topbar */
   .topbar { flex-direction:column; align-items:flex-start; }
+  .topbar-right { width:100%; }
+  .btn-quick,
+  .btn-quick--outline,
+  .btn-export { flex:1; justify-content:center; }
+
+  /* Alert banner */
+  .alert-banner { flex-wrap:wrap; }
+  .alert-inner { flex-wrap:wrap; }
+
+  /* Tabs */
+  .dash-nav {
+    flex-wrap:nowrap;
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .dash-nav::-webkit-scrollbar { display:none; }
+  .dash-nav { -ms-overflow-style:none; scrollbar-width:none; }
+  .dnav-tab { flex-shrink:0; white-space:nowrap; }
+
+  /* KPI cards */
   .kpi-grid { grid-template-columns:1fr 1fr; }
+
+  /* Charts */
+  .chart-card-header { flex-direction:column; align-items:flex-start; gap:10px; }
+  .chart-wrap canvas { height:180px!important; }
+
+  /* Painéis */
+  .panel-header { flex-wrap:wrap; gap:8px; }
+
+  /* Sales feed row */
+  .sf-row { flex-wrap:wrap; }
+  .sf-right { align-items:flex-start; }
+
+  /* Upcoming */
+  .upcoming-item { flex-wrap:wrap; }
+  .up-occ { min-width:auto; }
+
+  /* Perf list */
+  .perf-row { flex-wrap:wrap; }
+  .perf-name { min-width:100%; }
+  .perf-val { min-width:auto; text-align:left; }
+
+  /* Seção header */
+  .sec-header { flex-direction:column; align-items:flex-start; }
+  .sec-filters { width:100%; flex-direction:column; align-items:stretch; }
+  .search-box { min-width:unset; width:100%; }
+  .filter-sel { width:100%; }
+
+  /* Cards de evento/estabelecimento */
+  .ev-top { flex-direction:column; align-items:flex-start; gap:10px; }
+  .ev-revenue { text-align:left; }
+  .ev-meta { gap:10px; }
+  .ev-stats { gap:8px; }
   .ev-actions { grid-template-columns:1fr 1fr; }
+
+  /* Modal */
+  .modal-box { padding:20px; }
   .modal-grid { grid-template-columns:1fr; }
-  .modal-qty  { flex-direction:column; }
-  .dash-nav   { flex-wrap:wrap; width:100%; }
-  .search-box { min-width:180px; }
+  .modal-qty { flex-direction:column; gap:12px; }
+  .modal-foot { flex-direction:column-reverse; }
+  .btn-save-m, .btn-cancel-m { width:100%; text-align:center; }
+
+  /* Tabela de vendas: scroll horizontal */
+  .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .sales-table { min-width:620px; }
+
+  /* Notificações */
+  .notif-filters { overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; padding-bottom:4px; }
+  .notif-filters::-webkit-scrollbar { display:none; }
+  .nf-btn { flex-shrink:0; white-space:nowrap; }
+  .notif-item { flex-wrap:wrap; }
+  .ni-new { margin-left:auto; }
 }
+
 @media (max-width:480px) {
-  .kpi-grid   { grid-template-columns:1fr; }
+  .main-content { padding:10px 12px 40px; }
+
+  .page-title { font-size:22px; }
+
+  .kpi-grid { grid-template-columns:1fr; }
+  .kpi-card { padding:16px 18px; }
+  .kpi-value { font-size:20px; }
+
   .ev-actions { grid-template-columns:1fr; }
-  .ev-stats   { flex-direction:column; }
+  .ev-stats { flex-direction:column; }
+  .ev-card { padding:16px; }
+
+  .btn-quick, .btn-quick--outline, .btn-export, .btn-create {
+    font-size:12.5px;
+    padding:9px 12px;
+  }
+
+  .chart-card, .panel { padding:16px; }
+
+  .modal-box { padding:16px; border-radius:12px; }
 }

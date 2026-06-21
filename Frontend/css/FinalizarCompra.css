@@ -5,6 +5,9 @@ h1, h2, h3, h4,
     font-weight: 700;
 }
 
+*, *::before, *::after {
+    box-sizing: border-box;
+}
 /* ============================================
    VARIÁVEIS DE DESIGN
 ============================================ */
@@ -494,8 +497,8 @@ header {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
 }
-
 .btn-copy {
     background: linear-gradient(135deg, var(--primary), var(--primary-mid));
     color: white;
@@ -832,22 +835,41 @@ header {
     text-align: center;
 }
 
-/* ============================================
-   RESPONSIVIDADE
-============================================ */
 @media (max-width: 900px) {
+    .page-content {
+        padding: 20px 16px;
+    }
     .checkout-container {
         flex-direction: column;
+        gap: 16px;
     }
     .summary-section {
         position: static;
+        order: 1;
+    }
+    .form-section {
+        order: 2;
+    }
+    .event-details {
+        margin-bottom: 14px;
+        padding-bottom: 14px;
+    }
+    .ticket-selected {
+        margin-bottom: 14px;
+        padding-bottom: 14px;
+    }
+    .form-group {
+        margin-bottom: 16px;
+    }
+    .form-subtitle {
+        margin-top: 18px;
     }
 }
 
 @media (max-width: 600px) {
     .form-section,
     .summary-section {
-        padding: 20px 16px;
+        padding: 18px 16px;
     }
     .dados-pessoais {
         grid-template-columns: 1fr;
@@ -860,5 +882,32 @@ header {
     }
     .payment-tab i {
         font-size: 16px;
+    }
+    .section-title {
+        font-size: 18px;
+        margin-bottom: 2px;
+    }
+    .section-subtitle {
+        margin-bottom: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .quantity-control {
+        flex-wrap: wrap;
+    }
+    .quantity-control > span {
+        width: 100%;
+        margin-top: 4px;
+    }
+}
+
+@media (max-width: 400px) {
+    .page-content {
+        padding: 16px 12px;
+    }
+    .event-image {
+        width: 64px;
+        height: 64px;
     }
 }

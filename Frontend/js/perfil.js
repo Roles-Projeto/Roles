@@ -259,7 +259,7 @@ g('senha-nova').addEventListener('input', function () {
         { w: '25%',  c: 'var(--danger)',  t: 'Fraca' },
         { w: '50%',  c: 'var(--warning)', t: 'Moderada' },
         { w: '75%',  c: '#85c200',        t: 'Boa' },
-        { w: '100%', c: 'var(--success)', t: 'Forte 🔒' },
+        { w: '100%', c: 'var(--success)', t: 'Forte' },
     ][sc];
 
     g('strength-fill').style.width      = levels.w;
@@ -734,7 +734,7 @@ function openTicketDetail(ticketId) {
         <div class="tdm-body">
             <div class="tdm-info-grid">
                 <div class="tdm-info-item"><label>Pedido</label><span>${pedidoNum}</span></div>
-                <div class="tdm-info-item"><label>Status</label><span>${isPendente ? '⏳ Pendente' : '✅ Confirmado'}</span></div>
+                <div class="tdm-info-item"><label>Status</label><span>${isPendente ? 'Pendente' : 'Confirmado'}</span></div>
                 <div class="tdm-info-item"><label>Data</label><span>${dataStr}</span></div>
                 <div class="tdm-info-item"><label>Horário</label><span>${horaStr}</span></div>
                 <div class="tdm-info-item"><label>Local</label><span>${local}</span></div>
@@ -765,69 +765,278 @@ function openTicketDetail(ticketId) {
 }
 
 /* ═══════════════════════════════════════════
-   DOWNLOAD PDF
+   DOWNLOAD PDF — mesmo modelo (cartão estilo embarque + QR real)
+   usado em Confirmacao.js, pra manter o ingresso consistente
+   em todo o site.
 ═══════════════════════════════════════════ */
+const LOGO_PATH = '/frontend/imagens/logo-roles.png';
+
+function fmtBRL(v) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
+}
+
+// Carrega uma imagem do próprio projeto e devolve como dataURL (pra addImage do jsPDF)
+function carregarImagemComoDataUrl(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            try { resolve(canvas.toDataURL('image/png')); }
+            catch (e) { reject(e); }
+        };
+        img.onerror = reject;
+        img.src = src;
+    });
+}
+
+// Gera um QR Code real (lib qrcode.js) e devolve como dataURL
+function gerarQrCodeDataUrl(texto, tamanho = 300) {
+    return new Promise((resolve, reject) => {
+        if (typeof QRCode === 'undefined') { reject(new Error('lib QRCode não carregada')); return; }
+        const container = document.createElement('div');
+        container.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
+        document.body.appendChild(container);
+        try {
+            new QRCode(container, {
+                text: texto,
+                width: tamanho,
+                height: tamanho,
+                correctLevel: QRCode.CorrectLevel.M
+            });
+            setTimeout(() => {
+                const canvas = container.querySelector('canvas');
+                const img = container.querySelector('img');
+                const dataUrl = canvas ? canvas.toDataURL('image/png') : (img ? img.src : null);
+                document.body.removeChild(container);
+                dataUrl ? resolve(dataUrl) : reject(new Error('QR não gerado'));
+            }, 60);
+        } catch (err) {
+            document.body.removeChild(container);
+            reject(err);
+        }
+    });
+}
+
 async function downloadTicket(ticketId) {
     const t = _allTickets.find(x => String(x.id) === String(ticketId));
     if (!t) return;
 
+    if (!window.jspdf) {
+        showToast('Não foi possível carregar o gerador de PDF.', 'error');
+        return;
+    }
+
+    const dataEvento = t.data_evento ? new Date(t.data_evento) : null;
+    const pedidoId    = String(t.id).padStart(5, '0');
+
+    const dados = {
+        nome:            t.nome_evento || t.evento || t.titulo || 'Evento',
+        data:            dataEvento ? dataEvento.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '—',
+        hora:            dataEvento ? dataEvento.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—',
+        local:           t.local_evento || t.local || t.cidade || '—',
+        ingressoNome:    t.tipo_ingresso || 'Ingresso',
+        quantidade:      t.quantidade || 1,
+        totalPago:       t.preco,
+        forma_pagamento: t.forma_pagamento,
+        beneficios:      Array.isArray(t.beneficios) ? t.beneficios : [],
+    };
+
+    try {
+        await gerarPdfIngresso(pedidoId, dados);
+        showToast('PDF baixado com sucesso!', 'success');
+    } catch (err) {
+        console.error('downloadTicket:', err);
+        showToast('Não foi possível gerar o PDF agora.', 'error');
+    }
+}
+
+// ── Gera o PDF: cabeçalho com logo + cartão estilo cartão de embarque + QR real ──
+async function gerarPdfIngresso(pedidoId, dados) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-    const nomeEvento = t.nome_evento || t.evento || t.titulo || 'Evento';
-    const dataEvento = t.data_evento ? new Date(t.data_evento) : null;
-    const dataStr    = dataEvento ? dataEvento.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
-    const horaStr    = dataEvento ? dataEvento.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
-    const local      = t.local_evento || t.local || t.cidade || '—';
-    const tipo       = t.tipo_ingresso || '—';
-    const preco      = t.preco ? `R$ ${parseFloat(t.preco).toFixed(2).replace('.', ',')}` : '—';
-    const pedido     = `#${String(t.id).padStart(5, '0')}`;
-    const pagamento  = t.forma_pagamento || '—';
+    const ROXO = [108, 29, 206];
+    const ROXO_CLARO = [244, 241, 252];
+    const TEXTO = [40, 40, 40];
+    const CINZA = [140, 140, 140];
+    const BORDA = [225, 225, 230];
 
-    doc.setFillColor(108, 29, 206);
-    doc.rect(0, 0, 210, 45, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22); doc.setFont('helvetica', 'bold');
-    doc.text('INGRESSO', 105, 18, { align: 'center' });
-    doc.setFontSize(14); doc.setFont('helvetica', 'normal');
-    doc.text(nomeEvento, 105, 30, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text('Rolés — Sua plataforma de eventos', 105, 40, { align: 'center' });
+    const nomeEvento = dados.nome || 'Evento';
+    const dataStr = dados.data || '—';
+    const horaStr = dados.hora || '—';
+    const local = dados.local || '—';
+    const tipo = dados.ingressoNome || 'Ingresso';
+    const qtd = dados.quantidade || 1;
+    const formas = { credito: 'Cartão de Crédito', cartao: 'Cartão de Crédito', pix: 'PIX', boleto: 'Boleto Bancário' };
+    const pagamento = formas[String(dados.forma_pagamento).toLowerCase()] || dados.forma_pagamento || '—';
+    const pedido = `#${pedidoId}`;
+    const beneficios = Array.isArray(dados.beneficios) ? dados.beneficios.filter(Boolean) : [];
 
-    doc.setDrawColor(108, 29, 206); doc.setLineWidth(0.5);
-    doc.line(15, 52, 195, 52);
+    let logoDataUrl = null;
+    try { logoDataUrl = await carregarImagemComoDataUrl(LOGO_PATH); } catch (_) {}
 
-    doc.setTextColor(50, 50, 50); doc.setFontSize(11);
-    const campos = [
-        ['Pedido', pedido], ['Status', 'Confirmado'],
-        ['Data', dataStr],  ['Horário', horaStr],
-        ['Local', local],   ['Tipo', tipo],
-        ['Valor pago', preco], ['Pagamento', pagamento],
-    ];
+    let qrDataUrl = null;
+    try { qrDataUrl = await gerarQrCodeDataUrl('ROLES-PEDIDO-' + pedidoId); } catch (_) {}
 
-    let y = 65;
-    campos.forEach(([label, valor]) => {
-        doc.setFont('helvetica', 'bold'); doc.setTextColor(108, 29, 206);
-        doc.text(label + ':', 20, y);
-        doc.setFont('helvetica', 'normal'); doc.setTextColor(50, 50, 50);
-        doc.text(String(valor), 70, y);
-        y += 12;
+    const cardX = 15, cardW = 180, raio = 4;
+    const stubW = 58;
+    const mainW = cardW - stubW;
+    const seamX = cardX + mainW;
+
+    // ── MEDE O CONTEÚDO PRIMEIRO, PRA DEFINIR A ALTURA DO CARTÃO SEM SOBRA ──
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+    const nomeLinhas = doc.splitTextToSize(nomeEvento, mainW - 20);
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
+    const dataLinhas  = doc.splitTextToSize(dataStr, mainW - 20);
+    const horaLinhas  = doc.splitTextToSize(horaStr, mainW - 20);
+    const localLinhas = doc.splitTextToSize(local, mainW - 20);
+
+    let alturaMain = 16 + (nomeLinhas.length * 6 + 6);
+    [dataLinhas, horaLinhas, localLinhas].forEach(linhas => {
+        alturaMain += 5 + linhas.length * 5 + 4;
+    });
+    if (beneficios.length > 0) {
+        alturaMain += 2 + 5 + beneficios.slice(0, 4).length * 5;
+    }
+    alturaMain += 14; // respiro inferior
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    const tipoLinhas = doc.splitTextToSize(tipo, stubW - 12);
+    const alturaStub = 14 + 6 + (tipoLinhas.length * 5 + 4) + 42 + 5 + 14;
+
+    const cardY = 42;
+    const cardH = Math.max(alturaMain, alturaStub, 70);
+
+    // ── CARTÃO (TICKET) ──
+    doc.setFillColor(232, 230, 238);
+    doc.roundedRect(cardX + 1.2, cardY + 1.5, cardW, cardH, raio, raio, 'F');
+
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...BORDA);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(cardX, cardY, cardW, cardH, raio, raio, 'FD');
+
+    doc.setFillColor(...ROXO_CLARO);
+    doc.rect(seamX, cardY, stubW, cardH, 'F');
+
+    // furinhos do canhoto
+    doc.setFillColor(255, 255, 255);
+    doc.circle(seamX, cardY, 3.2, 'F');
+    doc.circle(seamX, cardY + cardH, 3.2, 'F');
+
+    // linha pontilhada
+    doc.setDrawColor(200, 195, 215);
+    doc.setLineWidth(0.4);
+    if (doc.setLineDashPattern) doc.setLineDashPattern([1.4, 1.4], 0);
+    doc.line(seamX, cardY + 5, seamX, cardY + cardH - 5);
+    if (doc.setLineDashPattern) doc.setLineDashPattern([], 0);
+
+    // ── CABEÇALHO ──
+    if (logoDataUrl) {
+        doc.addImage(logoDataUrl, 'PNG', 15, 14, 14, 14);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...TEXTO);
+        doc.text('Rolês', 33, 21);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...CINZA);
+        doc.text('Comprovante de ingresso', 33, 26);
+    } else {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...ROXO);
+        doc.text('Rolês', 15, 21);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...CINZA);
+        doc.text('Comprovante de ingresso', 15, 26);
+    }
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...CINZA);
+    doc.text(`Pedido ${pedido}`, 195, 18, { align: 'right' });
+    doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, 195, 23, { align: 'right' });
+
+    doc.setDrawColor(...BORDA);
+    doc.line(15, 33, 195, 33);
+
+    // ── PAINEL PRINCIPAL (esquerda) ──
+    const px = cardX + 10;
+    let py = cardY + 16;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(...TEXTO);
+    doc.text(nomeLinhas, px, py);
+    py += nomeLinhas.length * 6 + 6;
+
+    doc.setDrawColor(...BORDA);
+    doc.line(px, py - 3, cardX + mainW - 10, py - 3);
+
+    [['Data', dataLinhas], ['Horário', horaLinhas], ['Local', localLinhas]].forEach(([label, valorLinhas]) => {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...ROXO);
+        doc.text(label.toUpperCase(), px, py);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(...TEXTO);
+        doc.text(valorLinhas, px, py + 5);
+        py += 5 + valorLinhas.length * 5 + 4;
     });
 
-    doc.setDrawColor(200, 200, 200); doc.setFillColor(245, 245, 245);
-    doc.roundedRect(55, y + 5, 100, 50, 4, 4, 'FD');
-    doc.setTextColor(108, 29, 206); doc.setFontSize(12); doc.setFont('helvetica', 'bold');
-    doc.text('[ QR CODE ]', 105, y + 34, { align: 'center' });
-    doc.setTextColor(120, 120, 120); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-    doc.text('Apresente este ingresso na entrada do evento', 105, y + 48, { align: 'center' });
+    if (beneficios.length > 0) {
+        py += 2;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...ROXO);
+        doc.text('BENEFÍCIOS', px, py);
+        py += 5;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...TEXTO);
+        beneficios.slice(0, 4).forEach(b => { doc.text(`✓ ${b}`, px, py); py += 5; });
+    }
 
-    doc.setFillColor(240, 240, 240); doc.rect(0, 275, 210, 22, 'F');
-    doc.setTextColor(150, 150, 150); doc.setFontSize(8);
-    doc.text('Este ingresso é pessoal e intransferível. Gerado em ' + new Date().toLocaleDateString('pt-BR'), 105, 284, { align: 'center' });
-    doc.text('Rolés © ' + new Date().getFullYear(), 105, 290, { align: 'center' });
+    // ── CANHOTO (direita) ──
+    const stubCenterX = seamX + stubW / 2;
+    let sy = cardY + 14;
 
-    doc.save(`ingresso-${pedido}.pdf`);
-    showToast('PDF baixado com sucesso! 🎉', 'success');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...ROXO);
+    doc.text('INGRESSO', stubCenterX, sy, { align: 'center' });
+    sy += 6;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...TEXTO);
+    doc.text(tipoLinhas, stubCenterX, sy, { align: 'center' });
+    sy += tipoLinhas.length * 5 + 4;
+
+    if (qrDataUrl) {
+        const qrSize = 36;
+        doc.addImage(qrDataUrl, 'PNG', stubCenterX - qrSize / 2, sy, qrSize, qrSize);
+        sy += qrSize + 6;
+    } else {
+        doc.setDrawColor(...BORDA);
+        doc.rect(stubCenterX - 18, sy, 36, 36);
+        doc.setFontSize(8); doc.setTextColor(...CINZA);
+        doc.text('QR indisponível', stubCenterX, sy + 20, { align: 'center' });
+        sy += 42;
+    }
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...TEXTO);
+    doc.text(pedido, stubCenterX, sy, { align: 'center' });
+    sy += 5;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA);
+    doc.text(`Qtd: ${qtd}`, stubCenterX, sy, { align: 'center' });
+
+    // ── RESUMO DO PAGAMENTO ──
+    const ry = cardY + cardH + 14;
+    doc.setDrawColor(...BORDA);
+    doc.line(15, ry - 6, 195, ry - 6);
+
+    const resumo = [['Valor pago', fmtBRL(dados.totalPago)], ['Forma de pagamento', pagamento], ['Status', 'Confirmado']];
+    const colW = 180 / resumo.length;
+    resumo.forEach(([label, valor], i) => {
+        const x = 15 + i * colW;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA);
+        doc.text(label, x, ry);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...TEXTO);
+        doc.text(String(valor), x, ry + 6);
+    });
+
+    // ── RODAPÉ ──
+    doc.setDrawColor(...BORDA);
+    doc.line(15, 270, 195, 270);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...CINZA);
+    doc.text('Este ingresso é pessoal e intransferível. Apresente um documento com foto na entrada do evento.', 105, 277, { align: 'center' });
+    doc.text(`Rolês © ${new Date().getFullYear()} — Gerado em ${new Date().toLocaleString('pt-BR')}`, 105, 283, { align: 'center' });
+
+    doc.save(`ingresso-${pedidoId}.pdf`);
 }
 
 /* ═══════════════════════════════════════════
@@ -1255,7 +1464,7 @@ g('btn-redefinir-senha').addEventListener('click', async () => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.erro || 'Erro ao redefinir senha.');
 
-        showToast('Senha redefinida com sucesso! 🔒', 'success');
+        showToast('Senha redefinida com sucesso!', 'success');
         g('recuperar-senha-modal').classList.remove('open');
 
     } catch (err) {

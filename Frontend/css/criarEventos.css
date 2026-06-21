@@ -235,14 +235,95 @@ input:checked + .slider:before { transform: translateX(18px); }
 .modal-content ul li { font-size: 13.5px; color: var(--text-mid); margin-bottom: 4px; }
 .modal-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 26px; gap: 12px; }
 
+/* ─── RESPONSIVO ─── */
+
+/* Evita rolagem horizontal e imagens estourando a tela */
+body { overflow-x: hidden; }
+img { max-width: 100%; }
+
+/* Tablets (≤1024px) */
+@media (max-width: 1024px) {
+    .container { padding: 0 20px; }
+    .card { padding: 36px 32px; }
+}
+
+/* Tablets pequenos e celulares grandes (≤768px) */
 @media (max-width: 768px) {
-    .card { padding: 26px 20px; }
     .main-header { padding: 16px 22px; }
+    .main-header h1 { font-size: 19px; margin-bottom: 12px; }
+
+    .container { margin: 20px auto; padding: 0 16px; }
+    .card { padding: 26px 20px; border-radius: 12px; }
+
+    .section-title { font-size: 20px; }
+    .section-subtitle { margin-bottom: 24px; }
+
     .row { flex-direction: column; gap: 0; }
+    .col-3, .col-9 { flex: 1; }
+
+    /* Upload: empilha caixa e instruções */
+    .upload-content { flex-direction: column; align-items: stretch; gap: 14px; }
+    .upload-box { width: 100%; height: 150px; }
+
+    /* Data e horário: já empilha (regra original mantida) */
+    .datetime-panel { padding: 22px 18px; }
+
+    /* Duração: quebra linha se o texto não couber */
+    .duracao-badge { width: 100%; box-sizing: border-box; white-space: normal; text-align: center; justify-content: center; }
+
+    /* Ingressos */
     .ticket-selection { flex-direction: column; }
-    .btn-ticket-action { justify-content: center; }
+    .btn-ticket-action { justify-content: center; width: 100%; }
+    .ticket-item { padding: 20px; }
+    .ingresso-resumo { flex-wrap: wrap; gap: 8px; }
+
+    /* Configurações de ingresso */
     .config-row { flex-direction: column; align-items: flex-start; }
-    .datetime-wrapper { flex-direction: column; }
-    .datetime-divider { flex-direction: row; min-width: unset; padding: 14px 24px; border-left: none; border-right: none; border-top: 1.5px solid #e9d5ff; border-bottom: 1.5px solid #e9d5ff; }
-    .datetime-divider i { transform: rotate(90deg); }
+    .nomenclature-group { width: 100%; }
+    .select-small { width: 100% !important; }
+
+    .radio-group { flex-direction: column; gap: 10px; }
+
+    /* Modal */
+    .modal-content { padding: 24px; width: 94%; }
+    .modal-actions { flex-direction: column-reverse; gap: 10px; }
+    .modal-actions button { width: 100%; justify-content: center; }
+
+    .step { margin-bottom: 50px; }
+    .step-navigation { margin-bottom: 60px; }
+}
+
+/* Celulares pequenos (≤480px) */
+@media (max-width: 480px) {
+    .main-header { padding: 14px 16px; }
+    .main-header h1 { font-size: 17px; }
+    .step-indicator { font-size: 11px; }
+
+    .container { margin: 14px auto; padding: 0 12px; }
+    .card { padding: 20px 16px; }
+
+    .section-title { font-size: 18px; }
+    .section-subtitle { font-size: 12.5px; margin-bottom: 20px; }
+
+    label, .label-heading { font-size: 11px; }
+
+    input[type="text"], input[type="number"], input[type="date"],
+    input[type="time"], select, textarea { padding: 10px 12px; font-size: 13.5px; }
+
+    .editor-area { min-height: 180px; }
+
+    .datetime-panel { padding: 18px 14px; }
+    .datetime-panel-header { gap: 8px; margin-bottom: 16px; padding-bottom: 12px; }
+    .datetime-panel-icon { width: 30px; height: 30px; font-size: 11px; }
+    .datetime-panel-label { font-size: 11px; }
+
+    .ticket-item { padding: 16px; }
+    .ingresso-resumo { flex-direction: column; align-items: flex-start; }
+
+    .btn-primary, .btn-outline { width: 100%; justify-content: center; padding: 12px 20px; }
+    .step-navigation { flex-direction: column-reverse; gap: 10px; }
+    .step-navigation button { width: 100%; }
+
+    .modal-content { padding: 18px; }
+    .modal-content h2 { font-size: 19px; }
 }

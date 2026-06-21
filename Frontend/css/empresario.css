@@ -1,6 +1,10 @@
-
-h1, h2, h3, h4,
-.logo, .kicker, .nav-logo {
+h1,
+h2,
+h3,
+h4,
+.logo,
+.kicker,
+.nav-logo {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
 }
@@ -20,10 +24,18 @@ h1, h2, h3, h4,
     --color-quote: #999;
     --color-divider: #383747;
     --font-family: 'Inter', sans-serif;
+
+    .empresario-page,
+    .empresario-page *,
+    .empresario-page *::before,
+    .empresario-page *::after {
+        box-sizing: border-box;
+    }
 }
 
 body {
     margin: 0;
+    overflow-x: hidden; 
 }
 
 /* ====================================================================== */
@@ -145,10 +157,23 @@ body {
     border: 1px solid transparent;
 }
 
-.empresario-page .btn-primary:hover { background-color: #f0f0f0; border-color: #f0f0f0; }
-.empresario-page .btn-secondary:hover { background-color: rgba(255,255,255,0.1); border-color: var(--color-text-light); }
-.empresario-page .btn-black-start:hover { background-color: #000; }
-.empresario-page .btn-white-cta:hover { background-color: #f0f0f0; }
+.empresario-page .btn-primary:hover {
+    background-color: #f0f0f0;
+    border-color: #f0f0f0;
+}
+
+.empresario-page .btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--color-text-light);
+}
+
+.empresario-page .btn-black-start:hover {
+    background-color: #000;
+}
+
+.empresario-page .btn-white-cta:hover {
+    background-color: #f0f0f0;
+}
 
 /* ====================================================================== */
 /* 4. HERO                                                                 */
@@ -205,12 +230,14 @@ body {
     padding: 1.5em;
     border-radius: 0.8em;
     text-align: left;
-    box-shadow: 0 0.5em 1.5em var(--color-card-shadow), 0 0.1em 0.2em rgba(0,0,0,0.03);
+    box-shadow: 0 0.5em 1.5em var(--color-card-shadow), 0 0.1em 0.2em rgba(0, 0, 0, 0.03);
     border: 1px solid #eee;
     transition: transform 0.3s ease;
 }
 
-.empresario-page .feature-card h3 { margin: 0.5em 0 0.4em 0; }
+.empresario-page .feature-card h3 {
+    margin: 0.5em 0 0.4em 0;
+}
 
 .empresario-page .feature-card p {
     font-size: 1.25em;
@@ -333,7 +360,9 @@ body {
     padding-bottom: 6em;
 }
 
-.empresario-page .testimonials .section-title { margin-bottom: 1em; }
+.empresario-page .testimonials .section-title {
+    margin-bottom: 1em;
+}
 
 .empresario-page .testimonials .section-subtitle {
     max-width: 55em;
@@ -429,13 +458,90 @@ body {
     margin: 0;
 }
 
+.empresario-page .hero-business-cta {
+    position: relative;
+}
+
+.empresario-page .back-btn {
+    position: absolute;
+    top: 2.4em;
+    left: 2.4em;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8em;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 99px;
+    padding: 1em 1.8em 1em 1.4em;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 1.4em;
+    color: var(--color-dark);
+    cursor: pointer;
+    box-shadow: 0 0.4em 1.6em rgba(0, 0, 0, 0.18);
+    transition: background 0.2s, transform 0.2s;
+}
+
+.empresario-page .back-btn:hover {
+    background: #fff;
+    transform: translateX(-2px);
+}
+
+.empresario-page .back-btn i {
+    font-size: 0.9em;
+}
+
 /* ====================================================================== */
 /* 10. RESPONSIVO                                                          */
 /* ====================================================================== */
+@media (max-width: 900px) {
+    .empresario-page .hero-business-cta {
+        padding: 9em 0 7em 0;
+    }
+
+    .empresario-page .back-btn {
+        top: 2em;
+        left: 2em;
+    }
+
+    .empresario-page .complete-resources-data .container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 3em;
+    }
+
+    .empresario-page .content-left {
+        min-width: 0;
+    }
+
+    .empresario-page .data-right {
+        margin-left: 0;
+    }
+
+    .empresario-page .resource-list {
+        font-size: 1.3em;
+    }
+}
+
 @media (max-width: 600px) {
-    .empresario-page .hero-business-cta h1 { font-size: 3.2em; }
+    .empresario-page .back-btn {
+        top: 1.6em;
+        left: 1.6em;
+        padding: 0.9em 1.6em 0.9em 1.2em;
+        font-size: 1.3em;
+    }
+
+    .empresario-page .hero-business-cta h1 {
+        font-size: 3.2em;
+    }
+
     .empresario-page .content-left h2,
-    .empresario-page .final-cta-dark h2 { font-size: 1.8em; }
+    .empresario-page .final-cta-dark h2 {
+        font-size: 1.8em;
+    }
 
     .empresario-page .cta-buttons {
         display: flex;
@@ -443,13 +549,22 @@ body {
         gap: 1.2em;
     }
 
-    .empresario-page .btn-primary { margin-right: 0; }
+    .empresario-page .btn-primary {
+        margin-right: 0;
+    }
 
     .empresario-page .features-grid,
-    .empresario-page .testimonials-grid { grid-template-columns: 1fr; }
+    .empresario-page .testimonials-grid {
+        grid-template-columns: 1fr;
+    }
 
-    .empresario-page .resource-list { grid-template-columns: 1fr; }
-    .empresario-page .data-right { grid-template-columns: 1fr; }
+    .empresario-page .resource-list {
+        grid-template-columns: 1fr;
+    }
+
+    .empresario-page .data-right {
+        grid-template-columns: 1fr;
+    }
 
     .empresario-page .btn-black-start {
         width: 100%;
@@ -457,11 +572,42 @@ body {
         justify-content: center;
     }
 
-    .empresario-page .final-cta-dark .container { padding: 5em 0; }
+    .empresario-page .final-cta-dark .container {
+        padding: 5em 0;
+    }
 
     .empresario-page .btn-white-cta {
         padding: 1.2em 2.5em;
         width: 100%;
         justify-content: center;
+    }
+}
+
+@media (max-width: 420px) {
+    .empresario-page .hero-business-cta {
+        flex-direction: column;
+        padding-top: 6em;
+    }
+
+    .empresario-page .back-btn {
+        position: static;
+        margin-bottom: 2em;
+    }
+
+    .empresario-page h1 {
+        font-size: 2.6em;
+    }
+
+    .empresario-page .data-card strong {
+        font-size: 2.4em;
+    }
+
+    .empresario-page .testimonial-card {
+        padding: 1.8em;
+    }
+
+    .empresario-page .icon-box {
+        width: 3.4em;
+        height: 3.4em;
     }
 }

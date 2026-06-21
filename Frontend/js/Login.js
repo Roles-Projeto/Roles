@@ -3,7 +3,6 @@ const API_URL = window.API_BASE
         ? 'http://localhost:3000'
         : 'https://projeto-integrador-roles.onrender.com');
 
-// Se não encontrar os elementos do login, encerra o script
 if (!document.getElementById("login-form") && !document.getElementById("forgotPasswordBox")) {
     throw new Error("Login.js carregado fora do contexto correto.");
 }
@@ -43,10 +42,6 @@ const inputEmail = document.getElementById("email");
 const inputPassword = document.getElementById("password");
 const headerIframe = document.getElementById("site-header");
 
-/* ==================================================
-================ HEADER LOGIN ========================
-================================================== */
-
 function enviarLoginParaHeader(name, email, userType, photoUrl) {
     if (headerIframe && headerIframe.contentWindow) {
         headerIframe.contentWindow.postMessage({
@@ -60,12 +55,7 @@ function enviarLoginParaHeader(name, email, userType, photoUrl) {
     }
 }
 
-/* ==================================================
-================ BOTÕES CLIENTE =====================
-================================================== */
-
 if (clienteBtn && empresarioBtn) {
-
     clienteBtn.addEventListener("click", () => {
         clienteBtn.classList.add("active");
         empresarioBtn.classList.remove("active");
@@ -79,7 +69,6 @@ if (clienteBtn && empresarioBtn) {
         mainText.textContent = "Cadastre seu estabelecimento e aumente sua visibilidade";
         subText.textContent = "Entre rapidamente com";
     });
-
 }
 
 /* ==================================================
@@ -87,9 +76,7 @@ if (clienteBtn && empresarioBtn) {
 ================================================== */
 
 if (form) {
-
     form.addEventListener("submit", async (e) => {
-
         e.preventDefault();
 
         const email = inputEmail.value.trim();
@@ -101,7 +88,6 @@ if (form) {
         }
 
         try {
-
             const response = await fetch(`${API_URL}/usuarios/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -112,8 +98,6 @@ if (form) {
             console.log("📩 Backend:", data);
 
             if (response.ok) {
-
-                // ── Login bem-sucedido ──
                 localStorage.setItem("userIsLoggedIn", "true");
                 localStorage.setItem("userType", "usuario");
                 localStorage.setItem("userId", data.id);
@@ -132,24 +116,30 @@ if (form) {
                 localStorage.setItem("profileEmail", email);
                 enviarLoginParaHeader(nome, email, "usuario", foto);
 
-                if (window.parent && window.parent !== window) {
+                const params = new URLSearchParams(window.location.search);
+                const redirect = params.get("redirect");
+
+                if (redirect) {
+                    // Veio com ?redirect= — navegar direto, ignorar iframe
+                    window.location.href = redirect;
+                } else if (window.parent && window.parent !== window) {
+                    // Está dentro de iframe sem redirect — avisar o pai
                     window.parent.postMessage("LOGIN_SUCCESS", "*");
                 } else {
+                    // Acesso direto sem redirect — ir pro index
                     window.location.href = "../index.html";
                 }
 
             } else if (response.status === 429 && data.bloqueado) {
-
-                // ── Conta bloqueada ──
                 const minutos = data.minutosRestantes || 30;
 
                 mostrarNotificacao(
                     "notificacaoLogin",
                     `Conta bloqueada por ${minutos} minuto(s). Tente novamente mais tarde ou redefina sua senha.`,
                     "erro",
-                    true   // persistente — não desaparece
+                    true
                 );
-                // Desabilita o botão de login durante o bloqueio
+
                 const btnEntrar = form.querySelector("button[type='submit']");
                 if (btnEntrar) {
                     btnEntrar.disabled = true;
@@ -168,7 +158,6 @@ if (form) {
                     }, minutos * 60 * 1000);
                 }
 
-                // Destaca o link de recuperação de senha
                 const forgotLink = document.getElementById("forgotPasswordLink");
                 if (forgotLink) {
                     forgotLink.classList.add("destaque-recuperacao");
@@ -176,8 +165,6 @@ if (form) {
                 }
 
             } else {
-
-                // ── Senha errada — mostra tentativas restantes ──
                 const tentativas = data.tentativasRestantes;
 
                 if (tentativas !== undefined) {
@@ -186,29 +173,18 @@ if (form) {
                         `Senha incorreta. Você tem ${tentativas} tentativa(s) restante(s) antes do bloqueio.`,
                         "aviso"
                     );
-
                     inputPassword.style.borderColor = "#e53e3e";
-                    setTimeout(() => {
-                        inputPassword.style.borderColor = "";
-                    }, 3000);
-
+                    setTimeout(() => { inputPassword.style.borderColor = ""; }, 3000);
                 } else {
-                    mostrarNotificacao(
-                        "notificacaoLogin",
-                        data.erro || "Email ou senha incorretos.",
-                        "erro"
-                    );
+                    mostrarNotificacao("notificacaoLogin", data.erro || "Email ou senha incorretos.", "erro");
                 }
-
             }
 
         } catch (err) {
             console.error(err);
             mostrarNotificacao("notificacaoLogin", "Não foi possível conectar ao servidor.", "erro");
         }
-
     });
-
 }
 
 /* ==================================================
@@ -232,7 +208,6 @@ const togglePassword = document.getElementById("togglePassword");
 const password = document.getElementById("password");
 
 if (togglePassword && password) {
-
     password.addEventListener("input", () => {
         if (password.value.length > 0) {
             togglePassword.classList.add("show");
@@ -252,7 +227,6 @@ if (togglePassword && password) {
             togglePassword.textContent = "visibility";
         }
     });
-
 }
 
 /* ==================================================
@@ -277,7 +251,6 @@ if (backToLogin) {
         forgotPasswordBox.classList.remove("active");
         loginContent.style.display = "block";
 
-        // Reabilita o botão de login caso esteja bloqueado
         const btnEntrar = form && form.querySelector("button[type='submit']");
         if (btnEntrar) {
             btnEntrar.disabled = false;
@@ -285,11 +258,9 @@ if (backToLogin) {
             btnEntrar.style.cursor = "";
         }
 
-        // Remove notificação de bloqueio persistente
         const notif = document.getElementById("notificacaoLogin");
         if (notif) notif.className = "notificacao";
 
-        // Remove destaque do link de recuperação
         const forgotLink = document.getElementById("forgotPasswordLink");
         if (forgotLink) {
             forgotLink.classList.remove("destaque-recuperacao");
@@ -305,9 +276,7 @@ if (backToLogin) {
 const sendRecoveryBtn = document.getElementById("sendRecoveryBtn");
 
 if (sendRecoveryBtn) {
-
     sendRecoveryBtn.addEventListener("click", async () => {
-
         const email = document.getElementById("recoveryEmail").value.trim();
 
         if (!email) {
@@ -316,7 +285,6 @@ if (sendRecoveryBtn) {
         }
 
         try {
-
             const response = await fetch(`${API_URL}/usuarios/recuperar-senha`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -332,14 +300,11 @@ if (sendRecoveryBtn) {
             } else {
                 mostrarNotificacao("notificacaoRecuperar", data.erro, "erro");
             }
-
         } catch (err) {
             console.log(err);
             mostrarNotificacao("notificacaoRecuperar", "Erro ao enviar o código.", "erro");
         }
-
     });
-
 }
 
 /* ==================================================
@@ -349,9 +314,7 @@ if (sendRecoveryBtn) {
 const redefinirSenhaBtn = document.getElementById("redefinirSenhaBtn");
 
 if (redefinirSenhaBtn) {
-
     redefinirSenhaBtn.addEventListener("click", async () => {
-
         const email = document.getElementById("recoveryEmail").value.trim();
         const codigo = document.getElementById("codigoRecuperacao").value.trim();
         const novaSenha = document.getElementById("novaSenha").value;
@@ -362,7 +325,6 @@ if (redefinirSenhaBtn) {
         }
 
         try {
-
             const response = await fetch(`${API_URL}/usuarios/redefinir-senha`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -372,7 +334,6 @@ if (redefinirSenhaBtn) {
             const data = await response.json();
 
             if (response.ok) {
-
                 mostrarNotificacao("notificacaoRecuperar", "Senha redefinida com sucesso!", "sucesso");
 
                 document.getElementById("recoveryEmail").value = "";
@@ -387,7 +348,6 @@ if (redefinirSenhaBtn) {
                     forgotPasswordBox.classList.remove("active");
                     loginContent.style.display = "block";
 
-                    // Reabilita botão e limpa notificação de bloqueio
                     const btnEntrar = form && form.querySelector("button[type='submit']");
                     if (btnEntrar) {
                         btnEntrar.disabled = false;
@@ -405,12 +365,9 @@ if (redefinirSenhaBtn) {
             } else {
                 mostrarNotificacao("notificacaoRecuperar", data.erro, "erro");
             }
-
         } catch (err) {
             console.log(err);
             mostrarNotificacao("notificacaoRecuperar", "Erro ao redefinir a senha.", "erro");
         }
-
     });
-
 }

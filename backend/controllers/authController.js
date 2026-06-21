@@ -1,15 +1,15 @@
 ﻿"use strict";
 
-const bcrypt     = require("bcrypt");
-const jwt        = require("jsonwebtoken");
-const db         = require("../db/db_config");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const db = require("../db/db_config");
 const nodemailer = require("nodemailer");
 
 /* ════════════════════════════════════════
    CONSTANTES DE LIMITE DE TENTATIVAS
 ════════════════════════════════════════ */
-const MAX_TENTATIVAS   = 4;   // bloqueia na 4ª tentativa errada
-const BLOQUEIO_MINUTOS = 30;  // tempo de bloqueio em minutos
+const MAX_TENTATIVAS = 4;   // bloqueia na 4ª tentativa errada
+const BLOQUEIO_MINUTOS = 15;  // tempo de bloqueio em minutos
 
 /* ════════════════════════════════════════
    EMAIL
@@ -41,7 +41,7 @@ async function ensureHistoricoTable() {
       navegador   VARCHAR(100),
       criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-  `).catch(() => {});
+  `).catch(() => { });
 }
 ensureHistoricoTable();
 
@@ -51,9 +51,9 @@ ensureHistoricoTable();
 function detectarNavegador(ua) {
   if (!ua) return "Desconhecido";
   if (ua.includes("Firefox")) return "Firefox";
-  if (ua.includes("Edg"))     return "Edge";
-  if (ua.includes("Chrome"))  return "Chrome";
-  if (ua.includes("Safari"))  return "Safari";
+  if (ua.includes("Edg")) return "Edge";
+  if (ua.includes("Chrome")) return "Chrome";
+  if (ua.includes("Safari")) return "Safari";
   return "Navegador";
 }
 
@@ -81,7 +81,7 @@ exports.loginUsuario = async (req, res) => {
     const usuario = results[0];
 
     // ── 2. Verifica se está bloqueado ──────────────────
-    if (usuario.bloqueado_ate && new Date(usuario.bloqueado_ate) > new Date()) {
+    if (usuario.bloqueado_ate && new Date(usuario.bloqueado_ate + 'Z') > new Date()) {
       const minutosRestantes = Math.ceil(
         (new Date(usuario.bloqueado_ate) - new Date()) / 60000
       );
@@ -111,12 +111,11 @@ exports.loginUsuario = async (req, res) => {
         // ── Bloqueia por 30 minutos ──
         await db.query(
           `UPDATE usuarios
-           SET tentativas_login = ?, bloqueado_ate = DATE_ADD(NOW(), INTERVAL ? MINUTE),
-               ultima_tentativa = NOW()
-           WHERE id = ?`,
+   SET tentativas_login = ?, bloqueado_ate = DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? MINUTE),
+       ultima_tentativa = UTC_TIMESTAMP()
+   WHERE id = ?`,
           [novasTentativas, BLOQUEIO_MINUTOS, usuario.id]
         );
-
         // ── Envia e-mail de aviso ──
         enviarEmail(
           email,
@@ -132,7 +131,7 @@ exports.loginUsuario = async (req, res) => {
                         margin:16px 0;border-left:4px solid #e53e3e;">
               <p><strong>Conta bloqueada por:</strong> ${BLOQUEIO_MINUTOS} minutos</p>
               <p><strong>Data/Hora:</strong> ${new Date().toLocaleString("pt-BR",
-                { timeZone: "America/Sao_Paulo" })}</p>
+            { timeZone: "America/Sao_Paulo" })}</p>
             </div>
             <p>Se foi você, aguarde ${BLOQUEIO_MINUTOS} minutos e tente novamente,
                ou <a href="${process.env.FRONTEND_URL}/recuperar-senha"
@@ -144,7 +143,7 @@ exports.loginUsuario = async (req, res) => {
               Rolês — Sua plataforma de eventos</p>
           </div>
           `
-        ).catch(() => {});
+        ).catch(() => { });
 
         return res.status(429).json({
           erro: "Conta bloqueada temporariamente.",
@@ -158,8 +157,8 @@ exports.loginUsuario = async (req, res) => {
       // ── Ainda tem tentativas ──
       await db.query(
         `UPDATE usuarios
-         SET tentativas_login = ?, ultima_tentativa = NOW()
-         WHERE id = ?`,
+   SET tentativas_login = ?, ultima_tentativa = UTC_TIMESTAMP()
+   WHERE id = ?`,
         [novasTentativas, usuario.id]
       );
 
@@ -176,7 +175,7 @@ exports.loginUsuario = async (req, res) => {
        SET tentativas_login = 0, bloqueado_ate = NULL, ultima_tentativa = NULL
        WHERE id = ?`,
       [usuario.id]
-    ).catch(() => {});
+    ).catch(() => { });
 
     const token = jwt.sign(
       { id: usuario.id, email: usuario.email, role: usuario.role },
@@ -185,17 +184,17 @@ exports.loginUsuario = async (req, res) => {
     );
 
     // ── Dados do dispositivo ───────────────────────────
-    const ua             = req.headers["user-agent"] || "";
-    const ip             = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "—";
-    const navegador      = detectarNavegador(ua);
-    const dispositivo    = detectarDispositivo(ua);
+    const ua = req.headers["user-agent"] || "";
+    const ip = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "—";
+    const navegador = detectarNavegador(ua);
+    const dispositivo = detectarDispositivo(ua);
     const dispositivoStr = `${navegador} — ${dispositivo}`;
 
     // ── Salva no histórico ─────────────────────────────
     await db.query(
       "INSERT INTO login_historico (usuario_id, ip, dispositivo, navegador) VALUES (?, ?, ?, ?)",
       [usuario.id, ip, dispositivoStr, navegador]
-    ).catch(() => {});
+    ).catch(() => { });
 
     // ── Verifica se é dispositivo novo ─────────────────
     const historicoAnterior = await db.query(
@@ -234,18 +233,18 @@ exports.loginUsuario = async (req, res) => {
             Rolês — Sua plataforma de eventos</p>
         </div>
         `
-      ).catch(() => {});
+      ).catch(() => { });
     }
 
     res.json({
-      mensagem:      "Login realizado com sucesso!",
+      mensagem: "Login realizado com sucesso!",
       token,
-      id:            usuario.id,
+      id: usuario.id,
       nome_completo: usuario.nome_completo,
-      email:         usuario.email,
-      telefone:      usuario.telefone,
-      foto_perfil:   usuario.foto_perfil,
-      role:          usuario.role,
+      email: usuario.email,
+      telefone: usuario.telefone,
+      foto_perfil: usuario.foto_perfil,
+      role: usuario.role,
     });
 
   } catch (err) {

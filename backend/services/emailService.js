@@ -12,7 +12,6 @@ const PDFDocument = require("pdfkit");
 const transporter = nodemailer.createTransport({
     service: "gmail",
     family: 4,
-    family: 4,       
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -121,10 +120,11 @@ async function enviarEmailIngresso(dados) {
 
   <!-- HEADER -->
   <tr>
-    <td style="background:linear-gradient(135deg,#6c2bd9 0%,#9b59b6 100%);
+    <td bgcolor="#6c2bd9" style="background-color:#6c2bd9;
+               background-image:linear-gradient(135deg,#6c2bd9 0%,#9b59b6 100%);
                padding:40px;text-align:center;">
-      <h1 style="color:#fff;margin:0;font-size:30px;letter-spacing:1px;">🎉 Rolês</h1>
-      <p style="color:rgba(255,255,255,.85);margin:8px 0 0;font-size:16px;">
+      <h1 style="color:#ffffff;margin:0;font-size:30px;letter-spacing:1px;">Rolês</h1>
+      <p style="color:#f0e6ff;margin:8px 0 0;font-size:16px;">
         Ingresso confirmado com sucesso!
       </p>
     </td>
@@ -134,7 +134,7 @@ async function enviarEmailIngresso(dados) {
   <tr>
     <td style="padding:32px 40px 0;">
       <p style="font-size:16px;color:#333;margin:0;">
-        Olá, <strong>${nomeCliente}</strong>! 👋
+        Olá, <strong>${nomeCliente}</strong>!
       </p>
       <p style="font-size:15px;color:#555;margin:10px 0 0;line-height:1.6;">
         Seu pagamento foi
@@ -150,13 +150,13 @@ async function enviarEmailIngresso(dados) {
       <div style="background:#f5f0ff;border-left:4px solid #6c2bd9;
                   border-radius:8px;padding:20px;">
         <p style="margin:0 0 12px;font-size:18px;font-weight:700;color:#1a1a2e;">
-          📍 ${nomeEvento}
+          ${nomeEvento}
         </p>
         <p style="margin:0 0 6px;font-size:14px;color:#555;">
-          📅 <strong>Data:</strong> ${dataEvento} às ${horaEvento}
+          <strong>Data:</strong> ${dataEvento} às ${horaEvento}
         </p>
         <p style="margin:0;font-size:14px;color:#555;">
-          📌 <strong>Local:</strong> ${localEvento}
+          <strong>Local:</strong> ${localEvento}
         </p>
       </div>
     </td>
@@ -167,7 +167,7 @@ async function enviarEmailIngresso(dados) {
     <td style="padding:0 40px 24px;">
       <h3 style="font-size:15px;color:#1a1a2e;margin:0 0 16px;
                  border-bottom:2px solid #f0edf8;padding-bottom:10px;">
-        🎟️ Seus Ingressos
+        Seus Ingressos
       </h3>
       ${ingressosHtml.join("")}
     </td>
@@ -180,7 +180,7 @@ async function enviarEmailIngresso(dados) {
                   border-radius:12px;overflow:hidden;">
         <div style="background:#6c2bd9;padding:12px 20px;">
           <span style="color:#fff;font-size:14px;font-weight:600;">
-            💳 Resumo do Pagamento
+            Resumo do Pagamento
           </span>
         </div>
         <table width="100%" cellpadding="0" cellspacing="0"
@@ -242,7 +242,7 @@ async function enviarEmailIngresso(dados) {
       <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;
                   padding:14px 18px;">
         <p style="margin:0;font-size:13px;color:#7a5c00;">
-          ⚠️ <strong>Importante:</strong> Guarde este e-mail. O QR Code é pessoal
+          <strong>Importante:</strong> Guarde este e-mail. O QR Code é pessoal
           e intransferível. Não compartilhe com terceiros.
         </p>
       </div>
@@ -287,7 +287,7 @@ async function enviarEmailIngresso(dados) {
     await transporter.sendMail({
         from:    `"Rolês Eventos" <${process.env.EMAIL_USER}>`,
         to:      emailCliente,
-        subject: `🎟️ Seu ingresso para ${nomeEvento} — Pedido #${pedido_id}`,
+        subject: `Seu ingresso para ${nomeEvento} — Pedido #${pedido_id}`,
         html,
         attachments: [{
             filename:    `ingresso-pedido-${pedido_id}.pdf`,
@@ -296,7 +296,7 @@ async function enviarEmailIngresso(dados) {
         }],
     });
 
-    console.log(`✅ E-mail de ingresso enviado para ${emailCliente}`);
+    console.log(`E-mail de ingresso enviado para ${emailCliente}`);
 }
 
 // ====================================================
@@ -375,4 +375,3 @@ function gerarPdfIngresso(dados) {
 }
 
 module.exports = { enviarEmailIngresso };
-

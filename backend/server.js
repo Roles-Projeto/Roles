@@ -49,8 +49,26 @@ const loginLimiter = rateLimit({
 app.use("/usuarios/login", loginLimiter);
 
 /* ─── Middlewares globais ─── */
+const allowedOrigins = [
+    "http://127.0.0.1:5502",
+    "http://localhost:5502",
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://projeto-integrador-roles.onrender.com",
+];
+
 app.use(cors({
-    origin: "*",
+    origin: (origin, callback) => {
+        // requests sem origin (ex: Postman, mesma origem) passam direto
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Não permitido pelo CORS"));
+        }
+    },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));

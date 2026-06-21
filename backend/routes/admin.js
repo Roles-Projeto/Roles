@@ -220,6 +220,38 @@ router.delete("/ingressos/:id", authAdmin, (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────
+// 🛒 PEDIDOS
+// ─────────────────────────────────────────────────────
+
+// Listar pedidos
+router.get("/pedidos", authAdmin, (req, res) => {
+    connection.query(
+        `SELECT p.*, u.nome_completo, e.nome AS evento_nome
+         FROM pedidos p
+         LEFT JOIN usuarios u ON u.id = p.usuario_id
+         LEFT JOIN eventos e ON e.id = p.evento_id
+         ORDER BY p.criado_em DESC`,
+        [],
+        (err, rows) => {
+            if (err) return res.status(500).json({ erro: err.message });
+            res.json(rows);
+        }
+    );
+});
+
+// Excluir pedido
+router.delete("/pedidos/:id", authAdmin, (req, res) => {
+    connection.query(
+        "DELETE FROM pedidos WHERE id = ?",
+        [req.params.id],
+        (err) => {
+            if (err) return res.status(500).json({ erro: err.message });
+            res.json({ mensagem: "Pedido excluído com sucesso." });
+        }
+    );
+});
+
+// ─────────────────────────────────────────────────────
 // ✉️  MENSAGENS DE CONTATO  ← NOVO
 // ─────────────────────────────────────────────────────
 
@@ -390,4 +422,40 @@ router.delete("/avaliacoes/:id", authAdmin, (req, res) => {
     );
 });
 
+router.get("/pedidos", authAdmin, (req, res) => {
+    connection.query(
+        `SELECT p.*, u.nome_completo, e.nome AS evento_nome
+         FROM pedidos p
+         LEFT JOIN usuarios u ON u.id = p.usuario_id
+         LEFT JOIN eventos e ON e.id = p.evento_id
+         ORDER BY p.criado_em DESC`,
+        [],
+        (err, rows) => {
+            if (err) return res.status(500).json({ erro: err.message });
+            res.json(rows);
+        }
+    );
+});
+
+router.delete("/pedidos/:id", authAdmin, (req, res) => {
+    connection.query(
+        "DELETE FROM pedidos WHERE id = ?",
+        [req.params.id],
+        (err) => {
+            if (err) return res.status(500).json({ erro: err.message });
+            res.json({ mensagem: "Pedido excluído com sucesso." });
+        }
+    );
+});
+
+router.delete("/pedidos", authAdmin, (req, res) => {
+    connection.query(
+        "DELETE FROM pedidos",
+        [],
+        (err) => {
+            if (err) return res.status(500).json({ erro: err.message });
+            res.json({ mensagem: "Todos os pedidos foram removidos." });
+        }
+    );
+});
 module.exports = router;

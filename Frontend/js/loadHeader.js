@@ -170,10 +170,11 @@ function initHeader() {
     // ----------------------------------------------------------
     // CARD DE CIDADE
     // ----------------------------------------------------------
-    const cityBtn = document.querySelector('.city-btn');
-    const cityCard = document.getElementById('city-card');
-    const overlay = document.getElementById('city-overlay');
-    const closeCard = document.getElementById('close-card');
+    const cityBtn    = document.querySelector('.city-btn');
+    const cityBtnMobile = document.getElementById('cityBtnMobile');
+    const cityCard   = document.getElementById('city-card');
+    const overlay    = document.getElementById('city-overlay');
+    const closeCard  = document.getElementById('close-card');
     const citySearch = document.getElementById('city-search');
     const useLocation = document.getElementById('use-location');
     const cityItems = document.querySelectorAll('.city-list li');
@@ -186,17 +187,20 @@ function initHeader() {
 
     function selecionarCidade(nome) {
         if (cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${nome}`;
+        if (cityBtnMobile) cityBtnMobile.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${nome}`;
         localStorage.setItem('cidade', nome);
         fecharCard();
     }
 
     cityBtn?.addEventListener('click', abrirCard);
+    cityBtnMobile?.addEventListener('click', abrirCard);
     closeCard?.addEventListener('click', fecharCard);
     overlay?.addEventListener('click', fecharCard);
     cityItems.forEach(i => i.addEventListener('click', () => selecionarCidade(i.dataset.city)));
 
     const savedCity = localStorage.getItem('cidade');
     if (savedCity && cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${savedCity}`;
+    if (savedCity && cityBtnMobile) cityBtnMobile.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${savedCity}`;
 
     citySearch?.addEventListener('input', () => {
         const val = citySearch.value.toLowerCase();
@@ -242,8 +246,36 @@ function initHeader() {
     // ----------------------------------------------------------
     const searchInput = document.getElementById('search-input');
     const searchWrapper = document.getElementById('search-bar-wrapper');
-    const suggestionsBox = document.getElementById('search-suggestions');
-    const btnBuscar = document.getElementById('btn-buscar');
+    const suggestionsBox= document.getElementById('search-suggestions');
+    const btnBuscar     = document.getElementById('btn-buscar');
+    const searchInputMobile = document.getElementById('search-input-mobile');
+
+    // ----------------------------------------------------------
+    // BOTÃO LUPA MOBILE (abre/fecha a barra de busca mobile)
+    // ----------------------------------------------------------
+    const searchToggleBtn = document.getElementById('searchToggleBtn');
+    const searchBarMobile = document.getElementById('searchBarMobile');
+
+    if (searchToggleBtn && searchBarMobile) {
+        searchToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            searchBarMobile.classList.toggle('open');
+            searchToggleBtn.classList.toggle('active');
+            if (searchBarMobile.classList.contains('open')) {
+                searchInputMobile?.focus();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (
+                !searchBarMobile.contains(e.target) &&
+                !searchToggleBtn.contains(e.target)
+            ) {
+                searchBarMobile.classList.remove('open');
+                searchToggleBtn.classList.remove('active');
+            }
+        });
+    }
 
     const CHAVE_RECENTES = 'buscasRecentes';
     const MAX_RECENTES = 5;
@@ -322,8 +354,7 @@ function initHeader() {
             `;
             li.querySelector('.sug-left').addEventListener('click', () => {
                 if (searchInput) searchInput.value = termo;
-                fecharDropdown();
-                irParaBusca(termo);
+                buscarEDirecionar(termo);
             });
             li.querySelector('.sug-remover').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -399,21 +430,6 @@ function initHeader() {
             });
 
             suggestionsBox.appendChild(ul);
-
-            // Botão "Ver mais eventos"
-            const btnVerMaisEventos = document.createElement('div');
-            btnVerMaisEventos.className = 'sug-ver-mais';
-            btnVerMaisEventos.innerHTML = `
-                <i class="fas fa-calendar-alt"></i>
-                <span>Ver todos os eventos com <strong>"${termo}"</strong></span>
-                <i class="fas fa-chevron-right sug-chevron"></i>
-            `;
-            btnVerMaisEventos.addEventListener('click', () => {
-                salvarRecente(termo);
-                fecharDropdown();
-                irParaBusca(termo, 'eventos');
-            });
-            suggestionsBox.appendChild(btnVerMaisEventos);
         }
 
         // ── SEÇÃO LOCAIS ──
@@ -459,62 +475,75 @@ function initHeader() {
             });
 
             suggestionsBox.appendChild(ul2);
-
-            // Botão "Ver mais locais"
-            const btnVerMaisLocais = document.createElement('div');
-            btnVerMaisLocais.className = 'sug-ver-mais';
-            btnVerMaisLocais.innerHTML = `
-                <i class="fas fa-store"></i>
-                <span>Ver todos os locais com <strong>"${termo}"</strong></span>
-                <i class="fas fa-chevron-right sug-chevron"></i>
-            `;
-            btnVerMaisLocais.addEventListener('click', () => {
-                salvarRecente(termo);
-                fecharDropdown();
-                irParaBusca(termo, 'locais');
-            });
-            suggestionsBox.appendChild(btnVerMaisLocais);
         }
 
-        // Nenhum resultado — mostra rodapé de busca geral
+        // Nenhum resultado — só uma mensagem informativa, sem ação
         if (!temResultados) {
             const rodape = document.createElement('div');
             rodape.className = 'sug-rodape';
-            rodape.innerHTML = `<i class="fas fa-search"></i><span>Buscar por <strong>"${termo}"</strong></span>`;
-            rodape.addEventListener('click', () => {
-                salvarRecente(termo);
-                fecharDropdown();
-                irParaBusca(termo);
-            });
+            rodape.innerHTML = `<i class="fas fa-search"></i><span>Nenhum resultado para <strong>"${termo}"</strong></span>`;
             suggestionsBox.appendChild(rodape);
         }
 
         abrirDropdown();
     }
 
-    // Redireciona para página de busca
-    function irParaBusca(termo, tipo = '') {
-        salvarRecente(termo);
-        const params = new URLSearchParams({ q: termo });
-        if (tipo) params.set('tipo', tipo);
-        window.location.href = `/frontend/busca/busca.html?${params.toString()}`;
-    }
-
-    // Dispara filtro na home (sem redirecionar)
-    // Dispara filtro na home (sem redirecionar)
     function dispararFiltroDireto(termo) {
         window.dispatchEvent(new CustomEvent('roles:filtrar', { detail: { termo: termo.trim() } }));
     }
 
-    function dispararBusca() {
-        const termo = searchInput?.value.trim() || '';
-        irParaBusca(termo);
+    // Decide o que fazer com a busca:
+    // - bateu em exatamente 1 evento/local -> vai direto pro detalhe
+    // - bateu em 0 ou mais de 1 -> não navega, mantém o dropdown aberto
+    //   com as opções pra pessoa escolher
+    async function buscarEDirecionar(termo) {
+        if (!termo.trim()) return;
+
+        await carregarDados();
+        const t = norm(termo);
+
+        const eventosBate = (cacheEventos || []).filter(e =>
+            norm(e.nome).includes(t) || norm(e.assunto || '').includes(t)
+        );
+        const locaisBate = (cacheLocais || []).filter(l =>
+            norm(l.nome).includes(t) || norm(l.tipo || '').includes(t)
+        );
+
+        const totalBate = eventosBate.length + locaisBate.length;
+
+        if (totalBate === 1) {
+            salvarRecente(termo);
+            fecharDropdown();
+            if (eventosBate.length === 1) {
+                window.location.href = `/frontend/detalheseventos/detalheevento.html?id=${eventosBate[0].id}`;
+            } else {
+                window.location.href = `/frontend/detalheslocais/detalheslocais.html?id=${locaisBate[0].id}`;
+            }
+            return;
+        }
+
+        if (searchInput) searchInput.value = termo;
+        renderSugestoes(termo);
     }
 
-    // Eventos do input
+    function dispararBusca() {
+        const termo = searchInput?.value.trim() || '';
+        buscarEDirecionar(termo);
+    }
 
+    // ----------------------------------------------------------
+    // BUSCA MOBILE — mesmo comportamento do desktop
+    // ----------------------------------------------------------
+    if (searchInputMobile) {
+        searchInputMobile.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const termo = searchInputMobile.value.trim();
+                buscarEDirecionar(termo);
+            }
+        });
+    }
 
-    // Eventos do input
+    // Eventos do input (desktop)
     if (searchInput) {
         searchInput.addEventListener('focus', () => {
             const t = searchInput.value.trim();
@@ -531,8 +560,6 @@ function initHeader() {
 
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                salvarRecente(searchInput.value.trim());
-                fecharDropdown();
                 dispararBusca();
             }
             if (e.key === 'Escape') fecharDropdown();
@@ -544,8 +571,6 @@ function initHeader() {
     });
 
     btnBuscar?.addEventListener('click', () => {
-        if (searchInput?.value.trim()) salvarRecente(searchInput.value.trim());
-        fecharDropdown();
         dispararBusca();
     });
 }

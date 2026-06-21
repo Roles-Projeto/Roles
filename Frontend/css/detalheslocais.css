@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
 
 :root {
@@ -28,14 +35,14 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: var(--bg-gray);
   color: var(--text-dark);
   font-size: 14px;
   line-height: 1.6;
 }
 
-h1,h2,h3,h4 { font-family: 'DM Sans', sans-serif; font-weight: 700; margin: 0; }
+h1,h2,h3,h4 { font-family: 'Inter', sans-serif; font-weight: 700; margin: 0; }
 p { margin: 0; }
 hr { border: 0; border-top: 1.5px solid var(--border); margin: 20px 0; }
 
@@ -83,7 +90,7 @@ hr { border: 0; border-top: 1.5px solid var(--border); margin: 20px 0; }
   color: rgba(255,255,255,0.92);
   font-size: 13px;
   font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s;
@@ -223,7 +230,7 @@ hr { border: 0; border-top: 1.5px solid var(--border); margin: 20px 0; }
   cursor: pointer;
   color: var(--text-mid);
   border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   transition: all 0.2s;
   display: inline-flex;
   align-items: center;
@@ -486,7 +493,7 @@ hr { border: 0; border-top: 1.5px solid var(--border); margin: 20px 0; }
   padding: 10px 14px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
   color: var(--text-dark);
   background: var(--bg-card);
@@ -523,7 +530,7 @@ hr { border: 0; border-top: 1.5px solid var(--border); margin: 20px 0; }
   border: none;
   padding: 10px 22px;
   border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -721,7 +728,7 @@ hr { border: 0; border-top: 1.5px solid var(--border); margin: 20px 0; }
   padding: 11px 0;
   margin-top: 10px;
   border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -774,7 +781,7 @@ hr { border: 0; border-top: 1.5px solid var(--border); margin: 20px 0; }
   color: #fff;
   padding: 12px 26px;
   border-radius: 99px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 600;
   transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
@@ -804,4 +811,110 @@ hr { border: 0; border-top: 1.5px solid var(--border); margin: 20px 0; }
   .tab-content { padding: 20px 18px; }
   .details-row { grid-template-columns: 1fr; }
   .photo-grid { grid-template-columns: repeat(2, 1fr); }
+}
+/* TABLET */
+@media (max-width: 768px) {
+
+  .hero-section {
+    height: 320px;
+  }
+
+  .hero-info {
+    padding: 0 20px 20px;
+  }
+
+  .hero-name {
+    font-size: 2rem;
+  }
+
+  .tab-navigation {
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+
+  .tab-navigation::-webkit-scrollbar {
+    display: none;
+  }
+
+  .content-container {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .sidebar-cards {
+    position: static;
+  }
+
+  .photo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* CELULAR */
+@media (max-width: 480px) {
+
+  .main-content {
+    padding: 15px 10px 40px;
+  }
+
+  .hero-name {
+    font-size: 1.7rem;
+  }
+
+  .hero-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .hero-meta-sep {
+    display: none;
+  }
+
+  .tab-button {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+
+  .tab-content {
+    padding: 18px 14px;
+  }
+
+  .info-card {
+    padding: 18px;
+  }
+
+  .sidebar-rating-block {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .details-row {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-item-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .item-price-container {
+    text-align: left;
+    padding-left: 0;
+  }
+
+  .contact-row-value {
+    word-break: break-word;
+  }
 }

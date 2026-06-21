@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -22,7 +29,7 @@
 }
 
 body {
-    font-family: var(--font);
+    font-family: 'Inter', sans-serif;
     background: var(--bg);
     color: var(--ink);
     min-height: 100vh;
@@ -286,9 +293,39 @@ body {
 .qs-closing h2 em { color: var(--violet); font-style: normal; }
 .qs-closing p { font-size: 13px; color: var(--muted); max-width: 420px; margin: 0 auto; }
 
+.qs-back-btn {
+    position: absolute;
+    top: 28px;
+    left: 28px;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(79,70,229,0.15);
+    border-radius: 99px;
+    padding: 10px 18px 10px 14px;
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(26,5,51,0.1);
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.qs-back-btn:hover {
+    background: var(--white);
+    transform: translateX(-2px);
+    box-shadow: 0 6px 20px rgba(26,5,51,0.14);
+}
+.qs-back-btn i { font-size: 12px; color: var(--violet); }
+
 @media (max-width: 900px) {
     .qs-sec, .qs-stats, .qs-closing { padding-left: 24px; padding-right: 24px; }
-    .qs-hero { padding: 52px 24px 44px; }
+    .qs-hero { padding: 64px 24px 40px; }
+    .qs-back-btn { top: 20px; left: 20px; }
     .qs-hist-grid { grid-template-columns: 1fr; }
     .qs-hist-right { padding: 24px; gap: 16px; }
     .qs-stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -298,7 +335,31 @@ body {
 }
 
 @media (max-width: 600px) {
-    .qs-val-grid  { grid-template-columns: 1fr; }
+    .qs-val-grid { grid-template-columns: 1fr; }
     .qs-stats-grid { grid-template-columns: 1fr 1fr; }
     .qs-h1 { font-size: 32px; }
+    .qs-hero { padding: 56px 20px 36px; }
+    .qs-back-btn { top: 16px; left: 16px; padding: 9px 16px 9px 12px; font-size: 12.5px; }
+    .qs-sec { padding: 44px 20px; }
+    .qs-stats { padding: 44px 20px; }
+    .qs-closing { padding: 48px 20px; }
+    .qs-hist-left, .qs-hist-right { padding: 24px 20px; }
+    .qs-stat { padding: 20px 12px; }
+    .qs-proj-card { padding: 20px 16px; }
+}
+
+@media (max-width: 420px) {
+    .qs-hero { padding: 64px 16px 32px; }
+    .qs-back-btn {
+        position: static;
+        margin-bottom: 20px;
+        display: inline-flex;
+    }
+    .qs-hero-inner { display: flex; flex-direction: column; align-items: center; }
+    .qs-h1 { font-size: 26px; }
+    .qs-sub { font-size: 13.5px; }
+    .qs-stats-grid { grid-template-columns: 1fr; }
+    .qs-stat-num { font-size: 26px; }
+    .qs-equipe-txt h3 { font-size: 17px; }
+    .qs-eq-tag { padding: 8px 12px; }
 }

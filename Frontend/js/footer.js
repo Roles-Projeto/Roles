@@ -12,15 +12,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     Seu guia definitivo para encontrar os melhores lugares para sair e se divertir na cidade!
                 </p>
                 <div class="roles-footer-social">
-                    <a href="#" aria-label="Instagram">
-                        <i class="fab fa-instagram"></i>
-                    </a>
-                    <a href="#" aria-label="Facebook">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="#" aria-label="TikTok">
-                        <i class="fab fa-tiktok"></i>
-                    </a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
                 </div>
             </div>
 
@@ -38,9 +32,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 <ul>
                     <li><a href="/frontend/quemSomos/quemsomos.html">Quem somos</a></li>
                     <li><a href="/frontend/Contato/contato.html">Contato</a></li>
-                    <li><a href="/frontend/Cadastro/cadastro.html">Cadastrar Local</a></li>
+                    <li><a href="#" id="footer-link-cadastro">Cadastrar Local</a></li>
                     <li><a href="/frontend/empresario/empresario.html">Para empresas</a></li>
-                    <li><a href="/frontend/termodeuso/termoDeUso.html">Termo de Uso</a></li>
+                    <li><a href="/frontend/termoDeUso/termoDeUso.html">Termo de Uso</a></li>
                 </ul>
             </div>
 
@@ -65,10 +59,29 @@ document.addEventListener("DOMContentLoaded", function () {
     </footer>
     `;
 
+    // Injeta o footer
+    const temp = document.createElement('div');
+    temp.innerHTML = footerHTML;
+    const novoFooter = temp.firstElementChild;
+
     const existingFooter = document.querySelector('footer');
     if (existingFooter) {
-        existingFooter.outerHTML = footerHTML;
+        existingFooter.replaceWith(novoFooter);
     } else {
-        document.body.insertAdjacentHTML('beforeend', footerHTML);
+        document.body.appendChild(novoFooter);
+    }
+
+    // Guard: agora temos referência direta ao elemento já no DOM
+    const linkCadastro = novoFooter.querySelector('#footer-link-cadastro');
+    if (linkCadastro) {
+        linkCadastro.addEventListener('click', function (e) {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            if (token) {
+                window.location.href = '/frontend/criarEstabelecimentos/criarEstabelecimentos.html';
+            } else {
+                window.location.href = '/frontend/login/login.html?redirect=/frontend/criarEstabelecimentos/criarEstabelecimentos.html';
+            }
+        });
     }
 });

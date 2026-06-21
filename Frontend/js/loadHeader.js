@@ -277,6 +277,26 @@ function initHeader() {
         });
     }
 
+    // ----------------------------------------------------------
+    // AJUDANTES: qual input está ativo e onde posicionar a caixa
+    // ----------------------------------------------------------
+    function getInputAtivo() {
+        const mobileAberto = searchBarMobile && searchBarMobile.classList.contains('open');
+        return mobileAberto ? searchInputMobile : searchInput;
+    }
+
+    function posicionarSuggestions() {
+        if (!suggestionsBox) return;
+        const mobileAberto = searchBarMobile && searchBarMobile.classList.contains('open');
+        const ref = mobileAberto ? searchBarMobile : searchWrapper;
+        if (!ref) return;
+        const rect = ref.getBoundingClientRect();
+        suggestionsBox.style.position = 'fixed';
+        suggestionsBox.style.top = `${rect.bottom + 6}px`;
+        suggestionsBox.style.left = `${rect.left}px`;
+        suggestionsBox.style.width = `${rect.width}px`;
+    }
+
     const CHAVE_RECENTES = 'buscasRecentes';
     const MAX_RECENTES = 5;
     const MAX_SUGESTOES = 4; // máximo por tipo (eventos e locais)
@@ -328,8 +348,15 @@ function initHeader() {
         );
     }
 
-    const abrirDropdown = () => suggestionsBox?.classList.add('active');
+    const abrirDropdown = () => {
+        posicionarSuggestions();
+        suggestionsBox?.classList.add('active');
+    };
     const fecharDropdown = () => suggestionsBox?.classList.remove('active');
+
+    window.addEventListener('resize', () => {
+        if (suggestionsBox?.classList.contains('active')) posicionarSuggestions();
+    });
 
     // Renderiza buscas recentes (campo vazio)
     function renderVazio() {
@@ -353,7 +380,8 @@ function initHeader() {
                 <button class="sug-remover" aria-label="Remover"><i class="fas fa-times"></i></button>
             `;
             li.querySelector('.sug-left').addEventListener('click', () => {
-                if (searchInput) searchInput.value = termo;
+                const inputAtivo = getInputAtivo();
+                if (inputAtivo) inputAtivo.value = termo;
                 buscarEDirecionar(termo);
             });
             li.querySelector('.sug-remover').addEventListener('click', (e) => {
@@ -422,8 +450,9 @@ function initHeader() {
                 });
                 li.querySelector('.sug-completar').addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (searchInput) searchInput.value = evento.nome;
-                    searchInput?.focus();
+                    const inputAtivo = getInputAtivo();
+                    if (inputAtivo) inputAtivo.value = evento.nome;
+                    inputAtivo?.focus();
                     renderSugestoes(evento.nome);
                 });
                 ul.appendChild(li);
@@ -467,8 +496,9 @@ function initHeader() {
                 });
                 li.querySelector('.sug-completar').addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (searchInput) searchInput.value = local.nome;
-                    searchInput?.focus();
+                    const inputAtivo = getInputAtivo();
+                    if (inputAtivo) inputAtivo.value = local.nome;
+                    inputAtivo?.focus();
                     renderSugestoes(local.nome);
                 });
                 ul2.appendChild(li);
@@ -522,7 +552,8 @@ function initHeader() {
             return;
         }
 
-        if (searchInput) searchInput.value = termo;
+        const inputAtivo = getInputAtivo();
+        if (inputAtivo) inputAtivo.value = termo;
         renderSugestoes(termo);
     }
 
@@ -535,11 +566,24 @@ function initHeader() {
     // BUSCA MOBILE — mesmo comportamento do desktop
     // ----------------------------------------------------------
     if (searchInputMobile) {
+        searchInputMobile.addEventListener('focus', () => {
+            const t = searchInputMobile.value.trim();
+            if (t.length < 2) renderVazio();
+            else renderSugestoes(t);
+        });
+
+        searchInputMobile.addEventListener('input', () => {
+            const t = searchInputMobile.value.trim();
+            if (t.length < 2) renderVazio();
+            else renderSugestoes(t);
+        });
+
         searchInputMobile.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 const termo = searchInputMobile.value.trim();
                 buscarEDirecionar(termo);
             }
+            if (e.key === 'Escape') fecharDropdown();
         });
     }
 
@@ -567,7 +611,10 @@ function initHeader() {
     }
 
     document.addEventListener('click', (e) => {
-        if (searchWrapper && !searchWrapper.contains(e.target)) fecharDropdown();
+        const dentroDesktop = searchWrapper && searchWrapper.contains(e.target);
+        const dentroMobile = searchBarMobile && searchBarMobile.contains(e.target);
+        const dentroSugestoes = suggestionsBox && suggestionsBox.contains(e.target);
+        if (!dentroDesktop && !dentroMobile && !dentroSugestoes) fecharDropdown();
     });
 
     btnBuscar?.addEventListener('click', () => {

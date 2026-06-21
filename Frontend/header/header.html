@@ -1,169 +1,210 @@
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="/frontend/css/header.css">
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+/>
+
+<link rel="stylesheet" href="/frontend/css/header.css" />
 <script src="/frontend/js/auth.js"></script>
 
 <header class="header-main">
+  <nav class="navbar">
 
-    <nav class="navbar">
-
-        <!-- LOGO -->
-        <div class="logo">
-            <a href="/frontend/index.html">Rolês</a>
-        </div>
-
-        <!-- BARRA DE BUSCA DESKTOP -->
-        <div class="search-bar" id="search-bar-wrapper">
-
-            <input
-                type="text"
-                id="search-input"
-                placeholder="Buscar eventos..."
-                autocomplete="off"
-            />
-
-            <div class="divider"></div>
-
-            <div class="city-dropdown">
-                <button class="city-btn" id="cityBtn">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span id="selectedCity">Minha localização</span>
-                </button>
-            </div>
-
-            <button class="search-btn" id="btn-buscar">
-                <img src="/frontend/imagens/lupa.png" alt="Buscar">
-            </button>
-
-            <!-- DROPDOWN DE SUGESTÕES -->
-            <div id="search-suggestions"></div>
-
-        </div>
-
-        <!-- LADO DIREITO -->
-        <div class="right-section">
-
-            <!-- BOTÃO LUPA — só aparece no mobile -->
-            <button class="search-toggle-btn" id="searchToggleBtn" aria-label="Buscar">
-                <i class="fas fa-search"></i>
-            </button>
-
-            <div class="event-actions">
-                <a href="/frontend/criareventos/criareventos.html" class="action-btn">Criar evento</a>
-                <a href="/Frontend/perfil/perfil.html?section=ingressos" class="action-btn">Meus ingressos</a>
-            </div>
-
-            <!-- NÃO LOGADO -->
-            <div id="header-nao-logado" class="user-action-btns">
-                <a href="/frontend/login/login.html" class="login" id="openLogin">Entrar</a>
-            </div>
-
-            <!-- HAMBURGER (visível só quando logado) -->
-            <button id="hamburger-btn" class="hamburger-btn" style="display:none;">
-                <i class="fas fa-bars"></i>
-            </button>
-
-            <!-- LOGADO -->
-            <div id="header-logado" class="user-profile-container" style="display: none;">
-
-                <div class="profile-avatar">
-                    <img id="profile-pic-header"
-                         src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23ccc'/%3E%3Ccircle cx='20' cy='16' r='7' fill='%23fff'/%3E%3Cellipse cx='20' cy='34' rx='12' ry='8' fill='%23fff'/%3E%3C/svg%3E"
-                         alt="Foto de Perfil"
-                         class="avatar-img">
-                </div>
-
-                <div class="dropdown-menu">
-
-                    <div class="user-info">
-                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23ccc'/%3E%3Ccircle cx='20' cy='16' r='7' fill='%23fff'/%3E%3Cellipse cx='20' cy='34' rx='12' ry='8' fill='%23fff'/%3E%3C/svg%3E" alt="Foto de Perfil">
-                        <div>
-                            <strong id="profile-name-header">Nome do usuário</strong>
-                            <span id="profile-email-header">email@email.com</span>
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <a href="/frontend/perfil/perfil.html" id="minha-conta" class="dropdown-item">
-                        <i class="fas fa-user"></i> Minha conta
-                    </a>
-
-                    <a href="/frontend/perfil/perfil.html?section=favoritos" id="favoritos" class="dropdown-item">
-        <i class="fas fa-heart"></i> Favoritos
-                </a>
-
-                    <a href="/frontend/criareventos/criareventos.html" id="criar-eventos" class="dropdown-item">
-                        <i class="fas fa-calendar-plus"></i> Criar eventos
-                    </a>
-
-                    <a href="/frontend/criarEstabelecimentos/criarEstabelecimentos.html" id="cadastrar-estabelecimento" class="dropdown-item">
-                        <i class="fas fa-store"></i> Cadastrar estabelecimento
-                    </a>
-
-                    <a href="/frontend/dashboard/dashboard.html" id="dashboard" class="dropdown-item">
-                        <i class="fas fa-chart-line"></i> Dashboard
-                    </a>
-
-                    <hr>
-
-                    <a href="/frontend/Contato/contato.html" id="contato" class="dropdown-item">
-                        <i class="fas fa-headset"></i> Central de ajuda
-                    </a>
-
-                    <hr>
-
-                    <a href="/frontend/login/logout.html" id="logout" class="dropdown-item logout-btn">
-                        <i class="fas fa-sign-out-alt"></i> Sair
-                    </a>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </nav>
-
-    <!-- BARRA DE BUSCA MOBILE — aparece abaixo do navbar ao clicar na lupa -->
-    <div class="search-bar-mobile" id="searchBarMobile">
-        <input type="text" id="search-input-mobile" placeholder="Buscar eventos..." autocomplete="off" />
-        <button class="city-tag-mobile" id="cityBtnMobile">
-            <i class="fas fa-map-marker-alt"></i>
-            <span id="selectedCityMobile">Goiânia</span>
-        </button>
+    <!-- LOGO -->
+    <div class="logo">
+      <a href="/frontend/index.html">Rolês</a>
     </div>
 
-    <div class="bottom-gradient-bar"></div>
-    <div class="header-placeholder-fixo"></div>
+    <!-- SEARCH DESKTOP -->
+    <div class="search-bar" id="search-bar-wrapper">
+      <input
+        type="text"
+        id="search-input"
+        placeholder="Buscar eventos..."
+        autocomplete="off"
+      />
 
+      <div class="divider"></div>
+
+      <div class="city-dropdown">
+        <button class="city-btn" id="cityBtn">
+          <i class="fas fa-map-marker-alt"></i>
+          <span id="selectedCity">Minha localização</span>
+        </button>
+      </div>
+
+      <button class="search-btn" id="btn-buscar">
+        <img src="/frontend/imagens/lupa.png" alt="Buscar" />
+      </button>
+    </div>
+
+    <!-- LADO DIREITO -->
+    <div class="right-section">
+
+      <!-- LUPA MOBILE -->
+      <button class="search-toggle-btn" id="searchToggleBtn" aria-label="Buscar">
+        <i class="fas fa-search"></i>
+      </button>
+
+      <div class="event-actions">
+        <a href="/frontend/criareventos/criareventos.html" class="action-btn">
+          Criar evento
+        </a>
+
+        <a
+          href="/frontend/perfil/perfil.html?section=ingressos"
+          class="action-btn"
+        >
+          Meus ingressos
+        </a>
+      </div>
+
+      <!-- NÃO LOGADO -->
+      <div id="header-nao-logado" class="user-action-btns">
+        <a href="/frontend/login/login.html" class="login" id="openLogin">
+          Entrar
+        </a>
+      </div>
+
+      <!-- HAMBURGER -->
+      <button
+        id="hamburger-btn"
+        class="hamburger-btn"
+        style="
+          display: none;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          font-size: 1.5em;
+          color: #6c1dce;
+          align-items: center;
+          padding: 0;
+        "
+      >
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <!-- LOGADO -->
+      <div
+        id="header-logado"
+        class="user-profile-container"
+        style="display: none"
+      >
+        <div class="profile-avatar">
+          <img
+            id="profile-pic-header"
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23ccc'/%3E%3Ccircle cx='20' cy='16' r='7' fill='%23fff'/%3E%3Cellipse cx='20' cy='34' rx='12' ry='8' fill='%23fff'/%3E%3C/svg%3E"
+            alt="Foto de Perfil"
+            width="40"
+            height="40"
+            style="width:40px;height:40px;border-radius:50%;object-fit:cover;"
+          />
+        </div>
+
+        <div class="dropdown-menu">
+
+          <div class="user-info">
+            <img
+              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23ccc'/%3E%3Ccircle cx='20' cy='16' r='7' fill='%23fff'/%3E%3Cellipse cx='20' cy='34' rx='12' ry='8' fill='%23fff'/%3E%3C/svg%3E"
+              width="40"
+              height="40"
+              style="width:40px;height:40px;border-radius:50%;object-fit:cover;"
+            />
+            <div>
+              <strong id="profile-name-header">Nome do usuário</strong>
+              <span id="profile-email-header">email@email.com</span>
+            </div>
+          </div>
+
+          <hr />
+
+          <a href="/frontend/perfil/perfil.html" id="minha-conta" class="dropdown-item">
+            <i class="fas fa-user"></i> Minha conta
+          </a>
+
+          <a href="/frontend/perfil/perfil.html?section=favoritos" id="favoritos" class="dropdown-item">
+            <i class="fas fa-heart"></i> Favoritos
+          </a>
+
+          <a href="/frontend/criareventos/criareventos.html" id="criar-eventos" class="dropdown-item">
+            <i class="fas fa-calendar-plus"></i> Criar eventos
+          </a>
+
+          <a href="/frontend/criarEstabelecimentos/criarEstabelecimentos.html" id="cadastrar-estabelecimento" class="dropdown-item">
+            <i class="fas fa-store"></i> Cadastrar estabelecimento
+          </a>
+
+          <a href="/frontend/dashboard/dashboard.html" id="dashboard" class="dropdown-item">
+            <i class="fas fa-chart-line"></i> Dashboard
+          </a>
+
+          <hr />
+
+          <a href="/frontend/Contato/contato.html" id="contato" class="dropdown-item">
+            <i class="fas fa-headset"></i> Central de ajuda
+          </a>
+
+          <hr />
+
+          <a href="/frontend/login/logout.html" id="logout" class="dropdown-item logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Sair
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MOBILE SEARCH -->
+  <div class="search-bar-mobile" id="searchBarMobile">
+    <input
+      type="text"
+      id="search-input-mobile"
+      placeholder="Buscar eventos..."
+      autocomplete="off"
+    />
+
+    <button class="city-tag-mobile" id="cityBtnMobile">
+      <i class="fas fa-map-marker-alt"></i>
+      <span id="selectedCityMobile">Goiânia</span>
+    </button>
+  </div>
+
+  <div id="search-suggestions"></div>
+  <div class="bottom-gradient-bar"></div>
+  <div class="header-placeholder-fixo"></div>
 </header>
 
-<!-- OVERLAY DE CIDADE -->
+<!-- OVERLAY CIDADE -->
 <div id="city-overlay" class="overlay"></div>
 
-<!-- CARD DE LOCALIZAÇÃO -->
+<!-- CITY CARD -->
 <div id="city-card" class="city-card">
+  <div class="card-header">
+    <h3>Localização</h3>
+    <span id="close-card">&times;</span>
+  </div>
 
-    <div class="card-header">
-        <h3>Localização</h3>
-        <span id="close-card">&times;</span>
-    </div>
+  <div class="search-box">
+    <i class="fas fa-search"></i>
+    <input type="text" id="city-search" placeholder="Onde?" />
+  </div>
 
-    <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input type="text" id="city-search" placeholder="Onde?">
-    </div>
+  <div class="use-location" id="use-location">
+    <i class="fas fa-location-arrow"></i>
+    <div><strong>Usar minha localização atual</strong></div>
+  </div>
 
-    <div class="use-location" id="use-location">
-        <i class="fas fa-location-arrow"></i>
-        <div><strong>Usar minha localização atual</strong></div>
-    </div>
-
-    <ul class="city-list" id="city-list">
-        <li data-city="Goiânia"><i class="fas fa-map-marker-alt"></i> Goiânia</li>
-        <li data-city="Aparecida de Goiânia"><i class="fas fa-map-marker-alt"></i> Aparecida de Goiânia</li>
-        <li data-city="Caldas Novas"><i class="fas fa-map-marker-alt"></i> Caldas Novas</li>
-    </ul>
-
+  <ul class="city-list" id="city-list">
+    <li data-city="Goiânia"><i class="fas fa-map-marker-alt"></i> Goiânia</li>
+    <li data-city="Aparecida de Goiânia">
+      <i class="fas fa-map-marker-alt"></i> Aparecida de Goiânia
+    </li>
+    <li data-city="Caldas Novas">
+      <i class="fas fa-map-marker-alt"></i> Caldas Novas
+    </li>
+  </ul>
 </div>

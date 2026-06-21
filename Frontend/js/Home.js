@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const res          = await fetch(`${window.API_BASE}/eventos`);
             const todosEventos = await res.json();
-            const eventos      = todosEventos.slice(0, 10); // máximo 10 cards
+            const eventos      = todosEventos.slice(0, 10);
 
             if (!eventos || eventos.length === 0) {
                 track.innerHTML = '<p style="color:#fff;text-align:center;padding:20px">Nenhum evento encontrado.</p>';
@@ -89,42 +89,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 let translateX, translateY, scale, zIndex, opacity, rotation;
 
                 if (rel === 0) {
-                    translateX = 0;
-                    translateY = 0;
-                    scale = 1;
-                    zIndex = 10;
-                    opacity = 1;
-                    rotation = 0;
+                    translateX = 0; translateY = 0; scale = 1;
+                    zIndex = 10; opacity = 1; rotation = 0;
                 } else if (rel === 1 || rel === -1) {
                     const side = rel > 0 ? 1 : -1;
-                    translateX = side * 280;
-                    translateY = 30;
-                    scale = 0.80;
-                    zIndex = 7;
-                    opacity = 0.90;
-                    rotation = side * 4;
+                    translateX = side * 280; translateY = 30; scale = 0.80;
+                    zIndex = 7; opacity = 0.90; rotation = side * 4;
                 } else if (rel === 2 || rel === -2) {
                     const side = rel > 0 ? 1 : -1;
-                    translateX = side * 460;
-                    translateY = 55;
-                    scale = 0.62;
-                    zIndex = 4;
-                    opacity = 0.60;
-                    rotation = side * 8;
+                    translateX = side * 460; translateY = 55; scale = 0.62;
+                    zIndex = 4; opacity = 0.60; rotation = side * 8;
                 } else if (rel === 3 || rel === -3) {
                     const side = rel > 0 ? 1 : -1;
-                    translateX = side * 580;
-                    translateY = 75;
-                    scale = 0.48;
-                    zIndex = 2;
-                    opacity = 0.30;
-                    rotation = side * 12;
+                    translateX = side * 580; translateY = 75; scale = 0.48;
+                    zIndex = 2; opacity = 0.30; rotation = side * 12;
                 } else {
                     translateX = rel > 0 ? 700 : -700;
-                    translateY = 90;
-                    scale = 0.38;
-                    zIndex = 0;
-                    opacity = 0;
+                    translateY = 90; scale = 0.38; zIndex = 0; opacity = 0;
                     rotation = rel > 0 ? 15 : -15;
                 }
 
@@ -177,9 +158,6 @@ document.addEventListener("DOMContentLoaded", () => {
         window.addEventListener("resize", aplicarCarrossel);
     }
 
-    // ------------------------------------------------
-    // CONTAGEM DE CLIQUES (localStorage)
-    // ------------------------------------------------
     function registrarClique(eventoId) {
         if (!eventoId) return;
         const cliques = JSON.parse(localStorage.getItem('eventosCliques') || '{}');
@@ -198,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!grid) return;
 
         try {
-            const res    = await fetch(`${window.API_BASE}/eventos`);
+            const res     = await fetch(`${window.API_BASE}/eventos`);
             const eventos = await res.json();
 
             if (!eventos || eventos.length === 0) {
@@ -254,126 +232,219 @@ document.addEventListener("DOMContentLoaded", () => {
     carregarEventosProximos();
 
     /* ==================================================
-================= LOCAIS POPULARES ==================
-================================================== */
-
-async function carregarLocaisPopulares() {
-    const grid = document.querySelector(".populares-grid");
-    if (!grid) return;
-
-    try {
-        const res    = await fetch(`${window.API_BASE}/estabelecimentos`);
-        const locais = await res.json();
-
-        if (!locais || locais.length === 0) {
-            grid.innerHTML = '<p style="text-align:center;padding:40px;color:#888;">Nenhum local encontrado.</p>';
-            return;
-        }
-
-        grid.innerHTML = "";
-
-        locais.slice(0, 6).forEach(local => {
-
-            let imagem = '/frontend/imagens/1º imagem cad.png';
-if (local.img_capa && local.img_capa.startsWith('data:')) {
-    imagem = local.img_capa;
-} else if (local.img_capa) {
-    imagem = local.img_capa.startsWith('http')
-        ? local.img_capa
-        : `${window.API_BASE}${local.img_capa.startsWith('/') ? '' : '/'}${local.img_capa}`;
-} else if (local.img_logo && local.img_logo.startsWith('data:')) {
-    imagem = local.img_logo;
-} else if (local.img_logo) {
-    imagem = local.img_logo.startsWith('http')
-        ? local.img_logo
-        : `${window.API_BASE}${local.img_logo.startsWith('/') ? '' : '/'}${local.img_logo}`;
-}
-
-            const categoria = local.tipo || 'Local';
-            const tagClass  = categoria.toLowerCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .replace(/\s+/g, '-')
-                .split('-')[0];
-
-            const card = document.createElement('a');
-            card.href                    = `/frontend/detalheslocais/detalheslocais.html?id=${local.id}`;
-            card.className               = 'card-local';
-            card.dataset.categoriaCard   = tagClass;
-            card.innerHTML = `
-                <div class="card-image-wrap">
-                    <img src="${imagem}"
-                         alt="${local.nome}"
-                         onerror="this.onerror=null;this.src='/frontend/imagens/1º imagem cad.png'">
-                    <span class="tag tag-${tagClass}">${categoria}</span>
-                </div>
-                <div class="card-content">
-                    <h3>${local.nome}</h3>
-                    <p class="evento-local">
-                        <i class="fas fa-map-marker-alt"></i>
-                        ${local.bairro || ''}${local.cidade ? ' — ' + local.cidade : ''}
-                    </p>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
-
-    } catch (err) {
-        console.error('❌ Erro ao carregar locais populares:', err);
-    }
-}
-
-carregarLocaisPopulares();
-
-    /* ==================================================
-    ================= CARROSSEL CATEGORIAS =============
+    ================= LOCAIS POPULARES ==================
     ================================================== */
 
-    const catTrack = document.querySelector(".categorias-track");
-    const catCards = document.querySelectorAll(".card-categoria");
-    const catNext  = document.querySelector(".cat-btn.next");
-    const catPrev  = document.querySelector(".cat-btn.prev");
+    async function carregarLocaisPopulares() {
+        const grid = document.querySelector(".populares-grid");
+        if (!grid) return;
 
-    if (catTrack && catCards.length > 0) {
+        try {
+            const res    = await fetch(`${window.API_BASE}/estabelecimentos`);
+            const locais = await res.json();
 
-        let catIndex = 0;
-        let catAutoplay;
+            if (!locais || locais.length === 0) {
+                grid.innerHTML = '<p style="text-align:center;padding:40px;color:#888;">Nenhum local encontrado.</p>';
+                return;
+            }
 
-        function visiveis() {
-            const containerW = catTrack.parentElement.offsetWidth - 112;
-            const cardW = catCards[0].offsetWidth + 14;
-            return Math.max(1, Math.floor(containerW / cardW));
+            grid.innerHTML = "";
+
+            locais.slice(0, 6).forEach(local => {
+                let imagem = '/frontend/imagens/1º imagem cad.png';
+                if (local.img_capa && local.img_capa.startsWith('data:')) {
+                    imagem = local.img_capa;
+                } else if (local.img_capa) {
+                    imagem = local.img_capa.startsWith('http')
+                        ? local.img_capa
+                        : `${window.API_BASE}${local.img_capa.startsWith('/') ? '' : '/'}${local.img_capa}`;
+                } else if (local.img_logo && local.img_logo.startsWith('data:')) {
+                    imagem = local.img_logo;
+                } else if (local.img_logo) {
+                    imagem = local.img_logo.startsWith('http')
+                        ? local.img_logo
+                        : `${window.API_BASE}${local.img_logo.startsWith('/') ? '' : '/'}${local.img_logo}`;
+                }
+
+                const categoria = local.tipo || 'Local';
+                const tagClass  = categoria.toLowerCase()
+                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    .replace(/\s+/g, '-').split('-')[0];
+
+                const card = document.createElement('a');
+                card.href                  = `/frontend/detalheslocais/detalheslocais.html?id=${local.id}`;
+                card.className             = 'card-local';
+                card.dataset.categoriaCard = tagClass;
+                card.innerHTML = `
+                    <div class="card-image-wrap">
+                        <img src="${imagem}" alt="${local.nome}"
+                             onerror="this.onerror=null;this.src='/frontend/imagens/1º imagem cad.png'">
+                        <span class="tag tag-${tagClass}">${categoria}</span>
+                    </div>
+                    <div class="card-content">
+                        <h3>${local.nome}</h3>
+                        <p class="evento-local">
+                            <i class="fas fa-map-marker-alt"></i>
+                            ${local.bairro || ''}${local.cidade ? ' — ' + local.cidade : ''}
+                        </p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+        } catch (err) {
+            console.error('❌ Erro ao carregar locais populares:', err);
+        }
+    }
+
+    carregarLocaisPopulares();
+
+    /* ==================================================
+    ================= CARROSSEL CATEGORIAS ==============
+    ✅ Busca contagem de LOCAIS (por tipo) +
+       EVENTOS (por assunto) em cada categoria
+    ================================================== */
+
+    async function iniciarCarrosselCategorias() {
+
+        const catTrack = document.querySelector(".categorias-track");
+        const catNext  = document.querySelector(".cat-btn.next");
+        const catPrev  = document.querySelector(".cat-btn.prev");
+
+        if (!catTrack) return;
+
+        const categorias = [
+            {
+                name: "Baladas",
+                icon: "fas fa-music",
+                slug: "Baladas",
+                keywords: ["balada", "baladas", "night", "clube", "club"]
+            },
+            {
+                name: "Bar",
+                icon: "fas fa-glass-martini-alt",
+                slug: "Bar",
+                keywords: ["bar", "pub", "boteco", "happy hour"]
+            },
+            {
+                name: "Restaurante",
+                icon: "fas fa-utensils",
+                slug: "Restaurante",
+                keywords: ["restaurante", "gastronomia", "churrascaria", "brunch", "food"]
+            },
+            {
+                name: "Karaoke",
+                icon: "fas fa-microphone",
+                slug: "Karaoke",
+                keywords: ["karaoke", "karaokê"]
+            },
+            {
+                name: "Shows",
+                icon: "fas fa-ticket-alt",
+                slug: "Show",
+                keywords: ["show", "shows", "shows e música", "musica", "música", "banda", "concert", "standup", "stand-up", "stand up", "comédia", "comedia", "comedy"]
+            },
+            {
+                name: "Eventos",
+                icon: "fas fa-cocktail",
+                slug: "Eventos",
+                keywords: ["evento", "eventos", "festa", "festas", "festival", "festivais", "workshop", "feirinha", "feira"]
+            },
+            {
+                name: "Parques",
+                icon: "fas fa-tree",
+                slug: "Parques",
+                keywords: ["parque", "parques", "natureza", "ao ar livre", "outdoor"]
+            },
+            {
+                name: "50+",
+                icon: "fas fa-leaf",
+                slug: "%2B50%20anos",
+                keywords: ["50+", "50 anos", "maturidade", "terceira idade"]
+            },
+        ];
+
+        const norm = (s) => (s || '').toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+        function bate(texto, keywords) {
+            const t = norm(texto);
+            return keywords.some(k => t.includes(norm(k)));
         }
 
-        function maxIndex() {
-            return Math.max(0, catCards.length - visiveis());
+        let locais = [], eventos = [];
+        try {
+            const [resLocais, resEventos] = await Promise.all([
+                fetch(`${window.API_BASE}/estabelecimentos`),
+                fetch(`${window.API_BASE}/eventos`)
+            ]);
+            locais  = await resLocais.json();
+            eventos = await resEventos.json();
+        } catch (e) {
+            console.warn('Não foi possível carregar dados para categorias:', e);
+        }
+
+        function contarCategoria(cat) {
+            const qtdLocais  = locais.filter(l  => bate(l.tipo    || '', cat.keywords)).length;
+            const qtdEventos = eventos.filter(ev => bate(ev.assunto || '', cat.keywords)).length;
+            return qtdLocais + qtdEventos;
+        }
+
+        catTrack.innerHTML = '';
+        categorias.forEach(cat => {
+            const qtd  = contarCategoria(cat);
+            const link = `/frontend/categorias/categorias.html?name=${cat.slug}&icon-class=${encodeURIComponent(cat.icon)}`;
+            const card = document.createElement('a');
+            card.href      = link;
+            card.className = 'card-categoria';
+            card.innerHTML = `
+                <div class="icon"><i class="${cat.icon}"></i></div>
+                <h3>${cat.name}</h3>
+                <span>${qtd} ${qtd === 1 ? 'item' : 'itens'}</span>
+            `;
+            catTrack.appendChild(card);
+        });
+
+        const catCards = Array.from(catTrack.querySelectorAll(".card-categoria"));
+        if (catCards.length === 0) return;
+
+        let catIndex  = 0;
+        let catAutoplay;
+
+        function getMaxSlide() {
+            const cardWidth  = catCards[0].offsetWidth + 14;
+            const trackWidth = catCards.length * cardWidth - 14;
+            const containerW = catTrack.parentElement.offsetWidth - 112;
+            return Math.max(0, Math.floor((trackWidth - containerW) / cardWidth));
         }
 
         function moverCategorias(instant = false) {
-            const cardWidth = catCards[0].offsetWidth + 14;
+            const cardWidth  = catCards[0].offsetWidth + 14;
+            const slideIndex = Math.min(catIndex, getMaxSlide());
+
             if (instant) {
                 catTrack.style.transition = "none";
-                catTrack.style.transform  = `translateX(-${catIndex * cardWidth}px)`;
+                catTrack.style.transform  = `translateX(-${slideIndex * cardWidth}px)`;
                 requestAnimationFrame(() => {
                     catTrack.style.transition = "transform .45s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
                 });
             } else {
-                catTrack.style.transform = `translateX(-${catIndex * cardWidth}px)`;
+                catTrack.style.transform = `translateX(-${slideIndex * cardWidth}px)`;
             }
-
-            if (catPrev) catPrev.style.opacity = "1";
-            if (catNext) catNext.style.opacity = "1";
         }
 
         function proximaCategoria() {
+            const maxSlide = getMaxSlide();
             catIndex++;
-            if (catIndex > maxIndex()) catIndex = 0;
+            if (catIndex > maxSlide) catIndex = 0;
             moverCategorias(catIndex === 0);
         }
 
         function categoriaAnterior() {
+            const maxSlide = getMaxSlide();
             catIndex--;
-            if (catIndex < 0) catIndex = maxIndex();
-            moverCategorias(catIndex === maxIndex());
+            if (catIndex < 0) catIndex = maxSlide;
+            moverCategorias(catIndex === maxSlide);
         }
 
         function iniciarAutoplay() {
@@ -381,10 +452,8 @@ carregarLocaisPopulares();
             catAutoplay = setInterval(proximaCategoria, 3000);
         }
 
-        function resetarAutoplay() { iniciarAutoplay(); }
-
-        if (catNext) catNext.addEventListener("click", () => { proximaCategoria(); resetarAutoplay(); });
-        if (catPrev) catPrev.addEventListener("click", () => { categoriaAnterior(); resetarAutoplay(); });
+        if (catNext) catNext.addEventListener("click", () => { proximaCategoria(); iniciarAutoplay(); });
+        if (catPrev) catPrev.addEventListener("click", () => { categoriaAnterior(); iniciarAutoplay(); });
 
         catTrack.addEventListener("mouseenter", () => clearInterval(catAutoplay));
         catTrack.addEventListener("mouseleave", iniciarAutoplay);
@@ -404,13 +473,15 @@ carregarLocaisPopulares();
         }, { passive: true });
 
         window.addEventListener("resize", () => {
-            catIndex = Math.min(catIndex, maxIndex());
+            catIndex = Math.min(catIndex, getMaxSlide());
             moverCategorias();
         });
 
         iniciarAutoplay();
         moverCategorias();
     }
+
+    iniciarCarrosselCategorias();
 
     /* ==================================================
     ================= FAQ ===============================
@@ -440,7 +511,6 @@ carregarLocaisPopulares();
     const closeLogin = document.getElementById("closeLogin");
 
     if (modal && closeLogin) {
-
         closeLogin.addEventListener("click", () => {
             modal.classList.remove("active");
         });
@@ -450,7 +520,6 @@ carregarLocaisPopulares();
                 modal.classList.add("active");
             }
             if (event.data === "LOGIN_SUCCESS") {
-                console.log("✅ Login realizado com sucesso");
                 modal.classList.remove("active");
                 location.reload();
             }
@@ -458,7 +527,6 @@ carregarLocaisPopulares();
     }
 
 });
-
 
 /* ==================================================
    MODAL LOGIN — FORA DO DOMCONTENTLOADED
@@ -474,7 +542,6 @@ if (loginModal && closeLogin) {
             loginModal.style.display = "flex";
         }
         if (event.data === "LOGIN_SUCCESS") {
-            console.log("✅ Login realizado com sucesso");
             loginModal.style.display = "none";
             location.reload();
         }

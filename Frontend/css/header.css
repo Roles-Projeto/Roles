@@ -114,7 +114,7 @@ header { margin: 0; padding: 0; z-index: 100; }
 .header-main .city-btn i { color: #6C1DCE; }
 
 /* ==================================================
-   DROPDOWN DE BUSCA — ESTILO INDEED
+   DROPDOWN DE BUSCA
 ================================================== */
 #search-suggestions {
     position: absolute;
@@ -122,15 +122,12 @@ header { margin: 0; padding: 0; z-index: 100; }
     left: 0;
     width: 100%;
     min-width: 360px;
-
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.13), 0 1px 4px rgba(0,0,0,0.08);
     border: 1px solid #ececec;
-
     z-index: 99999;
     overflow: hidden;
-
     opacity: 0;
     visibility: hidden;
     transform: translateY(-4px);
@@ -279,7 +276,6 @@ header { margin: 0; padding: 0; z-index: 100; }
     padding: 6px;
     border-radius: 50%;
     transition: background 0.12s, color 0.12s;
-    transform: rotate(0deg);
 }
 .sug-item:hover .sug-completar { color: #6C1DCE; background: #f0ebff; }
 
@@ -297,6 +293,75 @@ header { margin: 0; padding: 0; z-index: 100; }
 .sug-rodape:hover { background: #f7f4ff; }
 .sug-rodape i { color: #6C1DCE; font-size: 13px; }
 .sug-rodape strong { color: #1a1a1a; }
+
+/* ==================================================
+   DROPDOWN — BOTÃO VER MAIS
+   ✅ CORRIGIDO: espaçamento + cor + hover com seletor
+================================================== */
+.sug-ver-mais {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px 12px 20px;
+    border-top: 1px solid #f0f0f0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Inter', 'Poppins', sans-serif;
+    transition: background 0.15s ease, border-left 0.15s ease, padding 0.15s ease;
+}
+
+.sug-ver-mais i:first-child {
+    color: #4f46e5;
+    font-size: 13px;
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+    margin-right: 8px;
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.sug-ver-mais span {
+    flex: 1;
+    color: #4f46e5;
+    font-weight: 400;
+    font-family: 'Inter', 'Poppins', sans-serif;
+    letter-spacing: 0.01em;
+    transition: color 0.15s ease, font-weight 0.15s ease;
+}
+
+.sug-ver-mais span strong {
+    color: #3730a3;
+    font-weight: 600;
+}
+
+.sug-chevron {
+    font-size: 11px;
+    color: #a5b4fc;
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+
+/* ✅ HOVER — seletor visual completo */
+.sug-ver-mais:hover {
+    background: #ede9fe;
+    border-left: 3px solid #4f46e5;
+    padding-left: 17px;
+}
+
+.sug-ver-mais:hover i:first-child {
+    color: #3730a3;
+    transform: scale(1.15);
+}
+
+.sug-ver-mais:hover span {
+    color: #3730a3;
+    font-weight: 500;
+}
+
+.sug-ver-mais:hover .sug-chevron {
+    color: #4f46e5;
+    transform: translateX(3px);
+}
 
 /* ==================================================
    RIGHT SECTION
@@ -486,14 +551,14 @@ header { margin: 0; padding: 0; z-index: 100; }
 }
 
 /* ==================================================
-   BOTÃO LUPA MOBILE — escondido no desktop
+   BOTÃO LUPA MOBILE
 ================================================== */
 .header-main .search-toggle-btn {
     display: none;
 }
 
 /* ==================================================
-   BARRA DE BUSCA MOBILE — escondida no desktop
+   BARRA DE BUSCA MOBILE
 ================================================== */
 .header-main .search-bar-mobile {
     display: none;
@@ -504,35 +569,29 @@ header { margin: 0; padding: 0; z-index: 100; }
 ================================================== */
 @media (max-width: 768px) {
 
-    /* Navbar mais compacta */
     .header-main .navbar {
         padding: 0 16px;
         height: 56px;
         gap: 10px;
     }
 
-    /* Logo menor */
     .header-main .logo a {
         font-size: 1.6em;
         margin-right: 0;
     }
 
-    /* Esconde a barra de busca desktop */
     .header-main .search-bar {
         display: none;
     }
 
-    /* Esconde "Criar evento" e "Meus ingressos" */
     .header-main .event-actions {
         display: none;
     }
 
-    /* Right section mais compacta */
     .header-main .right-section {
         gap: 8px;
     }
 
-    /* Botão lupa aparece no mobile */
     .header-main .search-toggle-btn {
         display: flex;
         align-items: center;
@@ -558,7 +617,6 @@ header { margin: 0; padding: 0; z-index: 100; }
         color: #6C1DCE;
     }
 
-    /* Barra de busca mobile — aparece abaixo do navbar ao clicar na lupa */
     .header-main .search-bar-mobile {
         display: flex;
         align-items: center;
@@ -612,7 +670,6 @@ header { margin: 0; padding: 0; z-index: 100; }
         font-size: 10px;
     }
 
-    /* Card de cidade responsivo */
     .city-card {
         width: 90vw;
         max-width: 400px;

@@ -1241,7 +1241,7 @@ function removeFavoritoLocal(id, btn) {
         set.delete(id);
         localStorage.setItem('roles_favoritos', JSON.stringify([...set]));
     } catch (_) {}
-    const item = btn.closest('.list-item');
+    const item = btn.closest('.fav-event-card');
     item.style.transition = 'opacity .3s, transform .3s';
     item.style.opacity = '0'; item.style.transform = 'translateX(20px)';
     setTimeout(() => {

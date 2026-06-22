@@ -263,10 +263,8 @@ confirmarBtn.addEventListener("click", async () => {
     }
 
     const toISO = (date, time) => {
-        const d = new Date(`${date}T${time}:00`);
-        d.setHours(d.getHours() + 3);
-        return d.toISOString().slice(0, 19).replace("T", " ");
-    };
+    return `${date} ${time}:00`;
+};
 
     const evento = {
         nome:          document.getElementById("event-name")?.value?.trim(),

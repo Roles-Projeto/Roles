@@ -8,11 +8,12 @@ const router = express.Router();
 const authAdmin = require("../middleware/authAdmin");
 const connection = require("../db/db_config");
 const nodemailer = require("nodemailer");
+const { wrapEmail, logoAttachment } = require("../services/emailTemplate");
 
 // ── Transporter (mesmo do contato.js) ───────────────
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-  family: 4,
+    family: 4,
     port: 587,
     secure: false,
     auth: {
@@ -309,30 +310,24 @@ router.post("/mensagens/:id/responder", authAdmin, async (req, res) => {
                             from: `"Rolês Suporte" <${process.env.EMAIL_USER}>`,
                             to: contato.email,
                             subject: `Re: [Protocolo #${req.params.id}] ${contato.assunto}`,
-                            html: `
-                                <div style="font-family:sans-serif;max-width:560px;margin:0 auto;border:1px solid #e2e2e2;border-radius:10px;overflow:hidden;">
-                                    <div style="background:#0c0c1d;padding:20px 28px;">
-                                        <h2 style="color:#fff;margin:0;font-size:18px;">Rolês Suporte</h2>
-                                    </div>
-                                    <div style="padding:24px 28px;">
-                                        <p style="font-size:15px;margin:0 0 12px;">Olá, <strong>${contato.nome}</strong>!</p>
-                                        <p style="font-size:14px;color:#555;margin:0 0 16px;">Respondemos à sua mensagem sobre <strong>${contato.assunto}</strong>:</p>
-                                        <div style="background:#f8f8f8;padding:16px;border-radius:8px;font-size:14px;line-height:1.65;color:#333;">
-                                            ${resposta.trim().replace(/\n/g, "<br>")}
-                                        </div>
-                                        <hr style="border:none;border-top:1px solid #f0f0f0;margin:20px 0 14px;">
-                                        <p style="font-size:12px;color:#aaa;margin:0;">Sua mensagem original:</p>
-                                        <p style="font-size:13px;color:#999;padding:10px 14px;border-left:3px solid #ddd;margin:8px 0 0;line-height:1.6;">
-                                            ${contato.mensagem.replace(/\n/g, "<br>")}
-                                        </p>
-                                    </div>
-                                    <div style="background:#fafafa;padding:12px 28px;border-top:1px solid #f0f0f0;">
-                                        <p style="margin:0;font-size:11px;color:#bbb;">
-  Protocolo #${contato.id} — NÃO RESPONDER fora do sistema
-</p>
-                                    </div>
-                                </div>
-                            `,
+                            html: wrapEmail(`
+      <tr><td style="padding:40px;">
+        <h2 style="color:#1a1a2e;margin:0 0 12px;font-size:22px;">Resposta ao seu contato</h2>
+        <p style="color:#333;font-size:15px;margin:0 0 8px;">Olá, <strong>${contato.nome}</strong>!</p>
+        <p style="color:#555;font-size:14px;margin:0 0 20px;line-height:1.6;">
+          Respondemos à sua mensagem sobre <strong>${contato.assunto}</strong>:
+        </p>
+        <div style="background:#f5f0ff;border-left:4px solid #6c2bd9;border-radius:8px;padding:20px;margin-bottom:24px;font-size:14px;color:#333;line-height:1.7;">
+          ${resposta.trim().replace(/\n/g, "<br>")}
+        </div>
+        <p style="color:#999;font-size:12px;margin:0;">Mensagem original:</p>
+        <div style="background:#fafafa;border-left:3px solid #ddd;padding:12px 16px;margin-top:8px;font-size:13px;color:#999;line-height:1.6;">
+          ${contato.mensagem.replace(/\n/g, "<br>")}
+        </div>
+        <p style="color:#bbb;font-size:11px;margin-top:20px;">Protocolo #${contato.id}</p>
+      </td></tr>
+    `),
+                            attachments: [logoAttachment]
                         });
                         res.json({ mensagem: "Resposta enviada com sucesso!" });
                     } catch (mailErr) {
@@ -411,7 +406,7 @@ router.delete("/avaliacoes/:id", authAdmin, (req, res) => {
                             connection.query(
                                 "UPDATE estabelecimentos SET nota = ?, avaliacoes = ? WHERE id = ?",
                                 [parseFloat(r[0].media || 0).toFixed(1), r[0].total, estId],
-                                () => {}
+                                () => { }
                             );
                         }
                         res.json({ mensagem: "Avaliação deletada com sucesso." });

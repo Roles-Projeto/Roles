@@ -42,8 +42,8 @@ function inicializarLogicaSelecao() {
 
             // Atualiza ingresso selecionado no estado global
             if (window._eventoAtual) {
-                window._eventoAtual.ingressoNome     = nomeIngresso;
-                window._eventoAtual.ingressoPreco    = precoNumerico;
+                window._eventoAtual.ingressoNome = nomeIngresso;
+                window._eventoAtual.ingressoPreco = precoNumerico;
                 window._eventoAtual.tipo_ingresso_id = opcaoPai.dataset.id || window._eventoAtual.tipo_ingresso_id;
                 localStorage.setItem('eventoSelecionado', JSON.stringify(window._eventoAtual));
             }
@@ -83,10 +83,14 @@ async function carregarDetalhesEvento() {
         document.querySelector('.titulo-evento').textContent = evento.nome;
 
         const dataFormatada = evento.data_inicio
-            ? new Date(evento.data_inicio).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
+            ? (() => {
+                const [ano, mes, dia] = evento.data_inicio.substring(0, 10).split('-');
+                const d = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+                return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
+            })()
             : '-';
         const horaFormatada = evento.data_inicio
-            ? new Date(evento.data_inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+            ? evento.data_inicio.substring(11, 16)
             : '-';
 
         document.querySelector('.data-hora-cabecalho').innerHTML =
@@ -165,14 +169,14 @@ async function carregarDetalhesEvento() {
                 document.querySelector('.ingresso-resumo').textContent = ingresso.titulo;
                 atualizarBotaoDeCompra(preco, precoFormatado);
                 window._eventoAtual = {
-                    nome:             evento.nome,
-                    data:             dataFormatada,
-                    hora:             horaFormatada,
-                    local:            evento.local_nome || '',
-                    imagem:           evento.imagem || '',
-                    ingressoNome:     ingresso.titulo,
-                    ingressoPreco:    preco,
-                    evento_id:        evento.id,       // ← ID do evento
+                    nome: evento.nome,
+                    data: dataFormatada,
+                    hora: horaFormatada,
+                    local: evento.local_nome || '',
+                    imagem: evento.imagem || '',
+                    ingressoNome: ingresso.titulo,
+                    ingressoPreco: preco,
+                    evento_id: evento.id,       // ← ID do evento
                     tipo_ingresso_id: ingresso.id      // ← ID do tipo de ingresso
                 };
                 localStorage.setItem('eventoSelecionado', JSON.stringify(window._eventoAtual));
@@ -202,9 +206,9 @@ function realizarAcaoComprar() {
 
     const dadosParaCheckout = {
         ...(window._eventoAtual || {}),
-        ingressoNome:     nomeIngresso,
-        ingressoPreco:    precoNumerico,
-        evento_id:        window._eventoAtual?.evento_id,
+        ingressoNome: nomeIngresso,
+        ingressoPreco: precoNumerico,
+        evento_id: window._eventoAtual?.evento_id,
         tipo_ingresso_id: opcaoPai?.dataset?.id || window._eventoAtual?.tipo_ingresso_id
     };
 
@@ -229,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     inicializarAcaoBotaoComprar();
 
     // ── Avaliações ──
-    const params  = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(window.location.search);
     const eventId = params.get('id');
     if (eventId) await carregarAvaliacoesEvento(eventId);
     setupStarSelectorEvento();
@@ -247,19 +251,19 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (userId && window._eventoAtual) {
         const e = window._eventoAtual;
         fetch(`${API_BASE}/visitas`, {
-            method:  'POST',
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({
-                usuarioId:   userId,
-                nome:        e.nome || 'Evento',
-                nome_local:  e.local || '',
+            body: JSON.stringify({
+                usuarioId: userId,
+                nome: e.nome || 'Evento',
+                nome_local: e.local || '',
                 data_visita: new Date().toISOString().split('T')[0],
-                tipo:        'evento',
-                item_id:     e.evento_id || 0,
-                imagem:      e.imagem || '',
-                url:         window.location.href
+                tipo: 'evento',
+                item_id: e.evento_id || 0,
+                imagem: e.imagem || '',
+                url: window.location.href
             })
-        }).catch(() => {});
+        }).catch(() => { });
     }
 });
 
@@ -274,15 +278,15 @@ function setupStarSelectorEvento() {
 
     function pintar(ate) {
         stars.forEach((s, i) => {
-            s.textContent  = i < ate ? '★' : '☆';
-            s.style.color  = i < ate ? '#f59e0b' : '#d1d5db';
+            s.textContent = i < ate ? '★' : '☆';
+            s.style.color = i < ate ? '#f59e0b' : '#d1d5db';
         });
     }
 
     stars.forEach(s => {
         s.addEventListener('mouseenter', () => pintar(+s.dataset.val));
         s.addEventListener('mouseleave', () => pintar(_notaEvento));
-        s.addEventListener('click',      () => { _notaEvento = +s.dataset.val; pintar(_notaEvento); });
+        s.addEventListener('click', () => { _notaEvento = +s.dataset.val; pintar(_notaEvento); });
     });
 }
 
@@ -298,7 +302,7 @@ async function carregarAvaliacoesEvento(eventoId) {
     container.innerHTML = '<p style="color:#999;font-size:13px;">Carregando avaliações...</p>';
 
     try {
-        const res   = await fetch(`${API_BASE}/avaliacoes?evento_id=${eventoId}`);
+        const res = await fetch(`${API_BASE}/avaliacoes?evento_id=${eventoId}`);
         const lista = await res.json();
 
         container.innerHTML = '';
@@ -314,12 +318,12 @@ async function carregarAvaliacoesEvento(eventoId) {
         if (avgEl) avgEl.textContent = `${media} (${total} avaliação${total !== 1 ? 'ões' : ''})`;
 
         lista.forEach(r => {
-            const nome    = r.nome_autor || 'Anônimo';
-            const data    = r.created_at
+            const nome = r.nome_autor || 'Anônimo';
+            const data = r.created_at
                 ? new Date(r.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
                 : '';
-            const cores   = ['#6c63ff','#e63946','#2a9d8f','#e9c46a','#f4a261','#264653'];
-            const cor     = cores[(nome.charCodeAt(0) || 0) % cores.length];
+            const cores = ['#6c63ff', '#e63946', '#2a9d8f', '#e9c46a', '#f4a261', '#264653'];
+            const cor = cores[(nome.charCodeAt(0) || 0) % cores.length];
             const inicial = nome[0].toUpperCase();
 
             const div = document.createElement('div');
@@ -348,18 +352,18 @@ async function carregarAvaliacoesEvento(eventoId) {
 async function enviarAvaliacaoEvento() {
     if (_notaEvento === 0) { alert('Selecione pelo menos 1 estrela.'); return; }
 
-    const params   = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(window.location.search);
     const eventoId = params.get('id');
-    const nome     = document.getElementById('review-name-evento')?.value.trim()
-                     || localStorage.getItem('profileName')
-                     || 'Anônimo';
-    const texto    = document.getElementById('review-text-evento')?.value.trim() || '';
+    const nome = document.getElementById('review-name-evento')?.value.trim()
+        || localStorage.getItem('profileName')
+        || 'Anônimo';
+    const texto = document.getElementById('review-text-evento')?.value.trim() || '';
 
     try {
         const res = await fetch(`${API_BASE}/avaliacoes`, {
-            method:  'POST',
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ evento_id: eventoId, nota: _notaEvento, comentario: texto, nome_autor: nome })
+            body: JSON.stringify({ evento_id: eventoId, nota: _notaEvento, comentario: texto, nome_autor: nome })
         });
         if (!res.ok) throw new Error('Erro ao enviar');
 

@@ -8,12 +8,14 @@ const nodemailer = require("nodemailer");
 /* ════════════════════════════════════════
    CONSTANTES DE LIMITE DE TENTATIVAS
 ════════════════════════════════════════ */
-const MAX_TENTATIVAS = 4;   // bloqueia na 4ª tentativa errada
-const BLOQUEIO_MINUTOS = 15;  // tempo de bloqueio em minutos
+const MAX_TENTATIVAS = 4;
+const BLOQUEIO_MINUTOS = 15;
 
 /* ════════════════════════════════════════
    EMAIL
 ════════════════════════════════════════ */
+const { wrapEmail, logoAttachment } = require("../services/emailTemplate");
+
 async function enviarEmail(para, assunto, html) {
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     const transporter = nodemailer.createTransport({
@@ -23,7 +25,10 @@ async function enviarEmail(para, assunto, html) {
     });
     await transporter.sendMail({
       from: `"Rolês" <${process.env.EMAIL_USER}>`,
-      to: para, subject: assunto, html,
+      to: para,
+      subject: assunto,
+      html,
+      attachments: [logoAttachment]
     });
   }
 }
@@ -71,7 +76,6 @@ exports.loginUsuario = async (req, res) => {
     return res.status(400).json({ erro: "Preencha email e senha." });
 
   try {
-    // ── 1. Busca o usuário ─────────────────────────────
     const results = await db.query(
       "SELECT * FROM usuarios WHERE email = ?", [email]
     );
@@ -80,7 +84,6 @@ exports.loginUsuario = async (req, res) => {
 
     const usuario = results[0];
 
-    // ── 2. Verifica se está bloqueado ──────────────────
     if (usuario.bloqueado_ate && new Date(usuario.bloqueado_ate + 'Z') > new Date()) {
       const minutosRestantes = Math.ceil(
         (new Date(usuario.bloqueado_ate) - new Date()) / 60000
@@ -94,13 +97,11 @@ exports.loginUsuario = async (req, res) => {
       });
     }
 
-    // ── 3. Conta não verificada ────────────────────────
     if (!usuario.verificado)
       return res.status(403).json({
         erro: "Conta não verificada. Verifique o código enviado por email.",
       });
 
-    // ── 4. Verifica a senha ────────────────────────────
     const senhaValida = await bcrypt.compare(senha, usuario.senha);
 
     if (!senhaValida) {
@@ -108,41 +109,36 @@ exports.loginUsuario = async (req, res) => {
       const restantes = MAX_TENTATIVAS - novasTentativas;
 
       if (novasTentativas >= MAX_TENTATIVAS) {
-        // ── Bloqueia por 30 minutos ──
         await db.query(
           `UPDATE usuarios
-   SET tentativas_login = ?, bloqueado_ate = DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? MINUTE),
-       ultima_tentativa = UTC_TIMESTAMP()
-   WHERE id = ?`,
+           SET tentativas_login = ?, bloqueado_ate = DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? MINUTE),
+               ultima_tentativa = UTC_TIMESTAMP()
+           WHERE id = ?`,
           [novasTentativas, BLOQUEIO_MINUTOS, usuario.id]
         );
-        // ── Envia e-mail de aviso ──
+
         enviarEmail(
-          email,
-          "Conta bloqueada por tentativas incorretas — Rolês",
-          `
-          <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;
-                      padding:32px;background:#f9f9f9;border-radius:12px;">
-            <h2 style="color:#e53e3e;">⚠️ Conta bloqueada temporariamente</h2>
-            <p>Olá, <strong>${usuario.nome_completo}</strong>!</p>
-            <p>Detectamos <strong>${MAX_TENTATIVAS} tentativas incorretas</strong>
-               de acesso à sua conta.</p>
-            <div style="background:#fff;border-radius:8px;padding:16px;
-                        margin:16px 0;border-left:4px solid #e53e3e;">
-              <p><strong>Conta bloqueada por:</strong> ${BLOQUEIO_MINUTOS} minutos</p>
-              <p><strong>Data/Hora:</strong> ${new Date().toLocaleString("pt-BR",
-            { timeZone: "America/Sao_Paulo" })}</p>
-            </div>
-            <p>Se foi você, aguarde ${BLOQUEIO_MINUTOS} minutos e tente novamente,
-               ou <a href="${process.env.FRONTEND_URL}/recuperar-senha"
-               style="color:#6c3dff;">redefina sua senha</a>.</p>
-            <p>Se <strong>não foi você</strong>, entre em contato com nosso
-               <a href="${process.env.FRONTEND_URL}/contato" style="color:#6c3dff;">
-               suporte</a> imediatamente.</p>
-            <p style="color:#999;font-size:12px;margin-top:24px;">
-              Rolês — Sua plataforma de eventos</p>
-          </div>
-          `
+          usuario.email,
+          "⚠️ Conta bloqueada temporariamente — Rolês",
+          wrapEmail(`
+  <tr><td style="padding:40px;text-align:center;">
+    <h2 style="color:#e53e3e;margin:0 0 12px;font-size:22px;">⚠️ Conta bloqueada temporariamente</h2>
+    <p style="color:#333;font-size:15px;margin:0 0 12px;">Olá, <strong>${usuario.nome_completo}</strong>!</p>
+    <p style="color:#555;font-size:14px;margin:0 0 20px;line-height:1.6;">
+      Detectamos <strong>${MAX_TENTATIVAS} tentativas incorretas</strong> de acesso à sua conta.
+    </p>
+    <div style="background:#fff5f5;border:2px solid #e53e3e;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0 0 8px;font-size:14px;color:#555;"><strong>Bloqueada por:</strong> ${BLOQUEIO_MINUTOS} minutos</p>
+      <p style="margin:0;font-size:14px;color:#555;"><strong>Data/Hora:</strong> ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</p>
+    </div>
+    <p style="color:#555;font-size:14px;margin:0 0 20px;">Se foi você, aguarde ${BLOQUEIO_MINUTOS} minutos e tente novamente.</p>
+    <a href="${process.env.FRONTEND_URL || 'http://localhost:5502/frontend'}/recuperar-senha/recuperar-senha.html"
+       style="display:inline-block;background:#6c2bd9;color:#fff;padding:12px 28px;
+              border-radius:8px;text-decoration:none;font-weight:600;margin-top:12px;">
+      Redefinir senha
+    </a>
+  </td></tr>
+`)
         ).catch(() => { });
 
         return res.status(429).json({
@@ -154,11 +150,10 @@ exports.loginUsuario = async (req, res) => {
         });
       }
 
-      // ── Ainda tem tentativas ──
       await db.query(
         `UPDATE usuarios
-   SET tentativas_login = ?, ultima_tentativa = UTC_TIMESTAMP()
-   WHERE id = ?`,
+         SET tentativas_login = ?, ultima_tentativa = UTC_TIMESTAMP()
+         WHERE id = ?`,
         [novasTentativas, usuario.id]
       );
 
@@ -169,7 +164,7 @@ exports.loginUsuario = async (req, res) => {
       });
     }
 
-    // ── 5. Login bem-sucedido — reseta tentativas ──────
+    // ── Login bem-sucedido — reseta tentativas ──────
     await db.query(
       `UPDATE usuarios
        SET tentativas_login = 0, bloqueado_ate = NULL, ultima_tentativa = NULL
@@ -183,20 +178,17 @@ exports.loginUsuario = async (req, res) => {
       { expiresIn: "2h" }
     );
 
-    // ── Dados do dispositivo ───────────────────────────
     const ua = req.headers["user-agent"] || "";
     const ip = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "—";
     const navegador = detectarNavegador(ua);
     const dispositivo = detectarDispositivo(ua);
     const dispositivoStr = `${navegador} — ${dispositivo}`;
 
-    // ── Salva no histórico ─────────────────────────────
     await db.query(
       "INSERT INTO login_historico (usuario_id, ip, dispositivo, navegador) VALUES (?, ?, ?, ?)",
       [usuario.id, ip, dispositivoStr, navegador]
     ).catch(() => { });
 
-    // ── Verifica se é dispositivo novo ─────────────────
     const historicoAnterior = await db.query(
       `SELECT id FROM login_historico
        WHERE usuario_id = ? AND dispositivo = ?
@@ -207,35 +199,40 @@ exports.loginUsuario = async (req, res) => {
     const isNovoDispositivo =
       Array.isArray(historicoAnterior) && historicoAnterior.length === 1;
 
-    // ── Alerta de dispositivo novo ─────────────────────
     const alertaAtivo = usuario.alerta_novo_dispositivo !== 0;
 
     if (isNovoDispositivo && usuario.email && alertaAtivo) {
       const agora = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
       enviarEmail(
         usuario.email,
-        "Novo acesso a sua conta Roles",
-        `
-        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;
-                    padding:32px;background:#f9f9f9;border-radius:12px;">
-          <h2 style="color:#6c3dff;">Novo dispositivo detectado</h2>
-          <p>Olá, <strong>${usuario.nome_completo}</strong>!</p>
-          <p>Detectamos um acesso à sua conta a partir de um novo dispositivo:</p>
-          <div style="background:#fff;border-radius:8px;padding:16px;
-                      margin:16px 0;border-left:4px solid #6c3dff;">
-            <p><strong>Dispositivo:</strong> ${dispositivoStr}</p>
-            <p><strong>IP:</strong> ${ip}</p>
-            <p><strong>Data/Hora:</strong> ${agora}</p>
-          </div>
-          <p>Se foi você, pode ignorar este e-mail.</p>
-          <p>Se não foi você, acesse sua conta e altere sua senha imediatamente.</p>
-          <p style="color:#999;font-size:12px;margin-top:24px;">
-            Rolês — Sua plataforma de eventos</p>
-        </div>
-        `
+        "Novo acesso à sua conta Rolês",
+        wrapEmail(`
+  <tr><td style="padding:40px;text-align:center;">
+    <h2 style="color:#1a1a2e;margin:0 0 12px;font-size:22px;">Novo dispositivo detectado</h2>
+    <p style="color:#333;font-size:15px;margin:0 0 12px;">Olá, <strong>${usuario.nome_completo}</strong>!</p>
+    <p style="color:#555;font-size:14px;margin:0 0 20px;line-height:1.6;">
+      Detectamos um acesso à sua conta a partir de um novo dispositivo.
+    </p>
+    <div style="background:#f5f0ff;border-left:4px solid #6c2bd9;border-radius:8px;padding:20px;margin-bottom:24px;text-align:left;">
+      <p style="margin:0 0 8px;font-size:14px;color:#555;"><strong>Dispositivo:</strong> ${dispositivoStr}</p>
+      <p style="margin:0 0 8px;font-size:14px;color:#555;"><strong>IP:</strong> ${ip}</p>
+      <p style="margin:0;font-size:14px;color:#555;"><strong>Data/Hora:</strong> ${agora}</p>
+    </div>
+    <p style="color:#555;font-size:14px;margin:0 0 20px;">Se foi você, pode ignorar este e-mail.</p>
+    <p style="color:#e53e3e;font-size:14px;font-weight:600;margin:0 0 20px;">
+      Se não foi você, altere sua senha imediatamente!
+    </p>
+    <a href="${process.env.FRONTEND_URL || 'http://localhost:5502/frontend'}/recuperar-senha/recuperar-senha.html"
+       style="display:inline-block;background:#6c2bd9;color:#fff;padding:12px 28px;
+              border-radius:8px;text-decoration:none;font-weight:600;">
+      Alterar minha senha
+    </a>
+  </td></tr>
+`)
       ).catch(() => { });
     }
 
+    // ── Resposta final ──────────────────────────────
     res.json({
       mensagem: "Login realizado com sucesso!",
       token,

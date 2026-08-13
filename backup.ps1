@@ -1,6 +1,6 @@
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-$SUPABASE_URL = "postgresql://postgres.vdbwazvaxgvsgpkzyoxo:Roles38225544@aws-1-us-west-2.pooler.supabase.com:6543/postgres"
+$SUPABASE_URL = "postgresql://postgres.owrmeedrahminxumrshp:Roles26242528@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
 
 # 1. BACKUP MYSQL
 docker exec roles_mysql sh -c "mysqldump --default-character-set=utf8mb4 -u root -p265 roles_db" |

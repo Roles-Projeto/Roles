@@ -1,6 +1,14 @@
 require("dotenv").config();
 
-const { Pool } = require("pg");
+const { Pool, types } = require("pg");
+
+// Faz o driver devolver timestamp/date/timestamptz como texto puro,
+// em vez de converter automaticamente pra objeto Date do JS.
+// Isso evita bugs de fuso horário e "Invalid Date" no frontend,
+// preservando o mesmo comportamento que o mysql2 tinha antes.
+types.setTypeParser(1114, (val) => val); // timestamp without time zone
+types.setTypeParser(1082, (val) => val); // date
+types.setTypeParser(1184, (val) => val); // timestamptz
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,

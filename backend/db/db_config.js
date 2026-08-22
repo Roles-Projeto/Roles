@@ -15,12 +15,30 @@ function converterParams(sql) {
   return sql.replace(/\?/g, () => `$${++i}`);
 }
 
-/* Converte funções de sintaxe MySQL usadas no código para o equivalente em Postgres */
+/* Converte funções e sintaxe MySQL usadas no código para o equivalente em Postgres.
+   Adicione novas conversões aqui conforme forem aparecendo erros — não precisa
+   editar os controllers individualmente. */
 function converterSQL(sql) {
   let result = sql
+    // DATE_ADD(base, INTERVAL ? UNIDADE) -> (base) + (? * INTERVAL '1 unidade')
+    .replace(/DATE_ADD\(([^,]+),\s*INTERVAL\s+\?\s+(\w+)\)/gi,
+      (_, base, unidade) => `(${base.trim()}) + (? * INTERVAL '1 ${unidade.toLowerCase()}')`)
+    // DATE_SUB(base, INTERVAL ? UNIDADE) -> (base) - (? * INTERVAL '1 unidade')
+    .replace(/DATE_SUB\(([^,]+),\s*INTERVAL\s+\?\s+(\w+)\)/gi,
+      (_, base, unidade) => `(${base.trim()}) - (? * INTERVAL '1 ${unidade.toLowerCase()}')`)
+    // UTC_TIMESTAMP() -> hora atual em UTC
+    .replace(/UTC_TIMESTAMP\(\)/gi, "(NOW() AT TIME ZONE 'UTC')")
+    // GROUP_CONCAT(campo SEPARATOR 'x') -> STRING_AGG(campo, 'x')
     .replace(/GROUP_CONCAT\((.+?)\s+SEPARATOR\s+'(.+?)'\)/gi, "STRING_AGG($1, '$2')")
     .replace(/GROUP_CONCAT\((.+?)\)/gi, "STRING_AGG($1, ',')")
-    .replace(/IFNULL\(/gi, "COALESCE(");
+    // IFNULL(a, b) -> COALESCE(a, b)
+    .replace(/IFNULL\(/gi, "COALESCE(")
+    // INT AUTO_INCREMENT (em CREATE TABLE) -> SERIAL
+    .replace(/INT\s+AUTO_INCREMENT/gi, "SERIAL")
+    // CURDATE() -> data atual
+    .replace(/CURDATE\(\)/gi, "CURRENT_DATE")
+    // CURTIME() -> hora atual
+    .replace(/CURTIME\(\)/gi, "CURRENT_TIME");
 
   // Adiciona RETURNING id em INSERTs automaticamente, se ainda não tiver
   if (/^\s*INSERT\s+/i.test(result) && !/RETURNING/i.test(result)) {

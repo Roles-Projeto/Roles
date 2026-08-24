@@ -10,6 +10,7 @@ const nextBtn = document.getElementById("nextBtn");
 const prevBtn = document.getElementById("prevBtn");
 const progressBar = document.getElementById("progress-bar");
 const stepIndicator = document.getElementById("step-indicator");
+const stepLabels = document.querySelectorAll(".step-label");
 
 const modal = document.getElementById("modalConfirmacao");
 const resumoEvento = document.getElementById("resumoEvento");
@@ -24,12 +25,10 @@ let currentStep = 0;
 function showStep(index) {
     steps.forEach((step, i) => { step.style.display = i === index ? "block" : "none"; });
     prevBtn.style.display = index === 0 ? "none" : "inline-block";
-    if (index > 0) prevBtn.innerHTML = '<img src="/frontend/imagens/seta-direita.png" style="transform:scaleX(-1);width:40px;">';
-    if (index === steps.length - 1) {
-        nextBtn.textContent = "Publicar Evento"; nextBtn.className = "btn-primary"; nextBtn.style.padding = "12px 28px";
-    } else {
-        nextBtn.innerHTML = '<img src="/frontend/imagens/seta-direita.png" style="width:40px;">'; nextBtn.className = "btn-success"; nextBtn.style.padding = "";
-    }
+    prevBtn.textContent = "Voltar";
+    prevBtn.className = "btn-primary";
+    nextBtn.textContent = index === steps.length - 1 ? "Publicar Evento" : "Próximo";
+    nextBtn.className = "btn-primary";
     atualizarProgresso();
 }
 
@@ -40,6 +39,13 @@ function atualizarProgresso() {
     const total = steps.length;
     progressBar.style.width = ((currentStep + 1) / total * 100) + "%";
     stepIndicator.textContent = `Etapa ${currentStep + 1} de ${total}`;
+
+    stepLabels.forEach(label => {
+        const labelStep = parseInt(label.dataset.step, 10);
+        label.classList.remove("active", "completed");
+        if (labelStep === currentStep) label.classList.add("active");
+        else if (labelStep < currentStep) label.classList.add("completed");
+    });
 }
 
 // ====================================================
@@ -60,27 +66,25 @@ function alerta(msg, el) { if (el) el.focus(); alert(msg); }
 // ====================================================
 function validarEtapa(index) {
 
-    // ── Etapa 1: Informações básicas ──────────────────
-    // Obrigatórios: nome, assunto
+    // ── Etapa 1: O Evento ─────────────────────────────
+    // Obrigatórios: nome, assunto, imagem de divulgação, descrição
     // Opcional: categoria
     if (index === 0) {
         const nome = document.getElementById("event-name");
         const assunto = document.getElementById("assunto");
         if (!nome?.value?.trim()) { marcarErro(nome); alerta("Informe o nome do evento.", nome); return false; }
         if (!assunto?.value) { marcarErro(assunto); alerta("Selecione um assunto para o evento.", assunto); return false; }
-        return true;
-    }
 
-    // ── Etapa 2: Imagem ───────────────────────────────
-    // Obrigatório: imagem de divulgação
-    if (index === 1) {
         if (!imagemEvento) { alert("Adicione uma imagem de divulgação para o evento."); return false; }
+        const descricao = document.getElementById("descricao");
+        if (!descricao?.value?.trim()) { marcarErro(descricao); alerta("Adicione uma descrição para o evento.", descricao); return false; }
         return true;
     }
 
-    // ── Etapa 3: Data e horário ───────────────────────
-    // Todos obrigatórios
-    if (index === 2) {
+    // ── Etapa 2: Onde e Quando ─────────────────────────
+    // Data/horário: todos obrigatórios
+    // Localização: nome do local, CEP, rua, cidade, estado
+    if (index === 1) {
         const dataInicio = document.getElementById("start-date");
         const horaInicio = document.getElementById("start-time");
         const dataFim = document.getElementById("end-date");
@@ -97,21 +101,7 @@ function validarEtapa(index) {
 
         if (inicio < agora) { marcarErro(dataInicio); marcarErro(horaInicio); alert("A data de início não pode ser no passado."); return false; }
         if (fim <= inicio) { marcarErro(dataFim); marcarErro(horaFim); alert("A data de término deve ser depois da data de início."); return false; }
-        return true;
-    }
 
-    // ── Etapa 4: Descrição ────────────────────────────
-    // Obrigatório: descrição
-    if (index === 3) {
-        const descricao = document.getElementById("descricao");
-        if (!descricao?.value?.trim()) { marcarErro(descricao); alerta("Adicione uma descrição para o evento.", descricao); return false; }
-        return true;
-    }
-
-    // ── Etapa 5: Local do evento ──────────────────────
-    // Obrigatórios: nome do local, CEP, rua, cidade, estado
-    // Opcional: —
-    if (index === 4) {
         const localNome = document.getElementById("local-nome");
         const cep = document.getElementById("cep");
         const rua = document.getElementById("rua");
@@ -126,19 +116,15 @@ function validarEtapa(index) {
         return true;
     }
 
-    // ── Etapa 6: Ingressos ────────────────────────────
-    // Obrigatório: ao menos 1 ingresso criado
-    if (index === 5) {
+    // ── Etapa 3: Ingressos e Publicação ───────────────
+    // Ingressos: ao menos 1 ingresso criado
+    // Publicação: nome do produtor, termos
+    if (index === 2) {
         if (listaIngressos.length === 0) {
             alert("Adicione ao menos um ingresso (pago ou gratuito) antes de continuar.");
             return false;
         }
-        return true;
-    }
 
-    // ── Etapa 7: Publicação ───────────────────────────
-    // Obrigatórios: nome do produtor, termos
-    if (index === 6) {
         const produtor = document.getElementById("producer-name");
         const termos = document.getElementById("terms");
         if (!produtor?.value?.trim()) { marcarErro(produtor); alerta("Informe o nome do produtor.", produtor); return false; }

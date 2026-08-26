@@ -1,6 +1,15 @@
 "use strict";
 
 // ====================================================
+// CONFIG DA API
+// ====================================================
+
+const API_URL = window.API_BASE
+    || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3000'
+        : 'https://projeto-integrador-roles.onrender.com');
+
+// ====================================================
 // VARIÁVEIS GLOBAIS
 // ====================================================
 
@@ -336,6 +345,14 @@ cancelarBtn.addEventListener("click", () => {
 // ====================================================
 
 confirmarBtn.addEventListener("click", async () => {
+    // ── Verifica se o usuário está logado antes de publicar ──
+    const token = localStorage.getItem("token");
+    if (!token) {
+        alert("Você precisa estar logado para cadastrar um estabelecimento.");
+        window.location.href = "/frontend/login/login.html";
+        return;
+    }
+
     const nome        = document.getElementById("estab-name")?.value?.trim() || "";
     const tipo        = document.getElementById("tipo")?.value || "";
     const especialidade = document.getElementById("especialidade")?.value || "";
@@ -402,9 +419,12 @@ confirmarBtn.addEventListener("click", async () => {
         confirmarBtn.disabled     = true;
         confirmarBtn.textContent  = "Publicando...";
 
-        const res      = await fetch("http://127.0.0.1:3000/estabelecimentos", {
+        const res = await fetch(`${API_URL}/estabelecimentos`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
             body: JSON.stringify(body)
         });
         const resultado = await res.json();

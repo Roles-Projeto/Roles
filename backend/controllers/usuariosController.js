@@ -113,17 +113,26 @@ async function cadastrarUsuario(req, res) {
     console.log("🔥 CHEGOU NO CONTROLLER cadastrarUsuario");
 
     try {
-        const { nome_completo, email, telefone, senha } = req.body;
+        const { nome_completo, email, telefone, cpf, senha } = req.body;
 
-        if (!nome_completo || !email || !senha) {
+        if (!nome_completo || !email || !senha || !cpf) {
             return res.status(400).json({ erro: "Preencha todos os campos obrigatorios." });
         }
 
+        const cpfLimpo = cpf.replace(/\D/g, "");
+
+        // Verifica no banco se e-mail OU cpf já existem
         const existe = await connection.query(
-            "SELECT id FROM usuarios WHERE email = ?", [email]
+            "SELECT id, email, cpf FROM usuarios WHERE email = ? OR cpf = ?",
+            [email, cpfLimpo]
         );
+
         if (existe.length > 0) {
-            return res.status(400).json({ erro: "E-mail ja cadastrado!" });
+            const duplicado = existe[0];
+            if (duplicado.email === email) {
+                return res.status(400).json({ erro: "E-mail ja cadastrado!" });
+            }
+            return res.status(400).json({ erro: "CPF ja cadastrado!" });
         }
 
         const senhaHash = await bcrypt.hash(senha, 10);
@@ -133,9 +142,9 @@ async function cadastrarUsuario(req, res) {
         console.log("🔥 VAI INSERIR USUÁRIO...");
 
         const insert = await connection.query(
-            `INSERT INTO usuarios (nome_completo, email, telefone, senha, codigo_verificacao, verificado)
-             VALUES (?, ?, ?, ?, ?, 0)`,
-            [nome_completo, email, telefone || null, senhaHash, codigo]
+            `INSERT INTO usuarios (nome_completo, email, telefone, cpf, senha, codigo_verificacao, verificado)
+             VALUES (?, ?, ?, ?, ?, ?, 0)`,
+            [nome_completo, email, telefone || null, cpfLimpo, senhaHash, codigo]
         );
 
         console.log("✅ USUÁRIO INSERIDO COM SUCESSO");

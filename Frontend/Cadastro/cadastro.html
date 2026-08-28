@@ -6,7 +6,7 @@
     <title>Criar Conta - Rolês</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="/Frontend/css/footer.css">
     <link rel="stylesheet" href="/Frontend/css/login.css">
@@ -56,121 +56,137 @@
                     </div>
 
                     <!-- FORM -->
-                    <form id="cadastroForm" novalidate>
+                    <form id="cadastroForm" style="display:flex;flex-direction:column;gap:14px;">
 
-                      <div class="campo-form">
-                        <label for="nome">NOME COMPLETO</label>
-                        <div class="input-com-icone">
-                          <i class="icone-usuario"></i>
-                          <input type="text" id="nome" name="nome" placeholder="Seu nome completo" autocomplete="name" required minlength="3">
+                        <div class="field-group">
+                            <label>Nome Completo</label>
+                            <div class="input-wrap">
+                                <i class="fa-solid fa-user input-icon"></i>
+                                <input type="text" id="nome" placeholder="Seu nome completo" required>
+                            </div>
+                            <small id="erroNome" class="erro"></small>
                         </div>
-                        <span class="erro-campo" id="erroNome"></span>
-                      </div>
 
-                      <div class="campo-form">
-                        <label for="cpf">CPF</label>
-                        <div class="input-com-icone">
-                          <i class="icone-usuario"></i>
-                          <input type="text" id="cpf" name="cpf" placeholder="000.000.000-00" maxlength="14" autocomplete="off" required>
+                        <div class="field-group">
+                            <label>CPF</label>
+                            <div class="input-wrap">
+                                <i class="fa-solid fa-id-card input-icon"></i>
+                                <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" required>
+                            </div>
+                            <small id="erroCpf" class="erro"></small>
                         </div>
-                        <span class="erro-campo" id="erroCpf"></span>
-                      </div>
 
-                      <div class="campo-form">
-                        <label for="email">EMAIL</label>
-                        <div class="input-com-icone">
-                          <i class="icone-email"></i>
-                          <input type="email" id="email" name="email" placeholder="seu@email.com" autocomplete="email" required>
+                        <div class="field-group">
+                            <label>Email</label>
+                            <div class="input-wrap">
+                                <i class="fa-solid fa-envelope input-icon"></i>
+                                <input type="email" id="email" placeholder="seu@email.com" required>
+                            </div>
+                            <small id="erroEmail" class="erro"></small>
                         </div>
-                        <span class="erro-campo" id="erroEmail"></span>
-                      </div>
 
-                      <div class="campo-form">
-                        <label for="telefone">TELEFONE (OPCIONAL)</label>
-                        <div class="input-com-icone">
-                          <i class="icone-telefone"></i>
-                          <input type="tel" id="telefone" name="telefone" placeholder="(62) 9 9999-9999" autocomplete="tel">
+                        <div class="field-group">
+                            <label>Confirmar E-mail</label>
+                            <div class="input-wrap">
+                                <i class="fa-solid fa-envelope input-icon"></i>
+                                <input type="email" id="confirmarEmail" placeholder="seu@email.com" required>
+                            </div>
                         </div>
-                      </div>
 
-                      <div class="campo-form">
-                        <label for="senha">SENHA</label>
-                        <div class="input-com-icone">
-                          <i class="icone-senha"></i>
-                          <input type="password" id="senha" name="senha" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required minlength="8">
-                          <button type="button" class="icone-olho" id="toggleSenha" aria-label="Mostrar senha">
-                            <i class="fa-regular fa-eye" id="iconeSenha"></i>
-                          </button>
+                        <div class="field-group">
+                            <label>Telefone (opcional)</label>
+                            <div class="input-wrap">
+                                <i class="fa-solid fa-phone input-icon"></i>
+                                <input type="tel" id="telefone" placeholder="(62) 9 9999-9999">
+                            </div>
                         </div>
-                        <div class="forca-senha" id="forcaSenhaWrapper" style="opacity:0;">
-                          <div class="forca-segmentos">
-                            <span class="segmento" id="seg1"></span>
-                            <span class="segmento" id="seg2"></span>
-                            <span class="segmento" id="seg3"></span>
-                            <span class="segmento" id="seg4"></span>
-                          </div>
-                          <span class="forca-label" id="forcaLabel"></span>
+
+                        <div class="field-group">
+                            <label>Senha</label>
+                            <div class="input-wrap">
+                                <i class="fa-solid fa-lock input-icon"></i>
+                                <input type="password" id="senha" placeholder="Mínimo 8 caracteres" required minlength="8">
+                                <button type="button" class="btn-olho" id="toggleSenha">
+                                    <i class="fa-regular fa-eye" id="iconeSenha"></i>
+                                </button>
+                            </div>
+                            <small class="erro" id="dicaSenha" style="color: var(--text-muted); font-weight: 400;">
+                                Mínimo 8 caracteres, com 1 letra maiúscula, 1 número e 1 caractere especial (ex: @)
+                            </small>
+                            <div class="forca-senha-wrapper" id="forcaSenhaWrapper">
+                                <div class="forca-barra">
+                                    <span class="forca-segmento" id="seg1"></span>
+                                    <span class="forca-segmento" id="seg2"></span>
+                                    <span class="forca-segmento" id="seg3"></span>
+                                    <span class="forca-segmento" id="seg4"></span>
+                                </div>
+                                <span class="forca-label" id="forcaLabel"></span>
+                            </div>
+                            <small id="erroSenha" class="erro"></small>
                         </div>
-                        <span class="erro-campo" id="erroSenha"></span>
-                      </div>
 
-                      <div class="campo-form">
-                        <label for="confirmarSenha">CONFIRMAR SENHA</label>
-                        <div class="input-com-icone">
-                          <i class="icone-senha"></i>
-                          <input type="password" id="confirmarSenha" name="confirmarSenha" placeholder="Digite novamente sua senha" autocomplete="new-password" required>
-                          <button type="button" class="icone-olho" id="toggleConfirmar" aria-label="Mostrar senha">
-                            <i class="fa-regular fa-eye" id="iconeConfirmar"></i>
-                          </button>
+                        <div class="field-group">
+                            <label>Confirmar Senha</label>
+                            <div class="input-wrap">
+                                <i class="fa-solid fa-lock input-icon"></i>
+                                <input type="password" id="confirmarSenha" placeholder="Digite novamente sua senha" required>
+                                <button type="button" class="btn-olho" id="toggleConfirmar">
+                                    <i class="fa-regular fa-eye" id="iconeConfirmar"></i>
+                                </button>
+                            </div>
+                            <small id="erroConfirmar" class="erro"></small>
                         </div>
-                        <span class="erro-campo" id="erroConfirmar"></span>
-                      </div>
 
-                      <button type="submit" class="btn-criar-conta" id="btnCriar">
-                        <span id="btnCriarTexto">Criar Conta</span>
-                        <span id="btnCriarSpinner" class="spinner hidden"></span>
-                      </button>
-
-                      <p class="texto-login">Já tem uma conta? <a href="login.html">Fazer login</a></p>
-                      <p class="texto-termos">Ao criar uma conta, você concorda com nossos <a href="termos.html">Termos de Uso</a></p>
+                        <button type="submit" class="btn-entrar" id="btnCriar">
+                            <span id="btnCriarTexto">Criar Conta</span>
+                            <span id="btnCriarSpinner" class="spinner hidden"></span>
+                        </button>
 
                     </form>
 
-                    <!-- MODAL VERIFICAÇÃO -->
-                    <div id="modalCodigo" class="modal hidden">
-                        <div class="modal-card">
-                            <button class="fechar" onclick="fecharModal()">&#x2715;</button>
-                            <div class="icone-seguranca"><i class="fa-solid fa-shield-halved"></i></div>
-                            <h2>Verificação de Segurança</h2>
-                            <div id="escolhaMetodo">
-                                <p>Como deseja receber o código?</p>
-                                <button class="btn-opcao" id="btnEmail">📧 Receber por Email</button>
-                                <button class="btn-opcao" id="btnTelefone">📱 Receber por Telefone</button>
-                            </div>
-                            <div id="areaCodigo" style="display:none;">
-                                <p id="mensagemEnvio">Enviamos um código de verificação</p>
-                                <input type="text" id="codigo" placeholder="_ _ _ _ _ _" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
-                                <button id="btnVerificar" class="btn-verificar">
-                                    <span id="btnVerificarTexto">Verificar Código</span>
-                                    <span id="btnVerificarSpinner" class="spinner hidden"></span>
-                                </button>
-                                <p class="reenviar">
-                                    Não recebeu o código?
-                                    <button id="reenviarCodigo" class="btn-reenviar" disabled>Reenviar em <span id="timer">60</span>s</button>
-                                    <br><span id="outraForma">Tente outra forma</span>
-                                </p>
-                                <div id="areaTelefone" style="display:none;">
-                                    <input type="tel" id="telefoneAlternativo" placeholder="(62) 9 9999-9999">
-                                    <button id="btnEnviarTelefone" class="btn-verificar">Enviar por telefone</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <p class="register-link" style="margin-top:16px;">
+                        Já tem uma conta? <a href="/Frontend/login/login.html">Fazer login</a>
+                    </p>
+                    <p class="register-link" style="margin-top:8px;font-size:11px;">
+                        Ao criar uma conta, você concorda com nossos
+                        <a href="/frontend/termodeuso/termoDeUso.html">Termos de Uso</a>
+                    </p>
 
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- MODAL VERIFICAÇÃO -->
+    <div id="modalCodigo" class="modal hidden">
+        <div class="modal-card">
+            <button class="fechar" onclick="fecharModal()">&#x2715;</button>
+            <div class="icone-seguranca"><i class="fa-solid fa-shield-halved"></i></div>
+            <h2>Verificação de Segurança</h2>
+            <div id="escolhaMetodo">
+                <p>Como deseja receber o código?</p>
+                <button class="btn-opcao" id="btnEmail">📧 Receber por Email</button>
+                <button class="btn-opcao" id="btnTelefone">📱 Receber por Telefone</button>
+            </div>
+            <div id="areaCodigo" style="display:none;">
+                <p id="mensagemEnvio">Enviamos um código de verificação</p>
+                <input type="text" id="codigo" placeholder="_ _ _ _ _ _" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+                <button id="btnVerificar" class="btn-verificar">
+                    <span id="btnVerificarTexto">Verificar Código</span>
+                    <span id="btnVerificarSpinner" class="spinner hidden"></span>
+                </button>
+                <p class="reenviar">
+                    Não recebeu o código?
+                    <button id="reenviarCodigo" class="btn-reenviar" disabled>Reenviar em <span id="timer">60</span>s</button>
+                    <br><span id="outraForma">Tente outra forma</span>
+                </p>
+                <div id="areaTelefone" style="display:none;">
+                    <input type="tel" id="telefoneAlternativo" placeholder="(62) 9 9999-9999">
+                    <button id="btnEnviarTelefone" class="btn-verificar">Enviar por telefone</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="/Frontend/js/footer.js" defer></script>
     <script src="/Frontend/js/loadHeader.js"></script>

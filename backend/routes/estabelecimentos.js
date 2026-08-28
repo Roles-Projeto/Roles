@@ -3,6 +3,35 @@ const router = express.Router();
 const db = require("../db/db_config");
 const verificarToken = require("../middleware/auth");
 
+// ── Upload de imagens (Supabase Storage) ──
+const { usarSupabase, criarStorage, uploadParaSupabase } = require("../utils/supabaseUpload");
+
+const BUCKET_ESTABELECIMENTOS = "imagens-estabelecimentos";
+const upload = multerInstance();
+
+function multerInstance() {
+  const multer = require("multer");
+  return multer({ storage: criarStorage("uploads-estabelecimentos") });
+}
+
+// Rota de upload — devolve a URL pra ser usada em img_logo, img_capa ou fotos_galeria
+router.post("/upload-imagem", upload.single("imagem"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ erro: "Nenhuma imagem enviada" });
+
+  // Modo local: multer já salvou o arquivo em disco, só devolve o caminho relativo.
+  if (!usarSupabase) {
+    return res.json({ url: `/uploads-estabelecimentos/${req.file.filename}` });
+  }
+
+  // Modo Supabase: o arquivo está em memória (req.file.buffer), sobe pro Storage.
+  try {
+    const url = await uploadParaSupabase(req.file, BUCKET_ESTABELECIMENTOS);
+    res.json({ url });
+  } catch (err) {
+    res.status(500).json({ erro: "Erro ao enviar imagem para o Supabase Storage.", detalhes: err.message });
+  }
+});
+
 function parseRow(row) {
   if (!row) return row;
   try { row.fotos_galeria = JSON.parse(row.fotos_galeria || "[]"); } catch { row.fotos_galeria = []; }

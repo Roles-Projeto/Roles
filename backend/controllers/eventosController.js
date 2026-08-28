@@ -2,19 +2,57 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const supabase = require('../db/supabaseClient');
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '../uploads');
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-});
+// ── Alternância de armazenamento de imagem ──
+// USE_SUPABASE_STORAGE=true  -> memoryStorage + Supabase Storage (usar em produção)
+// USE_SUPABASE_STORAGE=false -> diskStorage local em /uploads (só serve pra dev local,
+//                                 some a cada deploy no Render)
+const USAR_SUPABASE = process.env.USE_SUPABASE_STORAGE === 'true';
+
+const storage = USAR_SUPABASE
+    ? multer.memoryStorage()
+    : multer.diskStorage({
+        destination: (req, file, cb) => {
+            const dir = path.join(__dirname, '../uploads');
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+            cb(null, dir);
+        },
+        filename: (req, file, cb) => {
+            cb(null, Date.now() + path.extname(file.originalname));
+        }
+    });
 
 exports.upload = multer({ storage });
+
+// Nome do bucket no Supabase Storage. Precisa existir e estar público.
+const BUCKET_NAME = 'imagens-eventos';
+
+// Faz upload do buffer recebido do multer pro Supabase Storage
+// e devolve a URL pública do arquivo. Só é chamada quando USAR_SUPABASE = true.
+exports.uploadParaSupabase = async (file) => {
+    if (!supabase) throw new Error("Client do Supabase não configurado (SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY ausentes no .env).");
+
+    const nomeArquivo = `${Date.now()}${path.extname(file.originalname)}`;
+
+    const { error } = await supabase.storage
+        .from(BUCKET_NAME)
+        .upload(nomeArquivo, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false,
+        });
+
+    if (error) throw error;
+
+    const { data } = supabase.storage
+        .from(BUCKET_NAME)
+        .getPublicUrl(nomeArquivo);
+
+    return data.publicUrl;
+};
+
+// Indica ao route handler qual modo está ativo, sem precisar reler o env var lá.
+exports.usarSupabase = USAR_SUPABASE;
 
 const connection = require("../db/db_config");
 

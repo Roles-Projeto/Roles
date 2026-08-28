@@ -153,30 +153,6 @@ prevBtn.addEventListener("click", () => {
 });
 
 // ====================================================
-// AUTOSAVE
-// ====================================================
-function salvarRascunho() {
-    const dados = {};
-    document.querySelectorAll("input, textarea, select").forEach(input => {
-        dados[input.id] = input.type === "checkbox" ? input.checked : input.value;
-    });
-    localStorage.setItem("rascunhoEvento", JSON.stringify(dados));
-}
-setInterval(salvarRascunho, 5000);
-
-function carregarRascunho() {
-    const dados = JSON.parse(localStorage.getItem("rascunhoEvento"));
-    if (!dados) return;
-    Object.keys(dados).forEach(id => {
-        const input = document.getElementById(id);
-        if (!input) return;
-        if (input.type === "checkbox") input.checked = dados[id];
-        else input.value = dados[id];
-    });
-}
-window.addEventListener("load", carregarRascunho);
-
-// ====================================================
 // MOSTRAR RESUMO
 // ====================================================
 const stepNavigation = document.querySelector(".step-navigation");
@@ -237,6 +213,9 @@ confirmarBtn.addEventListener("click", async () => {
     const dataFim = document.getElementById("end-date")?.value;
     const horaFim = document.getElementById("end-time")?.value;
 
+    confirmarBtn.disabled = true;
+    confirmarBtn.textContent = "Publicando...";
+
     let imagemUrl = null;
     if (imagemEvento) {
         try {
@@ -244,8 +223,21 @@ confirmarBtn.addEventListener("click", async () => {
             formData.append("imagem", imagemEvento);
             const uploadRes = await fetch(`${API_BASE}/eventos/upload-imagem`, { method: "POST", body: formData });
             const uploadData = await uploadRes.json();
+
+            if (!uploadRes.ok) {
+                throw new Error(uploadData.erro ? `${uploadData.erro} ${uploadData.detalhes || ""}` : `Erro ${uploadRes.status} ao enviar imagem.`);
+            }
+            if (!uploadData.url) {
+                throw new Error("O upload não retornou uma URL válida.");
+            }
             imagemUrl = uploadData.url;
-        } catch (err) { console.error("Erro no upload da imagem:", err); }
+        } catch (err) {
+            console.error("Erro no upload da imagem:", err);
+            alert("❌ Não foi possível enviar a imagem: " + err.message + "\n\nA publicação foi cancelada. Corrija e tente novamente.");
+            confirmarBtn.disabled = false;
+            confirmarBtn.textContent = "Confirmar publicação";
+            return;
+        }
     }
 
     const toISO = (date, time) => {
@@ -268,9 +260,6 @@ confirmarBtn.addEventListener("click", async () => {
         nome_produtor: document.getElementById("producer-name")?.value?.trim(),
         ingressos: listaIngressos,
     };
-
-    confirmarBtn.disabled = true;
-    confirmarBtn.textContent = "Publicando...";
 
     try {
         const response = await fetch(API_URL, {

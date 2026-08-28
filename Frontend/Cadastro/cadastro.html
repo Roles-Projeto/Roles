@@ -110,7 +110,7 @@
                                     <i class="fa-regular fa-eye" id="iconeSenha"></i>
                                 </button>
                             </div>
-                            <small class="erro" id="dicaSenha" style="color: var(--text-muted); font-weight: 400;">
+                            <small class="erro" id="dicaSenha" style="display:none; color: var(--text-muted); font-weight: 400;">
                                 Mínimo 8 caracteres, com 1 letra maiúscula, 1 número e 1 caractere especial (ex: @)
                             </small>
                             <div class="forca-senha-wrapper" id="forcaSenhaWrapper">
@@ -192,5 +192,21 @@
     <script src="/Frontend/js/loadHeader.js"></script>
     <script src="/Frontend/js/config.js"></script>
     <script src="/Frontend/js/cadastro.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var senhaInput = document.getElementById('senha');
+            var dicaSenha = document.getElementById('dicaSenha');
+            if (senhaInput && dicaSenha) {
+                senhaInput.addEventListener('input', function () {
+                    dicaSenha.style.display = senhaInput.value.length > 0 ? 'block' : 'none';
+                });
+                senhaInput.addEventListener('blur', function () {
+                    if (senhaInput.value.length === 0) {
+                        dicaSenha.style.display = 'none';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

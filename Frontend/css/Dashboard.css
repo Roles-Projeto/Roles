@@ -52,6 +52,15 @@ body { font-family: 'Inter', sans-serif; background:var(--bg); color:var(--text)
 .page-eyebrow { display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--p); margin-bottom:4px; }
 .page-title   { font-size:28px; font-weight:800; color:var(--text); line-height:1; }
 .brand-dot    { color:var(--p); }
+.bulbs { display:inline-flex; gap:6px; margin-left:8px; vertical-align:middle; }
+.bulbs span {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--p);
+  box-shadow:0 0 8px 1px rgba(255,182,39,.55);
+  display:inline-block;
+}
+.bulbs span:nth-child(2) { background:var(--coral); box-shadow:0 0 8px 1px rgba(255,92,122,.5); }
+.bulbs span:nth-child(3) { opacity:.45; box-shadow:none; }
 .topbar-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 
 /* ════ BOTÕES TOPBAR ════ */

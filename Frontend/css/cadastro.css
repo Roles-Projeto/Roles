@@ -938,3 +938,106 @@ body::after {
 .btn-olho:hover {
     color: #7c3aed;
 }
+/* =========================
+   CAMPOS DO FORM DE CADASTRO
+========================= */
+.campo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.campo-form label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.2px;
+}
+
+.input-com-icone {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-com-icone input {
+  width: 100%;
+  padding: 13px 16px 13px 40px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface-2);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.input-com-icone input:focus {
+  background: var(--surface);
+  border-color: var(--primary-mid);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.10);
+}
+
+.input-com-icone i {
+  position: absolute;
+  left: 14px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.icone-olho {
+  position: absolute;
+  right: 14px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.erro-campo {
+  color: var(--error);
+  font-size: 11.5px;
+  font-weight: 500;
+  min-height: 14px;
+}
+
+.btn-criar-conta {
+  width: 100%;
+  margin-top: 6px;
+  padding: 15px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--grad-primary);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 24px rgba(91, 14, 166, 0.30);
+}
+
+.btn-criar-conta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(91, 14, 166, 0.38);
+}
+
+.texto-login,
+.texto-termos {
+  text-align: center;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.texto-login a,
+.texto-termos a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.texto-login a:hover,
+.texto-termos a:hover {
+  text-decoration: underline;
+}

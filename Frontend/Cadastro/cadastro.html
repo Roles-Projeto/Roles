@@ -68,6 +68,15 @@
                         </div>
 
                         <div class="field-group">
+                            <label>CPF</label>
+                            <div class="input-wrap">
+                                <i class="fa-solid fa-id-card input-icon"></i>
+                                <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" required>
+                            </div>
+                            <small id="erroCpf" class="erro"></small>
+                        </div>
+
+                        <div class="field-group">
                             <label>Email</label>
                             <div class="input-wrap">
                                 <i class="fa-solid fa-envelope input-icon"></i>
@@ -101,6 +110,9 @@
                                     <i class="fa-regular fa-eye" id="iconeSenha"></i>
                                 </button>
                             </div>
+                            <small class="erro" id="dicaSenha" style="color: var(--text-muted); font-weight: 400;">
+                                Mínimo 8 caracteres, com 1 letra maiúscula, 1 número e 1 caractere especial (ex: @)
+                            </small>
                             <div class="forca-senha-wrapper" id="forcaSenhaWrapper">
                                 <div class="forca-barra">
                                     <span class="forca-segmento" id="seg1"></span>

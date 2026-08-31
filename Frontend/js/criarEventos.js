@@ -3,17 +3,18 @@
 // ====================================================
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 const API_BASE = isLocal ? "http://localhost:3000" : window.location.origin;
-const API_URL  = `${API_BASE}/eventos`;
+const API_URL = `${API_BASE}/eventos`;
 
-const steps         = document.querySelectorAll(".step");
-const nextBtn       = document.getElementById("nextBtn");
-const prevBtn       = document.getElementById("prevBtn");
-const progressBar   = document.getElementById("progress-bar");
+const steps = document.querySelectorAll(".step");
+const nextBtn = document.getElementById("nextBtn");
+const prevBtn = document.getElementById("prevBtn");
+const progressBar = document.getElementById("progress-bar");
 const stepIndicator = document.getElementById("step-indicator");
+const stepLabels = document.querySelectorAll(".step-label");
 
-const modal        = document.getElementById("modalConfirmacao");
+const modal = document.getElementById("modalConfirmacao");
 const resumoEvento = document.getElementById("resumoEvento");
-const cancelarBtn  = document.getElementById("cancelarPublicacao");
+const cancelarBtn = document.getElementById("cancelarPublicacao");
 const confirmarBtn = document.getElementById("confirmarPublicacao");
 
 let currentStep = 0;
@@ -24,12 +25,10 @@ let currentStep = 0;
 function showStep(index) {
     steps.forEach((step, i) => { step.style.display = i === index ? "block" : "none"; });
     prevBtn.style.display = index === 0 ? "none" : "inline-block";
-    if (index > 0) prevBtn.innerHTML = '<img src="/frontend/imagens/seta-direita.png" style="transform:scaleX(-1);width:40px;">';
-    if (index === steps.length - 1) {
-        nextBtn.textContent = "Publicar Evento"; nextBtn.className = "btn-primary"; nextBtn.style.padding = "12px 28px";
-    } else {
-        nextBtn.innerHTML = '<img src="/frontend/imagens/seta-direita.png" style="width:40px;">'; nextBtn.className = "btn-success"; nextBtn.style.padding = "";
-    }
+    prevBtn.textContent = "Voltar";
+    prevBtn.className = "btn-primary";
+    nextBtn.textContent = index === steps.length - 1 ? "Publicar Evento" : "Próximo";
+    nextBtn.className = "btn-primary";
     atualizarProgresso();
 }
 
@@ -38,8 +37,15 @@ function showStep(index) {
 // ====================================================
 function atualizarProgresso() {
     const total = steps.length;
-    progressBar.style.width   = ((currentStep + 1) / total * 100) + "%";
+    progressBar.style.width = ((currentStep + 1) / total * 100) + "%";
     stepIndicator.textContent = `Etapa ${currentStep + 1} de ${total}`;
+
+    stepLabels.forEach(label => {
+        const labelStep = parseInt(label.dataset.step, 10);
+        label.classList.remove("active", "completed");
+        if (labelStep === currentStep) label.classList.add("active");
+        else if (labelStep < currentStep) label.classList.add("completed");
+    });
 }
 
 // ====================================================
@@ -48,8 +54,8 @@ function atualizarProgresso() {
 function marcarErro(el) {
     if (!el) return;
     el.style.borderColor = "#ef4444";
-    el.style.boxShadow   = "0 0 0 3px rgba(239,68,68,0.15)";
-    el.addEventListener("input",  () => limparErro(el), { once: true });
+    el.style.boxShadow = "0 0 0 3px rgba(239,68,68,0.15)";
+    el.addEventListener("input", () => limparErro(el), { once: true });
     el.addEventListener("change", () => limparErro(el), { once: true });
 }
 function limparErro(el) { if (!el) return; el.style.borderColor = ""; el.style.boxShadow = ""; }
@@ -60,89 +66,69 @@ function alerta(msg, el) { if (el) el.focus(); alert(msg); }
 // ====================================================
 function validarEtapa(index) {
 
-    // ── Etapa 1: Informações básicas ──────────────────
-    // Obrigatórios: nome, assunto
+    // ── Etapa 1: O Evento ─────────────────────────────
+    // Obrigatórios: nome, assunto, imagem de divulgação, descrição
     // Opcional: categoria
     if (index === 0) {
-        const nome    = document.getElementById("event-name");
+        const nome = document.getElementById("event-name");
         const assunto = document.getElementById("assunto");
         if (!nome?.value?.trim()) { marcarErro(nome); alerta("Informe o nome do evento.", nome); return false; }
-        if (!assunto?.value)      { marcarErro(assunto); alerta("Selecione um assunto para o evento.", assunto); return false; }
-        return true;
-    }
+        if (!assunto?.value) { marcarErro(assunto); alerta("Selecione um assunto para o evento.", assunto); return false; }
 
-    // ── Etapa 2: Imagem ───────────────────────────────
-    // Obrigatório: imagem de divulgação
-    if (index === 1) {
         if (!imagemEvento) { alert("Adicione uma imagem de divulgação para o evento."); return false; }
-        return true;
-    }
-
-    // ── Etapa 3: Data e horário ───────────────────────
-    // Todos obrigatórios
-    if (index === 2) {
-        const dataInicio = document.getElementById("start-date");
-        const horaInicio = document.getElementById("start-time");
-        const dataFim    = document.getElementById("end-date");
-        const horaFim    = document.getElementById("end-time");
-
-        if (!dataInicio?.value) { marcarErro(dataInicio); alerta("Informe a data de início.", dataInicio); return false; }
-        if (!horaInicio?.value) { marcarErro(horaInicio); alerta("Informe a hora de início.", horaInicio); return false; }
-        if (!dataFim?.value)    { marcarErro(dataFim);    alerta("Informe a data de término.", dataFim);   return false; }
-        if (!horaFim?.value)    { marcarErro(horaFim);    alerta("Informe a hora de término.", horaFim);   return false; }
-
-        const inicio = new Date(`${dataInicio.value}T${horaInicio.value}`);
-        const fim    = new Date(`${dataFim.value}T${horaFim.value}`);
-        const agora  = new Date();
-
-        if (inicio < agora)  { marcarErro(dataInicio); marcarErro(horaInicio); alert("A data de início não pode ser no passado."); return false; }
-        if (fim <= inicio)   { marcarErro(dataFim); marcarErro(horaFim); alert("A data de término deve ser depois da data de início."); return false; }
-        return true;
-    }
-
-    // ── Etapa 4: Descrição ────────────────────────────
-    // Obrigatório: descrição
-    if (index === 3) {
         const descricao = document.getElementById("descricao");
         if (!descricao?.value?.trim()) { marcarErro(descricao); alerta("Adicione uma descrição para o evento.", descricao); return false; }
         return true;
     }
 
-    // ── Etapa 5: Local do evento ──────────────────────
-    // Obrigatórios: nome do local, CEP, rua, cidade, estado
-    // Opcional: —
-    if (index === 4) {
+    // ── Etapa 2: Onde e Quando ─────────────────────────
+    // Data/horário: todos obrigatórios
+    // Localização: nome do local, CEP, rua, cidade, estado
+    if (index === 1) {
+        const dataInicio = document.getElementById("start-date");
+        const horaInicio = document.getElementById("start-time");
+        const dataFim = document.getElementById("end-date");
+        const horaFim = document.getElementById("end-time");
+
+        if (!dataInicio?.value) { marcarErro(dataInicio); alerta("Informe a data de início.", dataInicio); return false; }
+        if (!horaInicio?.value) { marcarErro(horaInicio); alerta("Informe a hora de início.", horaInicio); return false; }
+        if (!dataFim?.value) { marcarErro(dataFim); alerta("Informe a data de término.", dataFim); return false; }
+        if (!horaFim?.value) { marcarErro(horaFim); alerta("Informe a hora de término.", horaFim); return false; }
+
+        const inicio = new Date(`${dataInicio.value}T${horaInicio.value}`);
+        const fim = new Date(`${dataFim.value}T${horaFim.value}`);
+        const agora = new Date();
+
+        if (inicio < agora) { marcarErro(dataInicio); marcarErro(horaInicio); alert("A data de início não pode ser no passado."); return false; }
+        if (fim <= inicio) { marcarErro(dataFim); marcarErro(horaFim); alert("A data de término deve ser depois da data de início."); return false; }
+
         const localNome = document.getElementById("local-nome");
-        const cep       = document.getElementById("cep");
-        const rua       = document.getElementById("rua");
-        const cidade    = document.getElementById("cidade");
-        const estado    = document.getElementById("estado");
+        const cep = document.getElementById("cep");
+        const rua = document.getElementById("rua");
+        const cidade = document.getElementById("cidade");
+        const estado = document.getElementById("estado");
 
         if (!localNome?.value?.trim()) { marcarErro(localNome); alerta("Informe o nome ou endereço do local.", localNome); return false; }
-        if (!cep?.value?.trim() || cep.value.replace(/\D/g,"").length < 8) { marcarErro(cep); alerta("Informe um CEP válido.", cep); return false; }
-        if (!rua?.value?.trim())    { marcarErro(rua); alerta("Informe a rua do local.", rua); return false; }
+        if (!cep?.value?.trim() || cep.value.replace(/\D/g, "").length < 8) { marcarErro(cep); alerta("Informe um CEP válido.", cep); return false; }
+        if (!rua?.value?.trim()) { marcarErro(rua); alerta("Informe a rua do local.", rua); return false; }
         if (!cidade?.value?.trim()) { alerta("A cidade não foi preenchida. Verifique o CEP."); return false; }
         if (!estado?.value?.trim()) { alerta("O estado não foi preenchido. Verifique o CEP."); return false; }
         return true;
     }
 
-    // ── Etapa 6: Ingressos ────────────────────────────
-    // Obrigatório: ao menos 1 ingresso criado
-    if (index === 5) {
+    // ── Etapa 3: Ingressos e Publicação ───────────────
+    // Ingressos: ao menos 1 ingresso criado
+    // Publicação: nome do produtor, termos
+    if (index === 2) {
         if (listaIngressos.length === 0) {
             alert("Adicione ao menos um ingresso (pago ou gratuito) antes de continuar.");
             return false;
         }
-        return true;
-    }
 
-    // ── Etapa 7: Publicação ───────────────────────────
-    // Obrigatórios: nome do produtor, termos
-    if (index === 6) {
         const produtor = document.getElementById("producer-name");
-        const termos   = document.getElementById("terms");
+        const termos = document.getElementById("terms");
         if (!produtor?.value?.trim()) { marcarErro(produtor); alerta("Informe o nome do produtor.", produtor); return false; }
-        if (!termos?.checked)         { alert("Você precisa aceitar os Termos de Uso para publicar."); return false; }
+        if (!termos?.checked) { alert("Você precisa aceitar os Termos de Uso para publicar."); return false; }
         return true;
     }
 
@@ -167,30 +153,6 @@ prevBtn.addEventListener("click", () => {
 });
 
 // ====================================================
-// AUTOSAVE
-// ====================================================
-function salvarRascunho() {
-    const dados = {};
-    document.querySelectorAll("input, textarea, select").forEach(input => {
-        dados[input.id] = input.type === "checkbox" ? input.checked : input.value;
-    });
-    localStorage.setItem("rascunhoEvento", JSON.stringify(dados));
-}
-setInterval(salvarRascunho, 5000);
-
-function carregarRascunho() {
-    const dados = JSON.parse(localStorage.getItem("rascunhoEvento"));
-    if (!dados) return;
-    Object.keys(dados).forEach(id => {
-        const input = document.getElementById(id);
-        if (!input) return;
-        if (input.type === "checkbox") input.checked = dados[id];
-        else input.value = dados[id];
-    });
-}
-window.addEventListener("load", carregarRascunho);
-
-// ====================================================
 // MOSTRAR RESUMO
 // ====================================================
 const stepNavigation = document.querySelector(".step-navigation");
@@ -198,17 +160,17 @@ const stepNavigation = document.querySelector(".step-navigation");
 function mostrarResumo() {
     stepNavigation.style.display = "none";
 
-    const nome       = document.getElementById("event-name")?.value || "-";
-    const produtor   = document.getElementById("producer-name")?.value || "-";
+    const nome = document.getElementById("event-name")?.value || "-";
+    const produtor = document.getElementById("producer-name")?.value || "-";
     const dataInicio = document.getElementById("start-date")?.value || "-";
     const horaInicio = document.getElementById("start-time")?.value || "-";
-    const dataFim    = document.getElementById("end-date")?.value || "-";
-    const horaFim    = document.getElementById("end-time")?.value || "-";
-    const nomeLocal  = document.getElementById("local-nome")?.value || "";
-    const rua        = document.getElementById("rua")?.value || "";
-    const cidade     = document.getElementById("cidade")?.value || "";
-    const estado     = document.getElementById("estado")?.value || "";
-    const descricao  = document.getElementById("descricao")?.value || "-";
+    const dataFim = document.getElementById("end-date")?.value || "-";
+    const horaFim = document.getElementById("end-time")?.value || "-";
+    const nomeLocal = document.getElementById("local-nome")?.value || "";
+    const rua = document.getElementById("rua")?.value || "";
+    const cidade = document.getElementById("cidade")?.value || "";
+    const estado = document.getElementById("estado")?.value || "";
+    const descricao = document.getElementById("descricao")?.value || "-";
 
     let local = "-";
     if (nomeLocal || rua || cidade) local = `${nomeLocal}<br>${rua}<br>${cidade}${estado ? " - " + estado : ""}`;
@@ -248,45 +210,56 @@ cancelarBtn.addEventListener("click", () => {
 confirmarBtn.addEventListener("click", async () => {
     const dataInicio = document.getElementById("start-date")?.value;
     const horaInicio = document.getElementById("start-time")?.value;
-    const dataFim    = document.getElementById("end-date")?.value;
-    const horaFim    = document.getElementById("end-time")?.value;
+    const dataFim = document.getElementById("end-date")?.value;
+    const horaFim = document.getElementById("end-time")?.value;
+
+    confirmarBtn.disabled = true;
+    confirmarBtn.textContent = "Publicando...";
 
     let imagemUrl = null;
     if (imagemEvento) {
         try {
             const formData = new FormData();
             formData.append("imagem", imagemEvento);
-            const uploadRes  = await fetch(`${API_BASE}/eventos/upload-imagem`, { method: "POST", body: formData });
+            const uploadRes = await fetch(`${API_BASE}/eventos/upload-imagem`, { method: "POST", body: formData });
             const uploadData = await uploadRes.json();
+
+            if (!uploadRes.ok) {
+                throw new Error(uploadData.erro ? `${uploadData.erro} ${uploadData.detalhes || ""}` : `Erro ${uploadRes.status} ao enviar imagem.`);
+            }
+            if (!uploadData.url) {
+                throw new Error("O upload não retornou uma URL válida.");
+            }
             imagemUrl = uploadData.url;
-        } catch (err) { console.error("Erro no upload da imagem:", err); }
+        } catch (err) {
+            console.error("Erro no upload da imagem:", err);
+            alert("❌ Não foi possível enviar a imagem: " + err.message + "\n\nA publicação foi cancelada. Corrija e tente novamente.");
+            confirmarBtn.disabled = false;
+            confirmarBtn.textContent = "Confirmar publicação";
+            return;
+        }
     }
 
     const toISO = (date, time) => {
-        const d = new Date(`${date}T${time}:00`);
-        d.setHours(d.getHours() + 3);
-        return d.toISOString().slice(0, 19).replace("T", " ");
+        return `${date} ${time}:00`;
     };
 
     const evento = {
-        nome:          document.getElementById("event-name")?.value?.trim(),
-        assunto:       document.getElementById("assunto")?.value,
-        categoria:     document.getElementById("categoria")?.value,
-        imagem:        imagemUrl,
-        data_inicio:   dataInicio && horaInicio ? toISO(dataInicio, horaInicio) : null,
-        data_fim:      dataFim && horaFim ? toISO(dataFim, horaFim) : null,
-        descricao:     document.getElementById("descricao")?.value?.trim(),
-        local_nome:    document.getElementById("local-nome")?.value?.trim(),
-        cep:           document.getElementById("cep")?.value?.trim(),
-        rua:           document.getElementById("rua")?.value?.trim(),
-        cidade:        document.getElementById("cidade")?.value?.trim(),
-        estado:        document.getElementById("estado")?.value?.trim(),
+        nome: document.getElementById("event-name")?.value?.trim(),
+        assunto: document.getElementById("assunto")?.value,
+        categoria: document.getElementById("categoria")?.value,
+        imagem: imagemUrl,
+        data_inicio: dataInicio && horaInicio ? toISO(dataInicio, horaInicio) : null,
+        data_fim: dataFim && horaFim ? toISO(dataFim, horaFim) : null,
+        descricao: document.getElementById("descricao")?.value?.trim(),
+        local_nome: document.getElementById("local-nome")?.value?.trim(),
+        cep: document.getElementById("cep")?.value?.trim(),
+        rua: document.getElementById("rua")?.value?.trim(),
+        cidade: document.getElementById("cidade")?.value?.trim(),
+        estado: document.getElementById("estado")?.value?.trim(),
         nome_produtor: document.getElementById("producer-name")?.value?.trim(),
-        ingressos:     listaIngressos,
+        ingressos: listaIngressos,
     };
-
-    confirmarBtn.disabled    = true;
-    confirmarBtn.textContent = "Publicando...";
 
     try {
         const response = await fetch(API_URL, {
@@ -302,7 +275,7 @@ confirmarBtn.addEventListener("click", async () => {
     } catch (err) {
         console.error(err);
         alert("❌ Erro ao publicar: " + err.message);
-        confirmarBtn.disabled    = false;
+        confirmarBtn.disabled = false;
         confirmarBtn.textContent = "Confirmar publicação";
     }
 });
@@ -316,24 +289,24 @@ showStep(currentStep);
 // BLOQUEIO DE DATAS PASSADAS + DURAÇÃO EM TEMPO REAL
 // ====================================================
 (function inicializarDatas() {
-    const hoje       = new Date().toISOString().split('T')[0];
-    const startDate  = document.getElementById('start-date');
-    const startTime  = document.getElementById('start-time');
-    const endDate    = document.getElementById('end-date');
-    const endTime    = document.getElementById('end-time');
-    const badge      = document.getElementById('duracao-badge');
+    const hoje = new Date().toISOString().split('T')[0];
+    const startDate = document.getElementById('start-date');
+    const startTime = document.getElementById('start-time');
+    const endDate = document.getElementById('end-date');
+    const endTime = document.getElementById('end-time');
+    const badge = document.getElementById('duracao-badge');
     const badgeTexto = document.getElementById('duracao-texto');
 
     // Bloqueia datas passadas diretamente no input
     if (startDate) startDate.min = hoje;
-    if (endDate)   endDate.min   = hoje;
+    if (endDate) endDate.min = hoje;
 
     function calcularDuracao() {
         if (!startDate?.value || !startTime?.value || !endDate?.value || !endTime?.value || !badge) return;
 
         const inicio = new Date(`${startDate.value}T${startTime.value}`);
-        const fim    = new Date(`${endDate.value}T${endTime.value}`);
-        const agora  = new Date();
+        const fim = new Date(`${endDate.value}T${endTime.value}`);
+        const agora = new Date();
 
         badge.classList.remove('tem-duracao', 'erro-data');
 
@@ -351,15 +324,15 @@ showStep(currentStep);
             return;
         }
 
-        const diff        = fim - inicio;
-        const totalMin    = Math.floor(diff / 60000);
-        const dias        = Math.floor(totalMin / (60 * 24));
-        const horas       = Math.floor((totalMin % (60 * 24)) / 60);
-        const minutos     = totalMin % 60;
+        const diff = fim - inicio;
+        const totalMin = Math.floor(diff / 60000);
+        const dias = Math.floor(totalMin / (60 * 24));
+        const horas = Math.floor((totalMin % (60 * 24)) / 60);
+        const minutos = totalMin % 60;
 
         let durStr = 'Duração: ';
-        if (dias > 0)    durStr += `${dias} dia${dias > 1 ? 's' : ''} `;
-        if (horas > 0)   durStr += `${horas}h `;
+        if (dias > 0) durStr += `${dias} dia${dias > 1 ? 's' : ''} `;
+        if (horas > 0) durStr += `${horas}h `;
         if (minutos > 0) durStr += `${minutos}min`;
 
         badgeTexto.textContent = durStr.trim();
@@ -399,7 +372,7 @@ const categoriasPorAssunto = {
     "Festivais": ["Festival de música", "Festival gastronômico", "Festival cultural"],
 };
 
-const assuntoSelect   = document.getElementById("assunto");
+const assuntoSelect = document.getElementById("assunto");
 const categoriaSelect = document.getElementById("categoria");
 
 assuntoSelect.addEventListener("change", () => {
@@ -420,15 +393,15 @@ const fileInput = document.createElement("input");
 fileInput.type = "file"; fileInput.accept = "image/jpeg,image/png,image/gif"; fileInput.style.display = "none";
 document.body.appendChild(fileInput);
 
-dropZone.addEventListener("click",    () => fileInput.click());
-fileInput.addEventListener("change",  e => processarImagem(e.target.files[0]));
+dropZone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", e => processarImagem(e.target.files[0]));
 dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.style.border = "2px dashed #7c3aed"; });
-dropZone.addEventListener("dragleave",  () => { dropZone.style.border = ""; });
-dropZone.addEventListener("drop",     e => { e.preventDefault(); dropZone.style.border = ""; processarImagem(e.dataTransfer.files[0]); });
+dropZone.addEventListener("dragleave", () => { dropZone.style.border = ""; });
+dropZone.addEventListener("drop", e => { e.preventDefault(); dropZone.style.border = ""; processarImagem(e.dataTransfer.files[0]); });
 
 function processarImagem(file) {
     if (!file) return;
-    if (!["image/jpeg","image/png","image/gif"].includes(file.type)) { alert("Formato inválido. Use JPEG, PNG ou GIF."); return; }
+    if (!["image/jpeg", "image/png", "image/gif"].includes(file.type)) { alert("Formato inválido. Use JPEG, PNG ou GIF."); return; }
     if (file.size > 2 * 1024 * 1024) { alert("Imagem muito grande. Máximo 2MB."); return; }
     imagemEvento = file;
     const reader = new FileReader();
@@ -439,25 +412,25 @@ function processarImagem(file) {
 // ====================================================
 // CEP
 // ====================================================
-const cepInput    = document.getElementById("cep");
-const ruaInput    = document.getElementById("rua");
+const cepInput = document.getElementById("cep");
+const ruaInput = document.getElementById("rua");
 const cidadeInput = document.getElementById("cidade");
 const estadoInput = document.getElementById("estado");
 
 cepInput.addEventListener("input", () => {
-    let v = cepInput.value.replace(/\D/g,"");
-    if (v.length > 5) v = v.slice(0,5) + "-" + v.slice(5,8);
+    let v = cepInput.value.replace(/\D/g, "");
+    if (v.length > 5) v = v.slice(0, 5) + "-" + v.slice(5, 8);
     cepInput.value = v;
 });
 
 cepInput.addEventListener("blur", async () => {
-    const cep = cepInput.value.replace(/\D/g,"");
+    const cep = cepInput.value.replace(/\D/g, "");
     if (cep.length !== 8) return;
     try {
-        const res  = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
         const data = await res.json();
         if (data.erro) { alert("CEP não encontrado."); ruaInput.value = cidadeInput.value = estadoInput.value = ""; return; }
-        ruaInput.value    = data.logradouro || ""; limparErro(ruaInput);
+        ruaInput.value = data.logradouro || ""; limparErro(ruaInput);
         cidadeInput.value = data.localidade || "";
         estadoInput.value = data.uf || "";
     } catch { alert("Erro ao buscar CEP."); }
@@ -466,9 +439,9 @@ cepInput.addEventListener("blur", async () => {
 // ====================================================
 // INGRESSOS
 // ====================================================
-const ticketConfigCard  = document.querySelector(".ticket-config-card");
-const listaContainer    = document.querySelector(".lista-ingressos");
-const listaIngressos    = [];
+const ticketConfigCard = document.querySelector(".ticket-config-card");
+const listaContainer = document.querySelector(".lista-ingressos");
+const listaIngressos = [];
 let ingressoEditandoIndex = null;
 
 document.querySelectorAll(".btn-ticket-action").forEach(btn => {
@@ -540,12 +513,12 @@ function criarFormIngresso(tipo) {
     });
 
     ticketItem.querySelector(".btnSalvarIngresso").addEventListener("click", () => {
-        const tituloInput    = ticketItem.querySelector(".titulo-ingresso");
+        const tituloInput = ticketItem.querySelector(".titulo-ingresso");
         const quantidadeInput = ticketItem.querySelector(".quantidade-ingresso");
-        const titulo     = tituloInput.value.trim();
+        const titulo = tituloInput.value.trim();
         const quantidade = quantidadeInput.value;
 
-        if (!titulo)                       { marcarErro(tituloInput);     alerta("Informe o título do ingresso.", tituloInput);     return; }
+        if (!titulo) { marcarErro(tituloInput); alerta("Informe o título do ingresso.", tituloInput); return; }
         if (!quantidade || quantidade <= 0) { marcarErro(quantidadeInput); alerta("Informe a quantidade de ingressos.", quantidadeInput); return; }
 
         let valor = 0;
@@ -592,7 +565,7 @@ function editarIngresso(index) {
     ticketConfigCard.style.display = "flex";
     criarFormIngresso(ing.tipo);
     const form = ticketConfigCard.querySelector(".ticket-item");
-    form.querySelector(".titulo-ingresso").value    = ing.titulo;
+    form.querySelector(".titulo-ingresso").value = ing.titulo;
     form.querySelector(".quantidade-ingresso").value = ing.quantidade_total;
     if (ing.tipo === "pago") {
         const vi = form.querySelector(".valor-ingresso");

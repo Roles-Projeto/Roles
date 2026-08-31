@@ -4,15 +4,6 @@ const PDFDocument = require("pdfkit");
 const QRCode      = require("qrcode");
 const db          = require("../db/db_config");
 
-function query(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.query(sql, params, (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-        });
-    });
-}
-
 function mascaraCPF(cpf) {
     if (!cpf) return "Não informado";
     const d = cpf.replace(/\D/g, "");
@@ -53,8 +44,7 @@ async function downloadIngressoPDF(req, res) {
     const { usuario_id } = req.query;
 
     try {
-        // 1. Busca dados do pedido + evento + usuário
-        const rows = await query(`
+        const rows = await db.query(`
             SELECT
                 p.id            AS pedido_id,
                 p.valor_total,
@@ -80,7 +70,6 @@ async function downloadIngressoPDF(req, res) {
         const d = rows[0];
         if (!d) return res.status(404).json({ erro: "Ingresso não encontrado." });
 
-        // 2. Gera QR Code como buffer PNG
         const qrData   = `ROLES-PEDIDO-${d.pedido_id}-USUARIO-${usuario_id}`;
         const qrBuffer = await QRCode.toBuffer(qrData, {
             errorCorrectionLevel: "M",
@@ -89,7 +78,6 @@ async function downloadIngressoPDF(req, res) {
             color: { dark: "#6c3dff", light: "#ffffff" },
         });
 
-        // 3. Monta o PDF
         const doc = new PDFDocument({ size: "A4", margin: 0 });
 
         res.setHeader("Content-Type", "application/pdf");
@@ -99,64 +87,48 @@ async function downloadIngressoPDF(req, res) {
         );
         doc.pipe(res);
 
-        const W  = 595.28;   // largura A4
-        const PX = 48;       // padding horizontal
+        const W       = 595.28;
+        const PX      = 48;
         const ROXO    = "#6c3dff";
         const ROXO_CL = "#f3efff";
         const CINZA   = "#888780";
         const PRETO   = "#1a1a2e";
 
-        // ── Cabeçalho roxo ───────────────────────────────
         doc.rect(0, 0, W, 90).fill(ROXO);
+        doc.font("Helvetica-Bold").fontSize(28).fillColor("#ffffff").text("Rolês", PX, 22);
+        doc.font("Helvetica").fontSize(12).fillColor("rgba(255,255,255,0.8)").text("Seu ingresso oficial", PX, 56);
 
-        doc.font("Helvetica-Bold").fontSize(28).fillColor("#ffffff")
-           .text("Rolês", PX, 22);
-
-        doc.font("Helvetica").fontSize(12).fillColor("rgba(255,255,255,0.8)")
-           .text("Seu ingresso oficial", PX, 56);
-
-        // ── Seção: dados do evento ───────────────────────
         let y = 110;
 
-        doc.font("Helvetica").fontSize(9).fillColor(CINZA)
-           .text("EVENTO", PX, y);
+        doc.font("Helvetica").fontSize(9).fillColor(CINZA).text("EVENTO", PX, y);
         y += 14;
-
-        doc.font("Helvetica-Bold").fontSize(18).fillColor(PRETO)
-           .text(d.nome_evento, PX, y, { width: W - PX * 2 });
+        doc.font("Helvetica-Bold").fontSize(18).fillColor(PRETO).text(d.nome_evento, PX, y, { width: W - PX * 2 });
         y = doc.y + 6;
-
-        doc.font("Helvetica").fontSize(11).fillColor(CINZA)
-           .text(
-               `${formatarData(d.data_inicio)}   ·   ${d.local_nome || ""}${d.cidade ? ", " + d.cidade : ""}`,
-               PX, y
-           );
+        doc.font("Helvetica").fontSize(11).fillColor(CINZA).text(
+            `${formatarData(d.data_inicio)}   ·   ${d.local_nome || ""}${d.cidade ? ", " + d.cidade : ""}`,
+            PX, y
+        );
         y = doc.y + 16;
 
-        // Linha divisória tracejada
-        doc.save().dash(4, { space: 4 }).moveTo(PX, y).lineTo(W - PX, y)
-           .stroke("#cccccc").restore();
+        doc.save().dash(4, { space: 4 }).moveTo(PX, y).lineTo(W - PX, y).stroke("#cccccc").restore();
         y += 16;
 
-        // ── Grid de dados (2 colunas) ─────────────────────
-        const COL1 = PX;
-        const COL2 = W / 2;
+        const COL1  = PX;
+        const COL2  = W / 2;
         const campos = [
-            ["TITULAR",        d.nome_completo || "—"],
-            ["CPF",            mascaraCPF(d.cpf)],
+            ["TITULAR",          d.nome_completo || "—"],
+            ["CPF",              mascaraCPF(d.cpf)],
             ["TIPO DE INGRESSO", d.tipo_ingresso || "Ingresso"],
-            ["PAGAMENTO",      labelPagamento(d.forma_pagamento)],
-            ["VALOR PAGO",     formatarBRL(d.valor_total)],
-            ["PEDIDO Nº",      `#${String(d.pedido_id).padStart(5, "0")}`],
+            ["PAGAMENTO",        labelPagamento(d.forma_pagamento)],
+            ["VALOR PAGO",       formatarBRL(d.valor_total)],
+            ["PEDIDO Nº",        `#${String(d.pedido_id).padStart(5, "0")}`],
         ];
 
         campos.forEach(([label, valor], i) => {
             const col = i % 2 === 0 ? COL1 : COL2;
             const row = Math.floor(i / 2);
             const ry  = y + row * 48;
-
-            doc.font("Helvetica").fontSize(9).fillColor(CINZA)
-               .text(label, col, ry);
+            doc.font("Helvetica").fontSize(9).fillColor(CINZA).text(label, col, ry);
             doc.font("Helvetica-Bold").fontSize(13)
                .fillColor(label === "VALOR PAGO" ? ROXO : PRETO)
                .text(valor, col, ry + 13, { width: W / 2 - PX });
@@ -164,20 +136,15 @@ async function downloadIngressoPDF(req, res) {
 
         y += Math.ceil(campos.length / 2) * 48 + 8;
 
-        // Linha divisória tracejada
-        doc.save().dash(4, { space: 4 }).moveTo(PX, y).lineTo(W - PX, y)
-           .stroke("#cccccc").restore();
+        doc.save().dash(4, { space: 4 }).moveTo(PX, y).lineTo(W - PX, y).stroke("#cccccc").restore();
         y += 20;
 
-        // ── QR Code + instruções ─────────────────────────
         const QR_SIZE = 110;
         doc.image(qrBuffer, PX, y, { width: QR_SIZE, height: QR_SIZE });
-
         doc.font("Helvetica-Bold").fontSize(13).fillColor(PRETO)
            .text("Apresente este QR Code na entrada", PX + QR_SIZE + 20, y + 6, {
                width: W - PX * 2 - QR_SIZE - 20,
            });
-
         doc.font("Helvetica").fontSize(11).fillColor(CINZA)
            .text(
                "Tenha o ingresso em mãos no dia do evento. Cada código é único e intransferível.",
@@ -187,18 +154,12 @@ async function downloadIngressoPDF(req, res) {
 
         y = Math.max(doc.y, y + QR_SIZE) + 20;
 
-        // Linha divisória tracejada
-        doc.save().dash(4, { space: 4 }).moveTo(PX, y).lineTo(W - PX, y)
-           .stroke("#cccccc").restore();
+        doc.save().dash(4, { space: 4 }).moveTo(PX, y).lineTo(W - PX, y).stroke("#cccccc").restore();
         y += 16;
 
-        // ── Banner "Baixe o app" ──────────────────────────
         const BANNER_H = 72;
         doc.rect(PX, y, W - PX * 2, BANNER_H).fill(ROXO_CL);
-
-        doc.font("Helvetica-Bold").fontSize(13).fillColor("#3c2299")
-           .text("Baixe o app Rolês", PX + 16, y + 14);
-
+        doc.font("Helvetica-Bold").fontSize(13).fillColor("#3c2299").text("Baixe o app Rolês", PX + 16, y + 14);
         doc.font("Helvetica").fontSize(11).fillColor("#534ab7")
            .text(
                "Acesse seus ingressos, receba notificações e aproveite ainda mais. Disponível para iOS e Android.",
@@ -208,13 +169,9 @@ async function downloadIngressoPDF(req, res) {
 
         y += BANNER_H + 20;
 
-        // ── Rodapé ───────────────────────────────────────
         const hoje = new Date().toLocaleDateString("pt-BR");
         doc.font("Helvetica").fontSize(9).fillColor(CINZA)
-           .text(
-               `Rolês · roles.com.br · Documento gerado em ${hoje}`,
-               0, y, { align: "center", width: W }
-           );
+           .text(`Rolês · roles.com.br · Documento gerado em ${hoje}`, 0, y, { align: "center", width: W });
 
         doc.end();
 

@@ -5,8 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Eventos | Rolê.AI</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/frontend/css/footer.css">
     <link rel="stylesheet" href="/frontend/css/eventos.css">
@@ -18,14 +17,15 @@
     </header>
 
     <section class="hero-section">
+        <a href="/frontend/index.html" class="btn-voltar">
+            <i class="fa-solid fa-arrow-left"></i> Voltar
+        </a>
         <div class="content-wrapper">
             <h1>Todos os Eventos</h1>
             <p>Encontre os eventos mais incríveis acontecendo na sua cidade</p>
-
             <div class="search-bar1">
                 <i class="fas fa-search search-icon" aria-hidden="true"></i>
-                <input id="searchInput" type="text" placeholder="Buscar eventos, locais, artistas..."
-                    aria-label="Buscar eventos">
+                <input id="searchInput" type="text" placeholder="Buscar eventos, locais, artistas..." aria-label="Buscar eventos">
             </div>
         </div>
     </section>
@@ -36,24 +36,13 @@
                 <i class="fa-solid fa-filter"></i>
                 <span>Filtros</span>
             </div>
-
             <div class="filtros-direita">
-                <select id="dataFiltro" aria-label="Filtrar por data">
-                    <option value="todas">Todas as datas</option>
-                    <option value="hoje">Hoje</option>
-                    <option value="amanha">Amanhã</option>
-                    <option value="semana">Esta semana</option>
-                    <option value="mes">Este mês</option>
-                </select>
-
-                <select id="categoriaFiltro" aria-label="Filtrar por categoria">
-                    <option value="todas">Todas as categorias</option>
-                    <option value="festa">Festa</option>
-                    <option value="show">Show</option>
-                    <option value="festival">Festival</option>
-                    <option value="gastronomia">Gastronomia</option>
-                    <option value="workshop">Workshop</option>
-                </select>
+                <button class="btn-dropdown" id="btnDropdownData">
+                    Todas as datas <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <button class="btn-dropdown" id="btnDropdownCategoria">
+                    Todas as categorias <i class="fa-solid fa-chevron-down"></i>
+                </button>
             </div>
         </div>
 
@@ -61,7 +50,6 @@
             <div class="encontrados" id="contadorEventos">
                 Encontrados <strong id="qtdEventos">0</strong> eventos
             </div>
-
             <div class="pills" id="pillsContainer">
                 <button class="pill active" data-cat="todas">Todos</button>
                 <button class="pill" data-cat="festa">Festas</button>
@@ -74,10 +62,13 @@
 
     <main class="eventos-lista" id="eventosContainer" aria-live="polite">
 
-        <!-- Os cards são inseridos aqui dinamicamente pelo Evento.js -->
-
         <div class="carregar-container">
-            <button id="carregarMais" class="btn-carregar">Carregar mais eventos</button>
+            <button id="carregarMais" class="btn-carregar" style="display:none">
+                <i class="fa-solid fa-rotate"></i> Ver Mais
+            </button>
+            <button id="verMenos" class="btn-carregar" style="display:none">
+                <i class="fa-solid fa-chevron-up"></i> Ver Menos
+            </button>
         </div>
 
         <section class="estatisticas">
@@ -95,12 +86,12 @@
             </div>
         </section>
 
-  </main>
+    </main>
 
-  <script src="/frontend/js/config.js"></script>
-  <script src="/frontend/js/footer.js" defer></script>
-  <script src="/frontend/js/loadHeader.js"></script>
-  <script src="/Frontend/js/Evento.js"></script>
+    <script src="/frontend/js/config.js"></script>
+    <script src="/frontend/js/footer.js" defer></script>
+    <script src="/frontend/js/loadHeader.js"></script>
+    <script src="/Frontend/js/Evento.js"></script>
 
 </body>
 </html>

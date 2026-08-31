@@ -1,125 +1,307 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Compra Confirmada | Rolês</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="/frontend/css/footer.css">
-    <link rel="stylesheet" href="/frontend/css/confirmacao.css">
-
-
-</head>
-
-<body>
-
-    <header>
-        <div id="header-container"></div>
-    </header>
-
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/frontend/css/footer.css" />
+    <link rel="stylesheet" href="/frontend/css/confirmacao.css" />
+  </head>
+  <body>
+    <header><div id="header-container"></div></header>
 
     <main>
-        <div class="page-content">
+      <div class="page-content">
+        <a href="javascript:history.back()" class="botao-voltar">
+          <i class="fas fa-arrow-left"></i> Voltar
+        </a>
 
-            <div class="card success-box">
-                <i class="fas fa-check-circle"></i>
-                <h1>Compra Realizada com Sucesso!</h1>
-                <p>Seus ingressos foram enviados para seu email</p>
-                <span class="order-id">Pedido #ROLE-1763763271212</span>
+        <!-- ESTADO: CARREGANDO -->
+        <div id="confirmacao-loading" class="estado-tela">
+          <div class="spinner"></div>
+          <p>Carregando sua compra...</p>
+        </div>
+
+        <!-- ESTADO: ERRO -->
+        <div id="confirmacao-erro" class="estado-tela estado-erro">
+          <div class="estado-erro-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <p>Não conseguimos carregar sua compra.</p>
+          <a href="/frontend/index.html" class="btn-action"
+            >Voltar para a página inicial</a
+          >
+        </div>
+
+        <!-- CONTEÚDO -->
+        <div id="conteudo-confirmacao" style="display: none">
+          <div class="confirmacao-stack">
+            <!-- CABEÇALHO DE SUCESSO (compacto) -->
+            <div class="confirmacao-header">
+              <div class="checkmark" id="checkmark-box">
+                <i class="fas fa-check" id="hero-checkmark-icon"></i>
+              </div>
+              <div class="header-text">
+                <h1 id="hero-titulo">Compra confirmada!</h1>
+                <p class="subtitle" id="hero-subtitulo">
+                  Seu ingresso está pronto. Bom rolê!
+                </p>
+              </div>
+              <span class="order-id" id="pedido-id">Pedido #—</span>
             </div>
 
-            <div class="card">
-                <h2 class="section-title">Detalhes do Evento</h2>
-                <div class="event-details-card">
-                    <img class="event-image" src="caminho/para/imagem_evento.jpg" alt="Noite da Salsa">
-                    <div class="event-info">
-                        <h4>Noite da Salsa</h4>
+            <!-- PAGAMENTO PENDENTE (visível apenas quando status = pendente) -->
+            <div
+              class="card pendente-card"
+              id="pendente-card"
+              style="display: none"
+            >
+              <div class="pendente-header">
+                <i class="fas fa-hourglass-half"></i>
+                <h2 class="section-title" style="margin: 0">
+                  Aguardando confirmação do pagamento
+                </h2>
+              </div>
+              <p class="pendente-texto" id="pendente-texto">
+                Assim que recebermos a confirmação, seu ingresso é liberado
+                automaticamente aqui e por e-mail.
+              </p>
+
+              <!-- PIX -->
+              <div class="pendente-pix" id="pendente-pix" style="display: none">
+                <span class="pendente-label">Pix copia e cola</span>
+                <div class="pendente-code-row">
+                  <code id="pix-codigo">—</code>
+                  <button
+                    type="button"
+                    class="btn-action btn-copy"
+                    id="btn-copiar-pix"
+                  >
+                    <i class="fas fa-copy"></i> Copiar
+                  </button>
+                </div>
+              </div>
+
+              <!-- BOLETO -->
+              <div
+                class="pendente-boleto"
+                id="pendente-boleto"
+                style="display: none"
+              >
+                <a
+                  href="#"
+                  target="_blank"
+                  rel="noopener"
+                  class="btn-action"
+                  id="btn-ver-boleto"
+                  ><i class="fas fa-barcode"></i> Visualizar Boleto</a
+                >
+              </div>
+
+              <p
+                class="pendente-expira"
+                id="pendente-expira"
+                style="display: none"
+              ></p>
+            </div>
+
+            <!-- GRID PRINCIPAL: conteúdo do evento à esquerda, pagamento/ações à direita -->
+            <div class="layout-grid">
+              <!-- COLUNA PRINCIPAL -->
+              <div class="col-main">
+                <!-- TICKET (evento + tipo/QR) -->
+                <div class="ticket">
+                  <div class="ticket-main">
+                    <div class="event-details-card">
+                      <img
+                        class="event-image"
+                        id="event-image"
+                        src=""
+                        alt="Imagem do evento"
+                      />
+                      <div class="event-info">
+                        <h4 id="nome-evento">—</h4>
                         <div class="event-meta">
-                            <p><i class="fas fa-calendar-alt"></i> 02/02/2025</p>
-                            <p><i class="fas fa-clock"></i> 21:00</p>
-                            <p><i class="fas fa-map-marker-alt"></i> Club Latino - Setor Oeste</p>
+                          <p>
+                            <i class="fas fa-calendar-alt"></i>
+                            <span id="data-evento">—</span>
+                          </p>
+                          <p>
+                            <i class="fas fa-clock"></i>
+                            <span id="hora-evento">—</span>
+                          </p>
+                          <p>
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span id="local-evento">—</span>
+                          </p>
                         </div>
+                      </div>
                     </div>
+
+                    <ul
+                      class="benefits-list"
+                      id="benefits-list"
+                      style="display: none"
+                    ></ul>
+                  </div>
+
+                  <div class="ticket-seam"></div>
+
+                  <div class="ticket-stub">
+                    <span class="ticket-stub-tipo" id="tipo-ingresso">—</span>
+                    <span class="ticket-stub-qtd"
+                      >Qtd: <strong id="qtd">—</strong></span
+                    >
+                    <div class="qr-wrap" id="qr-wrap">
+                      <img
+                        id="qr-code-img"
+                        class="qr-img"
+                        alt="QR Code do ingresso"
+                        src=""
+                      />
+                      <div id="qr-fallback-icon" class="qr-placeholder">
+                        <i class="fas fa-qrcode"></i>
+                      </div>
+                    </div>
+                    <span
+                      class="qr-locked-label"
+                      id="qr-locked-label"
+                      style="display: none"
+                      >Liberado após pagamento</span
+                    >
+                    <span class="ticket-stub-id" id="pedido-id-qr">#—</span>
+                  </div>
                 </div>
-            </div>
 
-            <div class="card">
-                <h2 class="section-title">Seus Ingressos</h2>
-                <p style="font-size: 12px; color: #666; margin-top: -10px; margin-bottom: 20px;">Apresente o QR Code na
-                    entrada do evento</p>
-
-                <div class="ticket-summary">
-                    <div class="ticket-row">
-                        <span class="ticket-type"><i class="fas fa-ticket-alt"></i> Individual</span>
-                        <span class="ticket-price">R$ 30.00 cada</span>
-                    </div>
-                    <p style="font-size: 12px; color: #888; margin: 0; padding-left: 30px;">Quantidade: 2</p>
-
-                    <ul class="benefits-list">
-                        <li><i class="fas fa-check-circle"></i> Aula gratuita</li>
-                        <li><i class="fas fa-check-circle"></i> 1 drink cortesia</li>
-                    </ul>
+                <!-- CLIMA -->
+                <div class="card clima-card" id="clima-card">
+                  <div class="clima-icon"><i class="fas fa-cloud-sun"></i></div>
+                  <div class="clima-texto-wrap">
+                    <span class="clima-label"
+                      >Previsão para o dia do evento</span
+                    >
+                    <span class="clima-texto" id="clima-texto"
+                      >Carregando previsão...</span
+                    >
+                  </div>
+                  <i class="fas fa-external-link-alt clima-link-icon"></i>
                 </div>
 
-                <div style="margin-bottom: 20px;">
+                <!-- INFO IMPORTANTES -->
+                <div class="card info-card">
+                  <h2 class="section-title">Informações importantes</h2>
+                  <ul class="important-info-list">
+                    <li>
+                      Seu ingresso também fica disponível a qualquer momento no
+                      seu perfil
+                    </li>
+                    <li>Chegue com antecedência para evitar filas</li>
+                    <li>Apresente um documento com foto junto ao ingresso</li>
+                    <li>
+                      Em caso de dúvidas, entre em contato com o organizador do
+                      evento
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <!-- /COLUNA PRINCIPAL -->
+
+              <!-- COLUNA LATERAL -->
+              <aside class="col-side">
+                <!-- PAGAMENTO -->
+                <div class="card pagamento-card">
+                  <h2 class="section-title">Pagamento</h2>
+
+                  <div class="price-summary">
                     <div class="price-row">
-                        <span>Subtotal</span>
-                        <span class="price">R$ 60.00</span>
+                      <span>Preço unitário</span>
+                      <span class="price" id="preco-unitario"
+                        >R$ 0,00 cada</span
+                      >
                     </div>
                     <div class="price-row">
-                        <span>Taxa de serviço</span>
-                        <span class="price">R$ 6.00</span>
+                      <span>Subtotal</span>
+                      <span class="price" id="subtotal">R$ 0,00</span>
+                    </div>
+                    <div class="price-row">
+                      <span>Taxa de serviço</span>
+                      <span class="price" id="taxa">R$ 0,00</span>
                     </div>
                     <div class="price-row total-row">
-                        <span>Total Pago</span>
-                        <span class="price">R$ 66.00</span>
+                      <span>Total pago</span>
+                      <span class="price" id="total-pago">R$ 0,00</span>
                     </div>
+                  </div>
+                  <p class="pagamento-label">
+                    Forma de pagamento: <strong id="forma-pagamento">—</strong>
+                  </p>
+
+                  <div class="email-notice">
+                    <i class="fas fa-envelope-circle-check"></i> Um e-mail com
+                    seu ingresso em PDF foi enviado para o seu endereço
+                    cadastrado.
+                  </div>
+
+                  <div class="actions-buttons stacked">
+                    <button
+                      type="button"
+                      class="btn-primary"
+                      id="btn-baixar-pdf"
+                    >
+                      <i class="fas fa-download"></i> Baixar Ingresso (PDF)
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-action"
+                      id="btn-reenviar-email"
+                    >
+                      <i class="fas fa-envelope"></i> Reenviar por Email
+                    </button>
+                  </div>
                 </div>
 
-                <div class="qr-code-area">
-                    <div class="qr-placeholder">
-                        <i class="fas fa-qrcode"></i>
-                    </div>
-                    <p class="qr-code-text">QR Code do Ingresso</p>
-                    <p class="order-id">#ROLE-1763763271212</p>
+                <!-- AÇÕES FINAIS -->
+                <div class="card acoes-card">
+                  <a href="#" id="btn-ver-ingressos" class="btn-primary block"
+                    ><i class="fas fa-ticket-alt"></i> Ver Meus Ingressos</a
+                  >
+                  <div class="acoes-links">
+                    <a href="/frontend/index.html"
+                      ><i class="fas fa-home"></i> Página Inicial</a
+                    >
+                    <a href="/frontend/eventos/eventos.html"
+                      >Ver Mais Eventos</a
+                    >
+                  </div>
                 </div>
-
-                <div class="actions-buttons">
-                    <a href="#" class="btn-action"><i class="fas fa-download"></i> Baixar Ingressos (PDF)</a>
-                    <a href="#" class="btn-action"><i class="fas fa-envelope"></i> Reenviar por Email</a>
-                </div>
+              </aside>
+              <!-- /COLUNA LATERAL -->
             </div>
-
-            <div class="card">
-                <h2 class="section-title">Informações Importantes</h2>
-                <ul class="important-info-list">
-                    <li>Seus ingressos foram enviados para o email cadastrado</li>
-                    <li>Você também pode acessar seus ingressos a qualquer momento em seu perfil</li>
-                    <li>Chegue com antecedência para evitar filas</li>
-                    <li>Em caso de dúvidas, entre em contato com o organizador do evento</li>
-                    <li>Apresente um documento com foto junto ao ingresso</li>
-                </ul>
-            </div>
-
-            <div class="actions-buttons" style="margin-bottom: 50px;">
-                <a href="/frontend/index.html" class="btn-action"><i class="fas fa-home"></i> Página Inicial</a>
-                <a href="/frontend/eventos/eventos.html" class="btn-action">Ver Mais Eventos</a>
-                <a href="/frontend/perfil/perfil.html" class="btn-primary"><i class="fas fa-ticket-alt"></i> Ver
-                    Meus Ingressos</a>
-            </div>
-
+            <!-- /GRID PRINCIPAL -->
+          </div>
         </div>
+        <!-- /CONTEÚDO -->
+      </div>
     </main>
 
-</body>
-<!-- Toast -->
-<div id="toast">Mensagem de confirmação</div>
-<script src="/frontend/js/config.js"></script>
-    <script src="/frontend/js/footer.js" defer></script>
-<script src="/frontend/js/loadHeader.js"></script>
-<script src="/frontend/js/Confirmacao.js"></script>
+    <!-- Toast -->
+    <div id="toast">Mensagem de confirmação</div>
 
+    <script src="/frontend/js/config.js"></script>
+    <script src="/frontend/js/footer.js" defer></script>
+    <script src="/frontend/js/loadHeader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script src="/frontend/js/Confirmacao.js"></script>
+  </body>
 </html>

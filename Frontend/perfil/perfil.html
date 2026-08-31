@@ -1,477 +1,662 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil do Usuário — Rolês</title>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="/frontend/css/footer.css">
-    <link rel="stylesheet" href="/frontend/css/perfil.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfil do Usuário — Rolês</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="/frontend/css/footer.css" />
+  <link rel="stylesheet" href="/frontend/css/perfil.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 
 <body>
-    <header><div id="header-container"></div></header>
+  <header>
+    <div id="header-container"></div>
+  </header>
 
-    <main class="page-wrapper">
-
-        <!-- ════════════════ LEFT PANEL ════════════════ -->
-        <aside class="left-panel">
-
-            <div class="profile-card">
-                <div class="avatar-wrapper">
-                    <div class="avatar-circle">
-                        <svg id="avatar-default-svg" class="avatar-default"
-                             viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Fundo cinza — igual ao avatar padrão do header -->
-                            <circle cx="20" cy="20" r="20" fill="#ccc"/>
-                            <!-- Cabeça branca -->
-                            <circle cx="20" cy="16" r="7" fill="#fff"/>
-                            <!-- Ombros brancos -->
-                            <ellipse cx="20" cy="34" rx="12" ry="8" fill="#fff"/>
-                        </svg>
-                        <img id="profile-picture" src="" alt="Foto de perfil" style="display:none;">
-                    </div>
-                    <button class="avatar-edit-btn" id="edit-picture-btn" title="Alterar foto">
-                        <i class="fas fa-camera"></i>
-                    </button>
-                    <input type="file" id="picture-upload" accept="image/jpeg,image/png,image/webp" style="display:none;">
-                </div>
-
-                <h2 class="profile-name" id="profile-name-display">Carregando...</h2>
-                <span class="profile-badge">Cliente</span>
-
-                <p class="profile-meta"><i class="fas fa-envelope"></i><span id="profile-email-display">—</span></p>
-                <p class="profile-meta"><i class="fas fa-phone"></i><span id="profile-phone-display">—</span></p>
-                <p class="profile-meta"><i class="fas fa-map-marker-alt"></i><span id="profile-city-display">Goiânia — GO</span></p>
-                <p class="member-since" id="profile-member-since">Membro desde —</p>
-            </div>
-
-            <nav class="nav-card">
-                <p class="nav-section-title">Opções de conta</p>
-                <div class="nav-item active" data-section="info">
-                    <i class="fas fa-user"></i> Informações Pessoais
-                </div>
-                <div class="nav-item" data-section="senha">
-                    <i class="fas fa-lock"></i> Senha
-                </div>
-                <div class="nav-item" data-section="seguranca">
-                    <i class="fas fa-shield-alt"></i> Segurança
-                </div>
-                <div class="nav-item" data-section="sessoes">
-                    <i class="fas fa-desktop"></i> Sessões Abertas
-                </div>
-
-                <div class="nav-divider"></div>
-                <p class="nav-section-title">Meu conteúdo</p>
-
-                <div class="nav-item" data-section="favoritos">
-                    <i class="fas fa-heart"></i> Eventos Favoritos
-                </div>
-                <div class="nav-item" data-section="visitas">
-                    <i class="fas fa-history"></i> Visitas Recentes
-                </div>
-                <div class="nav-item" data-section="ingressos">
-                    <i class="fas fa-ticket-alt"></i> Meus Ingressos
-                    <span class="nav-badge" id="nav-ticket-count" style="display:none;"></span>
-                </div>
-
-                <div class="nav-divider"></div>
-                <p class="nav-section-title">Suporte</p>
-
-                <div class="nav-item" data-section="ajuda">
-                    <i class="fas fa-question-circle"></i> Você precisa de ajuda?
-                </div>
-                <div class="nav-item danger" id="logout-nav">
-                    <i class="fas fa-sign-out-alt"></i> Sair da conta
-                </div>
-            </nav>
-
-        </aside>
-
-        <!-- ════════════════ RIGHT PANEL ════════════════ -->
-        <section class="right-panel">
-
-            <!-- ─── INFORMAÇÕES PESSOAIS ─── -->
-            <div class="section-panel active" id="section-info">
-                <div class="content-card">
-                    <div class="card-header">
-                        <span class="card-title"><i class="fas fa-user"></i> Informações Pessoais</span>
-                        <button class="btn btn-primary btn-sm" id="save-info-btn">
-                            <i class="fas fa-save"></i> Salvar alterações
-                        </button>
-                    </div>
-                    <form id="form-info" novalidate>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="nome">Nome completo *</label>
-                                <input type="text" id="nome" placeholder="Seu nome completo">
-                                <span class="field-error" id="erro-nome">Informe um nome válido (mín. 3 letras).</span>
-                            </div>
-                            <div class="form-group">
-                                <label for="sobrenome">Sobrenome</label>
-                                <input type="text" id="sobrenome" placeholder="Sobrenome">
-                            </div>
-                        </div>
-                        <div class="form-row full">
-                            <div class="form-group">
-                                <label for="email">E-mail *</label>
-                                <input type="email" id="email" placeholder="seu@email.com">
-                                <span class="field-error" id="erro-email">Informe um e-mail válido.</span>
-                                <span class="field-hint">Usado para notificações e recuperação de senha.</span>
-                            </div>
-                        </div>
-                        <div class="form-row triple">
-                            <div class="form-group">
-                                <label for="pais">País</label>
-                                <select id="pais">
-                                    <option value="BR" selected>🇧🇷 Brasil</option>
-                                    <option value="PT">🇵🇹 Portugal</option>
-                                    <option value="US">🇺🇸 EUA</option>
-                                    <option value="AR">🇦🇷 Argentina</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="tipo-doc">Tipo de doc.</label>
-                                <select id="tipo-doc">
-                                    <option value="CPF">CPF</option>
-                                    <option value="RG">RG</option>
-                                    <option value="Passaporte">Passaporte</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="cpf">Número do doc.</label>
-                                <input type="text" id="cpf" placeholder="000.000.000-00">
-                                <span class="field-error" id="erro-cpf">CPF inválido.</span>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="telefone">Telefone</label>
-                                <input type="tel" id="telefone" placeholder="(62) 99999-9999" maxlength="15">
-                                <span class="field-error" id="erro-telefone">Telefone inválido.</span>
-                            </div>
-                            <div class="form-group">
-                                <label for="nascimento">Data de nascimento</label>
-                                <input type="date" id="nascimento">
-                                <span class="field-error" id="erro-nascimento">Você deve ter pelo menos 13 anos.</span>
-                            </div>
-                        </div>
-                        <div class="form-row full">
-                            <div class="form-group">
-                                <label for="sexo">Sexo</label>
-                                <select id="sexo">
-                                    <option value="">Prefiro não informar</option>
-                                    <option value="M">Masculino</option>
-                                    <option value="F">Feminino</option>
-                                    <option value="O">Outro</option>
-                                </select>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- ─── SENHA ─── -->
-            <div class="section-panel" id="section-senha">
-                <div class="content-card">
-                    <div class="card-header">
-                        <span class="card-title"><i class="fas fa-lock"></i> Alterar Senha</span>
-                    </div>
-                    <form id="form-senha" novalidate>
-                        <div class="form-row full">
-                            <div class="form-group">
-                                <label for="senha-atual">Senha atual *</label>
-                                <div class="input-icon-wrap">
-                                    <input type="password" id="senha-atual" placeholder="Sua senha atual">
-                                    <button type="button" class="eye-btn" data-target="senha-atual"><i class="fas fa-eye"></i></button>
-                                </div>
-                                <span class="field-error" id="erro-senha-atual">Informe sua senha atual.</span>
-                            </div>
-                        </div>
-                        <div class="form-row full">
-                            <div class="form-group">
-                                <label for="senha-nova">Nova senha *</label>
-                                <div class="input-icon-wrap">
-                                    <input type="password" id="senha-nova" placeholder="Mín. 8 caracteres">
-                                    <button type="button" class="eye-btn" data-target="senha-nova"><i class="fas fa-eye"></i></button>
-                                </div>
-                                <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
-                                <div class="strength-label" id="strength-label"></div>
-                                <span class="field-error" id="erro-senha-nova">Mín. 8 caracteres, 1 maiúscula, 1 número e 1 símbolo.</span>
-                            </div>
-                        </div>
-                        <div class="form-row full">
-                            <div class="form-group">
-                                <label for="senha-confirma">Confirmar nova senha *</label>
-                                <div class="input-icon-wrap">
-                                    <input type="password" id="senha-confirma" placeholder="Repita a nova senha">
-                                    <button type="button" class="eye-btn" data-target="senha-confirma"><i class="fas fa-eye"></i></button>
-                                </div>
-                                <span class="field-error" id="erro-senha-confirma">As senhas não coincidem.</span>
-                            </div>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Alterar senha</button>
-                            <button type="button" class="btn btn-ghost" id="cancel-senha-btn">Cancelar</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="content-card">
-                    <div class="card-header">
-                        <span class="card-title"><i class="fas fa-lightbulb"></i> Dicas de segurança</span>
-                    </div>
-                    <ul class="tips-list">
-                        <li><i class="fas fa-check-circle"></i> Use pelo menos 8 caracteres com letra, número e símbolo.</li>
-                        <li><i class="fas fa-check-circle"></i> Nunca reutilize senhas de outros serviços.</li>
-                        <li><i class="fas fa-check-circle"></i> Nunca compartilhe sua senha com ninguém.</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- ─── SEGURANÇA ─── -->
-            <div class="section-panel" id="section-seguranca">
-                <div class="content-card">
-                    <div class="card-header">
-                        <span class="card-title"><i class="fas fa-shield-alt"></i> Segurança da Conta</span>
-                    </div>
-                    <div class="security-item">
-                        <div>
-                            <div class="security-item-label">Autenticação em dois fatores (2FA)</div>
-                            <div class="security-item-desc">Proteja sua conta com verificação via SMS ou app autenticador.</div>
-                        </div>
-                        <div class="security-controls">
-                            <span class="status-badge off"><i class="fas fa-times-circle"></i> Desativado</span>
-                            <button class="btn btn-primary btn-sm">Ativar</button>
-                        </div>
-                    </div>
-                    <div class="security-item">
-                        <div>
-                            <div class="security-item-label">E-mail de recuperação</div>
-                            <div class="security-item-desc">Usado para recuperar acesso caso você perca a senha.</div>
-                        </div>
-                        <div class="security-controls">
-                            <span class="status-badge ok"><i class="fas fa-check-circle"></i> Configurado</span>
-                            <button class="btn btn-ghost btn-sm">Editar</button>
-                        </div>
-                    </div>
-                    <div class="security-item">
-                        <div>
-                            <div class="security-item-label">Alertas de novo dispositivo</div>
-                            <div class="security-item-desc">Receba e-mail quando um novo dispositivo acessar sua conta.</div>
-                        </div>
-                        <div class="security-controls">
-                            <span class="status-badge ok"><i class="fas fa-check-circle"></i> Ativo</span>
-                            <button class="btn btn-ghost btn-sm">Configurar</button>
-                        </div>
-                    </div>
-                    <div class="security-item">
-                        <div>
-                            <div class="security-item-label">Histórico de acessos</div>
-                            <div class="security-item-desc">Veja todos os acessos recentes à sua conta.</div>
-                        </div>
-                        <button class="btn btn-ghost btn-sm">Ver histórico</button>
-                    </div>
-                </div>
-                <div class="content-card">
-                    <div class="card-header">
-                        <span class="card-title danger-title"><i class="fas fa-exclamation-triangle"></i> Zona de perigo</span>
-                    </div>
-                    <div class="danger-zone">
-                        <div class="danger-zone-title">Excluir conta permanentemente</div>
-                        <div class="danger-zone-desc">Esta ação é irreversível. Todos os seus dados e ingressos serão apagados definitivamente.</div>
-                        <button class="btn btn-danger btn-sm" id="open-delete-modal">
-                            <i class="fas fa-trash-alt"></i> Quero excluir minha conta
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ─── SESSÕES ─── -->
-            <div class="section-panel" id="section-sessoes">
-                <div class="content-card">
-                    <div class="card-header">
-                        <span class="card-title"><i class="fas fa-desktop"></i> Sessões Abertas</span>
-                        <button class="btn btn-danger btn-sm" id="logout-all-btn">
-                            <i class="fas fa-sign-out-alt"></i> Encerrar todas
-                        </button>
-                    </div>
-                    <div class="session-card current">
-                        <div class="session-icon"><i class="fas fa-laptop"></i></div>
-                        <div class="session-info">
-                            <div class="session-device" id="session-current-device">Navegador atual</div>
-                            <div class="session-meta">Agora mesmo</div>
-                        </div>
-                        <span class="session-badge">Sessão atual</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ─── FAVORITOS ─── -->
-            <div class="section-panel" id="section-favoritos">
-                <div class="content-card">
-                    <div class="card-header">
-                        <span class="card-title"><i class="fas fa-heart"></i> Eventos Favoritos</span>
-                    </div>
-                    <div id="favoritos-loading" class="loading-state">
-                        <div class="spinner"></div><span>Carregando...</span>
-                    </div>
-                    <div id="favoritos-empty" class="empty-state" style="display:none;">
-                        <i class="fas fa-heart"></i>
-                        <p>Você ainda não favoritou nenhum lugar.</p>
-                        <a href="/" class="btn btn-primary btn-sm" style="margin-top:12px;">
-                            <i class="fas fa-search"></i> Explorar lugares
-                        </a>
-                    </div>
-                    <div class="item-list" id="favoritos-list" style="display:none;"></div>
-                </div>
-            </div>
-
-            <!-- ─── VISITAS ─── -->
-            <div class="section-panel" id="section-visitas">
-                <div class="content-card">
-                    <div class="card-header">
-                        <span class="card-title"><i class="fas fa-history"></i> Visitas Recentes</span>
-                    </div>
-                    <div id="visitas-loading" class="loading-state">
-                        <div class="spinner"></div><span>Carregando...</span>
-                    </div>
-                    <div id="visitas-empty" class="empty-state" style="display:none;">
-                        <i class="fas fa-history"></i>
-                        <p>Nenhuma visita registrada ainda.</p>
-                    </div>
-                    <div class="item-list" id="visitas-list" style="display:none;"></div>
-                </div>
-            </div>
-
-            <!-- ─── INGRESSOS ─── -->
-            <div class="section-panel" id="section-ingressos">
-                <div class="content-card">
-                    <div class="card-header">
-                        <span class="card-title"><i class="fas fa-ticket-alt"></i> Meus Ingressos</span>
-                        <div class="ticket-filters">
-                            <button class="filter-btn active" data-filter="todos">Todos</button>
-                            <button class="filter-btn" data-filter="proximos">Próximos</button>
-                            <button class="filter-btn" data-filter="passados">Passados</button>
-                        </div>
-                    </div>
-                    <div id="tickets-loading" class="loading-state">
-                        <div class="spinner"></div><span>Carregando ingressos...</span>
-                    </div>
-                    <div id="tickets-empty" class="empty-state" style="display:none;">
-                        <i class="fas fa-ticket-alt"></i>
-                        <p>Você ainda não comprou nenhum ingresso.</p>
-                        <a href="/frontend/html/eventos.html" class="btn btn-primary btn-sm" style="margin-top:12px;">
-                            <i class="fas fa-search"></i> Explorar eventos
-                        </a>
-                    </div>
-                    <div class="item-list" id="tickets-list" style="display:none;"></div>
-                </div>
-                <div class="content-card" id="tickets-summary" style="display:none;">
-                    <div class="card-header">
-                        <span class="card-title"><i class="fas fa-chart-bar"></i> Resumo de compras</span>
-                    </div>
-                    <div class="summary-grid">
-                        <div class="summary-item">
-                            <span class="summary-value" id="summary-total">0</span>
-                            <span class="summary-label">Ingressos comprados</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-value" id="summary-proximos">0</span>
-                            <span class="summary-label">Próximos eventos</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-value" id="summary-gasto">R$ 0,00</span>
-                            <span class="summary-label">Total investido</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ─── AJUDA ─── -->
-            <div class="section-panel" id="section-ajuda">
-                <div class="content-card">
-                    <div class="card-header">
-                        <span class="card-title"><i class="fas fa-question-circle"></i> Como podemos ajudar?</span>
-                    </div>
-                    <div class="help-grid">
-                        <div class="help-card"><i class="fas fa-ticket-alt"></i><div class="help-card-title">Problemas com ingressos</div><div class="help-card-desc">Compra, reembolso ou transferência.</div></div>
-                        <div class="help-card"><i class="fas fa-user-cog"></i><div class="help-card-title">Conta e acesso</div><div class="help-card-desc">Login, senha ou dados do perfil.</div></div>
-                        <div class="help-card"><i class="fas fa-credit-card"></i><div class="help-card-title">Pagamentos</div><div class="help-card-desc">Cobrança, formas de pagamento e NF.</div></div>
-                        <div class="help-card"><i class="fas fa-comments"></i><div class="help-card-title">Falar com suporte</div><div class="help-card-desc">Entre em contato com nossa equipe.</div></div>
-                    </div>
-                </div>
-                <div class="content-card">
-                    <div class="card-header">
-                        <span class="card-title"><i class="fas fa-list-ul"></i> Perguntas frequentes</span>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question"><span>Como faço para transferir meu ingresso?</span><i class="fas fa-chevron-down"></i></div>
-                        <div class="faq-answer">Em "Meus Ingressos", localize o ingresso e clique em "Transferir". Informe o e-mail do destinatário e confirme.</div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question"><span>Posso pedir reembolso?</span><i class="fas fa-chevron-down"></i></div>
-                        <div class="faq-answer">Reembolsos são permitidos até 7 dias antes do evento. Em "Meus Ingressos" selecione "Solicitar reembolso".</div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question"><span>Como ativar autenticação em dois fatores?</span><i class="fas fa-chevron-down"></i></div>
-                        <div class="faq-answer">Vá em "Segurança" no menu lateral e clique em "Ativar" ao lado de "Autenticação em dois fatores".</div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question"><span>Como alterar minha foto de perfil?</span><i class="fas fa-chevron-down"></i></div>
-                        <div class="faq-answer">Clique no ícone de câmera sobre a foto no painel esquerdo. Formatos aceitos: JPG, PNG, WebP (máx. 5 MB).</div>
-                    </div>
-                </div>
-            </div>
-
-        </section>
-
-    </main><!-- /.page-wrapper -->
-
-    <!-- Modal: excluir conta -->
-    <div id="delete-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <h3>Excluir conta?</h3>
-            <p>Esta ação é <strong>permanente e irreversível</strong>. Todos os seus dados e ingressos serão apagados.</p>
-            <div class="modal-actions">
-                <button class="btn btn-ghost" id="cancel-delete-btn">Cancelar</button>
-                <button class="btn btn-danger" id="confirm-delete-btn"><i class="fas fa-trash-alt"></i> Sim, excluir</button>
-            </div>
+  <main class="page-wrapper">
+    <!-- ════════════════ LEFT PANEL ════════════════ -->
+    <aside class="left-panel">
+      <div class="profile-card">
+        <div class="avatar-wrapper">
+          <div class="avatar-circle">
+            <svg id="avatar-default-svg" class="avatar-default" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+              <!-- Fundo cinza — igual ao avatar padrão do header -->
+              <circle cx="20" cy="20" r="20" fill="#ccc" />
+              <!-- Cabeça branca -->
+              <circle cx="20" cy="16" r="7" fill="#fff" />
+              <!-- Ombros brancos -->
+              <ellipse cx="20" cy="34" rx="12" ry="8" fill="#fff" />
+            </svg>
+            <img id="profile-picture" src="" alt="Foto de perfil" style="display: none" />
+          </div>
+          <button class="avatar-edit-btn" id="edit-picture-btn" title="Alterar foto">
+            <i class="fas fa-camera"></i>
+          </button>
+          <input type="file" id="picture-upload" accept="image/jpeg,image/png,image/webp" style="display: none" />
         </div>
-    </div>
 
-    <!-- Modal: transferir ingresso -->
-    <div id="transfer-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-icon" style="color:var(--primary);font-size:36px;"><i class="fas fa-exchange-alt"></i></div>
-            <h3>Transferir Ingresso</h3>
-            <p id="transfer-ticket-name" style="font-weight:600;color:var(--text-dark);margin-bottom:4px;"></p>
-            <p>Informe o e-mail da pessoa para quem deseja transferir:</p>
-            <div class="form-group" style="margin-top:12px;text-align:left;">
-                <label for="transfer-email">E-mail do destinatário</label>
-                <input type="email" id="transfer-email" placeholder="destinatario@email.com">
-                <span class="field-error" id="erro-transfer-email">Informe um e-mail válido.</span>
+        <h2 class="profile-name" id="profile-name-display">Carregando...</h2>
+        <span class="profile-badge">Cliente</span>
+
+        <p class="profile-meta">
+          <i class="fas fa-envelope"></i><span id="profile-email-display">—</span>
+        </p>
+        <p class="profile-meta">
+          <i class="fas fa-phone"></i><span id="profile-phone-display">—</span>
+        </p>
+        <p class="profile-meta">
+          <i class="fas fa-map-marker-alt"></i><span id="profile-city-display">Goiânia — GO</span>
+        </p>
+        <p class="member-since" id="profile-member-since">Membro desde —</p>
+      </div>
+
+      <nav class="nav-card">
+        <p class="nav-section-title">Opções de conta</p>
+        <div class="nav-item active" data-section="info">
+          <i class="fas fa-user"></i> Informações Pessoais
+        </div>
+        <div class="nav-item" data-section="senha">
+          <i class="fas fa-lock"></i> Senha
+        </div>
+        <div class="nav-item" data-section="seguranca">
+          <i class="fas fa-shield-alt"></i> Segurança
+        </div>
+        <div class="nav-item" data-section="sessoes">
+          <i class="fas fa-desktop"></i> Sessões Abertas
+        </div>
+
+        <div class="nav-divider"></div>
+        <p class="nav-section-title">Meu conteúdo</p>
+
+        <div class="nav-item" data-section="favoritos">
+          <i class="fas fa-heart"></i> Eventos Favoritos
+        </div>
+        <div class="nav-item" data-section="visitas">
+          <i class="fas fa-history"></i> Visitas Recentes
+        </div>
+        <div class="nav-item" data-section="ingressos">
+          <i class="fas fa-ticket-alt"></i> Meus Ingressos
+          <span class="nav-badge" id="nav-ticket-count" style="display: none"></span>
+        </div>
+
+        <div class="nav-divider"></div>
+        <p class="nav-section-title">Suporte</p>
+
+        <div class="nav-item" data-section="ajuda">
+          <i class="fas fa-question-circle"></i> Você precisa de ajuda?
+        </div>
+        <div class="nav-item danger" id="logout-nav">
+          <i class="fas fa-sign-out-alt"></i> Sair da conta
+        </div>
+      </nav>
+    </aside>
+
+    <!-- ════════════════ RIGHT PANEL ════════════════ -->
+    <section class="right-panel">
+      <!-- ─── INFORMAÇÕES PESSOAIS ─── -->
+      <div class="section-panel active" id="section-info">
+        <div class="content-card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-user"></i> Informações Pessoais</span>
+            <button class="btn btn-primary btn-sm" id="save-info-btn">
+              <i class="fas fa-save"></i> Salvar alterações
+            </button>
+          </div>
+          <form id="form-info" novalidate>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="nome">Nome completo *</label>
+                <input type="text" id="nome" placeholder="Seu nome completo" />
+                <span class="field-error" id="erro-nome">Informe um nome válido (mín. 3 letras).</span>
+              </div>
+              <div class="form-group">
+                <label for="sobrenome">Sobrenome</label>
+                <input type="text" id="sobrenome" placeholder="Sobrenome" />
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="form-group">
+                <label for="email">E-mail *</label>
+                <input type="email" id="email" placeholder="seu@email.com" />
+                <span class="field-error" id="erro-email">Informe um e-mail válido.</span>
+                <span class="field-hint">Usado para notificações e recuperação de senha.</span>
+              </div>
+            </div>
+            <div class="form-row triple">
+              <div class="form-group">
+                <label for="pais">País</label>
+                <select id="pais">
+                  <option value="BR" selected>🇧🇷 Brasil</option>
+                  <option value="PT">🇵🇹 Portugal</option>
+                  <option value="US">🇺🇸 EUA</option>
+                  <option value="AR">🇦🇷 Argentina</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="tipo-doc">Tipo de doc.</label>
+                <select id="tipo-doc">
+                  <option value="CPF">CPF</option>
+                  <option value="RG">RG</option>
+                  <option value="Passaporte">Passaporte</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="cpf">Número do doc.</label>
+                <input type="text" id="cpf" placeholder="000.000.000-00" />
+                <span class="field-error" id="erro-cpf">CPF inválido.</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="telefone">Telefone</label>
+                <input type="tel" id="telefone" placeholder="(62) 99999-9999" maxlength="15" />
+                <span class="field-error" id="erro-telefone">Telefone inválido.</span>
+              </div>
+              <div class="form-group">
+                <label for="nascimento">Data de nascimento</label>
+                <input type="date" id="nascimento" />
+                <span class="field-error" id="erro-nascimento">Você deve ter pelo menos 13 anos.</span>
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="form-group">
+                <label for="sexo">Sexo</label>
+                <select id="sexo">
+                  <option value="">Prefiro não informar</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Feminino</option>
+                  <option value="O">Outro</option>
+                </select>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ─── SENHA ─── -->
+      <div class="section-panel" id="section-senha">
+        <div class="content-card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-lock"></i> Alterar Senha</span>
+          </div>
+          <form id="form-senha" novalidate>
+            <div class="form-row full">
+              <div class="form-group">
+                <label for="senha-atual">Senha atual *</label>
+                <div class="input-icon-wrap">
+                  <input type="password" id="senha-atual" placeholder="Sua senha atual" />
+                  <button type="button" class="eye-btn" data-target="senha-atual">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <span class="field-error" id="erro-senha-atual">Informe sua senha atual.</span>
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="form-group">
+                <label for="senha-nova">Nova senha *</label>
+                <div class="input-icon-wrap">
+                  <input type="password" id="senha-nova" placeholder="Mín. 8 caracteres" />
+                  <button type="button" class="eye-btn" data-target="senha-nova">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <div class="strength-bar">
+                  <div class="strength-fill" id="strength-fill"></div>
+                </div>
+                <div class="strength-label" id="strength-label"></div>
+                <span class="field-error" id="erro-senha-nova">Mín. 8 caracteres, 1 maiúscula, 1 número e 1
+                  símbolo.</span>
+              </div>
+            </div>
+            <div class="form-row full">
+              <div class="form-group">
+                <label for="senha-confirma">Confirmar nova senha *</label>
+                <div class="input-icon-wrap">
+                  <input type="password" id="senha-confirma" placeholder="Repita a nova senha" />
+                  <button type="button" class="eye-btn" data-target="senha-confirma">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <span class="field-error" id="erro-senha-confirma">As senhas não coincidem.</span>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Alterar senha
+              </button>
+              <button type="button" class="btn btn-ghost" id="cancel-senha-btn">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+        <div class="content-card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-lightbulb"></i> Dicas de segurança</span>
+          </div>
+          <ul class="tips-list">
+            <li>
+              <i class="fas fa-check-circle"></i> Use pelo menos 8 caracteres
+              com letra, número e símbolo.
+            </li>
+            <li>
+              <i class="fas fa-check-circle"></i> Nunca reutilize senhas de
+              outros serviços.
+            </li>
+            <li>
+              <i class="fas fa-check-circle"></i> Nunca compartilhe sua senha
+              com ninguém.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ─── SEGURANÇA ─── -->
+      <div class="section-panel" id="section-seguranca">
+        <div class="content-card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-shield-alt"></i> Segurança da Conta</span>
+          </div>
+
+          <div class="security-item">
+            <div>
+              <div class="security-item-label">Autenticação em dois fatores (2FA)</div>
+              <div class="security-item-desc">Sua conta já usa verificação por código no login.</div>
+            </div>
+            <div class="security-controls">
+              <span class="status-badge ok"><i class="fas fa-check-circle"></i> Ativo</span>
+            </div>
+          </div>
+
+          <div class="security-item">
+            <div>
+              <div class="security-item-label">Redefinir senha por e-mail</div>
+              <div class="security-item-desc">Envie um código de recuperação para seu e-mail cadastrado.</div>
+            </div>
+            <div class="security-controls">
+              <span class="status-badge ok"><i class="fas fa-check-circle"></i> Configurado</span>
+              <button class="btn btn-ghost btn-sm" id="btn-abrir-recuperar-senha">
+                <i class="fas fa-key"></i> Recuperar senha
+              </button>
+            </div>
+          </div>
+
+          <div class="security-item">
+            <div>
+              <div class="security-item-label">Alertas de novo dispositivo</div>
+              <div class="security-item-desc">Receba e-mail quando um novo dispositivo acessar sua conta.</div>
+            </div>
+            <div class="security-controls">
+              <span class="status-badge ok" id="alerta-status">
+                <i class="fas fa-check-circle"></i> Ativo
+              </span>
+              <button class="btn btn-ghost btn-sm" id="btn-toggle-alerta">Desativar</button>
+            </div>
+          </div>
+
+          <div class="security-item">
+            <div>
+              <div class="security-item-label">Histórico de acessos</div>
+              <div class="security-item-desc">Veja todos os acessos recentes à sua conta.</div>
+            </div>
+            <div class="security-controls">
+              <button class="btn btn-ghost btn-sm" id="btn-ver-historico">
+                <i class="fas fa-list"></i> Ver histórico
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Histórico de acessos -->
+        <div class="content-card" id="historico-card" style="display:none;">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-history"></i> Histórico de Acessos</span>
+            <button class="btn btn-ghost btn-sm" id="btn-fechar-historico">
+              <i class="fas fa-times"></i> Fechar
+            </button>
+          </div>
+          <div id="historico-loading" class="loading-state">
+            <div class="spinner"></div><span>Carregando...</span>
+          </div>
+          <div id="historico-empty" class="empty-state" style="display:none;">
+            <i class="fas fa-history"></i>
+            <p>Nenhum acesso registrado ainda.</p>
+          </div>
+          <div id="historico-list" style="display:none;"></div>
+        </div>
+
+        <div class="content-card">
+          <div class="card-header">
+            <span class="card-title danger-title"><i class="fas fa-exclamation-triangle"></i> Zona de perigo</span>
+          </div>
+          <div class="danger-zone">
+            <div class="danger-zone-title">Excluir conta permanentemente</div>
+            <div class="danger-zone-desc">Esta ação é irreversível. Todos os seus dados e ingressos serão apagados
+              definitivamente.</div>
+            <button class="btn btn-danger btn-sm" id="open-delete-modal">
+              <i class="fas fa-trash-alt"></i> Quero excluir minha conta
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: recuperar senha (inline no perfil) -->
+      <div id="recuperar-senha-modal" class="modal-overlay">
+        <div class="modal" style="max-width:460px;">
+          <div class="modal-icon" style="color:var(--primary);font-size:36px;">
+            <i class="fas fa-key"></i>
+          </div>
+          <h3>Recuperar Senha</h3>
+
+          <!-- Etapa 1: e-mail -->
+          <div id="recuperar-etapa-1">
+            <p>Informe seu e-mail para receber o código de recuperação.</p>
+            <div class="form-group" style="margin:16px 0;text-align:left;">
+              <label for="recuperar-email">E-mail da conta</label>
+              <input type="email" id="recuperar-email" placeholder="seu@email.com">
+              <span class="field-error" id="erro-recuperar-email">Informe um e-mail válido.</span>
             </div>
             <div class="modal-actions">
-                <button class="btn btn-ghost" id="cancel-transfer-btn">Cancelar</button>
-                <button class="btn btn-primary" id="confirm-transfer-btn"><i class="fas fa-paper-plane"></i> Transferir</button>
+              <button class="btn btn-ghost" id="btn-cancelar-recuperar">Cancelar</button>
+              <button class="btn btn-primary" id="btn-enviar-codigo-recuperar">
+                <i class="fas fa-paper-plane"></i> Enviar código
+              </button>
             </div>
+          </div>
+
+          <!-- Etapa 2: código + nova senha -->
+          <div id="recuperar-etapa-2" style="display:none;">
+            <p>Digite o código recebido no e-mail e sua nova senha.</p>
+            <div class="form-group" style="margin:12px 0;text-align:left;">
+              <label for="recuperar-codigo">Código de verificação</label>
+              <input type="text" id="recuperar-codigo" placeholder="000000" maxlength="6">
+              <span class="field-error" id="erro-recuperar-codigo">Informe o código recebido.</span>
+            </div>
+            <div class="form-group" style="margin:12px 0;text-align:left;">
+              <label for="recuperar-nova-senha">Nova senha</label>
+              <div class="input-icon-wrap">
+                <input type="password" id="recuperar-nova-senha" placeholder="Mín. 8 caracteres">
+                <button type="button" class="eye-btn" data-target="recuperar-nova-senha"><i
+                    class="fas fa-eye"></i></button>
+              </div>
+              <span class="field-error" id="erro-recuperar-nova-senha">Mín. 8 caracteres, 1 número e 1 símbolo.</span>
+            </div>
+            <div class="modal-actions">
+              <button class="btn btn-ghost" id="btn-voltar-recuperar">
+                <i class="fas fa-arrow-left"></i> Voltar
+              </button>
+              <button class="btn btn-primary" id="btn-redefinir-senha">
+                <i class="fas fa-save"></i> Redefinir senha
+              </button>
+            </div>
+          </div>
         </div>
-    </div>
+      </div>
+      <!-- ─── SESSÕES ─── -->
+      <div class="section-panel" id="section-sessoes">
+        <div class="content-card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-desktop"></i> Sessões Abertas</span>
+            <button class="btn btn-danger btn-sm" id="logout-all-btn">
+              <i class="fas fa-sign-out-alt"></i> Encerrar todas
+            </button>
+          </div>
+          <div class="session-card current">
+            <div class="session-icon"><i class="fas fa-laptop"></i></div>
+            <div class="session-info">
+              <div class="session-device" id="session-current-device">
+                Navegador atual
+              </div>
+              <div class="session-meta">Agora mesmo</div>
+            </div>
+            <span class="session-badge">Sessão atual</span>
+          </div>
+        </div>
+      </div>
 
-    <!-- Toast -->
-    <div class="toast" id="toast">
-        <i class="fas fa-check-circle" id="toast-icon"></i>
-        <span id="toast-msg">Operação realizada!</span>
-    </div>
+      <!-- ─── FAVORITOS ─── -->
+      <div class="section-panel" id="section-favoritos">
+        <div class="content-card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-heart"></i> Eventos Favoritos</span>
+          </div>
+          <div id="favoritos-loading" class="loading-state">
+            <div class="spinner"></div>
+            <span>Carregando...</span>
+          </div>
+          <div id="favoritos-empty" class="empty-state" style="display: none">
+            <i class="fas fa-heart"></i>
+            <p>Você ainda não favoritou nenhum lugar.</p>
+            <a href="/" class="btn btn-primary btn-sm" style="margin-top: 12px">
+              <i class="fas fa-search"></i> Explorar lugares
+            </a>
+          </div>
+          <div class="item-list" id="favoritos-list" style="display: none"></div>
+        </div>
+      </div>
 
-    <!-- Scripts — mesma ordem do cadastro.html -->
-    <script src="/frontend/js/config.js"></script>
-    <script src="/frontend/js/footer.js" defer></script>
-    <script src="/frontend/js/loadHeader.js"></script>
-    <script src="/Frontend/js/auth.js"></script>
-    <script src="/frontend/js/perfil.js"></script>
+      <!-- ─── VISITAS ─── -->
+      <div class="section-panel" id="section-visitas">
+        <div class="content-card">
+          <div class="card-header">
+            <div class="card-header">
+            <span class="card-title"><i class="fas fa-history"></i> Visitas Recentes</span>
+        </div>
+        <p style="font-size:11px;color:var(--text-light);margin-bottom:12px;">
+            <i class="fas fa-info-circle"></i> Visitas são mantidas por 7 dias.
+        </p>
+           
+          </div>
+          <div id="visitas-loading" class="loading-state">
+            <div class="spinner"></div>
+            <span>Carregando...</span>
+          </div>
+          <div id="visitas-empty" class="empty-state" style="display: none">
+            <i class="fas fa-history"></i>
+            <p>Nenhuma visita registrada ainda.</p>
+          </div>
+          <div class="item-list" id="visitas-list" style="display: none"></div>
+        </div>
+      </div>
+
+      <!-- ─── INGRESSOS ─── -->
+      <div class="section-panel" id="section-ingressos">
+        <div class="content-card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-ticket-alt"></i> Meus Ingressos</span>
+            <div class="ticket-filters">
+              <button class="filter-btn active" data-filter="todos">
+                Todos
+              </button>
+              <button class="filter-btn" data-filter="proximos">
+                Próximos
+              </button>
+              <button class="filter-btn" data-filter="passados">
+                Passados
+              </button>
+            </div>
+          </div>
+          <div id="tickets-loading" class="loading-state">
+            <div class="spinner"></div>
+            <span>Carregando ingressos...</span>
+          </div>
+          <div id="tickets-empty" class="empty-state" style="display: none">
+            <i class="fas fa-ticket-alt"></i>
+            <p>Você ainda não comprou nenhum ingresso.</p>
+            <a href="/frontend/html/eventos.html" class="btn btn-primary btn-sm" style="margin-top: 12px">
+              <i class="fas fa-search"></i> Explorar eventos
+            </a>
+          </div>
+          <div class="item-list" id="tickets-list" style="display: none"></div>
+        </div>
+        <div class="content-card" id="tickets-summary" style="display: none">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-chart-bar"></i> Resumo de compras</span>
+          </div>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="summary-value" id="summary-total">0</span>
+              <span class="summary-label">Ingressos comprados</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-value" id="summary-proximos">0</span>
+              <span class="summary-label">Próximos eventos</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-value" id="summary-gasto">R$ 0,00</span>
+              <span class="summary-label">Total investido</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── AJUDA ─── -->
+      <div class="section-panel" id="section-ajuda">
+        <div class="content-card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-question-circle"></i> Como podemos
+              ajudar?</span>
+          </div>
+          <div class="help-grid">
+            <div class="help-card">
+              <i class="fas fa-ticket-alt"></i>
+              <div class="help-card-title">Problemas com ingressos</div>
+              <div class="help-card-desc">
+                Compra, reembolso ou transferência.
+              </div>
+            </div>
+            <div class="help-card">
+              <i class="fas fa-user-cog"></i>
+              <div class="help-card-title">Conta e acesso</div>
+              <div class="help-card-desc">
+                Login, senha ou dados do perfil.
+              </div>
+            </div>
+            <div class="help-card">
+              <i class="fas fa-credit-card"></i>
+              <div class="help-card-title">Pagamentos</div>
+              <div class="help-card-desc">
+                Cobrança, formas de pagamento e NF.
+              </div>
+            </div>
+            <div class="help-card">
+              <i class="fas fa-comments"></i>
+              <div class="help-card-title">Falar com suporte</div>
+              <div class="help-card-desc">
+                Entre em contato com nossa equipe.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="content-card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-list-ul"></i> Perguntas frequentes</span>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>Como faço para transferir meu ingresso?</span><i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              Em "Meus Ingressos", localize o ingresso e clique em
+              "Transferir". Informe o e-mail do destinatário e confirme.
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>Posso pedir reembolso?</span><i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              Reembolsos são permitidos até 7 dias antes do evento. Em "Meus
+              Ingressos" selecione "Solicitar reembolso".
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>Como ativar autenticação em dois fatores?</span><i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              Vá em "Segurança" no menu lateral e clique em "Ativar" ao lado
+              de "Autenticação em dois fatores".
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>Como alterar minha foto de perfil?</span><i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              Clique no ícone de câmera sobre a foto no painel esquerdo.
+              Formatos aceitos: JPG, PNG, WebP (máx. 5 MB).
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <!-- /.page-wrapper -->
+
+  <!-- Modal: excluir conta -->
+  <div id="delete-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <h3>Excluir conta?</h3>
+      <p>
+        Esta ação é <strong>permanente e irreversível</strong>. Todos os seus
+        dados e ingressos serão apagados.
+      </p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="cancel-delete-btn">Cancelar</button>
+        <button class="btn btn-danger" id="confirm-delete-btn">
+          <i class="fas fa-trash-alt"></i> Sim, excluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: transferir ingresso -->
+  <div id="transfer-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-icon" style="color: var(--primary); font-size: 36px">
+        <i class="fas fa-exchange-alt"></i>
+      </div>
+      <h3>Transferir Ingresso</h3>
+      <p id="transfer-ticket-name" style="font-weight: 600; color: var(--text-dark); margin-bottom: 4px"></p>
+      <p>Informe o e-mail da pessoa para quem deseja transferir:</p>
+      <div class="form-group" style="margin-top: 12px; text-align: left">
+        <label for="transfer-email">E-mail do destinatário</label>
+        <input type="email" id="transfer-email" placeholder="destinatario@email.com" />
+        <span class="field-error" id="erro-transfer-email">Informe um e-mail válido.</span>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="cancel-transfer-btn">
+          Cancelar
+        </button>
+        <button class="btn btn-primary" id="confirm-transfer-btn">
+          <i class="fas fa-paper-plane"></i> Transferir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <i class="fas fa-check-circle" id="toast-icon"></i>
+    <span id="toast-msg">Operação realizada!</span>
+  </div>
+
+  <!-- Scripts — mesma ordem do cadastro.html -->
+  <script src="/frontend/js/config.js"></script>
+  <script src="/frontend/js/footer.js" defer></script>
+  <script src="/frontend/js/loadHeader.js"></script>
+  <script src="/Frontend/js/auth.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/frontend/js/perfil.js"></script>
 </body>
+
 </html>

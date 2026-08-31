@@ -22,3 +22,4 @@ router.post("/", authOpcional, criarAvaliacao);
 router.delete("/:id", deletarAvaliacao);
 
 module.exports = router;
+

@@ -58,8 +58,14 @@ const connection = require("../db/db_config");
 
 // =====================================================
 // CRIAR EVENTO
+// AGORA exige login (req.usuario vem do middleware verificarToken,
+// que precisa ser adicionado na rota — ver instruções abaixo)
+// e salva o usuario_id de quem criou.
 // =====================================================
 exports.criarEvento = (req, res) => {
+  const usuarioId = req.usuario?.id;
+  if (!usuarioId) return res.status(401).json({ erro: "Usuário não autenticado." });
+
   const {
     nome, assunto, categoria, imagem, data_inicio, data_fim,
     descricao, local_nome, cep, rua, cidade, estado, nome_produtor, ingressos,
@@ -68,11 +74,11 @@ exports.criarEvento = (req, res) => {
   if (!nome || !data_inicio || !data_fim)
     return res.status(400).json({ erro: "Nome, data de início e data de término são obrigatórios." });
 
-  const sql = `INSERT INTO eventos (nome, assunto, categoria, imagem, data_inicio, data_fim,
+  const sql = `INSERT INTO eventos (usuario_id, nome, assunto, categoria, imagem, data_inicio, data_fim,
        descricao, local_nome, cep, rua, cidade, estado, nome_produtor)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-  const valores = [nome, assunto||null, categoria||null, imagem||null, data_inicio, data_fim,
+  const valores = [usuarioId, nome, assunto||null, categoria||null, imagem||null, data_inicio, data_fim,
     descricao||null, local_nome||null, cep||null, rua||null, cidade||null, estado||null, nome_produtor||null];
 
   connection.query(sql, valores, (err, result) => {
@@ -83,12 +89,6 @@ exports.criarEvento = (req, res) => {
     if (!ingressos || ingressos.length === 0)
       return res.status(201).json({ mensagem: "Evento criado com sucesso!", eventoId });
 
-    // ── Monta INSERT multi-linha compatível com Postgres ──
-    // Em vez de "VALUES ?" (sintaxe exclusiva do mysql2), geramos
-    // "(?, ?, ?, ?, ?), (?, ?, ?, ?, ?), ..." e um array de valores
-    // já achatado (flatMap), na mesma ordem. O db_config.js converte
-    // cada "?" pra $1, $2... na ordem em que aparecem, então isso
-    // funciona igual pro Postgres.
     const placeholders = ingressos.map(() => "(?, ?, ?, ?, ?)").join(", ");
     const sqlIng = `INSERT INTO ingressos (evento_id, titulo, tipo, valor, quantidade_total) VALUES ${placeholders}`;
     const vals = ingressos.flatMap(i => [
@@ -103,6 +103,48 @@ exports.criarEvento = (req, res) => {
       if (errIng) return res.status(500).json({ erro: "Evento salvo, mas erro ao salvar ingressos.", detalhes: errIng.message });
       res.status(201).json({ mensagem: "Evento e ingressos criados com sucesso!", eventoId });
     });
+  });
+};
+
+// =====================================================
+// LISTAR EVENTOS
+//
+// Dois modos, dependendo se vem ?criador_id= na URL:
+//
+// - SEM criador_id (listagem pública, ex: página de eventos do site):
+//   mantém o comportamento antigo — só eventos futuros, de todo mundo.
+//
+// - COM criador_id (usado pelo Dashboard):
+//   traz TODOS os eventos daquele usuário (passados e futuros),
+//   já que o dono precisa ver o histórico completo, não só o que
+//   ainda vai acontecer.
+//
+// BUG CORRIGIDO: GROUP_CONCAT(... SEPARATOR ...) é sintaxe do MySQL
+// e não existe no Postgres — trocado por STRING_AGG(..., ', '),
+// que é o equivalente no Postgres.
+// =====================================================
+exports.listarEventos = (req, res) => {
+  const { criador_id } = req.query;
+
+  const filtroWhere = criador_id
+    ? "WHERE e.usuario_id = ?"
+    : "WHERE e.data_inicio >= NOW()";
+
+  const sql = `
+    SELECT e.*, MIN(i.valor) AS preco_minimo,
+      STRING_AGG(i.titulo, ', ') AS tipos_ingresso
+    FROM eventos e
+    LEFT JOIN ingressos i ON i.evento_id = e.id
+    ${filtroWhere}
+    GROUP BY e.id
+    ORDER BY e.data_inicio ${criador_id ? "DESC" : "ASC"}
+  `;
+
+  const params = criador_id ? [criador_id] : [];
+
+  connection.query(sql, params, (err, results) => {
+    if (err) return res.status(500).json({ erro: "Erro ao buscar eventos.", detalhes: err.message });
+    res.json(results);
   });
 };
 

@@ -26,6 +26,43 @@ async function listarEventos(req, res) {
 }
 
 // ====================================================
+// VENDAS DOS MEUS EVENTOS (visão do dono/organizador — pro Dashboard)
+// GET /pedidos/vendas/:usuario_id
+// ====================================================
+async function vendasDoDono(req, res) {
+    const { usuario_id } = req.params;
+    if (!usuario_id) {
+        return res.status(400).json({ erro: "usuario_id não informado." });
+    }
+
+    try {
+        const vendas = await db.query(`
+            SELECT
+                p.id,
+                p.evento_id,
+                p.valor_total,
+                p.forma_pagamento,
+                p.status,
+                p.criado_em,
+                e.nome                                                  AS nome_evento,
+                u.nome_completo                                         AS nome_comprador,
+                u.email                                                 AS email_comprador,
+                (SELECT titulo FROM ingressos WHERE evento_id = p.evento_id LIMIT 1) AS tipo_ingresso
+            FROM pedidos p
+            JOIN eventos  e ON e.id = p.evento_id
+            JOIN usuarios u ON u.id = p.usuario_id
+            WHERE e.usuario_id = ?
+            ORDER BY p.criado_em DESC
+        `, [usuario_id]);
+
+        res.json(vendas);
+    } catch (err) {
+        console.error("Erro ao buscar vendas do dono:", err);
+        res.status(500).json({ erro: "Erro ao buscar vendas.", detalhe: err.message });
+    }
+}
+
+// ====================================================
 // DETALHE DO EVENTO + TIPOS DE INGRESSO
 // ====================================================
 async function detalheEvento(req, res) {
@@ -319,5 +356,6 @@ module.exports = {
     meusIngressos,
     validarQRCode,
     detalheIngresso,
-    reenviarEmailIngresso,   // ← novo
+    reenviarEmailIngresso,
+    vendasDoDono,   // ← novo
 };

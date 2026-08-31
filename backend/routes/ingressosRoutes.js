@@ -8,7 +8,8 @@ const {
     meusIngressos,
     validarQRCode,
     detalheIngresso,
-    reenviarEmailIngresso,   // ← novo
+    reenviarEmailIngresso,
+    vendasDoDono,   // ← novo
 } = require("../controllers/ingressosController");
 
 const { downloadIngressoPDF } = require("../controllers/ticketPdfController");
@@ -30,7 +31,8 @@ ingressosRouter.get("/:id",                 detalheIngresso);
 // -- Router de PEDIDOS --
 const pedidosRouter = express.Router();
 pedidosRouter.get("/usuario/:usuario_id", meusIngressos);
-pedidosRouter.post("/:id/reenviar-email", reenviarEmailIngresso);   // ← novo
+pedidosRouter.get("/vendas/:usuario_id", vendasDoDono);   // ← novo
+pedidosRouter.post("/:id/reenviar-email", reenviarEmailIngresso);
 
 module.exports = { eventosRouter, ingressosRouter, pedidosRouter };
 

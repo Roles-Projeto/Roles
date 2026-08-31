@@ -3,152 +3,224 @@
 // ─────────────────────────────────────────────
 // FLAG GLOBAL DE ESTADOS VAZIOS
 // ─────────────────────────────────────────────
-let _dashboardVazio       = false;
+let _dashboardVazio = false;
 let _estabelecimentosVazio = false;
-let _eventosVazio          = false;
-let _vendasVazio           = false;
-let _notificacoesVazio     = false;
+let _eventosVazio = false;
+let _vendasVazio = false;
+let _notificacoesVazio = false;
+
+// ─────────────────────────────────────────────
+// DADOS REAIS CARREGADOS DO BACKEND
+// ─────────────────────────────────────────────
+let _eventosReais = [];
+let _estabsReais = [];
+let _vendasReais = [];
+let _vendidosPorEventoReais = {};   // { evento_id: { qtd, receita } } — a partir de vendas aprovadas
+let _ingressosPorEventoReais = {};  // { evento_id: totalIngressos } — a partir da tabela `ingressos`
+
+// ─────────────────────────────────────────────
+// CARREGAMENTO CONSOLIDADO DE DADOS REAIS
+// ─────────────────────────────────────────────
+async function carregarDashboard() {
+  const userId = localStorage.getItem('userId');
+  const token = localStorage.getItem('token');
+  if (!userId || !token) {
+    _mostrarVazioTodos();
+    return;
+  }
+
+  const headers = { 'Authorization': 'Bearer ' + token };
+
+  try {
+    const [resEventos, resEstabs, resVendas, resIngressos] = await Promise.all([
+      fetch(`${window.API_BASE}/eventos?criador_id=${userId}`, { headers }),
+      fetch(`${window.API_BASE}/estabelecimentos/meus`, { headers }),
+      fetch(`${window.API_BASE}/pedidos/vendas/${userId}`, { headers }),
+      // Rota nova (ingressosDashboard.js). Se ainda não estiver no ar no backend,
+      // resIngressos.ok vai ser false e seguimos com ocupação = 0, sem quebrar o resto.
+      fetch(`${window.API_BASE}/ingressos/totais/${userId}`, { headers }).catch(() => null)
+    ]);
+
+    const eventos = resEventos.ok ? await resEventos.json() : [];
+    const estabs = resEstabs.ok ? await resEstabs.json() : [];
+    const vendas = resVendas.ok ? await resVendas.json() : [];
+    const ingressosTotais = (resIngressos && resIngressos.ok) ? await resIngressos.json() : [];
+
+    _eventosReais = Array.isArray(eventos) ? eventos : (eventos.data || []);
+    _estabsReais = Array.isArray(estabs) ? estabs : (estabs.data || []);
+    _vendasReais = Array.isArray(vendas) ? vendas : (vendas.data || []);
+
+    _ingressosPorEventoReais = {};
+    (Array.isArray(ingressosTotais) ? ingressosTotais : []).forEach(row => {
+      _ingressosPorEventoReais[row.evento_id] = Number(row.total) || 0;
+    });
+
+    const vendidosPorEvento = calcularVendidosPorEvento(_vendasReais);
+    _vendidosPorEventoReais = vendidosPorEvento;
+    const vendasAprovadas = _vendasReais.filter(v => (v.status || '').toLowerCase() === 'aprovado');
+
+    processarEstadosVazios(_eventosReais, _estabsReais, vendidosPorEvento);
+
+    renderizarVendas(_vendasReais);
+    renderizarVendasRecentes(_vendasReais);
+    atualizarKPIs(vendasAprovadas, _eventosReais, _estabsReais, vendidosPorEvento, _ingressosPorEventoReais);
+    prepararGraficos(_eventosReais, vendasAprovadas, vendidosPorEvento, _ingressosPorEventoReais);
+    renderizarProximosEventos(_eventosReais, vendidosPorEvento, _ingressosPorEventoReais);
+    renderizarReceitaPorLocal(_eventosReais, vendasAprovadas);
+    renderizarNotificacoesReais(_vendasReais);
+
+    if (!_dashboardVazio) criarGraficos();
+
+  } catch (e) {
+    console.warn('Erro ao carregar dados do dashboard:', e);
+    _mostrarVazioTodos();
+  }
+}
+
+// Conta pedidos aprovados por evento_id (proxy de "vendidos" — a query
+// vendasDoDono não traz quantidade de ingressos por pedido, só o total
+// em dinheiro, então aqui 1 pedido aprovado = 1 unidade "vendida".
+// Isso fica impreciso se algum pedido tiver mais de 1 ingresso —
+// pra corrigir de verdade, precisa de uma coluna quantidade em pedidos
+// ou uma tabela pedido_itens).
+function calcularVendidosPorEvento(vendas) {
+  const mapa = {};
+  vendas.forEach(v => {
+    if ((v.status || '').toLowerCase() !== 'aprovado') return;
+    if (!mapa[v.evento_id]) mapa[v.evento_id] = { qtd: 0, receita: 0 };
+    mapa[v.evento_id].qtd += 1;
+    mapa[v.evento_id].receita += parseFloat(v.valor_total) || 0;
+  });
+  return mapa;
+}
 
 // ─────────────────────────────────────────────
 // ESTADOS VAZIOS DO DASHBOARD
 // ─────────────────────────────────────────────
-async function verificarEstadosVazios() {
-    const userId = localStorage.getItem('userId');
-    const token  = localStorage.getItem('token');
-    if (!userId || !token) {
-        _mostrarVazioTodos();
-        return;
+function processarEstadosVazios(eventos, estabs, vendidosPorEvento) {
+  try {
+    const qtdEventos = Array.isArray(eventos) ? eventos.length : 0;
+    const qtdEstabs = Array.isArray(estabs) ? estabs.length : 0;
+
+    if (qtdEventos === 0 && qtdEstabs === 0) {
+      _dashboardVazio = true;
+      _mostrarVazio('dashboard', 'visao-geral');
+      document.querySelectorAll('.kpi-grid, .charts-row, .bottom-row').forEach(el => el.style.display = 'none');
+      const banner = document.getElementById('alertBanner');
+      if (banner) banner.style.display = 'none';
+    } else {
+      _dashboardVazio = false;
     }
 
-    const headers = { 'Authorization': 'Bearer ' + token };
-
-    try {
-        const [resEventos, resEstabs] = await Promise.all([
-            fetch(`/eventos?criador_id=${userId}`, { headers }),
-            fetch(`${API_URL}/estabelecimentos/meus`, { headers })  
-        ]);
-
-        const eventos = resEventos.ok ? await resEventos.json() : [];
-        const estabs  = resEstabs.ok  ? await resEstabs.json()  : [];
-
-        const qtdEventos = Array.isArray(eventos) ? eventos.length : (eventos.data?.length || 0);
-        const qtdEstabs  = Array.isArray(estabs)  ? estabs.length  : (estabs.data?.length  || 0);
-
-        // Visão Geral — vazio se não tiver nenhum dos dois
-        if (qtdEventos === 0 && qtdEstabs === 0) {
-            _dashboardVazio = true;
-            _mostrarVazio('dashboard', 'visao-geral');
-            document.querySelectorAll('.kpi-grid, .charts-row, .bottom-row').forEach(el => el.style.display = 'none');
-            const banner = document.getElementById('alertBanner');
-            if (banner) banner.style.display = 'none';
-        }
-
-        // Estabelecimentos — vazio se não tiver nenhum
-        if (qtdEstabs === 0) {
-            _estabelecimentosVazio = true;
-            _mostrarVazio('estabelecimentos', 'estabelecimentos');
-            document.querySelectorAll('#estabelecimentos .ev-card').forEach(el => el.style.display = 'none');
-        }
-
-        // Eventos — vazio se não tiver nenhum
-        if (qtdEventos === 0) {
-            _eventosVazio = true;
-            _mostrarVazio('eventos', 'eventos');
-            document.querySelectorAll('#eventos .ev-card').forEach(el => el.style.display = 'none');
-        }
-
-        // Vendas — vazio se não tiver nenhum evento (sem evento = sem venda)
-        if (qtdEventos === 0 && qtdEstabs === 0) {
-            _vendasVazio = true;
-            _mostrarVazio('vendas', 'vendas');
-            const tableWrap = document.querySelector('#vendas .table-wrap');
-            if (tableWrap) tableWrap.style.display = 'none';
-        }
-
-        // Notificações — vazio se não tiver nenhum dos dois
-        if (qtdEventos === 0 && qtdEstabs === 0) {
-            _notificacoesVazio = true;
-            _mostrarVazio('notificacoes', 'notificacoes');
-            document.querySelector('#notifList')?.querySelectorAll('.notif-item, .notif-group-label').forEach(el => el.style.display = 'none');
-        }
-
-    } catch (e) {
-        console.warn('Erro ao verificar estados vazios:', e);
-        _mostrarVazioTodos();
+    if (qtdEstabs === 0) {
+      _estabelecimentosVazio = true;
+      _mostrarVazio('estabelecimentos', 'estabelecimentos');
+    } else {
+      _estabelecimentosVazio = false;
+      renderizarEstabelecimentos(estabs);
     }
+
+    if (qtdEventos === 0) {
+      _eventosVazio = true;
+      _mostrarVazio('eventos', 'eventos');
+    } else {
+      _eventosVazio = false;
+      renderizarEventos(eventos, vendidosPorEvento);
+    }
+
+    if (_vendasReais.length === 0) {
+      _vendasVazio = true;
+      _mostrarVazio('vendas', 'vendas');
+      const tableWrap = document.querySelector('#vendas .table-wrap');
+      if (tableWrap) tableWrap.style.display = 'none';
+    } else {
+      _vendasVazio = false;
+    }
+
+    if (qtdEventos === 0 && qtdEstabs === 0) {
+      _notificacoesVazio = true;
+      _mostrarVazio('notificacoes', 'notificacoes');
+    } else {
+      _notificacoesVazio = false;
+    }
+
+  } catch (e) {
+    console.warn('Erro ao processar estados vazios:', e);
+  }
 }
 
 // Mostra estado vazio em todas as abas (fallback de erro de rede)
 function _mostrarVazioTodos() {
-    _dashboardVazio        = true;
-    _estabelecimentosVazio = true;
-    _eventosVazio          = true;
-    _vendasVazio           = true;
-    _notificacoesVazio     = true;
+  _dashboardVazio = true;
+  _estabelecimentosVazio = true;
+  _eventosVazio = true;
+  _vendasVazio = true;
+  _notificacoesVazio = true;
 
-    ['dashboard', 'estabelecimentos', 'eventos', 'vendas', 'notificacoes'].forEach(id => {
-        _mostrarVazio(id, id);
-    });
-    document.querySelectorAll('.kpi-grid, .charts-row, .bottom-row, .table-wrap, #notifList').forEach(el => el.style.display = 'none');
-    const banner = document.getElementById('alertBanner');
-    if (banner) banner.style.display = 'none';
-    document.querySelectorAll('.ev-card').forEach(el => el.style.display = 'none');
+  ['dashboard', 'estabelecimentos', 'eventos', 'vendas', 'notificacoes'].forEach(id => {
+    _mostrarVazio(id, id);
+  });
+  document.querySelectorAll('.kpi-grid, .charts-row, .bottom-row, .table-wrap, #notifList, .loading-placeholder').forEach(el => el.style.display = 'none');
+  const banner = document.getElementById('alertBanner');
+  if (banner) banner.style.display = 'none';
+  document.querySelectorAll('.ev-card').forEach(el => el.style.display = 'none');
 }
 
 // Configurações por aba
 const _configVazio = {
-    'visao-geral': {
-        icone: `<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>`,
-        titulo: 'Seu dashboard está vazio',
-        descricao: 'Crie um evento ou cadastre um estabelecimento para começar a ver seus relatórios, vendas e métricas aqui.',
-        botoes: true
-    },
-    'estabelecimentos': {
-        icone: `<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>`,
-        titulo: 'Nenhum estabelecimento cadastrado',
-        descricao: 'Cadastre seu primeiro estabelecimento para gerenciar seu negócio, receber avaliações e acompanhar as métricas.',
-        botoes: false,
-        botaoUnico: { label: 'Cadastrar estabelecimento', href: '/frontend/criarEstabelecimentos/criarEstabelecimentos.html' }
-    },
-    'eventos': {
-        icone: `<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>`,
-        titulo: 'Nenhum evento criado',
-        descricao: 'Crie seu primeiro evento para começar a vender ingressos e acompanhar as métricas de ocupação.',
-        botoes: false,
-        botaoUnico: { label: 'Criar meu primeiro evento', href: '/frontend/criareventos/criareventos.html' }
-    },
-    'vendas': {
-        icone: `<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>`,
-        titulo: 'Nenhuma venda ainda',
-        descricao: 'Quando seus ingressos começarem a ser vendidos, todas as transações aparecerão aqui.',
-        botoes: true
-    },
-    'notificacoes': {
-        icone: `<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>`,
-        titulo: 'Nenhuma notificação',
-        descricao: 'Você receberá notificações de vendas, avaliações e atualizações do seu negócio aqui.',
-        botoes: false
-    }
+  'visao-geral': {
+    icone: `<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>`,
+    titulo: 'Seu dashboard está vazio',
+    descricao: 'Crie um evento ou cadastre um estabelecimento para começar a ver seus relatórios, vendas e métricas aqui.',
+    botoes: true
+  },
+  'estabelecimentos': {
+    icone: `<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>`,
+    titulo: 'Nenhum estabelecimento cadastrado',
+    descricao: 'Cadastre seu primeiro estabelecimento para gerenciar seu negócio, receber avaliações e acompanhar as métricas.',
+    botoes: false,
+    botaoUnico: { label: 'Cadastrar estabelecimento', href: '/frontend/criarEstabelecimentos/criarEstabelecimentos.html' }
+  },
+  'eventos': {
+    icone: `<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>`,
+    titulo: 'Nenhum evento criado',
+    descricao: 'Crie seu primeiro evento para começar a vender ingressos e acompanhar as métricas de ocupação.',
+    botoes: false,
+    botaoUnico: { label: 'Criar meu primeiro evento', href: '/frontend/criareventos/criareventos.html' }
+  },
+  'vendas': {
+    icone: `<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>`,
+    titulo: 'Nenhuma venda ainda',
+    descricao: 'Quando seus ingressos começarem a ser vendidos, todas as transações aparecerão aqui.',
+    botoes: true
+  },
+  'notificacoes': {
+    icone: `<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>`,
+    titulo: 'Nenhuma notificação',
+    descricao: 'Você receberá notificações de vendas, avaliações e atualizações do seu negócio aqui.',
+    botoes: false
+  }
 };
 
 function _mostrarVazio(secaoId, tipo) {
-    const secao = document.getElementById(secaoId);
-    if (!secao || secao.querySelector('.empty-state-box')) return;
+  const secao = document.getElementById(secaoId);
+  if (!secao || secao.querySelector('.empty-state-box')) return;
 
-    const cfg = _configVazio[tipo] || _configVazio['visao-geral'];
+  secao.querySelectorAll('.loading-placeholder').forEach(el => el.remove());
 
-    // Monta os botões
-    let botoesHTML = '';
-    if (cfg.botoes) {
-        botoesHTML = `
+  const cfg = _configVazio[tipo] || _configVazio['visao-geral'];
+
+  let botoesHTML = '';
+  if (cfg.botoes) {
+    botoesHTML = `
             <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center;">
                 <a href="/frontend/criareventos/criareventos.html" style="
                     display:inline-flex; align-items:center; gap:8px;
-                    background:linear-gradient(135deg,#a78bfa,#7c3aed);
-                    color:#fff; text-decoration:none;
+                    background:var(--p);
+                    color:#241A02; text-decoration:none;
                     padding:12px 24px; border-radius:10px;
-                    font-family:'Poppins',sans-serif; font-size:14px; font-weight:600;
-                    box-shadow:0 4px 14px rgba(124,58,237,0.3);"
+                    font-family:'Inter',sans-serif; font-size:14px; font-weight:600;
+                    box-shadow:0 4px 14px rgba(255,182,39,.3);"
                     onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -157,11 +229,11 @@ function _mostrarVazio(secaoId, tipo) {
                 </a>
                 <a href="/frontend/criarEstabelecimentos/criarEstabelecimentos.html" style="
                     display:inline-flex; align-items:center; gap:8px;
-                    background:#fff; color:#7c3aed; text-decoration:none;
+                    background:var(--card); color:var(--p); text-decoration:none;
                     padding:12px 24px; border-radius:10px;
-                    border:1.5px solid #7c3aed;
-                    font-family:'Poppins',sans-serif; font-size:14px; font-weight:600;"
-                    onmouseover="this.style.background='#f5f0ff'" onmouseout="this.style.background='#fff'">
+                    border:1.5px solid var(--p-border);
+                    font-family:'Inter',sans-serif; font-size:14px; font-weight:600;"
+                    onmouseover="this.style.background='var(--p-bg)'" onmouseout="this.style.background='var(--card)'">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                         <polyline points="9 22 9 12 15 12 15 22"/>
@@ -169,104 +241,193 @@ function _mostrarVazio(secaoId, tipo) {
                     Cadastrar estabelecimento
                 </a>
             </div>`;
-    } else if (cfg.botaoUnico) {
-        botoesHTML = `
+  } else if (cfg.botaoUnico) {
+    botoesHTML = `
             <a href="${cfg.botaoUnico.href}" style="
                 display:inline-flex; align-items:center; gap:8px;
-                background:linear-gradient(135deg,#a78bfa,#7c3aed);
-                color:#fff; text-decoration:none;
+                background:var(--p);
+                color:#241A02; text-decoration:none;
                 padding:12px 28px; border-radius:10px;
-                font-family:'Poppins',sans-serif; font-size:14px; font-weight:600;
-                box-shadow:0 4px 14px rgba(124,58,237,0.3);"
+                font-family:'Inter',sans-serif; font-size:14px; font-weight:600;
+                box-shadow:0 4px 14px rgba(255,182,39,.3);"
                 onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
                 ${cfg.botaoUnico.label}
             </a>`;
-    }
+  }
 
-    const vazio = document.createElement('div');
-    vazio.className = 'empty-state-box';
-    vazio.style.cssText = `
-        display:flex; flex-direction:column; align-items:center;
-        justify-content:center; padding:80px 24px; text-align:center;
-    `;
-    vazio.innerHTML = `
+  const vazio = document.createElement('div');
+  vazio.className = 'empty-state-box';
+  vazio.innerHTML = `
         <div style="
             width:80px; height:80px; border-radius:50%;
-            background:#f5f0ff; display:flex; align-items:center;
+            background:var(--p-bg); display:flex; align-items:center;
             justify-content:center; margin-bottom:24px;">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--p)" stroke-width="1.8">
                 ${cfg.icone}
             </svg>
         </div>
-        <h2 style="font-family:'Poppins',sans-serif; font-size:22px; font-weight:700;
-                   color:#111827; margin:0 0 8px;">${cfg.titulo}</h2>
-        <p style="font-family:'Poppins',sans-serif; font-size:14px; color:#6b7280;
+        <h2 style="font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700;
+                   color:var(--text); margin:0 0 8px;">${cfg.titulo}</h2>
+        <p style="font-family:'Inter',sans-serif; font-size:14px; color:var(--text-3);
                   max-width:420px; line-height:1.7; margin:0 0 40px;">${cfg.descricao}</p>
         ${botoesHTML}
     `;
 
-    secao.appendChild(vazio);
+  secao.appendChild(vazio);
 }
 
 // ─────────────────────────────────────────────
-// ESTADO GLOBAL DE NOTIFICAÇÕES
+// KPIs (VISÃO GERAL) — 6 cards, todos com dado real
 // ─────────────────────────────────────────────
-let unreadCount = 3;
+function atualizarKPIs(vendasAprovadas, eventos, estabs, vendidosPorEvento, ingressosPorEvento) {
+  const receitaTotal = vendasAprovadas.reduce((s, v) => s + (parseFloat(v.valor_total) || 0), 0);
+  const ingressosVendidos = vendasAprovadas.length; // proxy — ver nota em calcularVendidosPorEvento
 
-function setUnreadCount(n) {
-  unreadCount = Math.max(0, n);
-  const badge = document.querySelector('.dnav-badge');
-  if (badge) {
-    badge.textContent = unreadCount;
-    badge.style.display = unreadCount > 0 ? 'inline-flex' : 'none';
-  }
-  const banner = document.getElementById('alertBanner');
-  if (banner) {
-    if (unreadCount === 0) {
-      banner.style.display = 'none';
-    } else {
-      banner.style.display = 'flex';
-      const strong = banner.querySelector('strong');
-      if (strong) strong.textContent = unreadCount + ' notificaç' + (unreadCount === 1 ? 'ão não lida' : 'ões não lidas');
+  // Eventos "ativos" = data_inicio ainda não passou (ou sem data definida)
+  const agora = new Date();
+  const eventosAtivos = eventos.filter(e => !e.data_inicio || new Date(e.data_inicio) >= agora).length;
+
+  let somaNotas = 0, somaAvaliacoes = 0;
+  estabs.forEach(es => {
+    const n = Number(es.avaliacoes) || 0;
+    somaNotas += (Number(es.nota) || 0) * n;
+    somaAvaliacoes += n;
+  });
+  const avaliacaoMedia = somaAvaliacoes > 0 ? (somaNotas / somaAvaliacoes).toFixed(1) : '—';
+
+  const ticketMedio = ingressosVendidos > 0 ? receitaTotal / ingressosVendidos : 0;
+
+  // Ocupação média: soma de vendidos / soma de capacidade total, entre eventos que já têm ingressos cadastrados
+  let somaVendidos = 0, somaCapacidade = 0;
+  eventos.forEach(e => {
+    const total = ingressosPorEvento[e.id] || 0;
+    if (total > 0) {
+      somaCapacidade += total;
+      somaVendidos += (vendidosPorEvento[e.id] && vendidosPorEvento[e.id].qtd) || 0;
     }
-  }
-  const groupLabel = document.querySelector('#notifList .notif-group-label');
-  if (groupLabel) {
-    groupLabel.textContent = 'Não lidas · ' + unreadCount;
-  }
+  });
+  const ocupacaoMedia = somaCapacidade > 0 ? Math.round((somaVendidos / somaCapacidade) * 100) : null;
+
+  const elReceita = document.getElementById('total-vendas');
+  if (elReceita) elReceita.textContent = formatarMoeda(receitaTotal);
+
+  const elIngressos = document.getElementById('ingressos-vendidos');
+  if (elIngressos) elIngressos.textContent = ingressosVendidos;
+
+  const elEventosAtivos = document.getElementById('eventos-ativos');
+  if (elEventosAtivos) elEventosAtivos.textContent = eventosAtivos;
+
+  const elNota = document.getElementById('avaliacao-media');
+  if (elNota) elNota.textContent = avaliacaoMedia === '—' ? '—' : avaliacaoMedia + ' ⭐';
+
+  const elDescNota = document.getElementById('avaliacao-desc');
+  if (elDescNota) elDescNota.textContent = somaAvaliacoes + ' avaliações no total';
+
+  const elTicket = document.getElementById('ticket-medio');
+  if (elTicket) elTicket.textContent = formatarMoeda(ticketMedio);
+
+  const elOcupacao = document.getElementById('taxa-ocupacao');
+  if (elOcupacao) elOcupacao.textContent = ocupacaoMedia === null ? '—' : ocupacaoMedia + '%';
 }
 
 // ─────────────────────────────────────────────
 // INSTÂNCIAS DOS GRÁFICOS
 // ─────────────────────────────────────────────
-let salesChartInst  = null;
+let salesChartInst = null;
 let ratingChartInst = null;
-
-const chartData = {
-  '6m': { labels: ['Mai','Jun','Jul','Ago','Set','Out'], data: [8200,11500,15800,22400,31000,45780] },
-  '3m': { labels: ['Ago','Set','Out'],                  data: [22400,31000,45780] },
-  '1m': { labels: ['S1','S2','S3','S4'],                data: [8900,12400,14200,10280] }
-};
+let chartData = { '6m': { labels: [], data: [] }, '3m': { labels: [], data: [] }, '1m': { labels: [], data: [] } };
 let currentPeriod = '6m';
+let eventosData = { labels: [], vendidos: [], disponiveis: [] };
 
-const eventosData = {
-  labels:      ['Live Jazz Night','Festival Eletrônico','Happy Hour'],
-  vendidos:    [156, 186, 0],
-  disponiveis: [44,  114, 100]
-};
+function prepararGraficos(eventos, vendasAprovadas, vendidosPorEvento, ingressosPorEvento) {
+  chartData = construirDadosReceitaMensal(vendasAprovadas);
+  eventosData = construirDadosIngressosPorEvento(eventos, vendidosPorEvento, ingressosPorEvento);
+}
+
+function construirDadosReceitaMensal(vendasAprovadas) {
+  const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const receitaPorChave = {};
+  vendasAprovadas.forEach(v => {
+    if (!v.criado_em) return;
+    const d = new Date(v.criado_em);
+    const chave = d.getFullYear() + '-' + d.getMonth();
+    receitaPorChave[chave] = (receitaPorChave[chave] || 0) + (parseFloat(v.valor_total) || 0);
+  });
+
+  const gerarPeriodoMeses = (qtd) => {
+    const labels = [];
+    const data = [];
+    const hoje = new Date();
+    for (let i = qtd - 1; i >= 0; i--) {
+      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      const chave = d.getFullYear() + '-' + d.getMonth();
+      labels.push(nomesMeses[d.getMonth()]);
+      data.push(receitaPorChave[chave] || 0);
+    }
+    return { labels, data };
+  };
+
+  // "1M" quebra o mês corrente em 4 semanas
+  const hoje = new Date();
+  const semanas = [0, 0, 0, 0];
+  vendasAprovadas.forEach(v => {
+    if (!v.criado_em) return;
+    const d = new Date(v.criado_em);
+    if (d.getFullYear() !== hoje.getFullYear() || d.getMonth() !== hoje.getMonth()) return;
+    const idx = Math.min(3, Math.floor((d.getDate() - 1) / 7));
+    semanas[idx] += parseFloat(v.valor_total) || 0;
+  });
+
+  return {
+    '6m': gerarPeriodoMeses(6),
+    '3m': gerarPeriodoMeses(3),
+    '1m': { labels: ['S1', 'S2', 'S3', 'S4'], data: semanas }
+  };
+}
+
+function construirDadosIngressosPorEvento(eventos, vendidosPorEvento, ingressosPorEvento) {
+  const comVendas = eventos
+    .map(e => ({
+      nome: e.nome,
+      vendidos: (vendidosPorEvento[e.id] && vendidosPorEvento[e.id].qtd) || 0,
+      total: ingressosPorEvento[e.id] || 0
+    }))
+    .sort((a, b) => b.vendidos - a.vendidos)
+    .slice(0, 6);
+
+  return {
+    labels: comVendas.map(e => e.nome),
+    vendidos: comVendas.map(e => e.vendidos),
+    disponiveis: comVendas.map(e => Math.max(0, e.total - e.vendidos))
+  };
+}
 
 // ─────────────────────────────────────────────
 // CRIAR / RECRIAR GRÁFICOS
+// Paleta alinhada ao tema escuro dourado/coral do resto do produto
 // ─────────────────────────────────────────────
+const CHART_FONT = "'Inter', sans-serif";
+const CHART_COLORS = {
+  gold: '#FFB627',
+  goldSoft: 'rgba(255,182,39,0.14)',
+  coral: '#FF5C7A',
+  coralSoft: 'rgba(255,92,122,0.35)',
+  grid: 'rgba(255,255,255,0.06)',
+  tick: '#9689B8',
+  tooltipBg: '#1C1834',
+  tooltipBorder: '#322850',
+  tooltipText: '#F1EDFA'
+};
+
 function criarGraficos() {
-  const salesCanvas  = document.getElementById('salesChart');
+  const salesCanvas = document.getElementById('salesChart');
   const ratingCanvas = document.getElementById('ratingChart');
   if (!salesCanvas || !ratingCanvas) return;
 
-  if (salesChartInst)  { salesChartInst.destroy();  salesChartInst  = null; }
+  if (salesChartInst) { salesChartInst.destroy(); salesChartInst = null; }
   if (ratingChartInst) { ratingChartInst.destroy(); ratingChartInst = null; }
 
   const periodo = chartData[currentPeriod];
@@ -278,38 +439,49 @@ function criarGraficos() {
       datasets: [{
         label: 'Receita (R$)',
         data: periodo.data,
-        borderColor: '#7c3aed',
-        backgroundColor: 'rgba(124,58,237,0.08)',
+        borderColor: CHART_COLORS.gold,
+        backgroundColor: CHART_COLORS.goldSoft,
         borderWidth: 2.5,
         fill: true,
-        tension: 0.45,
-        pointBackgroundColor: '#7c3aed',
-        pointBorderColor: '#fff',
+        tension: 0.4,
+        pointBackgroundColor: CHART_COLORS.gold,
+        pointBorderColor: CHART_COLORS.tooltipBg,
         pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 7
+        pointRadius: 4,
+        pointHoverRadius: 6
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode:'index', intersect:false },
+      interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#111827',
-          titleFont: { family:'Poppins', size:12 },
-          bodyFont:  { family:'Poppins', size:13 },
+          backgroundColor: CHART_COLORS.tooltipBg,
+          borderColor: CHART_COLORS.tooltipBorder,
+          borderWidth: 1,
+          titleColor: CHART_COLORS.tooltipText,
+          bodyColor: CHART_COLORS.tooltipText,
+          titleFont: { family: CHART_FONT, size: 12, weight: '600' },
+          bodyFont: { family: CHART_FONT, size: 13 },
           padding: 12, cornerRadius: 8, displayColors: false,
           callbacks: {
             title: items => 'Mês: ' + items[0].label,
-            label: ctx  => ' R$ ' + ctx.parsed.y.toLocaleString('pt-BR')
+            label: ctx => ' R$ ' + ctx.parsed.y.toLocaleString('pt-BR')
           }
         }
       },
       scales: {
-        x: { grid:{display:false}, ticks:{font:{family:'Poppins',size:11},color:'#9ca3af'} },
-        y: { grid:{color:'#f3f4f6'}, ticks:{font:{family:'Poppins',size:11},color:'#9ca3af',callback:v=>'R$ '+(v/1000).toFixed(0)+'k'} }
+        x: { grid: { display: false }, ticks: { font: { family: CHART_FONT, size: 11 }, color: CHART_COLORS.tick } },
+        y: {
+          grid: { color: CHART_COLORS.grid },
+          border: { display: false },
+          ticks: {
+            font: { family: CHART_FONT, size: 11 }, color: CHART_COLORS.tick,
+            callback: v => 'R$ ' + (v / 1000).toFixed(0) + 'k'
+          }
+        }
       }
     }
   });
@@ -319,24 +491,38 @@ function criarGraficos() {
     data: {
       labels: eventosData.labels,
       datasets: [
-        { label:'Vendidos',    data:eventosData.vendidos,    backgroundColor:'#7c3aed', borderRadius:6, barPercentage:0.6 },
-        { label:'Disponíveis', data:eventosData.disponiveis, backgroundColor:'#e9e9ea', borderRadius:6, barPercentage:0.6 }
+        { label: 'Vendidos', data: eventosData.vendidos, backgroundColor: CHART_COLORS.gold, borderRadius: 6, barPercentage: 0.6 },
+        { label: 'Disponíveis', data: eventosData.disponiveis, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, barPercentage: 0.6 }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode:'index', intersect:false },
+      interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: {
-          display: true, position:'bottom',
-          labels: { usePointStyle:true, pointStyle:'circle', font:{family:'Poppins',size:12}, color:'#6b7280', padding:20 }
+          display: true, position: 'bottom',
+          labels: { usePointStyle: true, pointStyle: 'circle', font: { family: CHART_FONT, size: 12 }, color: CHART_COLORS.tick, padding: 20 }
         },
-        tooltip: { backgroundColor:'#111827', titleFont:{family:'Poppins',size:12}, bodyFont:{family:'Poppins',size:13}, padding:12, cornerRadius:8 }
+        tooltip: {
+          backgroundColor: CHART_COLORS.tooltipBg,
+          borderColor: CHART_COLORS.tooltipBorder,
+          borderWidth: 1,
+          titleColor: CHART_COLORS.tooltipText,
+          bodyColor: CHART_COLORS.tooltipText,
+          titleFont: { family: CHART_FONT, size: 12, weight: '600' },
+          bodyFont: { family: CHART_FONT, size: 13 },
+          padding: 12, cornerRadius: 8
+        }
       },
       scales: {
-        x: { grid:{display:false}, ticks:{font:{family:'Poppins',size:11},color:'#9ca3af'} },
-        y: { grid:{color:'#f3f4f6'}, min:0, ticks:{font:{family:'Poppins',size:11},color:'#9ca3af',stepSize:50} }
+        x: { grid: { display: false }, ticks: { font: { family: CHART_FONT, size: 11 }, color: CHART_COLORS.tick } },
+        y: {
+          grid: { color: CHART_COLORS.grid },
+          border: { display: false },
+          min: 0,
+          ticks: { font: { family: CHART_FONT, size: 11 }, color: CHART_COLORS.tick, precision: 0 }
+        }
       }
     }
   });
@@ -351,16 +537,13 @@ function setPeriod(btn, period) {
   btn.classList.add('active');
   if (!salesChartInst) return;
   const d = chartData[period];
-  salesChartInst.data.labels           = d.labels;
+  salesChartInst.data.labels = d.labels;
   salesChartInst.data.datasets[0].data = d.data;
   salesChartInst.update('active');
 }
 
 // ─────────────────────────────────────────────
 // NAVEGAÇÃO ENTRE SEÇÕES
-// BUG FIX: ao voltar para dashboard, restaura corretamente
-// o estado vazio (se aplicável) sem duplicar elementos,
-// e só recria gráficos quando há dados para exibir.
 // ─────────────────────────────────────────────
 function showSection(sectionId, btn) {
   document.querySelectorAll('.dsection').forEach(s => s.classList.remove('active-section'));
@@ -379,33 +562,26 @@ function showSection(sectionId, btn) {
 
   if (sectionId === 'dashboard') {
     if (_dashboardVazio) {
-      // ── ESTADO VAZIO: garante que os elementos continuam ocultos
-      // e que o empty-state-box não seja inserido duplicado
       document.querySelectorAll('.kpi-grid, .charts-row, .bottom-row').forEach(el => el.style.display = 'none');
       const banner = document.getElementById('alertBanner');
       if (banner) banner.style.display = 'none';
-      // Só insere o empty-state-box se ainda não existir
       if (!document.querySelector('#dashboard .empty-state-box')) {
         _mostrarVazio('dashboard', 'visao-geral');
       }
     } else {
-      // ── COM DADOS: aguarda o DOM pintar antes de recriar os gráficos
       requestAnimationFrame(() => {
         requestAnimationFrame(() => { criarGraficos(); });
       });
     }
   }
 
-  // Restaura estado vazio nas outras abas ao navegar de volta
   if (sectionId === 'estabelecimentos' && _estabelecimentosVazio) {
-    document.querySelectorAll('#estabelecimentos .ev-card').forEach(el => el.style.display = 'none');
     if (!document.querySelector('#estabelecimentos .empty-state-box')) {
       _mostrarVazio('estabelecimentos', 'estabelecimentos');
     }
   }
 
   if (sectionId === 'eventos' && _eventosVazio) {
-    document.querySelectorAll('#eventos .ev-card').forEach(el => el.style.display = 'none');
     if (!document.querySelector('#eventos .empty-state-box')) {
       _mostrarVazio('eventos', 'eventos');
     }
@@ -420,7 +596,6 @@ function showSection(sectionId, btn) {
   }
 
   if (sectionId === 'notificacoes' && _notificacoesVazio) {
-    document.querySelector('#notifList')?.querySelectorAll('.notif-item, .notif-group-label').forEach(el => el.style.display = 'none');
     if (!document.querySelector('#notificacoes .empty-state-box')) {
       _mostrarVazio('notificacoes', 'notificacoes');
     }
@@ -428,9 +603,37 @@ function showSection(sectionId, btn) {
 }
 
 // ─────────────────────────────────────────────
-// MODAL DE INGRESSOS
+// MODAL DE INGRESSOS (por evento — mostra o total real vindo de `ingressos`)
 // ─────────────────────────────────────────────
-function openTicketModal() {
+function openTicketModal(eventoId) {
+  const evento = _eventosReais.find(e => String(e.id) === String(eventoId));
+  if (!evento) return;
+
+  _ticketModalEventoId = evento.id;
+  const info = _vendidosPorEventoReais[evento.id] || { qtd: 0 };
+  _ticketModalVendidos = info.qtd;
+
+  const total = _ingressosPorEventoReais[evento.id] || 0;
+  const disponiveis = Math.max(0, total - _ticketModalVendidos);
+
+  const subtitulo = document.getElementById('ticketModalSubtitle');
+  if (subtitulo) subtitulo.textContent = `${evento.nome || 'Evento'} · ${evento.local_nome || evento.cidade || 'Local não informado'}`;
+
+  const dataEl = document.getElementById('ticketModalData');
+  if (dataEl) dataEl.textContent = formatarDataCurta(evento.data_inicio);
+
+  const horaEl = document.getElementById('ticketModalHorario');
+  if (horaEl) horaEl.textContent = formatarHora(evento.data_inicio);
+
+  const totalInput = document.getElementById('totalTickets');
+  if (totalInput) totalInput.value = total;
+
+  const soldInput = document.getElementById('soldTickets');
+  if (soldInput) soldInput.value = _ticketModalVendidos;
+
+  const availInput = document.getElementById('availableTickets');
+  if (availInput) availInput.value = disponiveis;
+
   const m = document.getElementById('ticketModal');
   if (m) m.style.display = 'flex';
 }
@@ -438,13 +641,119 @@ function closeTicketModal() {
   const m = document.getElementById('ticketModal');
   if (m) m.style.display = 'none';
 }
+
+let _ticketModalEventoId = null;
+let _ticketModalVendidos = 0;
+
 function initTicketInput() {
   const total = document.getElementById('totalTickets');
   const avail = document.getElementById('availableTickets');
   if (!total || !avail) return;
-  const sold = 156;
   total.addEventListener('input', () => {
-    avail.value = Math.max(0, (parseInt(total.value) || 0) - sold);
+    avail.value = Math.max(0, (parseInt(total.value) || 0) - _ticketModalVendidos);
+  });
+}
+
+// ─────────────────────────────────────────────
+// RENDERIZAÇÃO DE VENDAS REAIS
+// ─────────────────────────────────────────────
+function iniciais(nome) {
+  if (!nome) return '??';
+  const partes = nome.trim().split(/\s+/);
+  const a = partes[0]?.[0] || '';
+  const b = partes.length > 1 ? partes[partes.length - 1][0] : '';
+  return (a + b).toUpperCase();
+}
+
+function criarLinhaVenda(venda) {
+  const tr = document.createElement('tr');
+
+  const statusBackend = (venda.status || '').toLowerCase();
+  const statusExibicao = statusBackend === 'aprovado' ? 'confirmado' : 'pendente';
+  const statusClasse = statusBackend === 'aprovado' ? 'confirmed' : 'pending';
+  const statusIcone = statusBackend === 'aprovado' ? '●' : '○';
+
+  tr.dataset.status = statusExibicao;
+  tr.dataset.name = (venda.nome_comprador || '').toLowerCase();
+  tr.dataset.event = (venda.nome_evento || '').toLowerCase();
+
+  const dataFormatada = venda.criado_em
+    ? new Date(venda.criado_em).toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+    : '—';
+
+  tr.innerHTML = `
+    <td><span class="td-av">${iniciais(venda.nome_comprador)}</span> ${venda.nome_comprador || '—'}</td>
+    <td>${venda.nome_evento || '—'}</td>
+    <td>—</td>
+    <td>${formatarMoeda(venda.valor_total)}</td>
+    <td>${dataFormatada}</td>
+    <td><span class="status-badge ${statusClasse}">${statusIcone} ${statusExibicao}</span></td>
+  `;
+  return tr;
+}
+
+function atualizarRodapeVendas(qtd, total) {
+  const countEl = document.getElementById('tableCount');
+  const totalEl = document.getElementById('tableTotal');
+  if (countEl) countEl.textContent = qtd + ' transaç' + (qtd === 1 ? 'ão' : 'ões');
+  if (totalEl) totalEl.textContent = 'R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+function renderizarVendas(lista) {
+  const tbody = document.getElementById('salesTableBody');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+
+  if (!lista || lista.length === 0) {
+    atualizarRodapeVendas(0, 0);
+    return;
+  }
+
+  let total = 0;
+  lista.forEach(venda => {
+    tbody.appendChild(criarLinhaVenda(venda));
+    total += parseFloat(venda.valor_total) || 0;
+  });
+
+  atualizarRodapeVendas(lista.length, total);
+}
+
+// Painel "Vendas Recentes" da Visão Geral
+function renderizarVendasRecentes(vendas) {
+  const feed = document.getElementById('salesFeedRecent');
+  if (!feed) return;
+
+  feed.innerHTML = '';
+
+  const recentes = [...(vendas || [])]
+    .filter(v => v.criado_em)
+    .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em))
+    .slice(0, 5);
+
+  if (recentes.length === 0) {
+    feed.innerHTML = `<p style="font-size:13px; color:var(--text-3);">Nenhuma venda registrada ainda.</p>`;
+    return;
+  }
+
+  recentes.forEach(v => {
+    const aprovado = (v.status || '').toLowerCase() === 'aprovado';
+    const row = document.createElement('div');
+    row.className = 'sf-row';
+    row.innerHTML = `
+      <div class="sf-av">${iniciais(v.nome_comprador)}</div>
+      <div class="sf-info">
+        <span>${v.nome_comprador || '—'}</span>
+        <small>${v.nome_evento || '—'}</small>
+      </div>
+      <div class="sf-right">
+        <strong>${formatarMoeda(v.valor_total)}</strong>
+        <span class="chip ${aprovado ? 'chip--green' : 'chip--orange'}">${aprovado ? 'Pago' : 'Pendente'}</span>
+      </div>
+    `;
+    feed.appendChild(row);
   });
 }
 
@@ -452,22 +761,22 @@ function initTicketInput() {
 // FILTRO DA TABELA DE VENDAS
 // ─────────────────────────────────────────────
 function filterSales() {
-  const query  = (document.getElementById('salesSearch')?.value  || '').toLowerCase();
+  const query = (document.getElementById('salesSearch')?.value || '').toLowerCase();
   const status = (document.getElementById('statusFilter')?.value || '').toLowerCase();
-  const rows   = document.querySelectorAll('#salesTableBody tr');
+  const rows = document.querySelectorAll('#salesTableBody tr');
 
   let visible = 0;
   let totalVal = 0;
 
   rows.forEach(row => {
-    const matchQuery  = !query  || (row.dataset.name  || '').includes(query) || (row.dataset.event || '').includes(query);
+    const matchQuery = !query || (row.dataset.name || '').includes(query) || (row.dataset.event || '').includes(query);
     const matchStatus = !status || (row.dataset.status || '') === status;
 
     if (matchQuery && matchStatus) {
       row.style.display = '';
       visible++;
       const valCell = row.querySelectorAll('td')[3]?.innerText || '';
-      const num = parseFloat(valCell.replace(/[^\d,]/g,'').replace(',','.')) || 0;
+      const num = parseFloat(valCell.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
       totalVal += num;
     } else {
       row.style.display = 'none';
@@ -477,12 +786,317 @@ function filterSales() {
   const countEl = document.getElementById('tableCount');
   const totalEl = document.getElementById('tableTotal');
   if (countEl) countEl.textContent = visible + ' transaç' + (visible === 1 ? 'ão' : 'ões');
-  if (totalEl) totalEl.textContent = 'R$ ' + totalVal.toLocaleString('pt-BR', {minimumFractionDigits:2});
+  if (totalEl) totalEl.textContent = 'R$ ' + totalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 }
 
 // ─────────────────────────────────────────────
-// FILTRO DE NOTIFICAÇÕES
+// FILTROS E BUSCA — EVENTOS E ESTABELECIMENTOS
 // ─────────────────────────────────────────────
+function filterEventos() {
+  const query = (document.getElementById('eventosSearch')?.value || '').toLowerCase();
+  const status = (document.getElementById('eventosStatusFilter')?.value || '').toLowerCase();
+  document.querySelectorAll('#eventos .ev-card').forEach(card => {
+    const matchQuery = !query || (card.dataset.nome || '').includes(query);
+    const matchStatus = !status || (card.dataset.status || '') === status;
+    card.style.display = (matchQuery && matchStatus) ? '' : 'none';
+  });
+}
+
+function filterEstabelecimentos() {
+  const query = (document.getElementById('estabsSearch')?.value || '').toLowerCase();
+  document.querySelectorAll('#estabelecimentos .ev-card').forEach(card => {
+    const matchQuery = !query || (card.dataset.nome || '').includes(query);
+    card.style.display = matchQuery ? '' : 'none';
+  });
+}
+
+// ─────────────────────────────────────────────
+// RENDERIZAÇÃO DE EVENTOS REAIS
+// ─────────────────────────────────────────────
+function formatarDataCurta(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('pt-BR');
+}
+
+function formatarHora(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Bloco de imagem reaproveitado por evento e estabelecimento.
+// Sem imagem cadastrada -> fundo com ícone, nunca imagem quebrada.
+function _blocoImagem(url, iconePathSvg) {
+  if (url) {
+    return `<div class="ev-image" style="background-image:url('${url}')"></div>`;
+  }
+  return `
+    <div class="ev-image ev-image--placeholder">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        ${iconePathSvg}
+      </svg>
+    </div>`;
+}
+
+function criarCardEvento(evento, vendidos) {
+  const total = _ingressosPorEventoReais[evento.id] || 0;
+  const disponiveis = Math.max(0, total - vendidos);
+  const ocupacao = total > 0 ? Math.round((vendidos / total) * 100) : 0;
+  const receita = (evento._receita || 0);
+
+  const agora = new Date();
+  const dataEvento = evento.data_inicio ? new Date(evento.data_inicio) : null;
+  const status = dataEvento && dataEvento < agora ? 'encerrado' : 'ativo';
+
+  const card = document.createElement('div');
+  card.className = 'ev-card';
+  card.dataset.id = evento.id;
+  card.dataset.tipo = 'evento';
+  card.dataset.nome = (evento.nome || '').toLowerCase();
+  card.dataset.status = status;
+
+  card.innerHTML = `
+    ${_blocoImagem(evento.imagem, `<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>`)}
+    <div class="ev-top">
+      <div class="ev-info">
+        <h3 class="ev-title">${evento.nome || 'Sem nome'}</h3>
+        <span class="ev-chip ${status === 'ativo' ? 'ev-chip--on' : 'ev-chip--sched'}">${status}</span>
+      </div>
+      <div class="ev-revenue">${formatarMoeda(receita)}<br><small>receita</small></div>
+    </div>
+    <div class="ev-meta">
+      <span class="ev-mi">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>${evento.local_nome || evento.cidade || 'Local não informado'}
+      </span>
+      <span class="ev-mi">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>${formatarDataCurta(evento.data_inicio)}
+      </span>
+      <span class="ev-mi">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>${formatarHora(evento.data_inicio)}
+      </span>
+    </div>
+    <div class="ev-stats">
+      <div class="ev-stat"><h4>${vendidos}</h4><p>vendidos</p></div>
+      <div class="ev-stat"><h4>${disponiveis}</h4><p>disponíveis</p></div>
+      <div class="ev-stat"><h4>${ocupacao}%</h4><p>ocupação</p></div>
+    </div>
+    <div class="ev-prog">
+      <div class="ev-bar"><div class="ev-fill" style="width:${ocupacao}%"></div></div>
+      <p class="ev-bar-txt">${vendidos} / ${total} ingressos</p>
+    </div>
+    <div class="ev-actions">
+      <button class="ev-btn ev-btn--purple">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>Editar
+      </button>
+      <button class="ev-btn ev-btn--gray" onclick="showSection('vendas', null)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>Relatório
+      </button>
+      <button class="ev-btn ev-btn--orange" onclick="openTicketModal(${evento.id})">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M2 9V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2"/>
+          <path d="M2 15v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2"/>
+          <line x1="12" y1="5" x2="12" y2="19"/>
+        </svg>Ingressos
+      </button>
+    </div>
+  `;
+  return card;
+}
+
+function renderizarEventos(lista, vendidosPorEvento) {
+  const secao = document.getElementById('eventos');
+  if (!secao) return;
+
+  secao.querySelectorAll('.ev-card, .empty-state-box, .loading-placeholder').forEach(el => el.remove());
+
+  if (!lista || lista.length === 0) {
+    _eventosVazio = true;
+    _mostrarVazio('eventos', 'eventos');
+    return;
+  }
+
+  lista.forEach(evento => {
+    const info = vendidosPorEvento[evento.id] || { qtd: 0, receita: 0 };
+    evento._receita = info.receita;
+    secao.appendChild(criarCardEvento(evento, info.qtd));
+  });
+}
+
+// ─────────────────────────────────────────────
+// PRÓXIMOS EVENTOS
+// ─────────────────────────────────────────────
+function renderizarProximosEventos(eventos, vendidosPorEvento, ingressosPorEvento) {
+  const lista = document.querySelector('.upcoming-list');
+  if (!lista) return;
+
+  const agora = new Date();
+  const proximos = eventos
+    .filter(e => e.data_inicio && new Date(e.data_inicio) >= agora)
+    .sort((a, b) => new Date(a.data_inicio) - new Date(b.data_inicio))
+    .slice(0, 3);
+
+  lista.innerHTML = '';
+
+  if (proximos.length === 0) {
+    lista.innerHTML = `<p style="font-size:13px; color:var(--text-3);">Nenhum evento agendado nos próximos dias.</p>`;
+    return;
+  }
+
+  const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+
+  proximos.forEach(evento => {
+    const d = new Date(evento.data_inicio);
+    const total = ingressosPorEvento[evento.id] || 0;
+    const vendidos = (vendidosPorEvento[evento.id] && vendidosPorEvento[evento.id].qtd) || 0;
+    const pct = total > 0 ? Math.round((vendidos / total) * 100) : 0;
+    const cor = pct === 0 ? '#4A3B6E' : (pct >= 75 ? '#FFB627' : '#35D399');
+
+    const item = document.createElement('div');
+    item.className = 'upcoming-item';
+    item.innerHTML = `
+      <div class="up-date"><span>${d.getDate()}</span><small>${nomesMeses[d.getMonth()]}</small></div>
+      <div class="up-info">
+        <span>${evento.nome || 'Sem nome'}</span>
+        <small>${evento.local_nome || evento.cidade || ''} · ${formatarHora(evento.data_inicio)}</small>
+      </div>
+      <div class="up-occ">
+        <div class="occ-bar"><div style="width:${pct}%; background:${cor}"></div></div>
+        <small ${pct === 0 ? 'class="occ-empty"' : ''}>${total === 0 ? 'Sem ingressos cadastrados' : (pct + '%')}</small>
+      </div>
+    `;
+    lista.appendChild(item);
+  });
+}
+
+// ─────────────────────────────────────────────
+// RECEITA POR LOCAL
+// ─────────────────────────────────────────────
+function renderizarReceitaPorLocal(eventos, vendasAprovadas) {
+  const lista = document.querySelector('.perf-list');
+  if (!lista) return;
+
+  const eventoLocal = {};
+  eventos.forEach(e => { eventoLocal[e.id] = e.local_nome || e.cidade || 'Local não informado'; });
+
+  const porLocal = {};
+  vendasAprovadas.forEach(v => {
+    const local = eventoLocal[v.evento_id] || 'Local não informado';
+    porLocal[local] = (porLocal[local] || 0) + (parseFloat(v.valor_total) || 0);
+  });
+
+  const ordenado = Object.entries(porLocal).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  lista.innerHTML = '';
+
+  if (ordenado.length === 0) {
+    lista.innerHTML = `<p style="font-size:13px; color:var(--text-3);">Nenhuma receita registrada ainda.</p>`;
+    return;
+  }
+
+  const max = ordenado[0][1] || 1;
+  const cores = ['#FFB627', '#FFCE73', '#FF8A3D', '#35D399', '#6AA9FF'];
+
+  ordenado.forEach(([nome, valor], i) => {
+    const pct = Math.round((valor / max) * 100);
+    const row = document.createElement('div');
+    row.className = 'perf-row';
+    row.innerHTML = `
+      <span class="perf-dot" style="background:${cores[i % cores.length]}"></span>
+      <span class="perf-name">${nome}</span>
+      <div class="perf-bar"><div style="width:${pct}%; background:${cores[i % cores.length]}"></div></div>
+      <span class="perf-val">${formatarMoeda(valor)}</span>
+    `;
+    lista.appendChild(row);
+  });
+}
+
+// ─────────────────────────────────────────────
+// NOTIFICAÇÕES SIMULADAS A PARTIR DE VENDAS REAIS
+// ─────────────────────────────────────────────
+function tempoRelativo(iso) {
+  if (!iso) return '';
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return 'Agora mesmo';
+  if (min < 60) return `Há ${min} minuto${min === 1 ? '' : 's'}`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `Há ${h} hora${h === 1 ? '' : 's'}`;
+  const dias = Math.floor(h / 24);
+  return `Há ${dias} dia${dias === 1 ? '' : 's'}`;
+}
+
+function renderizarNotificacoesReais(vendas) {
+  const container = document.getElementById('notifList');
+  if (!container) return;
+
+  const ordenadas = [...vendas]
+    .filter(v => v.criado_em)
+    .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em))
+    .slice(0, 10);
+
+  container.innerHTML = '';
+
+  if (ordenadas.length === 0) {
+    setUnreadCount(0);
+    return;
+  }
+
+  const naoLidas = ordenadas.slice(0, 3);
+  const anteriores = ordenadas.slice(3);
+
+  const label1 = document.createElement('p');
+  label1.className = 'notif-group-label';
+  label1.textContent = 'Recentes · ' + naoLidas.length;
+  container.appendChild(label1);
+
+  naoLidas.forEach(v => container.appendChild(criarItemNotificacao(v, true)));
+
+  if (anteriores.length > 0) {
+    const label2 = document.createElement('p');
+    label2.className = 'notif-group-label';
+    label2.style.marginTop = '24px';
+    label2.textContent = 'Anteriores';
+    container.appendChild(label2);
+    anteriores.forEach(v => container.appendChild(criarItemNotificacao(v, false)));
+  }
+
+  setUnreadCount(naoLidas.length);
+  initNotifClicks();
+}
+
+function criarItemNotificacao(venda, novo) {
+  const aprovado = (venda.status || '').toLowerCase() === 'aprovado';
+  const div = document.createElement('div');
+  div.className = 'notif-item' + (novo ? ' notif-unread' : '');
+  div.dataset.cat = 'venda';
+  div.innerHTML = `
+    <div class="ni-icon ${aprovado ? 'ni-green' : 'ni-gray'}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M2 9V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2"/>
+        <path d="M2 15v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2"/>
+        <line x1="12" y1="5" x2="12" y2="19"/>
+      </svg>
+    </div>
+    <div class="ni-body">
+      <p class="ni-title">${aprovado ? 'Nova venda realizada' : 'Pagamento pendente'}</p>
+      <p class="ni-desc">${venda.nome_comprador || 'Cliente'} — <strong>${venda.nome_evento || 'Evento'}</strong> · ${formatarMoeda(venda.valor_total)}</p>
+      <span class="ni-time">${tempoRelativo(venda.criado_em)}</span>
+    </div>
+    ${novo ? '<span class="ni-new">Nova</span>' : ''}
+  `;
+  return div;
+}
+
 function filterNotif(btn, cat) {
   document.querySelectorAll('.nf-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -491,9 +1105,6 @@ function filterNotif(btn, cat) {
   });
 }
 
-// ─────────────────────────────────────────────
-// MARCAR TODAS COMO LIDAS
-// ─────────────────────────────────────────────
 function markAllRead() {
   document.querySelectorAll('.notif-unread').forEach(el => el.classList.remove('notif-unread'));
   document.querySelectorAll('.ni-new').forEach(el => el.remove());
@@ -501,9 +1112,6 @@ function markAllRead() {
   showToast('Todas as notificações foram marcadas como lidas.', 'success');
 }
 
-// ─────────────────────────────────────────────
-// NOTIFICAÇÕES INDIVIDUAIS CLICÁVEIS
-// ─────────────────────────────────────────────
 function initNotifClicks() {
   document.querySelectorAll('#notifList .notif-item').forEach(item => {
     item.style.cursor = 'pointer';
@@ -512,80 +1120,447 @@ function initNotifClicks() {
         item.classList.remove('notif-unread');
         const tag = item.querySelector('.ni-new');
         if (tag) tag.remove();
-        setUnreadCount(unreadCount - 1);
-        if (unreadCount === 0) {
-          showToast('Todas as notificações foram lidas!', 'success');
-        }
+        setUnreadCount(Math.max(0, unreadCount - 1));
       }
     });
   });
 }
 
 // ─────────────────────────────────────────────
-// MODAL DE EDIÇÃO GENÉRICO
+// ESTADO GLOBAL DE NOTIFICAÇÕES
 // ─────────────────────────────────────────────
-function openEditModal(tipo, nome) {
+let unreadCount = 0;
+
+function setUnreadCount(n) {
+  unreadCount = Math.max(0, n);
+  const badge = document.querySelector('.dnav-badge');
+  if (badge) {
+    badge.textContent = unreadCount;
+    badge.style.display = unreadCount > 0 ? 'inline-flex' : 'none';
+  }
+  const banner = document.getElementById('alertBanner');
+  if (banner) {
+    if (unreadCount === 0) {
+      banner.style.display = 'none';
+    } else {
+      banner.style.display = 'flex';
+      const strong = banner.querySelector('strong');
+      if (strong) strong.textContent = unreadCount + ' notificaç' + (unreadCount === 1 ? 'ão não lida' : 'ões não lidas');
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// LISTAS DE OPÇÕES — COPIADAS DIRETO DO CADASTRO
+// (criareventos.js e criarEstabelecimentos.js)
+// para manter os mesmos textos/valores usados na
+// criação, evitando divergência entre cadastro e edição.
+// ─────────────────────────────────────────────
+
+// Copiado 1:1 de criareventos.js → categoriasPorAssunto
+const CATEGORIAS_POR_ASSUNTO = {
+  "Festa e Balada": ["Aniversário", "Formatura", "Open Bar", "Festa Universitária", "Baile", "After", "Happy Hour"],
+  "Shows e Música": ["Sertanejo", "Funk", "Pagode", "Rock", "Eletrônica", "Rap / Trap", "DJ", "K-pop"],
+  "Gastronomia": ["Festival gastronômico", "Rodízio", "Degustação", "Churrasco", "Food Truck"],
+  "Esportes": ["Futebol", "Corrida", "Treino funcional", "Campeonato", "Torneio"],
+  "Cultura e Arte": ["Teatro", "Cinema", "Exposição", "Stand-up", "Dança"],
+  "Cursos e Workshops": ["Curso", "Workshop", "Palestra", "Oficina", "Mentoria"],
+  "Infantil e Família": ["Festa infantil", "Parque", "Teatro infantil", "Brincadeiras"],
+  "Tecnologia": ["Hackathon", "Meetup", "Conferência", "Workshop Tech"],
+  "Religião e Espiritualidade": ["Culto", "Retiro", "Congresso", "Meditação"],
+  "Networking e Negócios": ["Networking", "Palestra", "Summit", "Feira"],
+  "Saúde e Bem-estar": ["Yoga", "Meditação", "Corrida", "Palestra de saúde"],
+  "Festivais": ["Festival de música", "Festival gastronômico", "Festival cultural"],
+};
+const OPCOES_ASSUNTO_EVENTO = Object.keys(CATEGORIAS_POR_ASSUNTO);
+
+// Copiado 1:1 de criarEstabelecimentos.js → especialidadesPorTipo
+const ESPECIALIDADES_POR_TIPO = {
+  "Restaurante": ["Brasileiro", "Italiano", "Árabe", "Japonês", "Chinês", "Mexicano", "Francês", "Vegetariano/Vegano", "Frutos do mar", "Fusion"],
+  "Bar e Boteco": ["Petiscos", "Cervejas especiais", "Drinks e coquetéis", "Bar temático", "Esportivo"],
+  "Café e Cafeteria": ["Café especial", "Brunch", "Torradas e pães", "Bolos e doces", "Vegano"],
+  "Lanchonete e Fast Food": ["Hambúrguer", "Hot dog", "Batata frita", "Tacos", "Wraps"],
+  "Pizzaria": ["Tradicional", "Gourmet", "Sem glúten", "Por metro", "Pizza no forno a lenha"],
+  "Churrascaria": ["Rodízio", "À la carte", "Assado na brasa", "Costela"],
+  "Doceria e Confeitaria": ["Bolos personalizados", "Brigadeiros", "Tortas", "Macarons", "Chocolates"],
+  "Padaria": ["Pão artesanal", "Café da manhã", "Salgados", "Doces"],
+  "Sorveteria": ["Sorvete artesanal", "Açaí", "Frozen", "Sorvete vegano"],
+  "Sushi e Japonês": ["Sushi", "Temaki", "Ramen", "Udon", "Teppanyaki"],
+  "Food Truck": ["Hambúrguer", "Tacos", "Churrasco", "Vegano", "Comida de rua"],
+  "Hamburgueria": ["Smash burger", "Artesanal", "Vegano", "Gourmet"],
+  // ⚠️ Aparecem em mapearCategoria() do cadastro mas sem lista própria
+  // de especialidades ainda — confirme comigo se existem no <select id="tipo">
+  // do HTML e o que faz sentido colocar aqui.
+  "Bistrô": [],
+  "Pub": [],
+  "Enoteca": [],
+};
+const OPCOES_TIPO_ESTAB = Object.keys(ESPECIALIDADES_POR_TIPO);
+
+// ⚠️ PENDENTE: não encontrei o <select id="faixa-preco"> no HTML de
+// criarEstabelecimentos.html enviado até agora, só a validação no JS.
+// Os values abaixo são um placeholder — ajuste para os values reais
+// assim que tiver o HTML do step 1 do cadastro.
+const OPCOES_FAIXA_PRECO = [
+  { value: 'economico', label: '$ · Econômico' },
+  { value: 'moderado',  label: '$$ · Moderado' },
+  { value: 'alto',      label: '$$$ · Alto' },
+  { value: 'premium',   label: '$$$$ · Premium' }
+];
+
+// Dias da semana usados pelo campo de horário de funcionamento
+// estruturado (ver bloco "HORÁRIO DE FUNCIONAMENTO" abaixo).
+const DIAS_SEMANA = [
+  { key: 'seg', label: 'Segunda' },
+  { key: 'ter', label: 'Terça' },
+  { key: 'qua', label: 'Quarta' },
+  { key: 'qui', label: 'Quinta' },
+  { key: 'sex', label: 'Sexta' },
+  { key: 'sab', label: 'Sábado' },
+  { key: 'dom', label: 'Domingo' },
+];
+
+// ─────────────────────────────────────────────
+// MODAL DE EDIÇÃO COMPLETO (evento OU estabelecimento)
+//
+// PENDENTE DE BACKEND: a função salvarEdicao() abaixo já monta o
+// FormData certo (com upload de imagem via Supabase Storage, se um
+// arquivo novo for escolhido) e chama PUT em /eventos/:id ou
+// /estabelecimentos/:id. Assim que vocês me passarem essas rotas,
+// eu só confirmo/ajusto o nome exato dos campos do body — a UI e o
+// fluxo já ficam prontos agora.
+// ─────────────────────────────────────────────
+let _editModalItem = null;
+let _editModalTipo = null; // 'evento' | 'estabelecimento'
+let _editModalNovoArquivoImagem = null;
+
+function _campoTexto(label, id, valor, placeholder) {
+  return `
+    <div class="edit-field">
+      <label>${label}</label>
+      <input type="text" id="${id}" value="${valor != null ? valor : ''}" placeholder="${placeholder || ''}">
+    </div>`;
+}
+
+function _campoTextarea(label, id, valor) {
+  return `
+    <div class="edit-field edit-field--full">
+      <label>${label}</label>
+      <textarea id="${id}" rows="3">${valor || ''}</textarea>
+    </div>`;
+}
+
+function _campoData(label, id, valorISO) {
+  const valor = valorISO ? new Date(valorISO).toISOString().slice(0, 16) : '';
+  return `
+    <div class="edit-field">
+      <label>${label}</label>
+      <input type="datetime-local" id="${id}" value="${valor}">
+    </div>`;
+}
+
+function _campoNumero(label, id, valor, min) {
+  return `
+    <div class="edit-field">
+      <label>${label}</label>
+      <input type="number" id="${id}" value="${valor != null ? valor : ''}" ${min != null ? `min="${min}"` : ''}>
+    </div>`;
+}
+
+// Select "simples" — opções fixas, não dependem de outro campo
+// (ex: assunto do evento, tipo do estabelecimento)
+function _campoSelectSimples(label, id, valorAtual, opcoes) {
+  const valoresConhecidos = opcoes.map(op => typeof op === 'string' ? op : op.value);
+
+  // Se o valor salvo não bater com nenhuma opção da lista, mantém ele
+  // como opção extra selecionada — assim a edição nunca "apaga" um
+  // dado antigo que não está no padrão atual.
+  const extra = (valorAtual && !valoresConhecidos.includes(valorAtual))
+    ? `<option value="${valorAtual}" selected>${valorAtual} (atual)</option>`
+    : '';
+
+  const opts = opcoes.map(op => {
+    const val = typeof op === 'string' ? op : op.value;
+    const lbl = typeof op === 'string' ? op : op.label;
+    const selecionado = valorAtual === val ? 'selected' : '';
+    return `<option value="${val}" ${selecionado}>${lbl}</option>`;
+  }).join('');
+
+  return `
+    <div class="edit-field">
+      <label>${label}</label>
+      <select id="${id}">
+        <option value="">Selecione...</option>
+        ${extra}
+        ${opts}
+      </select>
+    </div>`;
+}
+
+// Select "dependente" — nasce só com o valor atual (se existir); as
+// opções de verdade são preenchidas via JS depois que o modal entra
+// no DOM, com base no que estiver selecionado no campo "pai"
+// (assunto → categoria | tipo → especialidade)
+function _campoSelectDependente(label, id, valorAtual) {
+  const atual = valorAtual
+    ? `<option value="${valorAtual}" selected>${valorAtual}</option>`
+    : '<option value="">Selecione o campo anterior primeiro</option>';
+  return `
+    <div class="edit-field">
+      <label>${label}</label>
+      <select id="${id}">${atual}</select>
+    </div>`;
+}
+
+// Popula um <select> dependente com uma nova lista de opções,
+// preservando o valor atual quando ele ainda existir na lista nova.
+function _popularDependente(selectEl, opcoes, valorAtual) {
+  if (!selectEl) return;
+  selectEl.innerHTML = '<option value="">Selecione...</option>';
+  opcoes.forEach(op => {
+    const opt = document.createElement('option');
+    opt.textContent = op;
+    if (op === valorAtual) opt.selected = true;
+    selectEl.appendChild(opt);
+  });
+  // Se o valor salvo não existir mais na lista nova, mantém como opção extra
+  if (valorAtual && !opcoes.includes(valorAtual)) {
+    const opt = document.createElement('option');
+    opt.value = valorAtual;
+    opt.textContent = valorAtual + ' (atual)';
+    opt.selected = true;
+    selectEl.insertBefore(opt, selectEl.firstChild.nextSibling);
+  }
+}
+
+// ─────────────────────────────────────────────
+// HORÁRIO DE FUNCIONAMENTO (estabelecimento)
+//
+// A coluna `horario` no banco continua sendo TEXT — não mexemos no
+// schema. O que muda é o "conteúdo": em vez de texto livre, salvamos
+// uma string JSON com abre/fecha/fechado por dia da semana. Se o
+// valor salvo já for um texto antigo (formato livre), ele é
+// preservado como aviso e nunca apagado silenciosamente — o usuário
+// só substitui ao configurar os dias e salvar.
+// ─────────────────────────────────────────────
+function _injectHorarioStyle() {
+  if (document.getElementById('horarioStyle')) return;
+  const s = document.createElement('style');
+  s.id = 'horarioStyle';
+  s.textContent = `
+    .horario-grid { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .horario-row {
+      display:grid; grid-template-columns:90px auto 1fr 12px 1fr; align-items:center; gap:10px;
+      background:var(--card-alt); border:1px solid var(--border); border-radius:8px;
+      padding:9px 12px;
+    }
+    .horario-row label.horario-dia { font-size:12px; font-weight:600; color:var(--text-2); }
+    .horario-row .horario-fechado-wrap { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-3); white-space:nowrap; }
+    .horario-row input[type="time"] {
+      width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:6px;
+      background:var(--bg); color:var(--text); font-size:12px; font-family:var(--font-body);
+    }
+    .horario-row input[type="time"]:disabled { opacity:.4; }
+    .horario-row .horario-sep { color:var(--text-4); font-size:11px; text-align:center; }
+    .horario-legado-aviso {
+      font-size:11.5px; color:var(--orange); background:#3A2712; border:1px solid #5A3A1E;
+      border-radius:8px; padding:9px 12px; margin-bottom:10px; line-height:1.5;
+    }
+  `;
+  document.head.appendChild(s);
+}
+
+// Tenta interpretar o valor salvo como JSON estruturado.
+// Se for texto antigo (formato livre), devolve null + guarda o texto
+// original pra mostrar como aviso, sem perder o dado.
+function _parseHorarioSalvo(valor) {
+  if (!valor) return { estruturado: null, legado: '' };
+  try {
+    const obj = JSON.parse(valor);
+    if (obj && typeof obj === 'object') return { estruturado: obj, legado: '' };
+  } catch { /* não é JSON — é texto legado */ }
+  return { estruturado: null, legado: valor };
+}
+
+function _campoHorarioEstruturado(valorAtual) {
+  const { estruturado, legado } = _parseHorarioSalvo(valorAtual);
+
+  const avisoLegado = legado
+    ? `<div class="horario-legado-aviso">⚠️ O horário salvo estava em formato livre: "<strong>${legado}</strong>". Configure abaixo dia a dia — ao salvar, isso substitui o texto antigo.</div>`
+    : '';
+
+  const linhas = DIAS_SEMANA.map(({ key, label }) => {
+    const dia = (estruturado && estruturado[key]) || { abre: '', fecha: '', fechado: !estruturado };
+    return `
+      <div class="horario-row" data-dia="${key}">
+        <label class="horario-dia">${label}</label>
+        <span class="horario-fechado-wrap">
+          <input type="checkbox" id="horario-fechado-${key}" ${dia.fechado ? 'checked' : ''}>
+          Fechado
+        </span>
+        <input type="time" id="horario-abre-${key}" value="${dia.abre || ''}" ${dia.fechado ? 'disabled' : ''}>
+        <span class="horario-sep">–</span>
+        <input type="time" id="horario-fecha-${key}" value="${dia.fecha || ''}" ${dia.fechado ? 'disabled' : ''}>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="edit-field edit-field--full">
+      <label>Horário de funcionamento</label>
+      ${avisoLegado}
+      <div class="horario-grid">${linhas}</div>
+    </div>`;
+}
+
+// Liga os checkboxes "Fechado" pra desabilitar os inputs de hora do próprio dia
+function _initHorarioToggles() {
+  DIAS_SEMANA.forEach(({ key }) => {
+    const chk = document.getElementById(`horario-fechado-${key}`);
+    const abre = document.getElementById(`horario-abre-${key}`);
+    const fecha = document.getElementById(`horario-fecha-${key}`);
+    if (!chk || !abre || !fecha) return;
+    chk.addEventListener('change', () => {
+      abre.disabled = chk.checked;
+      fecha.disabled = chk.checked;
+    });
+  });
+}
+
+// Lê os 7 dias do formulário e devolve como string JSON, pronta pra
+// ir direto no campo `horario` (que continua sendo TEXT no banco).
+function _lerHorarioDoFormulario() {
+  const resultado = {};
+  DIAS_SEMANA.forEach(({ key }) => {
+    const fechado = document.getElementById(`horario-fechado-${key}`)?.checked ?? true;
+    const abre = document.getElementById(`horario-abre-${key}`)?.value || '';
+    const fecha = document.getElementById(`horario-fecha-${key}`)?.value || '';
+    resultado[key] = { fechado, abre: fechado ? '' : abre, fecha: fechado ? '' : fecha };
+  });
+  return JSON.stringify(resultado);
+}
+
+function openEditModal(tipo, id) {
+  const item = tipo === 'evento'
+    ? _eventosReais.find(e => String(e.id) === String(id))
+    : _estabsReais.find(e => String(e.id) === String(id));
+  if (!item) return;
+
+  _editModalItem = item;
+  _editModalTipo = tipo;
+  _editModalNovoArquivoImagem = null;
+
+  const imagemAtual = tipo === 'evento' ? item.imagem : item.img_capa;
+
   let overlay = document.getElementById('editModalOverlay');
   if (!overlay) {
     overlay = document.createElement('div');
     overlay.id = 'editModalOverlay';
-    overlay.style.cssText = `
-      position:fixed; inset:0; background:rgba(0,0,0,.5);
-      display:flex; justify-content:center; align-items:center; z-index:9999;
-    `;
+    overlay.className = 'edit-ov';
     document.body.appendChild(overlay);
   }
 
+  const camposHTML = tipo === 'evento' ? `
+    <div class="edit-grid">
+      ${_campoTexto('Nome do evento', 'edit-nome', item.nome)}
+      ${_campoSelectSimples('Assunto', 'edit-assunto', item.assunto, OPCOES_ASSUNTO_EVENTO)}
+      ${_campoSelectDependente('Categoria', 'edit-categoria', item.categoria)}
+      ${_campoTexto('Nome do local', 'edit-local_nome', item.local_nome)}
+      ${_campoTexto('Cidade', 'edit-cidade', item.cidade)}
+      ${_campoTexto('Estado', 'edit-estado', item.estado)}
+      ${_campoData('Início', 'edit-data_inicio', item.data_inicio)}
+      ${_campoData('Fim', 'edit-data_fim', item.data_fim)}
+    </div>
+    ${_campoTextarea('Descrição', 'edit-descricao', item.descricao)}
+  ` : `
+    <div class="edit-grid">
+      ${_campoTexto('Nome do estabelecimento', 'edit-nome', item.nome)}
+      ${_campoSelectSimples('Tipo', 'edit-tipo', item.tipo, OPCOES_TIPO_ESTAB)}
+      ${_campoSelectDependente('Especialidade', 'edit-especialidade', item.especialidade)}
+      ${_campoSelectSimples('Faixa de preço', 'edit-faixa_preco', item.faixa_preco, OPCOES_FAIXA_PRECO)}
+      ${_campoNumero('Capacidade', 'edit-capacidade', item.capacidade, 0)}
+      ${_campoTexto('Cidade', 'edit-cidade', item.cidade)}
+      ${_campoTexto('Telefone', 'edit-telefone', item.telefone)}
+    </div>
+    ${_campoHorarioEstruturado(item.horario)}
+    ${_campoTextarea('Descrição', 'edit-descricao', item.descricao)}
+  `;
+
   overlay.innerHTML = `
-    <div style="background:#fff; border-radius:16px; padding:32px; width:480px; max-width:94vw;
-                box-shadow:0 20px 60px rgba(0,0,0,.2); font-family:'Poppins',sans-serif;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <div class="edit-box">
+      <div class="edit-head">
         <div>
-          <h2 style="font-size:18px; font-weight:700; margin:0;">Editar ${tipo}</h2>
-          <p style="font-size:13px; color:#6b7280; margin:4px 0 0;">${nome}</p>
+          <h2>Editar ${tipo === 'evento' ? 'evento' : 'estabelecimento'}</h2>
+          <p>${item.nome || ''}</p>
         </div>
-        <button onclick="closeEditModal()" style="background:#f3f4f6; border:none; width:32px; height:32px;
-          border-radius:50%; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">✕</button>
+        <button class="edit-close-btn" onclick="closeEditModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
-      <div style="background:#f5f0ff; border:1px solid #e9d5ff; border-left:4px solid #7c3aed;
-                  border-radius:8px; padding:14px 16px; margin-bottom:24px;
-                  font-size:13px; color:#374151; line-height:1.6;">
-        <strong style="color:#7c3aed;">📋 Funcionalidade em implementação</strong><br>
-        A edição completa de ${tipo.toLowerCase()}s será conectada ao banco de dados na próxima sprint.
-        Por enquanto você pode ajustar os campos abaixo (simulação local).
-      </div>
-      <div style="display:flex; flex-direction:column; gap:14px;">
-        <div>
-          <label style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#6b7280; display:block; margin-bottom:6px;">
-            Nome do ${tipo}
-          </label>
-          <input type="text" value="${nome}" style="width:100%; padding:10px 14px; border:1px solid #e5e7eb;
-            border-radius:8px; font-size:14px; font-family:'Poppins',sans-serif; outline:none; box-sizing:border-box;"
-            onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#e5e7eb'">
-        </div>
-        <div>
-          <label style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#6b7280; display:block; margin-bottom:6px;">
-            Status
-          </label>
-          <select style="width:100%; padding:10px 14px; border:1px solid #e5e7eb; border-radius:8px;
-            font-size:14px; font-family:'Poppins',sans-serif; outline:none; background:#fff; box-sizing:border-box;">
-            <option>Ativo / Aberto</option>
-            <option>Agendado</option>
-            <option>Pausado</option>
-            <option>Encerrado</option>
-          </select>
+
+      <div class="edit-image-block">
+        <label>Imagem de capa</label>
+        <div class="edit-image-row">
+          <div id="editImagemPreview" class="edit-image-preview" style="${imagemAtual ? `background-image:url('${imagemAtual}')` : ''}"></div>
+          <div>
+            <label class="edit-file-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Escolher arquivo
+              <input type="file" id="editImagemInput" accept="image/*">
+            </label>
+            <p class="edit-file-hint">Enviada para o Supabase Storage ao salvar.</p>
+          </div>
         </div>
       </div>
-      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:24px;">
-        <button onclick="closeEditModal()" style="background:#f3f4f6; color:#374151; border:none;
-          padding:10px 22px; border-radius:8px; font-size:13px; font-weight:600;
-          font-family:'Poppins',sans-serif; cursor:pointer;">Cancelar</button>
-        <button onclick="saveEditModal('${nome}')" style="background:linear-gradient(135deg,#a78bfa,#7c3aed); color:#fff; border:none;
-          padding:10px 22px; border-radius:8px; font-size:13px; font-weight:600;
-          font-family:'Poppins',sans-serif; cursor:pointer;">Salvar alterações</button>
+
+      ${camposHTML}
+
+      <div class="edit-foot">
+        <button class="edit-btn-cancel" onclick="closeEditModal()">Cancelar</button>
+        <button class="edit-btn-save" onclick="salvarEdicao()">Salvar alterações</button>
       </div>
     </div>
   `;
+
+  const inputImagem = document.getElementById('editImagemInput');
+  if (inputImagem) {
+    inputImagem.addEventListener('change', () => {
+      const file = inputImagem.files[0];
+      if (!file) return;
+      _editModalNovoArquivoImagem = file;
+      const preview = document.getElementById('editImagemPreview');
+      if (preview) preview.style.backgroundImage = `url('${URL.createObjectURL(file)}')`;
+    });
+  }
+
+  // ── Cascata entre selects dependentes (assunto→categoria | tipo→especialidade) ──
+  if (tipo === 'evento') {
+    const selAssunto = document.getElementById('edit-assunto');
+    const selCategoria = document.getElementById('edit-categoria');
+    if (selAssunto && selCategoria) {
+      // popula a categoria já na abertura, com base no assunto atual salvo
+      _popularDependente(selCategoria, CATEGORIAS_POR_ASSUNTO[item.assunto] || [], item.categoria);
+      selAssunto.addEventListener('change', () => {
+        _popularDependente(selCategoria, CATEGORIAS_POR_ASSUNTO[selAssunto.value] || [], null);
+      });
+    }
+  } else {
+    const selTipo = document.getElementById('edit-tipo');
+    const selEspecialidade = document.getElementById('edit-especialidade');
+    if (selTipo && selEspecialidade) {
+      _popularDependente(selEspecialidade, ESPECIALIDADES_POR_TIPO[item.tipo] || [], item.especialidade);
+      selTipo.addEventListener('change', () => {
+        _popularDependente(selEspecialidade, ESPECIALIDADES_POR_TIPO[selTipo.value] || [], null);
+      });
+    }
+
+    // Estilo e comportamento (fechado desativa os horários) do bloco de horário
+    _injectHorarioStyle();
+    _initHorarioToggles();
+  }
 
   overlay.style.display = 'flex';
 }
@@ -593,11 +1568,90 @@ function openEditModal(tipo, nome) {
 function closeEditModal() {
   const overlay = document.getElementById('editModalOverlay');
   if (overlay) overlay.style.display = 'none';
+  _editModalItem = null;
+  _editModalTipo = null;
+  _editModalNovoArquivoImagem = null;
 }
 
-function saveEditModal(nome) {
-  closeEditModal();
-  showToast('"' + nome + '" atualizado com sucesso! (simulação local)', 'success');
+// ─────────────────────────────────────────────
+// SALVAR EDIÇÃO — evento ou estabelecimento
+//
+// Correções aplicadas (evitando os dois bugs mapeados com o backend real):
+//
+// 1) Upload de imagem NUNCA mais viaja junto do PUT como multipart —
+//    a rota PUT de estabelecimentos não tem multer no middleware, então
+//    um FormData chegaria com req.body vazio e apagaria o registro.
+//    Agora, se houver arquivo novo, ele sobe sozinho primeiro via
+//    POST /upload-imagem (rota que já tem multer) e só a URL resultante
+//    entra no PUT, que vai sempre como JSON puro.
+//
+// 2) O PUT do backend faz UPDATE de todas as colunas da tabela usando
+//    o que vier em req.body — campos ausentes viram null. Por isso o
+//    payload final é sempre { ..._editModalItem (dado completo do GET),
+//    ...camposEditados (só o que mudou no formulário) }, garantindo que
+//    nenhuma coluna fora do modal (cnpj, comodidades, cep, nome_produtor,
+//    fotos_galeria, pratos, etc.) seja apagada.
+// ─────────────────────────────────────────────
+async function salvarEdicao() {
+  if (!_editModalItem || !_editModalTipo) return;
+
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+  const base = _editModalTipo === 'evento' ? `${window.API_BASE}/eventos` : `${window.API_BASE}/estabelecimentos`;
+  const campoImagem = _editModalTipo === 'evento' ? 'imagem' : 'img_capa';
+
+  try {
+    // 1) Se trocou a imagem, sobe ela sozinha primeiro (rota de upload já suporta multipart)
+    let novaUrlImagem = null;
+    if (_editModalNovoArquivoImagem) {
+      const fd = new FormData();
+      fd.append('imagem', _editModalNovoArquivoImagem);
+      const respUpload = await fetch(`${base}/upload-imagem`, { method: 'POST', headers, body: fd });
+      if (!respUpload.ok) throw new Error('Falha ao enviar imagem');
+      const dataUpload = await respUpload.json();
+      novaUrlImagem = dataUpload.url;
+    }
+
+    // 2) Campos editáveis no formulário
+    const camposComuns = { nome: 'edit-nome', descricao: 'edit-descricao', cidade: 'edit-cidade' };
+    const camposEvento = { categoria: 'edit-categoria', assunto: 'edit-assunto', local_nome: 'edit-local_nome', estado: 'edit-estado', data_inicio: 'edit-data_inicio', data_fim: 'edit-data_fim' };
+    const camposEstab = { tipo: 'edit-tipo', especialidade: 'edit-especialidade', faixa_preco: 'edit-faixa_preco', capacidade: 'edit-capacidade', telefone: 'edit-telefone' };
+    const mapaCampos = { ...camposComuns, ...(_editModalTipo === 'evento' ? camposEvento : camposEstab) };
+
+    const editados = {};
+    Object.entries(mapaCampos).forEach(([chave, inputId]) => {
+      const el = document.getElementById(inputId);
+      if (el) editados[chave] = el.value;
+    });
+
+    if (_editModalTipo === 'estabelecimento') {
+      editados.horario = _lerHorarioDoFormulario();
+    }
+
+    if (novaUrlImagem) {
+      editados[campoImagem] = novaUrlImagem;
+    }
+
+    // 3) Merge: item original (tudo que veio do GET) + só o que foi editado.
+    // Garante que campos fora do modal não sejam apagados no UPDATE total.
+    const dados = { ..._editModalItem, ...editados };
+
+    // 4) Sempre JSON — nunca mais multipart no PUT
+    const resposta = await fetch(`${base}/${_editModalItem.id}`, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados)
+    });
+
+    if (!resposta.ok) throw new Error('Falha ao salvar');
+
+    showToast('Alterações salvas com sucesso!', 'success');
+    closeEditModal();
+    carregarDashboard(); // recarrega tudo pra refletir o que foi salvo
+  } catch (erro) {
+    console.error('Erro ao salvar edição:', erro);
+    showToast('Não foi possível salvar. Verifique a conexão com o backend.', 'error');
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -606,23 +1660,24 @@ function saveEditModal(nome) {
 function showToast(msg, tipo) {
   document.querySelectorAll('.dash-toast').forEach(t => t.remove());
 
-  const colors = { success:'#16a34a', error:'#ef4444', info:'#7c3aed', warn:'#f59e0b' };
-  const icons  = { success:'✓', error:'✕', info:'ℹ', warn:'⚠' };
+  const colors = { success: '#35D399', error: '#FF5C7A', info: '#FFB627', warn: '#FF8A3D' };
+  const icons = { success: '✓', error: '✕', info: 'ℹ', warn: '⚠' };
 
   const toast = document.createElement('div');
   toast.className = 'dash-toast';
   toast.style.cssText = `
     position:fixed; bottom:28px; right:28px; z-index:99999;
-    background:#111827; color:#fff; padding:14px 20px;
-    border-radius:10px; font-family:'Poppins',sans-serif; font-size:13px; font-weight:500;
+    background:#1C1834; color:#F1EDFA; padding:14px 20px;
+    border-radius:10px; font-family:'Inter',sans-serif; font-size:13px; font-weight:500;
     display:flex; align-items:center; gap:10px;
-    box-shadow:0 8px 24px rgba(0,0,0,.25);
+    border:1px solid #322850;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);
     animation:toastIn .25s ease; max-width:360px; line-height:1.4;
   `;
 
   const dot = document.createElement('span');
   dot.style.cssText = `display:inline-flex; align-items:center; justify-content:center;
-    width:22px; height:22px; border-radius:50%; background:${colors[tipo]||colors.info};
+    width:22px; height:22px; border-radius:50%; background:${colors[tipo] || colors.info}; color:#160f28;
     font-size:12px; font-weight:700; flex-shrink:0;`;
   dot.textContent = icons[tipo] || 'ℹ';
 
@@ -656,7 +1711,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// Fechar modal clicando no overlay
 document.addEventListener('click', e => {
   const modalOv = document.getElementById('ticketModal');
   if (e.target === modalOv) closeTicketModal();
@@ -673,9 +1727,10 @@ function initEditButtons() {
     if (!btn) return;
     const card = btn.closest('.ev-card');
     if (!card) return;
-    const titulo = card.querySelector('.ev-title')?.textContent?.trim() || 'Item';
-    const secao = card.closest('#eventos') ? 'Evento' : 'Estabelecimento';
-    openEditModal(secao, titulo);
+    const tipo = card.dataset.tipo; // 'evento' | 'estabelecimento'
+    const id = card.dataset.id;
+    if (!tipo || !id) return;
+    openEditModal(tipo, id);
   });
 }
 
@@ -691,9 +1746,11 @@ function initExport() {
     const wb = XLSX.utils.book_new();
 
     const resumo = [
-      { Indicador:'Total de Vendas',   Valor: document.getElementById('total-vendas')?.innerText    || '' },
-      { Indicador:'Visualizações',     Valor: document.getElementById('eventos-ativos')?.innerText  || '' },
-      { Indicador:'Avaliação Média',   Valor: document.getElementById('avaliacao-media')?.innerText || '' }
+      { Indicador: 'Total de Vendas', Valor: document.getElementById('total-vendas')?.innerText || '' },
+      { Indicador: 'Eventos Ativos', Valor: document.getElementById('eventos-ativos')?.innerText || '' },
+      { Indicador: 'Ticket Médio', Valor: document.getElementById('ticket-medio')?.innerText || '' },
+      { Indicador: 'Taxa de Ocupação', Valor: document.getElementById('taxa-ocupacao')?.innerText || '' },
+      { Indicador: 'Avaliação Média', Valor: document.getElementById('avaliacao-media')?.innerText || '' }
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumo), 'Resumo');
 
@@ -702,17 +1759,17 @@ function initExport() {
       const cols = row.querySelectorAll('td');
       if (cols.length < 6) return;
       vendas.push({
-        Cliente:    cols[0]?.innerText.trim() || '',
-        Evento:     cols[1]?.innerText || '',
+        Cliente: cols[0]?.innerText.trim() || '',
+        Evento: cols[1]?.innerText || '',
         Quantidade: cols[2]?.innerText || '',
-        Total:      cols[3]?.innerText || '',
-        Data:       cols[4]?.innerText || '',
-        Status:     cols[5]?.innerText.trim() || ''
+        Total: cols[3]?.innerText || '',
+        Data: cols[4]?.innerText || '',
+        Status: cols[5]?.innerText.trim() || ''
       });
     });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(vendas), 'Histórico de Vendas');
 
-    const info = [{ Informação:'Relatório gerado em', Valor: new Date().toLocaleString('pt-BR') }];
+    const info = [{ Informação: 'Relatório gerado em', Valor: new Date().toLocaleString('pt-BR') }];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(info), 'Informações');
 
     XLSX.writeFile(wb, 'relatorio_dashboard_completo.xlsx');
@@ -761,14 +1818,100 @@ function initSaveTickets() {
 // INICIALIZAÇÃO
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    criarGraficos();
-    initTicketInput();
-    initExport();
-    initNavButtons();
-    initEditButtons();
-    initNotifClicks();
-    initSaveTickets();
-    setUnreadCount(3);
+  initTicketInput();
+  initExport();
+  initNavButtons();
+  initEditButtons();
+  initSaveTickets();
 
-    verificarEstadosVazios();
+  carregarDashboard();
 });
+
+// ─────────────────────────────────────────────
+// RENDERIZAÇÃO DE ESTABELECIMENTOS REAIS
+// ─────────────────────────────────────────────
+
+function formatarMoeda(valor) {
+  const n = Number(valor) || 0;
+  return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function criarCardEstabelecimento(estab) {
+  const nome = estab.nome || 'Sem nome';
+  const nota = estab.nota != null ? Number(estab.nota).toFixed(1) : '—';
+  const avaliacoes = estab.avaliacoes || 0;
+  const capacidade = estab.capacidade || '—';
+  const enderecoTxt = [estab.rua, estab.numero, estab.bairro, estab.cidade]
+    .filter(Boolean).join(', ') || estab.endereco || 'Endereço não informado';
+  const aberto = estab.visibilidade !== 'oculto';
+
+  const card = document.createElement('div');
+  card.className = 'ev-card';
+  card.dataset.id = estab.id;
+  card.dataset.tipo = 'estabelecimento';
+  card.dataset.nome = (estab.nome || '').toLowerCase();
+
+  card.innerHTML = `
+    ${_blocoImagem(estab.img_capa, `<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>`)}
+    <div class="ev-top">
+      <div class="ev-info">
+        <h3 class="ev-title">${nome}</h3>
+        <span class="ev-chip ${aberto ? 'ev-chip--on' : 'ev-chip--sched'}">${aberto ? 'aberto' : 'oculto'}</span>
+      </div>
+    </div>
+    <div class="ev-meta">
+      <span class="ev-mi">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>${enderecoTxt}
+      </span>
+      <span class="ev-mi">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>${nota} · ${avaliacoes} avaliações
+      </span>
+      ${estab.tipo ? `<span class="ev-mi">${estab.tipo}${estab.especialidade ? ' · ' + estab.especialidade : ''}</span>` : ''}
+    </div>
+    <div class="ev-stats">
+      <div class="ev-stat"><h4>${nota} ⭐</h4><p>avaliação</p></div>
+      <div class="ev-stat"><h4>${avaliacoes}</h4><p>avaliações</p></div>
+      <div class="ev-stat"><h4>${capacidade}</h4><p>capacidade</p></div>
+    </div>
+    <div class="ev-actions">
+      <button class="ev-btn ev-btn--purple">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>Editar
+      </button>
+      <button class="ev-btn" onclick="window.location.href='/frontend/eventos/VerPerfil.html?id=${estab.id}'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>Visualizar
+      </button>
+      <button class="ev-btn ev-btn--gray" onclick="showSection('vendas', null)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>Relatório
+      </button>
+    </div>
+  `;
+  return card;
+}
+
+function renderizarEstabelecimentos(lista) {
+  const secao = document.getElementById('estabelecimentos');
+  if (!secao) return;
+
+  secao.querySelectorAll('.ev-card, .empty-state-box, .loading-placeholder').forEach(el => el.remove());
+
+  if (!lista || lista.length === 0) {
+    _estabelecimentosVazio = true;
+    _mostrarVazio('estabelecimentos', 'estabelecimentos');
+    return;
+  }
+
+  lista.forEach(estab => {
+    secao.appendChild(criarCardEstabelecimento(estab));
+  });
+}

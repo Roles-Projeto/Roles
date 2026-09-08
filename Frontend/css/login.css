@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* ═══════════════════════════════════════════
    TOKENS
 ═══════════════════════════════════════════ */
@@ -32,7 +39,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -143,6 +150,18 @@ body {
     justify-content: center;
     padding: 48px 40px;
     background: var(--bg);
+}
+
+#forgotPasswordLink.destaque-recuperacao {
+    font-weight: 600;
+    color: #6c3dff;
+    text-decoration: underline;
+    text-decoration-color: rgba(108, 61, 255, 0.4);
+    transition: color 0.2s ease;
+}
+
+#forgotPasswordLink.destaque-recuperacao:hover {
+    color: #5429e0;
 }
 
 /* ════════════════════════════════════════
@@ -258,7 +277,7 @@ body {
     padding: 13px 44px;
     border: 1.5px solid var(--border);
     border-radius: var(--r-sm);
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 14px; color: var(--text);
     background: #f9f7ff;
     outline: none;
@@ -305,7 +324,7 @@ body {
     border-radius: var(--r-md);
     background: var(--grad);
     color: #fff;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 15px; font-weight: 700; letter-spacing: 0.3px;
     cursor: pointer;
     transition: all 0.25s ease;
@@ -369,7 +388,7 @@ body {
     border: 1.5px solid var(--border);
     border-radius: var(--r-md);
     background: var(--surface);
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 14px; font-weight: 600; color: var(--text);
     cursor: pointer;
     transition: all 0.22s ease;

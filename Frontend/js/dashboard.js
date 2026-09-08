@@ -25,7 +25,7 @@ async function verificarEstadosVazios() {
     try {
         const [resEventos, resEstabs] = await Promise.all([
             fetch(`/eventos?criador_id=${userId}`, { headers }),
-            fetch(`/estabelecimentos?usuario_id=${userId}`, { headers })
+            fetch(`${API_URL}/estabelecimentos/meus`, { headers })  
         ]);
 
         const eventos = resEventos.ok ? await resEventos.json() : [];

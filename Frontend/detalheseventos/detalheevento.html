@@ -1,173 +1,336 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detalhes do Evento | Rolês</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="/frontend/css/footer.css">
-  <link rel="stylesheet" href="/frontend/css/detalheseventos.css">
-</head>
-<body>
-  <header><div id="header-container"></div></header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detalhes do Evento | Rolês</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/frontend/css/footer.css" />
+    <link rel="stylesheet" href="/frontend/css/detalheseventos.css" />
+  </head>
+  <body>
+    <header><div id="header-container"></div></header>
 
-  <main class="conteudo-principal-evento">
+    <main class="conteudo-principal-evento">
+      <!-- BANNER -->
+      <section
+        class="banner-evento"
+        style="background-size: cover; background-position: center"
+      >
+        <div class="banner-overlay"></div>
 
-    <!-- BANNER -->
-    <section class="banner-evento" style="background-size: cover; background-position: center;">
-      <div class="banner-overlay"></div>
+        <!-- Botão voltar -->
+        <a href="javascript:history.back()" class="botao-voltar" role="button">
+          <i class="fa-solid fa-arrow-left"></i> Voltar
+        </a>
 
-      <!-- Botão voltar -->
-      <a href="javascript:history.back()" class="botao-voltar" role="button">
-        <i class="fa-solid fa-arrow-left"></i> Voltar
-      </a>
+        <!-- Ações — canto superior direito -->
+        <div class="acoes-cabecalho">
+          <!-- SVG obrigatório para o favoritoCompartilhar.js funcionar -->
+          <button class="icone-acao" aria-label="Favoritar">
+            <svg
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              />
+            </svg>
+          </button>
+          <button class="icone-acao" aria-label="Compartilhar">
+            <i class="fa-solid fa-share-nodes"></i>
+          </button>
+        </div>
 
-      <!-- Ações — canto superior direito -->
-      <div class="acoes-cabecalho">
-        <!-- SVG obrigatório para o favoritoCompartilhar.js funcionar -->
-        <button class="icone-acao" aria-label="Favoritar">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-        </button>
-        <button class="icone-acao" aria-label="Compartilhar">
-          <i class="fa-solid fa-share-nodes"></i>
-        </button>
-      </div>
+        <!-- Info inferior -->
+        <div class="informacoes-cabecalho">
+          <span class="etiqueta-categoria">Música</span>
+          <h1 class="titulo-evento">Carregando Evento...</h1>
+          <p class="data-hora-cabecalho">--</p>
+        </div>
 
-      <!-- Info inferior -->
-      <div class="informacoes-cabecalho">
-        <span class="etiqueta-categoria">Música</span>
-        <h1 class="titulo-evento">Carregando Evento...</h1>
-        <p class="data-hora-cabecalho">--</p>
-      </div>
+        <div class="preco-cabecalho">
+          <span class="label-preco">A partir de</span>
+          <span class="valor-minimo">R$ --</span>
+          <span class="por-pessoas">por pessoa</span>
+        </div>
+      </section>
 
-      <div class="preco-cabecalho">
-        <span class="label-preco">A partir de</span>
-        <span class="valor-minimo">R$ --</span>
-        <span class="por-pessoas">por pessoa</span>
-      </div>
-    </section>
+      <!-- CONTEÚDO -->
+      <div class="conteudo-evento">
+        <!-- COLUNA ESQUERDA -->
+        <div class="detalhes-evento">
+          <!-- Sobre -->
+          <section class="card-informacoes sobre-evento">
+            <h2 class="titulo-secao">
+              <i class="fa-solid fa-circle-info"></i> Sobre o Evento
+            </h2>
+            <p class="descricao-evento">Carregando descrição...</p>
 
-    <!-- CONTEÚDO -->
-    <div class="conteudo-evento">
-
-      <!-- COLUNA ESQUERDA -->
-      <div class="detalhes-evento">
-
-        <!-- Sobre -->
-        <section class="card-informacoes sobre-evento">
-          <h2 class="titulo-secao"><i class="fa-solid fa-circle-info"></i> Sobre o Evento</h2>
-          <p class="descricao-evento">Carregando descrição...</p>
-
-          <div class="informacoes-extras">
-            <div class="info-item local-evento">
-              <div class="info-icone-wrap"><i class="fa-solid fa-location-dot"></i></div>
-              <div class="texto-info">
-                <p class="nome-local">Carregando...</p>
-                <p class="endereco-local">Carregando...</p>
+            <div class="informacoes-extras">
+              <div class="info-item local-evento">
+                <div class="info-icone-wrap">
+                  <i class="fa-solid fa-location-dot"></i>
+                </div>
+                <div class="texto-info">
+                  <p class="nome-local">Carregando...</p>
+                  <p class="endereco-local">Carregando...</p>
+                </div>
+              </div>
+              <div class="info-item confirmados">
+                <div class="info-icone-wrap">
+                  <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="texto-info">
+                  <span class="numero-confirmados">--</span>
+                  <span class="texto-confirmacao">confirmaram presença</span>
+                </div>
               </div>
             </div>
-            <div class="info-item confirmados">
-              <div class="info-icone-wrap"><i class="fa-solid fa-users"></i></div>
-              <div class="texto-info">
-                <span class="numero-confirmados">--</span>
-                <span class="texto-confirmacao">confirmaram presença</span>
-              </div>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Organizador -->
-        <section class="card-informacoes organizador">
-          <h2 class="titulo-secao"><i class="fa-solid fa-user-tie"></i> Organizador</h2>
-          <div class="perfil-organizador">
-            <img src="/frontend/imagens/logo3.png" alt="Logo do Organizador" class="avatar-organizador" id="avatar-organizador">
-            <div class="dados-organizador">
-              <p class="nome-produtora" id="nome-produtora">
-                Carregando... <span class="etiqueta-verificado"><i class="fa-solid fa-shield-halved"></i> Verificado</span>
+          <!-- Organizador -->
+          <section class="card-informacoes organizador">
+            <h2 class="titulo-secao">
+              <i class="fa-solid fa-user-tie"></i> Organizador
+            </h2>
+            <div class="perfil-organizador">
+              <img
+                src="/frontend/imagens/logo3.png"
+                alt="Logo do Organizador"
+                class="avatar-organizador"
+                id="avatar-organizador"
+              />
+              <div class="dados-organizador">
+                <p class="nome-produtora" id="nome-produtora">
+                  Carregando...
+                  <span class="etiqueta-verificado"
+                    ><i class="fa-solid fa-shield-halved"></i> Verificado</span
+                  >
+                </p>
+                <p class="eventos-organizados" id="eventos-organizados"></p>
+              </div>
+              <a
+                href="/frontend/eventos/VerPerfil.html"
+                class="botao-ver-perfil js-link-ver-perfil"
+              >
+                Ver Perfil <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </section>
+
+          <!-- Ingressos -->
+          <section class="ingressos-disponiveis">
+            <h3 class="titulo-ingressos">
+              <i class="fa-solid fa-ticket"></i> Ingressos Disponíveis
+            </h3>
+            <p id="loading-ingressos">Carregando opções de ingressos...</p>
+          </section>
+
+          <!-- Transparência -->
+          <div class="card-transparencia">
+            <div class="transparencia-icone">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="texto-transparencia">
+              <p class="titulo-transparencia">Transparência Total</p>
+              <p class="detalhe-taxa">
+                Taxa de serviço de
+                <span class="destaque-taxa">apenas 10%</span> será adicionada no
+                checkout. Esta taxa cobre processamento de pagamento, emissão de
+                ingresso digital e suporte ao cliente.
               </p>
-              <p class="eventos-organizados" id="eventos-organizados"></p>
             </div>
-            <a href="/frontend/eventos/VerPerfil.html" class="botao-ver-perfil js-link-ver-perfil">
-              Ver Perfil <i class="fa-solid fa-arrow-right"></i>
-            </a>
           </div>
-        </section>
 
-        <!-- Ingressos -->
-        <section class="ingressos-disponiveis">
-          <h3 class="titulo-ingressos"><i class="fa-solid fa-ticket"></i> Ingressos Disponíveis</h3>
-          <p id="loading-ingressos">Carregando opções de ingressos...</p>
-        </section>
+          <!-- Avaliações -->
+          <!-- Avaliações -->
+          <section class="card-informacoes avaliacoes">
+            <h2 class="titulo-secao">
+              <i class="fa-solid fa-star"></i> Avaliações
+            </h2>
 
-        <!-- Transparência -->
-        <div class="card-transparencia">
-          <div class="transparencia-icone"><i class="fa-solid fa-shield-halved"></i></div>
-          <div class="texto-transparencia">
-            <p class="titulo-transparencia">Transparência Total</p>
-            <p class="detalhe-taxa">Taxa de serviço de <span class="destaque-taxa">apenas 10%</span> será adicionada no checkout. Esta taxa cobre processamento de pagamento, emissão de ingresso digital e suporte ao cliente.</p>
-          </div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 16px;
+              "
+            >
+              <span
+                style="
+                  color: #f59e0b;
+                  font-weight: 700;
+                  font-size: 13px;
+                  display: flex;
+                  align-items: center;
+                  gap: 5px;
+                "
+              >
+                <i class="fas fa-star"></i>
+                <span id="avg-display-evento">0.0 (0 avaliações)</span>
+              </span>
+            </div>
+
+            <!-- Formulário -->
+            <div
+              style="
+                background: #f9f7ff;
+                border-radius: 12px;
+                padding: 20px;
+                margin-bottom: 20px;
+              "
+            >
+              <h4 style="margin: 0 0 12px; font-size: 14px; color: #1a1a2e">
+                Deixe sua avaliação
+              </h4>
+              <input
+                type="text"
+                id="review-name-evento"
+                placeholder="Seu nome"
+                style="
+                  width: 100%;
+                  padding: 10px 14px;
+                  border: 1.5px solid #e2e8f0;
+                  border-radius: 8px;
+                  font-size: 14px;
+                  margin-bottom: 10px;
+                  box-sizing: border-box;
+                "
+              />
+              <div
+                id="star-selector-evento"
+                style="
+                  display: flex;
+                  gap: 8px;
+                  margin-bottom: 10px;
+                  font-size: 28px;
+                  cursor: pointer;
+                "
+              >
+                <span class="star-evt" data-val="1">☆</span>
+                <span class="star-evt" data-val="2">☆</span>
+                <span class="star-evt" data-val="3">☆</span>
+                <span class="star-evt" data-val="4">☆</span>
+                <span class="star-evt" data-val="5">☆</span>
+              </div>
+              <textarea
+                id="review-text-evento"
+                rows="3"
+                placeholder="Conte como foi sua experiência..."
+                style="
+                  width: 100%;
+                  padding: 10px 14px;
+                  border: 1.5px solid #e2e8f0;
+                  border-radius: 8px;
+                  font-size: 14px;
+                  resize: vertical;
+                  box-sizing: border-box;
+                  margin-bottom: 10px;
+                "
+              ></textarea>
+              <button
+                onclick="enviarAvaliacaoEvento()"
+                style="
+                  background: #6c2bd9;
+                  color: #fff;
+                  border: none;
+                  padding: 10px 24px;
+                  border-radius: 8px;
+                  font-size: 14px;
+                  font-weight: 600;
+                  cursor: pointer;
+                "
+              >
+                <i class="fas fa-paper-plane"></i> Enviar avaliação
+              </button>
+            </div>
+
+            <div class="lista-avaliacoes" id="review-list-evento">
+              <p class="sem-avaliacoes">
+                Nenhuma avaliação para este evento. Seja o primeiro!
+              </p>
+            </div>
+          </section>
         </div>
+        <!-- /detalhes-evento -->
 
-        <!-- Avaliações -->
-        <section class="card-informacoes avaliacoes">
-          <h2 class="titulo-secao"><i class="fa-solid fa-star"></i> Avaliações</h2>
-          <div class="lista-avaliacoes">
-            <p class="sem-avaliacoes">Nenhuma avaliação para este evento. Seja o primeiro!</p>
-          </div>
-        </section>
+        <!-- COLUNA DIREITA — Compra -->
+        <aside class="compra-ingresso">
+          <div class="card-garantia-ingresso">
+            <h2 class="titulo-secao">Garanta seu Ingresso</h2>
 
-      </div><!-- /detalhes-evento -->
-
-      <!-- COLUNA DIREITA — Compra -->
-      <aside class="compra-ingresso">
-        <div class="card-garantia-ingresso">
-          <h2 class="titulo-secao">Garanta seu Ingresso</h2>
-
-          <div class="detalhes-data-local">
-            <div class="linha-detalhe">
-              <span class="label-detalhe"><i class="fa-regular fa-calendar"></i> Data</span>
-              <span class="valor-detalhe data-resumo">--</span>
+            <div class="detalhes-data-local">
+              <div class="linha-detalhe">
+                <span class="label-detalhe"
+                  ><i class="fa-regular fa-calendar"></i> Data</span
+                >
+                <span class="valor-detalhe data-resumo">--</span>
+              </div>
+              <div class="linha-detalhe">
+                <span class="label-detalhe"
+                  ><i class="fa-regular fa-clock"></i> Horário</span
+                >
+                <span class="valor-detalhe hora-resumo">--</span>
+              </div>
+              <div class="linha-detalhe">
+                <span class="label-detalhe"
+                  ><i class="fa-solid fa-location-dot"></i> Local</span
+                >
+                <span class="valor-detalhe local-resumo">--</span>
+              </div>
+              <div class="linha-detalhe">
+                <span class="label-detalhe"
+                  ><i class="fa-solid fa-ticket"></i> Ingresso</span
+                >
+                <span class="valor-detalhe ingresso-resumo">--</span>
+              </div>
             </div>
-            <div class="linha-detalhe">
-              <span class="label-detalhe"><i class="fa-regular fa-clock"></i> Horário</span>
-              <span class="valor-detalhe hora-resumo">--</span>
+
+            <div class="detalhe-valor-total">
+              <span class="label-valor">Total</span>
+              <span class="valor-ingresso">R$ 0,00</span>
             </div>
-            <div class="linha-detalhe">
-              <span class="label-detalhe"><i class="fa-solid fa-location-dot"></i> Local</span>
-              <span class="valor-detalhe local-resumo">--</span>
-            </div>
-            <div class="linha-detalhe">
-              <span class="label-detalhe"><i class="fa-solid fa-ticket"></i> Ingresso</span>
-              <span class="valor-detalhe ingresso-resumo">--</span>
+
+            <button class="botao-comprar" type="button">
+              Comprar Ingresso
+            </button>
+
+            <div class="beneficios-compra">
+              <div class="beneficio-item">
+                <i class="fa-solid fa-circle-check"></i> Confirmação imediata
+              </div>
+              <div class="beneficio-item">
+                <i class="fa-solid fa-circle-check"></i> Ingresso por email e
+                app
+              </div>
+              <div class="beneficio-item">
+                <i class="fa-solid fa-circle-check"></i> Pagamento seguro
+              </div>
             </div>
           </div>
+        </aside>
+      </div>
+      <!-- /conteudo-evento -->
+    </main>
 
-          <div class="detalhe-valor-total">
-            <span class="label-valor">Total</span>
-            <span class="valor-ingresso">R$ 0,00</span>
-          </div>
-
-          <button class="botao-comprar" type="button">Comprar Ingresso</button>
-
-          <div class="beneficios-compra">
-            <div class="beneficio-item"><i class="fa-solid fa-circle-check"></i> Confirmação imediata</div>
-            <div class="beneficio-item"><i class="fa-solid fa-circle-check"></i> Ingresso por email e app</div>
-            <div class="beneficio-item"><i class="fa-solid fa-circle-check"></i> Pagamento seguro</div>
-          </div>
-        </div>
-      </aside>
-
-    </div><!-- /conteudo-evento -->
-  </main>
-
-  <!-- Scripts — apenas uma vez, ordem correta -->
-  <script src="/frontend/js/config.js"></script>
-  <script src="/frontend/js/footer.js" defer></script>
-  <script src="/frontend/js/loadHeader.js"></script>
-  <script src="/frontend/js/detalhesEventos.js"></script>
-  <script src="/frontend/js/favoritoCompartilhar.js"></script>
-</body>
+    <!-- Scripts — apenas uma vez, ordem correta -->
+    <script src="/frontend/js/config.js"></script>
+    <script src="/frontend/js/footer.js" defer></script>
+    <script src="/frontend/js/loadHeader.js"></script>
+    <script src="/frontend/js/detalhesEventos.js"></script>
+    <script src="/frontend/js/favoritoCompartilhar.js"></script>
+  </body>
 </html>

@@ -133,91 +133,7 @@
             </div>
 
             <div class="populares-grid container">
-
-                <a href="/frontend/detalheslocais/detalheslocais.html" class="card-local" data-categoria-card="bar">
-                    <div class="card-image-wrap">
-                        <img src="/frontend/imagens/1º imagem cad.png" alt="Pingo Fogo">
-                        <span class="tag tag-bar">Bar</span>
-                    </div>
-                    <div class="card-content">
-                        <h3>Pingo Fogo</h3>
-                        <div class="local-meta">
-                            <p><i class="fas fa-calendar-alt"></i> Sex, 14 de Out - 20:00</p>
-                        </div>
-                        <p class="evento-local"><i class="fas fa-map-marker-alt"></i> Setor Marista, Goiânia</p>
-                    </div>
-                </a>
-
-                <a href="/frontend/detalheslocais/detalheslocais.html" class="card-local" data-categoria-card="restaurante">
-                    <div class="card-image-wrap">
-                        <img src="/frontend/imagens/2º imagem card.png" alt="Kabanas Restaurante">
-                        <span class="tag tag-restaurante">Restaurante</span>
-                    </div>
-                    <div class="card-content">
-                        <h3>Kabanas Restaurante</h3>
-                        <div class="local-meta">
-                            <p><i class="fas fa-calendar-alt"></i> Sex, 14 de Out - 20:00</p>
-                        </div>
-                        <p class="evento-local"><i class="fas fa-map-marker-alt"></i> Setor Bueno, Goiânia</p>
-                    </div>
-                </a>
-
-                <a href="/frontend/detalheslocais/detalheslocais.html" class="card-local" data-categoria-card="balada">
-                    <div class="card-image-wrap">
-                        <img src="/frontend/imagens/3º imagem card.png" alt="Roxy">
-                        <span class="tag tag-balada">Balada</span>
-                    </div>
-                    <div class="card-content">
-                        <h3>Roxy</h3>
-                        <div class="local-meta">
-                            <p><i class="fas fa-calendar-alt"></i> Sex, 14 de Out - 20:00</p>
-                        </div>
-                        <p class="evento-local"><i class="fas fa-map-marker-alt"></i> Setor Sul, Goiânia</p>
-                    </div>
-                </a>
-
-                <a href="/frontend/detalheslocais/detalheslocais.html" class="card-local" data-categoria-card="stand-up">
-                    <div class="card-image-wrap">
-                        <img src="/frontend/imagens/4º imagem cad.png" alt="Guardian Comedy Club">
-                        <span class="tag tag-comedy">Stand-up</span>
-                    </div>
-                    <div class="card-content">
-                        <h3>Guardian Comedy Club</h3>
-                        <div class="local-meta">
-                            <p><i class="fas fa-calendar-alt"></i> Sex, 14 de Out - 20:00</p>
-                        </div>
-                        <p class="evento-local"><i class="fas fa-map-marker-alt"></i> Setor Marista, Goiânia</p>
-                    </div>
-                </a>
-
-                <a href="/frontend/detalheslocais/detalheslocais.html" class="card-local" data-categoria-card="restaurante">
-                    <div class="card-image-wrap">
-                        <img src="/frontend/imagens/5º imagem cad.png" alt="Pizzaria da 8">
-                        <span class="tag tag-restaurante">Restaurante</span>
-                    </div>
-                    <div class="card-content">
-                        <h3>Pizzaria da 8</h3>
-                        <div class="local-meta">
-                            <p><i class="fas fa-calendar-alt"></i> Sex, 14 de Out - 20:00</p>
-                        </div>
-                        <p class="evento-local"><i class="fas fa-map-marker-alt"></i> Setor Central, Goiânia</p>
-                    </div>
-                </a>
-
-                <a href="/frontend/detalheslocais/detalheslocais.html" class="card-local" data-categoria-card="teatro">
-                    <div class="card-image-wrap">
-                        <img src="/frontend/imagens/6º imagem cad.png" alt="Teatro Rio Vermelho">
-                        <span class="tag tag-show">Teatro</span>
-                    </div>
-                    <div class="card-content">
-                        <h3>Teatro Rio Vermelho</h3>
-                        <div class="local-meta">
-                            <p><i class="fas fa-calendar-alt"></i> Verificar Agenda</p>
-                        </div>
-                        <p class="evento-local"><i class="fas fa-map-marker-alt"></i> Setor Central, Goiânia</p>
-                    </div>
-                </a>
-
+                <!-- Cards inseridos dinamicamente pelo Home.js -->
             </div>
 
             <a href="/frontend/locais/locais.html" class="btn-ver-todos">Ver Todos os Locais</a>
@@ -232,12 +148,12 @@
                 <p class="section-subtitle">Não perca os melhores eventos da cidade</p>
             </div>
 
-           <div class="eventos-grid container" id="eventosGrid">
-    <!-- Cards inseridos dinamicamente pelo Home.js -->
-    </div>
+            <div class="eventos-grid container" id="eventosGrid">
+                <!-- Cards inseridos dinamicamente pelo Home.js -->
+            </div>
 
-    <a href="/frontend/eventos/eventos.html" class="btn-ver-todos">Ver Todos os Eventos</a>
-    </section>
+            <a href="/frontend/eventos/eventos.html" class="btn-ver-todos">Ver Todos os Eventos</a>
+        </section>
 
         <!-- ================================================
              FAQ
@@ -346,7 +262,7 @@
     <script src="/frontend/js/loadHeader.js"></script>
     <script src="/frontend/js/Home.js"></script>
     <script src="/frontend/js/filtrohome.js"></script>
-    <script src="/monitor.js"></script>
+    <!-- ✅ CORREÇÃO: <script src="/monitor.js"></script> removido — arquivo inexistente causava flash na tela -->
 
 </body>
 

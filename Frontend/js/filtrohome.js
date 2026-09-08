@@ -5,7 +5,6 @@
 // Ouve o evento 'roles:filtrar' disparado pelo header.js e
 // filtra os cards .card-local e .card-evento do index.html
 // sem recarregar a página.
-// Adicione na index.html: <script src="js/filtro-home.js"></script>
 // ============================================================
 
 (function () {
@@ -19,7 +18,6 @@
 
     // ----------------------------------------------------------
     // EXTRAI TEXTO PESQUISÁVEL DE UM CARD
-    // Funciona com .card-local e .card-evento do index.html
     // ----------------------------------------------------------
     function textoDoCard(card) {
         const nome      = card.querySelector('h3')?.textContent || '';
@@ -34,10 +32,10 @@
     // ----------------------------------------------------------
     // ESTADO DE VISIBILIDADE DOS CARDS
     // ----------------------------------------------------------
-    let estadoOriginal = null; // guarda o display original de cada card
+    let estadoOriginal = null;
 
     function salvarEstadoOriginal() {
-        if (estadoOriginal) return; // só salva uma vez
+        if (estadoOriginal) return;
         estadoOriginal = new Map();
         document.querySelectorAll('.card-local, .card-evento').forEach(card => {
             estadoOriginal.set(card, card.style.display || '');
@@ -53,26 +51,16 @@
         const termoNorm = norm(termo);
         let totalVisiveis = 0;
 
-        // Filtra os cards
         estadoOriginal.forEach((displayOriginal, card) => {
             const bate = termoNorm === '' || textoDoCard(card).includes(termoNorm);
             card.style.display = bate ? displayOriginal : 'none';
             if (bate) totalVisiveis++;
         });
 
-        // Mostra/esconde seções inteiras se todos os cards dela sumiram
         gerenciarSecoes(termoNorm);
-
-        // Mostra mensagem de "nenhum resultado" se necessário
         atualizarMensagemVazia(termoNorm, totalVisiveis);
 
-        // Rola suavemente até a primeira seção com resultado
-        if (termoNorm !== '') {
-            const primeiraSecao = document.querySelector('.section-populares, .section-eventos');
-            if (primeiraSecao) {
-                primeiraSecao.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
+        // ✅ CORREÇÃO: scrollIntoView removido — era ele que jogava a página para baixo ao digitar
     }
 
     // Esconde seções onde TODOS os cards estão ocultos
@@ -84,7 +72,6 @@
             const cards = secao.querySelectorAll('.card-local, .card-evento');
             const algumVisivel = Array.from(cards).some(c => c.style.display !== 'none');
 
-            // Esconde/mostra a seção inteira
             secao.style.display = algumVisivel || termoNorm === '' ? '' : 'none';
         });
     }
@@ -110,7 +97,6 @@
                     <p style="font-size:0.9rem;margin:0;">Tente buscar por outro nome, categoria ou local.</p>
                 `;
 
-                // Insere antes do FAQ
                 const faq = document.querySelector('.faq');
                 if (faq) faq.before(msg);
                 else document.querySelector('main')?.appendChild(msg);
@@ -130,8 +116,6 @@
 
     // ----------------------------------------------------------
     // AO CARREGAR A PÁGINA: verifica se veio com filtro salvo
-    // (caso o usuário tenha buscado em outra página e foi
-    //  redirecionado para a home)
     // ----------------------------------------------------------
     document.addEventListener('DOMContentLoaded', () => {
         const filtrosSalvos = localStorage.getItem('filtrosRoles');
@@ -141,14 +125,11 @@
             const { termo } = JSON.parse(filtrosSalvos);
             if (!termo) return;
 
-            // Preenche o input do header (pode ser em iframe ou direto)
             const input = document.getElementById('search-input');
             if (input) input.value = termo;
 
-            // Aplica o filtro após um tick para garantir que os cards estão no DOM
             setTimeout(() => filtrar(termo), 100);
 
-            // Limpa para não filtrar novamente em próximas visitas
             localStorage.removeItem('filtrosRoles');
         } catch (_) {}
     });

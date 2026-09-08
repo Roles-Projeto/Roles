@@ -3,21 +3,12 @@
 const db     = require("../db/db_config");
 const crypto = require("crypto");
 
-function query(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.query(sql, params, (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-        });
-    });
-}
-
 // ====================================================
 // LISTAR EVENTOS DISPONÍVEIS
 // ====================================================
 async function listarEventos(req, res) {
     try {
-        const eventos = await query(`
+        const eventos = await db.query(`
             SELECT e.*,
                    MIN(i.valor) AS preco_minimo,
                    COUNT(i.id)  AS tipos_disponiveis
@@ -40,11 +31,11 @@ async function listarEventos(req, res) {
 async function detalheEvento(req, res) {
     const { id } = req.params;
     try {
-        const rows = await query("SELECT * FROM eventos WHERE id = ?", [id]);
+        const rows = await db.query("SELECT * FROM eventos WHERE id = ?", [id]);
         const evento = rows[0];
         if (!evento) return res.status(404).json({ erro: "Evento não encontrado." });
 
-        const tipos = await query(`
+        const tipos = await db.query(`
             SELECT id, titulo AS nome, tipo, valor AS preco,
                    quantidade_total, quantidade_total AS disponivel
             FROM ingressos
@@ -78,7 +69,7 @@ async function comprarIngresso(req, res) {
         const detalhes  = [];
 
         for (const item of itens) {
-            const rows = await query(
+            const rows = await db.query(
                 "SELECT * FROM ingressos WHERE id = ? AND evento_id = ?",
                 [item.tipo_ingresso_id, evento_id]
             );
@@ -92,13 +83,12 @@ async function comprarIngresso(req, res) {
 
         const status_pagamento = simularPagamento(forma_pagamento);
 
-        const pedidoResult = await query(
+        const pedidoResult = await db.query(
             "INSERT INTO pedidos (usuario_id, evento_id, valor_total, forma_pagamento, status) VALUES (?, ?, ?, ?, ?)",
             [usuario_id, evento_id, valor_total, forma_pagamento, status_pagamento]
         );
-        const pedido_id = pedidoResult.insertId;
+        const pedido_id = pedidoResult.insertId ?? pedidoResult[0]?.id;
 
-        // ── Gera QR codes UMA vez, reutiliza no e-mail e na resposta ──
         const ingressosGerados = detalhes.flatMap(d =>
             Array.from({ length: d.quantidade }, () => ({
                 tipo:      d.tipo.titulo,
@@ -106,22 +96,17 @@ async function comprarIngresso(req, res) {
             }))
         );
 
-        // ── Envia e-mail em background (só se aprovado) ───────────────
         if (status_pagamento === "aprovado") {
             try {
                 const { enviarEmailIngresso } = require("../services/emailService");
-
                 const [usuarioRows, eventoRows] = await Promise.all([
-                    query("SELECT nome_completo, email FROM usuarios WHERE id = ?", [usuario_id]),
-                    query("SELECT nome, data_inicio, local_nome, cidade FROM eventos WHERE id = ?", [evento_id]),
+                    db.query("SELECT nome_completo, email FROM usuarios WHERE id = ?", [usuario_id]),
+                    db.query("SELECT nome, data_inicio, local_nome, cidade FROM eventos WHERE id = ?", [evento_id]),
                 ]);
-
                 const usuario = usuarioRows[0];
                 const evento  = eventoRows[0];
-
                 if (usuario && evento) {
                     const d = new Date(evento.data_inicio);
-
                     enviarEmailIngresso({
                         nomeCliente:     usuario.nome_completo,
                         emailCliente:    usuario.email,
@@ -166,13 +151,12 @@ async function comprarIngresso(req, res) {
 // ====================================================
 async function meusIngressos(req, res) {
     const { usuario_id } = req.params;
-
     if (!usuario_id) {
         return res.status(400).json({ erro: "usuario_id não informado." });
     }
 
     try {
-        const ingressos = await query(`
+        const ingressos = await db.query(`
             SELECT
                 p.id,
                 p.usuario_id,
@@ -219,7 +203,7 @@ async function detalheIngresso(req, res) {
     const { usuario_id } = req.query;
 
     try {
-        const rows = await query(`
+        const rows = await db.query(`
             SELECT
                 p.id,
                 p.usuario_id,
@@ -266,6 +250,68 @@ function simularPagamento(forma_pagamento) {
     return "aprovado";
 }
 
+// ====================================================
+// REENVIAR E-MAIL DO INGRESSO
+// POST /pedidos/:id/reenviar-email
+// ====================================================
+async function reenviarEmailIngresso(req, res) {
+    const { id } = req.params;
+
+    try {
+        const rows = await db.query(`
+            SELECT
+                p.id            AS pedido_id,
+                p.usuario_id,
+                p.valor_total,
+                p.forma_pagamento,
+                p.status,
+                e.nome          AS nome_evento,
+                e.data_inicio,
+                e.local_nome,
+                e.cidade,
+                u.nome_completo,
+                u.email,
+                (SELECT titulo FROM ingressos WHERE evento_id = p.evento_id LIMIT 1) AS tipo_ingresso
+            FROM pedidos p
+            JOIN eventos  e ON e.id = p.evento_id
+            JOIN usuarios u ON u.id = p.usuario_id
+            WHERE p.id = ?
+            LIMIT 1
+        `, [id]);
+
+        const d = rows[0];
+        if (!d) return res.status(404).json({ erro: "Pedido não encontrado." });
+        if (!d.email) return res.status(400).json({ erro: "Usuário sem e-mail cadastrado." });
+
+        const dataEvt    = new Date(d.data_inicio);
+        const codigo_qr  = `ROLES-PEDIDO-${d.pedido_id}-USUARIO-${d.usuario_id}`;
+
+        const { enviarEmailIngresso } = require("../services/emailService");
+
+        await enviarEmailIngresso({
+            nomeCliente:     d.nome_completo,
+            emailCliente:    d.email,
+            pedido_id:       d.pedido_id,
+            nomeEvento:      d.nome_evento,
+            dataEvento:      dataEvt.toLocaleDateString("pt-BR"),
+            horaEvento:      dataEvt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+            localEvento:     `${d.local_nome}, ${d.cidade}`,
+            nomeIngresso:    d.tipo_ingresso || "Ingresso",
+            quantidade:      1,
+            subtotal:        d.valor_total,
+            taxaServico:     d.valor_total * 0.10,
+            totalPago:       d.valor_total * 1.10,
+            forma_pagamento: d.forma_pagamento,
+            ingressos:       [{ tipo: d.tipo_ingresso || "Ingresso", codigo_qr }],
+        });
+
+        res.json({ mensagem: "E-mail reenviado com sucesso." });
+
+    } catch (err) {
+        console.error("❌ Erro ao reenviar e-mail:", err);
+        res.status(500).json({ erro: "Erro ao reenviar e-mail.", detalhe: err.message });
+    }
+}
 module.exports = {
     listarEventos,
     detalheEvento,
@@ -273,4 +319,5 @@ module.exports = {
     meusIngressos,
     validarQRCode,
     detalheIngresso,
+    reenviarEmailIngresso,   // ← novo
 };

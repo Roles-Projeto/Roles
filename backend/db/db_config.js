@@ -1,60 +1,87 @@
 require("dotenv").config();
 
-const isProduction = process.env.NODE_ENV === "production";
-let pool;
+const { Pool, types } = require("pg");
 
-if (isProduction) {
-  const { Pool } = require("pg");
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-  });
-  console.log("🟢 Usando PostgreSQL (produção)");
-} else {
-  const mysql = require("mysql2");
-  pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    charset: 'utf8mb4',
-    waitForConnections: true,
-    connectionLimit: 10
-  });
+// Faz o driver devolver timestamp/date/timestamptz como texto puro,
+// em vez de converter automaticamente pra objeto Date do JS.
+// Isso evita bugs de fuso horário e "Invalid Date" no frontend,
+// preservando o mesmo comportamento que o mysql2 tinha antes.
+types.setTypeParser(1114, (val) => val); // timestamp without time zone
+types.setTypeParser(1082, (val) => val); // date
+types.setTypeParser(1184, (val) => val); // timestamptz
 
-  // Adiciona isso logo abaixo:
-  pool.on('connection', (conn) => {
-    conn.query("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'");
-  });
-  console.log("🟡 Usando MySQL (local)");
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+console.log("🟢 Usando PostgreSQL (Supabase)");
+
+/* Converte ? → $1, $2... (suas queries foram escritas nesse estilo) */
+function converterParams(sql) {
+  let i = 0;
+  return sql.replace(/\?/g, () => `$${++i}`);
 }
 
-// Wrapper que funciona nos dois bancos
+/* Converte funções e sintaxe MySQL usadas no código para o equivalente em Postgres.
+   Adicione novas conversões aqui conforme forem aparecendo erros — não precisa
+   editar os controllers individualmente. */
+function converterSQL(sql) {
+  let result = sql
+    // DATE_ADD(base, INTERVAL ? UNIDADE) -> (base) + (? * INTERVAL '1 unidade')
+    .replace(/DATE_ADD\(([^,]+),\s*INTERVAL\s+\?\s+(\w+)\)/gi,
+      (_, base, unidade) => `(${base.trim()}) + (? * INTERVAL '1 ${unidade.toLowerCase()}')`)
+    // DATE_SUB(base, INTERVAL ? UNIDADE) -> (base) - (? * INTERVAL '1 unidade')
+    .replace(/DATE_SUB\(([^,]+),\s*INTERVAL\s+\?\s+(\w+)\)/gi,
+      (_, base, unidade) => `(${base.trim()}) - (? * INTERVAL '1 ${unidade.toLowerCase()}')`)
+    // UTC_TIMESTAMP() -> hora atual em UTC
+    .replace(/UTC_TIMESTAMP\(\)/gi, "(NOW() AT TIME ZONE 'UTC')")
+    // GROUP_CONCAT(campo SEPARATOR 'x') -> STRING_AGG(campo, 'x')
+    .replace(/GROUP_CONCAT\((.+?)\s+SEPARATOR\s+'(.+?)'\)/gi, "STRING_AGG($1, '$2')")
+    .replace(/GROUP_CONCAT\((.+?)\)/gi, "STRING_AGG($1, ',')")
+    // IFNULL(a, b) -> COALESCE(a, b)
+    .replace(/IFNULL\(/gi, "COALESCE(")
+    // INT AUTO_INCREMENT (em CREATE TABLE) -> SERIAL
+    .replace(/INT\s+AUTO_INCREMENT/gi, "SERIAL")
+    // CURDATE() -> data atual
+    .replace(/CURDATE\(\)/gi, "CURRENT_DATE")
+    // CURTIME() -> hora atual
+    .replace(/CURTIME\(\)/gi, "CURRENT_TIME");
+
+  // Adiciona RETURNING id em INSERTs automaticamente, se ainda não tiver
+  if (/^\s*INSERT\s+/i.test(result) && !/RETURNING/i.test(result)) {
+    result = result.trimEnd().replace(/;?\s*$/, '') + ' RETURNING id';
+  }
+
+  return result;
+}
+
 const db = {
-  query: (sql, params, callback) => {
-    if (typeof params === "function") {
-      callback = params;
-      params = [];
-    }
+  query: (sql, params = [], callback) => {
+    const pgSql = converterParams(converterSQL(sql));
 
-    if (isProduction) {
-      let i = 0;
-      const pgSql = sql
-        .replace(/\?/g, () => `$${++i}`)
-        .replace(/GROUP_CONCAT\((.+?)\s+SEPARATOR\s+'.+?'\)/gi, "STRING_AGG($1::text, ',')")
-        .replace(/`/g, '"');
-
-      pool.query(pgSql, params || [])
-        .then(result => {
-          const rows = result.rows;
-          if (result.rows[0]?.id) rows.insertId = result.rows[0].id;
+    // ── MODO CALLBACK ──────────────────────────────────
+    if (typeof callback === 'function') {
+      pool.query(pgSql, params)
+        .then(r => {
+          const rows = r.rows;
+          if (r.command === 'INSERT' && rows.length > 0 && rows[0].id) {
+            rows.insertId = rows[0].id;
+          }
           callback(null, rows);
         })
-        .catch(err => callback(err, null));
-    } else {
-      pool.query(sql, params, callback);
+        .catch(err => callback(err));
+      return;
     }
+
+    // ── MODO PROMISE / ASYNC-AWAIT ─────────────────────
+    return pool.query(pgSql, params).then(r => {
+      const rows = r.rows;
+      if (r.command === 'INSERT' && rows.length > 0 && rows[0].id) {
+        rows.insertId = rows[0].id;
+      }
+      return rows;
+    });
   }
 };
 

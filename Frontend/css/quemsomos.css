@@ -1,497 +1,365 @@
-/* ==================================================
-==================== Quem somos ==========================
-================================================== */
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --ink:        #1a0533;
+    --violet:     #4f46e5;
+    --violet-mid: #7c3aed;
+    --violet-pale:#f5f3ff;
+    --violet-dim: rgba(79,70,229,0.12);
+    --muted:      #9b87b8;
+    --body-text:  #4a3f6b;
+    --bg:         #fafafa;
+    --white:      #ffffff;
+    --border:     rgba(0,0,0,0.07);
+    --font:       'Bricolage Grotesque', sans-serif;
+    --shadow:     0 2px 12px rgba(26,5,51,0.06);
+    --shadow-lift:0 6px 24px rgba(79,70,229,0.13);
+    --r-md:       10px;
+    --r-lg:       14px;
+    --r-xl:       16px;
+}
 
 body {
-    font-family: 'Poppins', sans-serif;
-    margin: 0%;
-    padding: 0%;
-    width: 100%;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* Se 'Sobre o Rolês' é seu título principal (H1) */
-h1 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 32px;
-    font-weight: 500;
-    /* Tente SemiBold */
-    color: #4A4A4A;
-    /* Cor cinza que parece ser a do Figma (aproximado) */
-    /* Você pode adicionar a altura de linha se quiser a mesma separação: */
-    line-height: 36px;
-
-    /* Centralize-o */
+.qs-hero {
+    background: var(--white);
+    padding: 72px 40px 60px;
     text-align: center;
-}
-
-h2 {
-    /* 1. Nome da fonte (Você já deve ter feito isso, mas garante) */
-    font-family: 'Poppins', sans-serif;
-
-    /* 2. Tamanho (32px, conforme o Figma) */
-    font-size: 32px;
-
-    /* 3. Peso da Fonte (Ajustamos para o SemiBold 600, que é mais leve que o Bold 700) */
-    font-weight: 500;
-
-    /* 4. Cor do Texto (Para a cor cinza escuro do Figma) */
-    color: #4A4A4A;
-
-    /* 5. Espaçamento entre as letras (Ajuste crucial para fontes geométricas como a Poppins) */
-    letter-spacing: -1px;
-    /* Use valores negativos (como -0.5px ou -1px) para diminuir o espaço, 
-         deixando o texto mais compacto, como no Figma. */
-
-    /* 6. Alinhamento */
-    text-align: center;
-}
-
-.primeira {
-    /* 1. Centraliza o texto DENTRO do parágrafo */
-    text-align: center;
-
-    color: rgba(3, 1, 15, 0.926);
-    font-size: 16px;
-
-    /* 2. Mantém a largura que você definiu */
-    width: 80%;
-
-
-    /* 3. CENTRALIZA o próprio BLOCO na horizontal */
-    margin-left: auto;
-    margin-right: auto;
-    /* (Ou, mais curto: margin: 0 auto; se quiser zerar margens verticais) */
-    color: #9D9B9B;
-}
-
-.p1 {
-    max-width: 600px;
-    /* largura do bloco de texto */
-    margin-left: 15%;
-    /* afasta da esquerda em % */
-    font-family: "Poppins", sans-serif;
-    font-size: 12px;
-    line-height: 1.8;
-    color: #9D9B9B;
-    text-align: left;
-}
-
-.banner-roles {
-    width: 100%;
-    /* ocupa a largura do container */
-    max-width: 1050px;
-    /* limite opcional, ajuste como no Figma */
-    height: 380px;
-    /* altura fixa igual ao retângulo */
-    border-radius: 8px;
+    position: relative;
     overflow: hidden;
-    /* corta o que passar do retângulo */
-    margin: 0% auto;
-
+    border-bottom: 1px solid var(--border);
 }
 
-.banner-roles img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    /* mantém proporção e preenche todo o espaço */
-    object-position: center;
-    /* centraliza a parte visível */
-    display: block;
+.qs-hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(79,70,229,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,70,229,0.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+    pointer-events: none;
 }
 
-.historia-container {
-    /* 1. Ativa o alinhamento lado a lado */
-    display: flex;
-
-    /* 2. Centraliza o container e dá um espaçamento interno */
-    padding: 0 5%;
-    max-width: 1200px;
-    margin: 0 auto;
-
-    /* 3. Espaço entre os dois blocos (texto e imagem) */
-    gap: 40px;
-
-    /* 4. Alinha o conteúdo pelo topo (evita a imagem ficar centralizada verticalmente) */
-    align-items: flex-start;
-}
-
-.historia-texto-principal {
-    /* Ocupa a maior parte do espaço na esquerda */
-    width: 50%;
-}
-
-.historia-imagem-lado {
-    /* Ocupa o espaço restante na direita, e é menor */
-    width: 35%;
-    height: auto;
-    /* Garante que a imagem não seja esticada ou fique muito grande */
-    max-width: 300px;
-}
-
-/* Opcional: Para melhor visualização em telas pequenas (mobile) */
-@media (max-width: 768px) {
-    .historia-container {
-        /* Muda de linha (row) para coluna (column) */
-        flex-direction: column;
-    }
-
-    .historia-texto-principal,
-    .historia-imagem-lado {
-        /* Ocupam a largura total em telas pequenas */
-        width: 100%;
-    }
-}
-
-/* Estilo Comum para Todas as Seções */
-h2 {
-    text-align: center;
-    margin-top: 50px;
-    margin-bottom: 40px;
-}
-
-/*==================================================
-      NUMEROS
- ==================================================*/
-
-.cards-container {
-    /* Ativa o Flexbox para alinhar os cards lado a lado */
-    display: flex;
-    /* Centraliza o bloco na tela */
-    max-width: 1200px;
-    margin: 0 auto;
-    /* Espaço entre os cards */
-    gap: 30px;
-    /* Permite que os cards quebrem a linha em telas menores */
-    flex-wrap: wrap;
-    /* Centraliza os cards dentro do container */
-    justify-content: center;
-}
-
-/* Largura Comum para 4 Cards por Linha */
-/* 25% menos metade do espaço de gap (30px/2 = 15px) para cada lado */
-.numero-card,
-.valor-card,
-.membro-card {
-    width: calc(25% - 22.5px);
-    text-align: center;
-    padding: 15px;
-    margin-bottom: 30px;
-}
-
-
-/* --- Estilos para a seção "Números que nos Orgulham" --- */
-
-/* Container principal da seção */
-.numeros-orgulho {
-    padding: 40px 0;
-    text-align: center;
-    /* Centraliza o título H2 */
-}
-
-/* Estilo do título H2 */
-.numeros-orgulho h2 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 28px;
-    color: #333;
-    margin: 0 auto 40px auto;
-    /* Centraliza verticalmente (distância para os cards) */
-}
-
-/* Container que envolve os cards */
-.numeros-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    /* Centraliza o bloco de cards */
-    max-width: 1200px;
-    margin: 0 auto;
-    gap: 30px;
-    /* Espaço entre os cards */
-}
-
-/* Estilo do Card Individual */
-.card-metrica {
-    /* Define o Flexbox para centralizar o CONTEÚDO (ícone, 0+, texto) */
-    display: flex;
-    flex-direction: column;
-    /* Organiza os itens verticalmente */
-    align-items: center;
-    /* Centraliza os itens na horizontal */
-    justify-content: center;
-    /* Centraliza os itens na vertical (se necessário) */
-
-    /* Tamanho e visual do card */
-    width: 25%;
-    /* Cada card ocupa 25% do container para ter 4 em linha */
-    min-width: 200px;
-    /* Garante um tamanho mínimo em telas menores */
-    height: 200px;
-    /* Altura fixa para todos */
-
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-    /* Sombra suave */
-    background-color: #fff;
-    transition: transform 0.3s;
-}
-
-.card-metrica:hover {
-    transform: translateY(-5px);
-    /* Efeito ao passar o mouse */
-}
-
-/* Estilo para o Ícone (Placeholder) */
-.icone-numero {
-    display: block;
-    width: 30px;
-    height: 30px;
-    background-color: #f0f0f0;
-    /* Cor de fundo para simular o ícone */
+.qs-hero-glow {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 500px;
+    height: 300px;
     border-radius: 50%;
-    margin: 0 auto 15px auto;
-    /* Centraliza o ícone e adiciona espaço abaixo */
+    background: radial-gradient(ellipse, rgba(79,70,229,0.08), transparent 70%);
+    pointer-events: none;
 }
 
-/* Estilo para o número "0+" */
-.numero-card h3 {
-    color: #4C267B;
-    /* Cor Roxa Principal */
-    font-size: 2.5em;
-    margin-bottom: 5px;
-}
-
-/* Estilo para o texto descritivo */
-.numero-card p {
-    font-size: 0.9em;
-    color: #666;
-    margin: 0;
-}
-
-/* Media Query para Telas Pequenas (Mobile/Tablet) */
-@media (max-width: 768px) {
-    .numero-card {
-        /* Em telas menores, 2 cards por linha */
-        flex: 0 0 calc(50% - 15px);
-        /* 15px é a metade do gap de 30px */
-    }
-}
-
-/* ==============================================
-      valores
-      =======================================*/
-
-/* Seção "Nossos Valores" */
-.nossos-valores {
-    text-align: center;
-    /* Centraliza o título H2 */
-    padding: 60px 0;
-    background-color: #fff;
-    /* Fundo BRANCO para não destacar do resto da página */
-}
-
-.nossos-valores h2 {
-    font-family: 'Poppins', sans-serif;
-    margin-bottom: 40px;
-    font-size: 28px;
-    color: #333;
-}
-
-.valores-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-
-    /* AUMENTAMOS A LARGURA: de 900px para 1000px ou mais, se necessário */
-    max-width: 1000px;
+.qs-hero-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 640px;
     margin: 0 auto;
 }
 
-.valor-card {
-    /* Mantenha o display: flex e os estilos visuais anteriores */
-    display: flex;
-    align-items: flex-start;
-    gap: 15px;
-    padding: 25px;
-    /* ... outros estilos ... */
-
-    /* NOVO: Garante que o card tenha uma largura mínima, dando espaço ao texto */
-    min-width: 450px;
-}
-
-/* NOVO: Ajuste a largura máxima da coluna de texto para garantir que ela não esmague */
-.valor-texto {
-    /* Define uma largura base para que a coluna de texto preencha o espaço */
-    flex: 1;
-}
-
-/* Estilo do Ícone */
-.icone-valor {
-    font-size: 24px;
-    color: #5C6BC0;
-    flex-shrink: 0;
-    /* Impede que o ícone seja comprimido */
-    padding-top: 3px;
-    /* Pequeno ajuste para alinhar com o texto */
-}
-
-/* Estilos dos textos dentro do card */
-.valor-texto h3 {
-    margin: 0 0 5px 0;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-    font-size: 18px;
-    color: #333;
-    text-align: left;
-}
-
-.valor-texto p {
-    margin: 0;
-    font-size: 14px;
-    color: #666;
-    line-height: 1.5;
-}
-
-/* Estilo de cada card individual */
-.card-metrica {
-    /* Define o Flexbox para centralizar o CONTEÚDO (ícone, 0+, texto) */
-    display: flex;
-    flex-direction: column;
-    /* Organiza os itens verticalmente */
+.qs-tag {
+    display: inline-flex;
     align-items: center;
-    /* Centraliza os itens na horizontal */
-    justify-content: center;
-    /* Centraliza os itens na vertical (se necessário) */
-
-    /* Tamanho e visual do card */
-    width: 25%;
-    /* Cada card ocupa 25% do container para ter 4 em linha */
-    min-width: 200px;
-    /* Garante um tamanho mínimo em telas menores */
-    height: 200px;
-    /* Altura fixa para todos */
-
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-    /* Sombra suave */
-    background-color: #fff;
-    transition: transform 0.3s;
-}
-
-.card-metrica:hover {
-    transform: translateY(-5px);
-    /* Efeito ao passar o mouse */
-}
-
-/* Estilo do Ícone (alta resolução garantida pelo Font Awesome) */
-.icone {
-    font-size: 35px;
-    /* Tamanho do ícone */
-    color: #5C6BC0;
-    /* Cor primária do design */
-    margin-bottom: 10px;
-}
-
-/* Estilo do número (0+) */
-.numero {
-    font-family: 'Poppins', sans-serif;
-    font-size: 48px;
+    gap: 6px;
+    font-size: 10px;
     font-weight: 700;
-    color: #5C6BC0;
-    /* Cor principal */
-    line-height: 1;
-    /* Para não ter espaço extra */
-    margin-bottom: 5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--violet);
+    border: 1px solid rgba(79,70,229,0.2);
+    border-radius: 99px;
+    padding: 4px 14px;
+    margin-bottom: 20px;
+    background: rgba(79,70,229,0.04);
 }
 
-/* Estilo do texto descritivo */
-.descricao {
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    color: #666;
-    text-align: center;
+.qs-h1 {
+    font-size: clamp(36px, 4.5vw, 54px);
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    margin-bottom: 14px;
 }
 
-/* Container principal da seção */
-.nossos-valores {
-    text-align: center;
-    padding: 60px 0;
-    /* CORREÇÃO 1: Fundo Branco (ou remova a linha se o body já for branco) */
-    background-color: #fff;
+.qs-h1 em { color: var(--violet); font-style: normal; }
+
+.qs-sub {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.75;
+    max-width: 520px;
+    margin: 0 auto;
 }
 
-/* Estilo de cada card de valor (2 por linha) */
-.valor-card {
-    /* CORREÇÃO 2: Ajusta o tamanho para garantir 2 cards por linha */
-    /* Deixamos o flex: 0 1 calc(50% - 15px) e removemos o min-width. */
-    flex: 0 1 calc(50% - 15px);
+.qs-sec { padding: 56px 40px; }
+.qs-sec--white { background: var(--white); }
+.qs-sec--bg    { background: var(--bg); }
 
-    height: auto;
+.qs-sec-inner {
+    max-width: 860px;
+    margin: 0 auto;
+}
 
-    /* Configuração do Flexbox para alinhar ÍCONE e TEXTO lado a lado */
+.qs-sec-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--violet);
     display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.qs-sec-label::before {
+    content: '';
+    width: 16px;
+    height: 2px;
+    background: var(--violet);
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.qs-sec-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--violet-dim);
+}
+
+.qs-hist-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.qs-hist-left { background: var(--white); padding: 32px 28px; }
+.qs-hist-left p { font-size: 13px; color: var(--body-text); line-height: 1.85; margin-bottom: 13px; }
+.qs-hist-left p:last-child { margin-bottom: 0; }
+.qs-hist-left strong { color: var(--ink); font-weight: 700; }
+
+.qs-hist-right {
+    background: var(--ink);
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.qs-hi { display: flex; gap: 12px; align-items: flex-start; }
+.qs-hi-num { font-size: 11px; font-weight: 800; color: #7c6fcd; flex-shrink: 0; width: 18px; padding-top: 1px; line-height: 1; }
+.qs-hi-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 3px; }
+.qs-hi-text { font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.6; }
+
+.qs-stats {
+    background: var(--violet-pale);
+    padding: 56px 40px;
+    border-top: 1px solid rgba(79,70,229,0.08);
+    border-bottom: 1px solid rgba(79,70,229,0.08);
+}
+
+.qs-stats-inner { max-width: 860px; margin: 0 auto; }
+.qs-stats-head { text-align: center; margin-bottom: 32px; }
+.qs-stats-head h2 { font-size: clamp(20px, 2.5vw, 28px); font-weight: 800; color: var(--ink); letter-spacing: -0.03em; margin-bottom: 6px; }
+.qs-stats-head p { font-size: 12px; color: var(--muted); }
+
+.qs-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+
+.qs-stat {
+    background: var(--white);
+    border: 1px solid rgba(79,70,229,0.12);
+    border-radius: var(--r-lg);
+    padding: 26px 16px;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+.qs-stat svg { color: var(--violet); margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
+.qs-stat-num { font-size: 30px; font-weight: 800; color: var(--ink); letter-spacing: -0.03em; line-height: 1; }
+.qs-stat-label { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+
+.qs-val-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.qs-val {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 22px 20px;
+    display: flex;
+    gap: 14px;
     align-items: flex-start;
-    gap: 15px;
-
-    padding: 25px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    background-color: #fff;
-    text-align: left;
+    box-shadow: var(--shadow);
+    transition: border-color 0.15s, transform 0.15s;
 }
 
+.qs-val:hover { border-color: rgba(79,70,229,0.25); transform: translateY(-2px); box-shadow: var(--shadow-lift); }
 
+.qs-val-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--r-md);
+    background: var(--violet-pale);
+    border: 1px solid rgba(79,70,229,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--violet);
+}
 
-h3 {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
+.qs-val-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.qs-val-text { font-size: 12px; color: var(--muted); line-height: 1.65; }
+
+.qs-proj-cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+.qs-proj-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px 20px; box-shadow: var(--shadow); }
+.qs-proj-card--highlight { background: var(--violet-pale); border-color: rgba(79,70,229,0.15); }
+.qs-proj-tag { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--violet); display: block; margin-bottom: 8px; }
+.qs-proj-title { font-size: 14px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; line-height: 1.3; margin-bottom: 8px; }
+.qs-proj-text { font-size: 12px; color: var(--muted); line-height: 1.65; }
+
+.qs-equipe {
+    background: var(--ink);
+    border-radius: var(--r-xl);
+    padding: 32px 36px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+.qs-equipe-txt h3 { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 8px; }
+.qs-equipe-txt p { font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.7; max-width: 420px; }
+.qs-equipe-tags { display: flex; flex-direction: column; gap: 7px; flex-shrink: 0; }
+
+.qs-eq-tag {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 9px;
+    padding: 9px 16px;
+    background: rgba(255,255,255,0.04);
+    white-space: nowrap;
+}
+
+.qs-eq-tag svg { color: #a78bfa; flex-shrink: 0; }
+.qs-eq-tag span { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.55); }
+
+.qs-closing {
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 64px 40px;
     text-align: center;
+    position: relative;
+    overflow: hidden;
 }
 
-/*===============================================
-      NOssa EQUIPE
-=================================================*/
-
-/* --- Estilos para "Nossa Equipe" --- */
-.membro-foto {
-    /* Bolinha da imagem */
-    width: 120px;
-    height: 120px;
+.qs-closing-glow {
+    position: absolute;
+    bottom: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    height: 200px;
     border-radius: 50%;
-    /* Transforma em círculo */
-    background-color: #eee;
-    margin: 0 auto 15px auto;
-
-    /* Configurações para a imagem de fundo */
-    background-size: cover;
-    background-position: center;
+    background: radial-gradient(ellipse, rgba(79,70,229,0.07), transparent 70%);
+    pointer-events: none;
 }
 
-.membro-card h3 {
-    margin-bottom: 5px;
-    text-align: center;
+.qs-closing-inner { position: relative; z-index: 1; }
+.qs-closing-bar { width: 36px; height: 3px; background: var(--violet); border-radius: 2px; margin: 0 auto 20px; }
+.qs-closing h2 { font-size: clamp(22px, 3vw, 38px); font-weight: 800; color: var(--ink); letter-spacing: -0.04em; line-height: 1.15; margin-bottom: 10px; }
+.qs-closing h2 em { color: var(--violet); font-style: normal; }
+.qs-closing p { font-size: 13px; color: var(--muted); max-width: 420px; margin: 0 auto; }
+
+.qs-back-btn {
+    position: absolute;
+    top: 28px;
+    left: 28px;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(79,70,229,0.15);
+    border-radius: 99px;
+    padding: 10px 18px 10px 14px;
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(26,5,51,0.1);
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.qs-back-btn:hover {
+    background: var(--white);
+    transform: translateX(-2px);
+    box-shadow: 0 6px 20px rgba(26,5,51,0.14);
+}
+.qs-back-btn i { font-size: 12px; color: var(--violet); }
+
+@media (max-width: 900px) {
+    .qs-sec, .qs-stats, .qs-closing { padding-left: 24px; padding-right: 24px; }
+    .qs-hero { padding: 64px 24px 40px; }
+    .qs-back-btn { top: 20px; left: 20px; }
+    .qs-hist-grid { grid-template-columns: 1fr; }
+    .qs-hist-right { padding: 24px; gap: 16px; }
+    .qs-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .qs-proj-cols { grid-template-columns: 1fr; }
+    .qs-equipe { flex-direction: column; align-items: flex-start; padding: 28px 24px; }
+    .qs-equipe-tags { flex-direction: row; flex-wrap: wrap; }
 }
 
-.membro-cargo {
-    font-size: 0.9em;
-    color: #666;
-    text-align: center;
+@media (max-width: 600px) {
+    .qs-val-grid { grid-template-columns: 1fr; }
+    .qs-stats-grid { grid-template-columns: 1fr 1fr; }
+    .qs-h1 { font-size: 32px; }
+    .qs-hero { padding: 56px 20px 36px; }
+    .qs-back-btn { top: 16px; left: 16px; padding: 9px 16px 9px 12px; font-size: 12.5px; }
+    .qs-sec { padding: 44px 20px; }
+    .qs-stats { padding: 44px 20px; }
+    .qs-closing { padding: 48px 20px; }
+    .qs-hist-left, .qs-hist-right { padding: 24px 20px; }
+    .qs-stat { padding: 20px 12px; }
+    .qs-proj-card { padding: 20px 16px; }
 }
 
-/* Media Query para Telas Pequenas (Mobile) */
-@media (max-width: 768px) {
-
-    /* Em telas menores, todos os cards ocupam a metade da tela (2 por linha) */
-    .numero-card,
-    .valor-card,
-    .membro-card {
-        /* Largura para 2 cards por linha */
-        width: calc(50% - 15px);
+@media (max-width: 420px) {
+    .qs-hero { padding: 64px 16px 32px; }
+    .qs-back-btn {
+        position: static;
+        margin-bottom: 20px;
+        display: inline-flex;
     }
+    .qs-hero-inner { display: flex; flex-direction: column; align-items: center; }
+    .qs-h1 { font-size: 26px; }
+    .qs-sub { font-size: 13.5px; }
+    .qs-stats-grid { grid-template-columns: 1fr; }
+    .qs-stat-num { font-size: 26px; }
+    .qs-equipe-txt h3 { font-size: 17px; }
+    .qs-eq-tag { padding: 8px 12px; }
 }
-

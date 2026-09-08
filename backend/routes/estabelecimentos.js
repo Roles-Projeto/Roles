@@ -1,22 +1,36 @@
-// routes/estabelecimentos.js
 const express = require("express");
 const router = express.Router();
 const db = require("../db/db_config");
+const verificarToken = require("../middleware/auth");
 
-const isProd = !!process.env.DATABASE_URL;
+// ── Upload de imagens (Supabase Storage) ──
+const { usarSupabase, criarStorage, uploadParaSupabase } = require("../utils/supabaseUpload");
 
-function query(sql, params) {
-  if (isProd) {
-    return db.query(sql, params).then(r => r.rows);
-  } else {
-    return new Promise((resolve, reject) => {
-      db.query(sql, params, (err, results) => {
-        if (err) return reject(err);
-        resolve(results);
-      });
-    });
-  }
+const BUCKET_ESTABELECIMENTOS = "imagens-estabelecimentos";
+const upload = multerInstance();
+
+function multerInstance() {
+  const multer = require("multer");
+  return multer({ storage: criarStorage("uploads-estabelecimentos") });
 }
+
+// Rota de upload — devolve a URL pra ser usada em img_logo, img_capa ou fotos_galeria
+router.post("/upload-imagem", upload.single("imagem"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ erro: "Nenhuma imagem enviada" });
+
+  // Modo local: multer já salvou o arquivo em disco, só devolve o caminho relativo.
+  if (!usarSupabase) {
+    return res.json({ url: `/uploads-estabelecimentos/${req.file.filename}` });
+  }
+
+  // Modo Supabase: o arquivo está em memória (req.file.buffer), sobe pro Storage.
+  try {
+    const url = await uploadParaSupabase(req.file, BUCKET_ESTABELECIMENTOS);
+    res.json({ url });
+  } catch (err) {
+    res.status(500).json({ erro: "Erro ao enviar imagem para o Supabase Storage.", detalhes: err.message });
+  }
+});
 
 function parseRow(row) {
   if (!row) return row;
@@ -25,18 +39,17 @@ function parseRow(row) {
   return row;
 }
 
-// ── GET /estabelecimentos ── Lista todos os públicos
+// Lista pública (continua igual)
 router.get("/", async (req, res) => {
   try {
-    const sql = `SELECT id, nome, tipo, especialidade, faixa_preco, descricao,
-               endereco, cidade, estado, bairro, rua, numero,
-               telefone, website, comodidades, img_logo, img_capa,
-               nota, avaliacoes, categoria_card, visibilidade
-         FROM estabelecimentos
-         WHERE visibilidade = ${isProd ? "$1" : "?"}
-         ORDER BY criado_em DESC`;
-
-    const rows = await query(sql, ["publico"]);
+    const rows = await db.query(`
+      SELECT id, nome, tipo, especialidade, faixa_preco, descricao,
+             endereco, cidade, estado, bairro, rua, numero,
+             telefone, website, comodidades, img_logo, img_capa,
+             nota, avaliacoes, categoria_card, visibilidade
+      FROM estabelecimentos
+      WHERE visibilidade = ?
+      ORDER BY criado_em DESC`, ["publico"]);
     res.json(rows);
   } catch (err) {
     console.error("Erro ao listar estabelecimentos:", err);
@@ -44,31 +57,38 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ── GET /estabelecimentos/:id ── Detalhe de um estabelecimento
+// NOVA ROTA — estabelecimentos do usuário logado (pro Dashboard)
+router.get("/meus", verificarToken, async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const rows = await db.query(
+      `SELECT * FROM estabelecimentos WHERE usuario_id = ? ORDER BY criado_em DESC`,
+      [usuarioId]
+    );
+    res.json(rows.map(parseRow));
+  } catch (err) {
+    console.error("Erro ao listar meus estabelecimentos:", err);
+    res.status(500).json({ erro: "Erro interno ao buscar seus estabelecimentos." });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    const sql = isProd
-      ? `SELECT * FROM estabelecimentos WHERE id = $1`
-      : `SELECT * FROM estabelecimentos WHERE id = ?`;
-
-    const rows = await query(sql, [id]);
-
-    if (!rows || rows.length === 0) {
+    const rows = await db.query("SELECT * FROM estabelecimentos WHERE id = ?", [req.params.id]);
+    if (!rows || rows.length === 0)
       return res.status(404).json({ erro: "Estabelecimento não encontrado." });
-    }
-
-    const row = parseRow(rows[0]);
-    res.json(row);
+    res.json(parseRow(rows[0]));
   } catch (err) {
     console.error("Erro ao buscar estabelecimento:", err);
     res.status(500).json({ erro: "Erro interno ao buscar estabelecimento." });
   }
 });
 
-// ── POST /estabelecimentos ── Cadastrar novo estabelecimento
-router.post("/", async (req, res) => {
+// Cadastro agora exige token e salva usuario_id
+router.post("/", verificarToken, async (req, res) => {
   try {
+    const usuarioId = req.usuario.id; // vem do token, não do body
+
     const {
       nome, tipo, especialidade, faixa_preco, capacidade, descricao,
       local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
@@ -77,49 +97,31 @@ router.post("/", async (req, res) => {
       categoria_card, fotos_galeria, pratos
     } = req.body;
 
-    if (!nome) {
-      return res.status(400).json({ erro: "O campo 'nome' é obrigatório." });
-    }
+    if (!nome) return res.status(400).json({ erro: "O campo 'nome' é obrigatório." });
 
-    const fotos_json = JSON.stringify(fotos_galeria || []);
-    const pratos_json = JSON.stringify(pratos || []);
-
-    const sql = isProd
-      ? `INSERT INTO estabelecimentos
-           (nome, tipo, especialidade, faixa_preco, capacidade, descricao,
-            local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
-            endereco, telefone, website, responsavel, cnpj,
-            visibilidade, horario, comodidades, img_logo, img_capa,
-            categoria_card, fotos_galeria, pratos)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27)
-         RETURNING id`
-      : `INSERT INTO estabelecimentos
-           (nome, tipo, especialidade, faixa_preco, capacidade, descricao,
-            local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
-            endereco, telefone, website, responsavel, cnpj,
-            visibilidade, horario, comodidades, img_logo, img_capa,
-            categoria_card, fotos_galeria, pratos)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-
-    const params = [
-      nome, tipo, especialidade, faixa_preco, capacidade, descricao,
+    const result = await db.query(`
+      INSERT INTO estabelecimentos
+        (usuario_id, nome, tipo, especialidade, faixa_preco, capacidade, descricao,
+         local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
+         endereco, telefone, website, responsavel, cnpj,
+         visibilidade, horario, comodidades, img_logo, img_capa,
+         categoria_card, fotos_galeria, pratos)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
+      usuarioId, nome, tipo, especialidade, faixa_preco, capacidade, descricao,
       local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
       endereco, telefone, website, responsavel, cnpj,
       visibilidade || "publico", horario || "", comodidades,
-      img_logo, img_capa, categoria_card, fotos_json, pratos_json
-    ];
+      img_logo, img_capa, categoria_card,
+      JSON.stringify(fotos_galeria || []), JSON.stringify(pratos || [])
+    ]);
 
-    const result = await query(sql, params);
-    const novoId = isProd ? result[0]?.id : result.insertId;
-    res.status(201).json({ mensagem: "Estabelecimento cadastrado com sucesso!", id: novoId });
-
+    res.status(201).json({ mensagem: "Estabelecimento cadastrado com sucesso!", id: result.insertId });
   } catch (err) {
     console.error("Erro ao cadastrar estabelecimento:", err);
     res.status(500).json({ erro: "Erro interno ao cadastrar estabelecimento." });
   }
 });
 
-// ── PUT /estabelecimentos/:id ── Atualizar estabelecimento
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -131,54 +133,34 @@ router.put("/:id", async (req, res) => {
       categoria_card, fotos_galeria, pratos
     } = req.body;
 
-    const fotos_json = JSON.stringify(fotos_galeria || []);
-    const pratos_json = JSON.stringify(pratos || []);
-
-    const sql = isProd
-      ? `UPDATE estabelecimentos SET
-           nome=$1, tipo=$2, especialidade=$3, faixa_preco=$4, capacidade=$5,
-           descricao=$6, local_nome=$7, cep=$8, rua=$9, numero=$10,
-           complemento=$11, bairro=$12, cidade=$13, estado=$14, endereco=$15,
-           telefone=$16, website=$17, responsavel=$18, cnpj=$19,
-           visibilidade=$20, horario=$21, comodidades=$22, img_logo=$23,
-           img_capa=$24, categoria_card=$25, fotos_galeria=$26, pratos=$27
-         WHERE id=$28`
-      : `UPDATE estabelecimentos SET
-           nome=?, tipo=?, especialidade=?, faixa_preco=?, capacidade=?,
-           descricao=?, local_nome=?, cep=?, rua=?, numero=?,
-           complemento=?, bairro=?, cidade=?, estado=?, endereco=?,
-           telefone=?, website=?, responsavel=?, cnpj=?,
-           visibilidade=?, horario=?, comodidades=?, img_logo=?,
-           img_capa=?, categoria_card=?, fotos_galeria=?, pratos=?
-         WHERE id=?`;
-
-    const params = [
+    await db.query(`
+      UPDATE estabelecimentos SET
+        nome=?, tipo=?, especialidade=?, faixa_preco=?, capacidade=?,
+        descricao=?, local_nome=?, cep=?, rua=?, numero=?,
+        complemento=?, bairro=?, cidade=?, estado=?, endereco=?,
+        telefone=?, website=?, responsavel=?, cnpj=?,
+        visibilidade=?, horario=?, comodidades=?, img_logo=?,
+        img_capa=?, categoria_card=?, fotos_galeria=?, pratos=?
+      WHERE id=?`, [
       nome, tipo, especialidade, faixa_preco, capacidade,
       descricao, local_nome, cep, rua, numero,
       complemento, bairro, cidade, estado, endereco,
       telefone, website, responsavel, cnpj,
       visibilidade, horario || "", comodidades, img_logo,
-      img_capa, categoria_card, fotos_json, pratos_json, id
-    ];
+      img_capa, categoria_card,
+      JSON.stringify(fotos_galeria || []), JSON.stringify(pratos || []), id
+    ]);
 
-    await query(sql, params);
     res.json({ mensagem: "Estabelecimento atualizado com sucesso!" });
-
   } catch (err) {
     console.error("Erro ao atualizar estabelecimento:", err);
     res.status(500).json({ erro: "Erro interno ao atualizar estabelecimento." });
   }
 });
 
-// ── DELETE /estabelecimentos/:id ── Remover estabelecimento
 router.delete("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    const sql = isProd
-      ? `DELETE FROM estabelecimentos WHERE id = $1`
-      : `DELETE FROM estabelecimentos WHERE id = ?`;
-
-    await query(sql, [id]);
+    await db.query("DELETE FROM estabelecimentos WHERE id = ?", [req.params.id]);
     res.json({ mensagem: "Estabelecimento removido com sucesso!" });
   } catch (err) {
     console.error("Erro ao remover estabelecimento:", err);

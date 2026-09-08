@@ -17,27 +17,27 @@ function initHeader() {
     // ----------------------------------------------------------
     function loadPersistentData() {
         const photoUrl = localStorage.getItem('profilePhotoUrl');
-        const name     = localStorage.getItem('profileName');
-        const email    = localStorage.getItem('profileEmail');
+        const name = localStorage.getItem('profileName');
+        const email = localStorage.getItem('profileEmail');
 
-        const headerPic    = document.getElementById('profile-pic-header');
+        const headerPic = document.getElementById('profile-pic-header');
         const dropdownName = document.querySelector('.dropdown-menu .user-info strong');
-        const dropdownEmail= document.querySelector('.dropdown-menu .user-info span');
-        const dropdownImg  = document.querySelector('.dropdown-menu .user-info img');
+        const dropdownEmail = document.querySelector('.dropdown-menu .user-info span');
+        const dropdownImg = document.querySelector('.dropdown-menu .user-info img');
 
         const defaultAvatar = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23ede9ff'/%3E%3Ccircle cx='20' cy='16' r='7' fill='%236C1DCE'/%3E%3Cellipse cx='20' cy='34' rx='12' ry='8' fill='%236C1DCE'/%3E%3C/svg%3E`;
 
         const avatarUrl = photoUrl || defaultAvatar;
-        if (headerPic)     headerPic.src = avatarUrl;
-        if (dropdownImg)   dropdownImg.src = avatarUrl;
-        if (name  && dropdownName)  dropdownName.textContent  = name;
+        if (headerPic) headerPic.src = avatarUrl;
+        if (dropdownImg) dropdownImg.src = avatarUrl;
+        if (name && dropdownName) dropdownName.textContent = name;
         if (email && dropdownEmail) dropdownEmail.textContent = email;
     }
 
     loadPersistentData();
 
     // ----------------------------------------------------------
-    // BOTÃO PAINEL ADMIN (visível só para admins)
+    // BOTÃO PAINEL ADMIN
     // ----------------------------------------------------------
     function injetarBotaoAdmin() {
         let role = localStorage.getItem('userRole');
@@ -48,7 +48,7 @@ function initHeader() {
                     const payload = JSON.parse(atob(token.split('.')[1]));
                     role = payload.role;
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
         if (role !== 'admin') return;
 
@@ -78,8 +78,8 @@ function initHeader() {
     // ESTADO LOGADO / NÃO LOGADO
     // ----------------------------------------------------------
     function alternarEstadoHeader(logado) {
-        const naoLogado    = document.getElementById('header-nao-logado');
-        const logadoDiv    = document.getElementById('header-logado');
+        const naoLogado = document.getElementById('header-nao-logado');
+        const logadoDiv = document.getElementById('header-logado');
         const hamburgerBtn = document.getElementById('hamburger-btn');
 
         if (!naoLogado || !logadoDiv) return;
@@ -100,8 +100,6 @@ function initHeader() {
     const logado = localStorage.getItem('userIsLoggedIn') === 'true';
     alternarEstadoHeader(logado);
 
-    // ✅ Controla visibilidade do link Dashboard
-    // (função definida em auth.js — carregado antes deste arquivo)
     if (typeof controlarLinkDashboard === 'function') {
         controlarLinkDashboard();
     }
@@ -115,9 +113,8 @@ function initHeader() {
 
         logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            // ✅ 'temDashboard' incluído para limpar o cache
-            ['userIsLoggedIn','profilePhotoUrl','profileName','profileEmail',
-             'userRole','token','admin_token','temDashboard']
+            ['userIsLoggedIn', 'profilePhotoUrl', 'profileName', 'profileEmail',
+                'userRole', 'token', 'admin_token', 'temDashboard', 'userId', 'userType']
                 .forEach(k => localStorage.removeItem(k));
             alternarEstadoHeader(false);
             window.location.href = '/frontend/login/logout.html';
@@ -174,32 +171,36 @@ function initHeader() {
     // CARD DE CIDADE
     // ----------------------------------------------------------
     const cityBtn    = document.querySelector('.city-btn');
+    const cityBtnMobile = document.getElementById('cityBtnMobile');
     const cityCard   = document.getElementById('city-card');
     const overlay    = document.getElementById('city-overlay');
     const closeCard  = document.getElementById('close-card');
     const citySearch = document.getElementById('city-search');
-    const useLocation= document.getElementById('use-location');
-    const cityItems  = document.querySelectorAll('.city-list li');
+    const useLocation = document.getElementById('use-location');
+    const cityItems = document.querySelectorAll('.city-list li');
 
     if (cityCard) document.body.appendChild(cityCard);
-    if (overlay)  document.body.appendChild(overlay);
+    if (overlay) document.body.appendChild(overlay);
 
-    const abrirCard  = () => { if (cityCard) cityCard.style.display = 'block'; if (overlay) overlay.style.display = 'block'; };
-    const fecharCard = () => { if (cityCard) cityCard.style.display = 'none';  if (overlay) overlay.style.display = 'none';  };
+    const abrirCard = () => { if (cityCard) cityCard.style.display = 'block'; if (overlay) overlay.style.display = 'block'; };
+    const fecharCard = () => { if (cityCard) cityCard.style.display = 'none'; if (overlay) overlay.style.display = 'none'; };
 
     function selecionarCidade(nome) {
         if (cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${nome}`;
+        if (cityBtnMobile) cityBtnMobile.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${nome}`;
         localStorage.setItem('cidade', nome);
         fecharCard();
     }
 
     cityBtn?.addEventListener('click', abrirCard);
+    cityBtnMobile?.addEventListener('click', abrirCard);
     closeCard?.addEventListener('click', fecharCard);
     overlay?.addEventListener('click', fecharCard);
     cityItems.forEach(i => i.addEventListener('click', () => selecionarCidade(i.dataset.city)));
 
     const savedCity = localStorage.getItem('cidade');
     if (savedCity && cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${savedCity}`;
+    if (savedCity && cityBtnMobile) cityBtnMobile.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${savedCity}`;
 
     citySearch?.addEventListener('input', () => {
         const val = citySearch.value.toLowerCase();
@@ -241,27 +242,92 @@ function initHeader() {
     }
 
     // ----------------------------------------------------------
-    // DROPDOWN DE BUSCA
+    // BUSCA COM SUGESTÕES DA API
     // ----------------------------------------------------------
-    const searchInput   = document.getElementById('search-input');
+    const searchInput = document.getElementById('search-input');
     const searchWrapper = document.getElementById('search-bar-wrapper');
     const suggestionsBox= document.getElementById('search-suggestions');
     const btnBuscar     = document.getElementById('btn-buscar');
+    const searchInputMobile = document.getElementById('search-input-mobile');
+
+    // ----------------------------------------------------------
+    // BOTÃO LUPA MOBILE (abre/fecha a barra de busca mobile)
+    // ----------------------------------------------------------
+    const searchToggleBtn = document.getElementById('searchToggleBtn');
+    const searchBarMobile = document.getElementById('searchBarMobile');
+
+    if (searchToggleBtn && searchBarMobile) {
+        searchToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            searchBarMobile.classList.toggle('open');
+            searchToggleBtn.classList.toggle('active');
+            if (searchBarMobile.classList.contains('open')) {
+                searchInputMobile?.focus();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (
+                !searchBarMobile.contains(e.target) &&
+                !searchToggleBtn.contains(e.target)
+            ) {
+                searchBarMobile.classList.remove('open');
+                searchToggleBtn.classList.remove('active');
+            }
+        });
+    }
+
+    // ----------------------------------------------------------
+    // AJUDANTES: qual input está ativo e onde posicionar a caixa
+    // ----------------------------------------------------------
+    function getInputAtivo() {
+        const mobileAberto = searchBarMobile && searchBarMobile.classList.contains('open');
+        return mobileAberto ? searchInputMobile : searchInput;
+    }
+
+    function posicionarSuggestions() {
+        if (!suggestionsBox) return;
+        const mobileAberto = searchBarMobile && searchBarMobile.classList.contains('open');
+        const ref = mobileAberto ? searchBarMobile : searchWrapper;
+        if (!ref) return;
+        const rect = ref.getBoundingClientRect();
+        suggestionsBox.style.position = 'fixed';
+        suggestionsBox.style.top = `${rect.bottom + 6}px`;
+        suggestionsBox.style.left = `${rect.left}px`;
+        suggestionsBox.style.width = `${rect.width}px`;
+    }
 
     const CHAVE_RECENTES = 'buscasRecentes';
-    const MAX_RECENTES   = 5;
-    const MAX_SUGESTOES  = 6;
+    const MAX_RECENTES = 5;
+    const MAX_SUGESTOES = 4; // máximo por tipo (eventos e locais)
 
-    const icones = {
-        'show':'fa-music','música':'fa-music','festa':'fa-glass-cheers',
-        'bar':'fa-cocktail','restaurante':'fa-utensils','teatro':'fa-theater-masks',
-        'esporte':'fa-futbol','balada':'fa-music','stand-up':'fa-microphone',
-        'arte':'fa-palette','default':'fa-calendar-alt',
-    };
-    const getIcone = (cat) => icones[(cat||'').toLowerCase()] || icones['default'];
-    const norm = (s) => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-    function getRecentes() { try { return JSON.parse(localStorage.getItem(CHAVE_RECENTES)) || []; } catch { return []; } }
+    // Cache para não buscar toda vez na API
+    let cacheEventos = null;
+    let cacheLocais = null;
+
+    async function carregarDados() {
+        try {
+            if (!cacheEventos) {
+                const res = await fetch(`${window.API_BASE}/eventos`);
+                cacheEventos = await res.json();
+            }
+            if (!cacheLocais) {
+                const res = await fetch(`${window.API_BASE}/estabelecimentos`);
+                cacheLocais = await res.json();
+            }
+        } catch (e) {
+            console.error('Erro ao carregar dados para busca:', e);
+        }
+    }
+
+    // Carrega em background assim que o header inicia
+    carregarDados();
+
+    function getRecentes() {
+        try { return JSON.parse(localStorage.getItem(CHAVE_RECENTES)) || []; } catch { return []; }
+    }
     function salvarRecente(termo) {
         if (!termo.trim()) return;
         let r = getRecentes().filter(x => norm(x) !== norm(termo));
@@ -269,107 +335,289 @@ function initHeader() {
         localStorage.setItem(CHAVE_RECENTES, JSON.stringify(r.slice(0, MAX_RECENTES)));
     }
     function removerRecente(termo) {
-        localStorage.setItem(CHAVE_RECENTES, JSON.stringify(getRecentes().filter(x => norm(x) !== norm(termo))));
-    }
-
-    function lerCardsDaPagina() {
-        const itens = [];
-        document.querySelectorAll('.card-local, .card-evento, .card').forEach(card => {
-            const nome      = card.querySelector('h3')?.textContent.trim() || '';
-            const local     = card.querySelector('.evento-local, .local')?.textContent.trim() || '';
-            const tagEl     = card.querySelector('[class*="tag"]');
-            const categoria = tagEl?.textContent.trim() || card.getAttribute('data-categoria-card') || '';
-            const data      = card.querySelector('.evento-data-local p, .local-meta p')?.textContent.trim() || '';
-            if (nome) itens.push({ nome, local, categoria, data });
-        });
-        return itens;
-    }
-
-    function filtrarSugestoes(termo) {
-        const t = norm(termo);
-        return lerCardsDaPagina()
-            .filter(i => norm(i.nome).includes(t) || norm(i.categoria).includes(t) || norm(i.local).includes(t))
-            .slice(0, MAX_SUGESTOES);
+        localStorage.setItem(CHAVE_RECENTES, JSON.stringify(
+            getRecentes().filter(x => norm(x) !== norm(termo))
+        ));
     }
 
     function destacar(txt, termo) {
         if (!termo) return txt;
-        return txt.replace(new RegExp(`(${termo.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi'),'<mark>$1</mark>');
+        return txt.replace(
+            new RegExp(`(${termo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+            '<mark>$1</mark>'
+        );
     }
 
-    const abrirDropdown  = () => suggestionsBox?.classList.add('active');
+    const abrirDropdown = () => {
+        posicionarSuggestions();
+        suggestionsBox?.classList.add('active');
+    };
     const fecharDropdown = () => suggestionsBox?.classList.remove('active');
 
+    window.addEventListener('resize', () => {
+        if (suggestionsBox?.classList.contains('active')) posicionarSuggestions();
+    });
+
+    // Renderiza buscas recentes (campo vazio)
     function renderVazio() {
         if (!suggestionsBox) return;
         const recentes = getRecentes();
         if (!recentes.length) { fecharDropdown(); return; }
-        suggestionsBox.innerHTML = `<div class="sug-section-title"><span>Buscas recentes</span></div><ul class="sug-list" id="sug-recentes-list"></ul>`;
+
+        suggestionsBox.innerHTML = `
+            <div class="sug-section-title"><span>Buscas recentes</span></div>
+            <ul class="sug-list" id="sug-recentes-list"></ul>
+        `;
         const ul = suggestionsBox.querySelector('#sug-recentes-list');
         recentes.forEach(termo => {
             const li = document.createElement('li');
             li.className = 'sug-item sug-recente';
-            li.innerHTML = `<div class="sug-left"><i class="fas fa-clock-rotate-left sug-icon-recente"></i><span class="sug-texto">${termo}</span></div><button class="sug-remover" aria-label="Remover"><i class="fas fa-times"></i></button>`;
-            li.querySelector('.sug-left').addEventListener('click', () => { if (searchInput) searchInput.value = termo; fecharDropdown(); dispararBusca(); });
-            li.querySelector('.sug-remover').addEventListener('click', (e) => { e.stopPropagation(); removerRecente(termo); renderVazio(); });
+            li.innerHTML = `
+                <div class="sug-left">
+                    <i class="fas fa-clock-rotate-left sug-icon-recente"></i>
+                    <span class="sug-texto">${termo}</span>
+                </div>
+                <button class="sug-remover" aria-label="Remover"><i class="fas fa-times"></i></button>
+            `;
+            li.querySelector('.sug-left').addEventListener('click', () => {
+                const inputAtivo = getInputAtivo();
+                if (inputAtivo) inputAtivo.value = termo;
+                buscarEDirecionar(termo);
+            });
+            li.querySelector('.sug-remover').addEventListener('click', (e) => {
+                e.stopPropagation();
+                removerRecente(termo);
+                renderVazio();
+            });
             ul.appendChild(li);
         });
         abrirDropdown();
     }
 
-    function renderSugestoes(termo) {
+    // Renderiza sugestões com dados da API
+    async function renderSugestoes(termo) {
         if (!suggestionsBox) return;
-        const resultados = filtrarSugestoes(termo);
+
+        await carregarDados();
+
+        const t = norm(termo);
+
+        const eventos = (cacheEventos || [])
+            .filter(e => norm(e.nome).includes(t) || norm(e.assunto || '').includes(t))
+            .slice(0, MAX_SUGESTOES);
+
+        const locais = (cacheLocais || [])
+            .filter(l => norm(l.nome).includes(t) || norm(l.tipo || '').includes(t))
+            .slice(0, MAX_SUGESTOES);
+
         suggestionsBox.innerHTML = '';
-        if (resultados.length) {
+
+        const temResultados = eventos.length > 0 || locais.length > 0;
+
+        // ── SEÇÃO EVENTOS ──
+        if (eventos.length > 0) {
             const secTitle = document.createElement('div');
             secTitle.className = 'sug-section-title';
-            secTitle.innerHTML = '<span>Sugestões</span>';
+            secTitle.innerHTML = '<span>Eventos</span>';
             suggestionsBox.appendChild(secTitle);
+
             const ul = document.createElement('ul');
             ul.className = 'sug-list';
-            resultados.forEach(item => {
+
+            eventos.forEach(evento => {
+                const data = evento.data_inicio
+                    ? new Date(evento.data_inicio).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+                    : '';
                 const li = document.createElement('li');
                 li.className = 'sug-item sug-evento';
-                li.innerHTML = `<div class="sug-left"><div class="sug-icon-evento"><i class="fas ${getIcone(item.categoria)}"></i></div><div class="sug-info"><span class="sug-nome">${destacar(item.nome,termo)}</span><span class="sug-meta">${item.categoria?`<span class="sug-badge">${item.categoria}</span>`:''} ${item.local?`<i class="fas fa-map-marker-alt"></i>${item.local}`:''}</span></div></div><i class="fas fa-arrow-up-left sug-completar"></i>`;
-                li.querySelector('.sug-left').addEventListener('click', () => { if (searchInput) searchInput.value = item.nome; salvarRecente(item.nome); fecharDropdown(); dispararBusca(); });
-                li.querySelector('.sug-completar').addEventListener('click', (e) => { e.stopPropagation(); if (searchInput) searchInput.value = item.nome; searchInput?.focus(); renderSugestoes(item.nome); });
+                li.innerHTML = `
+                    <div class="sug-left">
+                        <div class="sug-icon-evento"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="sug-info">
+                            <span class="sug-nome">${destacar(evento.nome, termo)}</span>
+                            <span class="sug-meta">
+                                ${evento.assunto ? `<span class="sug-badge">${evento.assunto}</span>` : ''}
+                                ${data ? `<i class="fas fa-calendar"></i>${data}` : ''}
+                            </span>
+                        </div>
+                    </div>
+                    <i class="fas fa-arrow-up-left sug-completar"></i>
+                `;
+                li.querySelector('.sug-left').addEventListener('click', () => {
+                    salvarRecente(evento.nome);
+                    fecharDropdown();
+                    window.location.href = `/frontend/detalheseventos/detalheevento.html?id=${evento.id}`;
+                });
+                li.querySelector('.sug-completar').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const inputAtivo = getInputAtivo();
+                    if (inputAtivo) inputAtivo.value = evento.nome;
+                    inputAtivo?.focus();
+                    renderSugestoes(evento.nome);
+                });
                 ul.appendChild(li);
             });
+
             suggestionsBox.appendChild(ul);
         }
-        const rodape = document.createElement('div');
-        rodape.className = 'sug-rodape';
-        rodape.innerHTML = `<i class="fas fa-search"></i><span>Buscar por <strong>"${termo}"</strong></span>`;
-        rodape.addEventListener('click', () => { salvarRecente(termo); fecharDropdown(); dispararBusca(); });
-        suggestionsBox.appendChild(rodape);
+
+        // ── SEÇÃO LOCAIS ──
+        if (locais.length > 0) {
+            const secTitle2 = document.createElement('div');
+            secTitle2.className = 'sug-section-title';
+            secTitle2.style.borderTop = eventos.length > 0 ? '1px solid #f0f0f0' : 'none';
+            secTitle2.style.paddingTop = eventos.length > 0 ? '10px' : '10px';
+            secTitle2.innerHTML = '<span>Locais</span>';
+            suggestionsBox.appendChild(secTitle2);
+
+            const ul2 = document.createElement('ul');
+            ul2.className = 'sug-list';
+
+            locais.forEach(local => {
+                const li = document.createElement('li');
+                li.className = 'sug-item sug-evento';
+                li.innerHTML = `
+                    <div class="sug-left">
+                        <div class="sug-icon-evento"><i class="fas fa-map-marker-alt"></i></div>
+                        <div class="sug-info">
+                            <span class="sug-nome">${destacar(local.nome, termo)}</span>
+                            <span class="sug-meta">
+                                ${local.tipo ? `<span class="sug-badge">${local.tipo}</span>` : ''}
+                                ${local.bairro ? `<i class="fas fa-map-marker-alt"></i>${local.bairro}` : ''}
+                            </span>
+                        </div>
+                    </div>
+                    <i class="fas fa-arrow-up-left sug-completar"></i>
+                `;
+                li.querySelector('.sug-left').addEventListener('click', () => {
+                    salvarRecente(local.nome);
+                    fecharDropdown();
+                    window.location.href = `/frontend/detalheslocais/detalheslocais.html?id=${local.id}`;
+                });
+                li.querySelector('.sug-completar').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const inputAtivo = getInputAtivo();
+                    if (inputAtivo) inputAtivo.value = local.nome;
+                    inputAtivo?.focus();
+                    renderSugestoes(local.nome);
+                });
+                ul2.appendChild(li);
+            });
+
+            suggestionsBox.appendChild(ul2);
+        }
+
+        // Nenhum resultado — só uma mensagem informativa, sem ação
+        if (!temResultados) {
+            const rodape = document.createElement('div');
+            rodape.className = 'sug-rodape';
+            rodape.innerHTML = `<i class="fas fa-search"></i><span>Nenhum resultado para <strong>"${termo}"</strong></span>`;
+            suggestionsBox.appendChild(rodape);
+        }
+
         abrirDropdown();
     }
-
-    if (searchInput) {
-        searchInput.addEventListener('focus', () => { const t = searchInput.value.trim(); if (t.length < 2) renderVazio(); else renderSugestoes(t); });
-        searchInput.addEventListener('input', () => { const t = searchInput.value.trim(); dispararFiltroDireto(t); if (t.length < 2) renderVazio(); else renderSugestoes(t); });
-        searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { salvarRecente(searchInput.value.trim()); fecharDropdown(); dispararBusca(); }
-            if (e.key === 'Escape') fecharDropdown();
-        });
-    }
-
-    document.addEventListener('click', (e) => { if (searchWrapper && !searchWrapper.contains(e.target)) fecharDropdown(); });
-    btnBuscar?.addEventListener('click', () => { if (searchInput?.value.trim()) salvarRecente(searchInput.value.trim()); fecharDropdown(); dispararBusca(); });
 
     function dispararFiltroDireto(termo) {
         window.dispatchEvent(new CustomEvent('roles:filtrar', { detail: { termo: termo.trim() } }));
     }
 
-    function dispararBusca() {
-        const termo  = searchInput?.value.trim() || '';
-        const cidade = localStorage.getItem('cidade') || 'Minha localização';
-        localStorage.setItem('filtrosRoles', JSON.stringify({ termo, cidade }));
-        const naHome = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
-        if (naHome) dispararFiltroDireto(termo);
-        else window.location.href = '/frontend/index.html';
+    // Decide o que fazer com a busca:
+    // - bateu em exatamente 1 evento/local -> vai direto pro detalhe
+    // - bateu em 0 ou mais de 1 -> não navega, mantém o dropdown aberto
+    //   com as opções pra pessoa escolher
+    async function buscarEDirecionar(termo) {
+        if (!termo.trim()) return;
+
+        await carregarDados();
+        const t = norm(termo);
+
+        const eventosBate = (cacheEventos || []).filter(e =>
+            norm(e.nome).includes(t) || norm(e.assunto || '').includes(t)
+        );
+        const locaisBate = (cacheLocais || []).filter(l =>
+            norm(l.nome).includes(t) || norm(l.tipo || '').includes(t)
+        );
+
+        const totalBate = eventosBate.length + locaisBate.length;
+
+        if (totalBate === 1) {
+            salvarRecente(termo);
+            fecharDropdown();
+            if (eventosBate.length === 1) {
+                window.location.href = `/frontend/detalheseventos/detalheevento.html?id=${eventosBate[0].id}`;
+            } else {
+                window.location.href = `/frontend/detalheslocais/detalheslocais.html?id=${locaisBate[0].id}`;
+            }
+            return;
+        }
+
+        const inputAtivo = getInputAtivo();
+        if (inputAtivo) inputAtivo.value = termo;
+        renderSugestoes(termo);
     }
 
-    window.dispararBusca = dispararBusca;
+    function dispararBusca() {
+        const termo = searchInput?.value.trim() || '';
+        buscarEDirecionar(termo);
+    }
+
+    // ----------------------------------------------------------
+    // BUSCA MOBILE — mesmo comportamento do desktop
+    // ----------------------------------------------------------
+    if (searchInputMobile) {
+        searchInputMobile.addEventListener('focus', () => {
+            const t = searchInputMobile.value.trim();
+            if (t.length < 2) renderVazio();
+            else renderSugestoes(t);
+        });
+
+        searchInputMobile.addEventListener('input', () => {
+            const t = searchInputMobile.value.trim();
+            if (t.length < 2) renderVazio();
+            else renderSugestoes(t);
+        });
+
+        searchInputMobile.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const termo = searchInputMobile.value.trim();
+                buscarEDirecionar(termo);
+            }
+            if (e.key === 'Escape') fecharDropdown();
+        });
+    }
+
+    // Eventos do input (desktop)
+    if (searchInput) {
+        searchInput.addEventListener('focus', () => {
+            const t = searchInput.value.trim();
+            if (t.length < 2) renderVazio();
+            else renderSugestoes(t);
+        });
+
+        searchInput.addEventListener('input', () => {
+            const t = searchInput.value.trim();
+
+            if (t.length < 2) renderVazio();
+            else renderSugestoes(t);
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                dispararBusca();
+            }
+            if (e.key === 'Escape') fecharDropdown();
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        const dentroDesktop = searchWrapper && searchWrapper.contains(e.target);
+        const dentroMobile = searchBarMobile && searchBarMobile.contains(e.target);
+        const dentroSugestoes = suggestionsBox && suggestionsBox.contains(e.target);
+        if (!dentroDesktop && !dentroMobile && !dentroSugestoes) fecharDropdown();
+    });
+
+    btnBuscar?.addEventListener('click', () => {
+        dispararBusca();
+    });
 }

@@ -101,7 +101,8 @@ function _redirecionarLogin(customPath) {
 
 function _limparSessao() {
     ['token','userIsLoggedIn','userType','userId',
-     'profileName','profileEmail','profilePhotoUrl','temDashboard']
+     'profileName','profileEmail','profilePhotoUrl',
+     'userRole','admin_token','temDashboard']
         .forEach(k => localStorage.removeItem(k));
 }
 

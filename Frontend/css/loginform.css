@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* ═══════════════════════════════════════════
    LOGIN MODAL / IFRAME
    Sobrepõe apenas o que é diferente do login.css principal.

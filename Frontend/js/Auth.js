@@ -79,7 +79,7 @@ function requireDashboard() {
  * Mostra para qualquer usuário logado — com ou sem conteúdo.
  */
 function controlarLinkDashboard() {
-    const linkDashboard = document.getElementById('dashboard');
+    const linkDashboard = document.getElementById('menu-link-dashboard');
     if (!linkDashboard) return;
 
     if (estaLogado()) {

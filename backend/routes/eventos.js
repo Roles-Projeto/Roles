@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const eventosController = require("../controllers/eventosController");
+const verificarToken = require("../middleware/auth");
 
 router.post("/upload-imagem", eventosController.upload.single("imagem"), async (req, res) => {
     if (!req.file) return res.status(400).json({ erro: "Nenhuma imagem enviada" });
@@ -19,10 +20,13 @@ router.post("/upload-imagem", eventosController.upload.single("imagem"), async (
     }
 });
 
+// Leitura — pública, não precisa de token
 router.get("/",       eventosController.listarEventos);
 router.get("/:id",    eventosController.buscarEvento);
-router.post("/",      eventosController.criarEvento);
-router.put("/:id",    eventosController.editarEvento);
-router.delete("/:id", eventosController.excluirEvento);
+
+// Escrita — exige login (o controller usa req.usuario.id)
+router.post("/",      verificarToken, eventosController.criarEvento);
+router.put("/:id",    verificarToken, eventosController.editarEvento);
+router.delete("/:id", verificarToken, eventosController.excluirEvento);
 
 module.exports = router;

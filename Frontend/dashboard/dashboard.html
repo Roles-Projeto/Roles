@@ -429,9 +429,9 @@
 
           <p class="loading-placeholder" style="font-size:13px; color:var(--text-3); text-align:center; padding:60px 0;">Carregando eventos...</p>
 
-          <!-- MODAL INGRESSOS -->
+                    <!-- MODAL INGRESSOS -->
           <div id="ticketModal" class="modal-ov">
-            <div class="modal-box">
+            <div class="modal-box modal-box--tipos">
               <div class="modal-head">
                 <div>
                   <h2>Gerenciar ingressos</h2>
@@ -461,29 +461,26 @@
                   <p id="ticketModalHorario">—</p>
                 </div>
               </div>
-              <div class="modal-qty">
-                <div class="qf">
-                  <label>Quantidade total</label>
-                  <input type="number" id="totalTickets" value="0" />
-                </div>
-                <div class="qf">
-                  <label>Vendidos</label>
-                  <input type="number" id="soldTickets" value="0" disabled />
-                </div>
-                <div class="qf">
-                  <label>Disponíveis</label>
-                  <input
-                    type="number"
-                    id="availableTickets"
-                    value="0"
-                    disabled
-                  />
-                </div>
+
+              <div class="tipos-ingresso-header">
+                <h3>Tipos de ingresso</h3>
+                <button class="btn-add-tipo" onclick="mostrarFormNovoTipo()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Adicionar tipo
+                </button>
               </div>
+
+              <div id="tiposIngressoList" class="tipos-ingresso-list">
+                <p class="loading-placeholder" style="font-size:13px; color:var(--text-3); text-align:center; padding:20px 0;">Carregando tipos de ingresso...</p>
+              </div>
+
+              <div id="novoTipoForm" class="tipo-row tipo-row--new" style="display:none"></div>
+
               <div class="modal-foot">
-                <button class="btn-save-m">Salvar alterações</button>
                 <button class="btn-cancel-m" onclick="closeTicketModal()">
-                  Cancelar
+                  Fechar
                 </button>
               </div>
             </div>
@@ -523,8 +520,9 @@
                 onchange="filterSales()"
               >
                 <option value="">Todos os status</option>
-                <option value="confirmado">Confirmado</option>
-                <option value="pendente">Pendente</option>
+<option value="confirmado">Confirmado</option>
+<option value="cortesia">Cortesia</option>
+<option value="pendente">Pendente</option>
               </select>
             </div>
           </div>

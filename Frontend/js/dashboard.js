@@ -603,18 +603,21 @@ function showSection(sectionId, btn) {
 }
 
 // ─────────────────────────────────────────────
-// MODAL DE INGRESSOS (por evento — mostra o total real vindo de `ingressos`)
+// MODAL DE INGRESSOS — POR TIPO
+//
+// Substitui o antigo modal (1 total/vendido/disponível por evento
+// inteiro) por uma lista dos tipos de ingresso cadastrados
+// (GET /ingressos/tipos/:evento_id), cada um editável e excluível
+// individualmente, mais um formulário pra criar tipos novos.
 // ─────────────────────────────────────────────
-function openTicketModal(eventoId) {
+let _ticketModalEventoId = null;
+let _tiposIngressoAtuais = [];
+
+async function openTicketModal(eventoId) {
   const evento = _eventosReais.find(e => String(e.id) === String(eventoId));
   if (!evento) return;
 
   _ticketModalEventoId = evento.id;
-  const info = _vendidosPorEventoReais[evento.id] || { qtd: 0 };
-  _ticketModalVendidos = info.qtd;
-
-  const total = _ingressosPorEventoReais[evento.id] || 0;
-  const disponiveis = Math.max(0, total - _ticketModalVendidos);
 
   const subtitulo = document.getElementById('ticketModalSubtitle');
   if (subtitulo) subtitulo.textContent = `${evento.nome || 'Evento'} · ${evento.local_nome || evento.cidade || 'Local não informado'}`;
@@ -625,33 +628,229 @@ function openTicketModal(eventoId) {
   const horaEl = document.getElementById('ticketModalHorario');
   if (horaEl) horaEl.textContent = formatarHora(evento.data_inicio);
 
-  const totalInput = document.getElementById('totalTickets');
-  if (totalInput) totalInput.value = total;
-
-  const soldInput = document.getElementById('soldTickets');
-  if (soldInput) soldInput.value = _ticketModalVendidos;
-
-  const availInput = document.getElementById('availableTickets');
-  if (availInput) availInput.value = disponiveis;
+  esconderFormNovoTipo();
 
   const m = document.getElementById('ticketModal');
   if (m) m.style.display = 'flex';
+
+  await carregarTiposIngressoModal(evento.id);
 }
+
 function closeTicketModal() {
   const m = document.getElementById('ticketModal');
   if (m) m.style.display = 'none';
+  _ticketModalEventoId = null;
+  _tiposIngressoAtuais = [];
+  esconderFormNovoTipo();
 }
 
-let _ticketModalEventoId = null;
-let _ticketModalVendidos = 0;
+async function carregarTiposIngressoModal(eventoId) {
+  const lista = document.getElementById('tiposIngressoList');
+  if (!lista) return;
+  lista.innerHTML = `<p class="loading-placeholder" style="font-size:13px; color:var(--text-3); text-align:center; padding:20px 0;">Carregando tipos de ingresso...</p>`;
 
-function initTicketInput() {
-  const total = document.getElementById('totalTickets');
-  const avail = document.getElementById('availableTickets');
-  if (!total || !avail) return;
-  total.addEventListener('input', () => {
-    avail.value = Math.max(0, (parseInt(total.value) || 0) - _ticketModalVendidos);
-  });
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+
+  try {
+    const res = await fetch(`${window.API_BASE}/ingressos/tipos/${eventoId}`, { headers });
+    const tipos = res.ok ? await res.json() : [];
+    _tiposIngressoAtuais = Array.isArray(tipos) ? tipos : [];
+    renderizarTiposIngressoModal(_tiposIngressoAtuais);
+  } catch (e) {
+    console.warn('Erro ao carregar tipos de ingresso:', e);
+    lista.innerHTML = `<p style="font-size:13px; color:var(--coral); text-align:center; padding:20px 0;">Não foi possível carregar os tipos de ingresso.</p>`;
+  }
+}
+
+function renderizarTiposIngressoModal(tipos) {
+  const lista = document.getElementById('tiposIngressoList');
+  if (!lista) return;
+  lista.innerHTML = '';
+
+  if (!tipos || tipos.length === 0) {
+    lista.innerHTML = `<p style="font-size:13px; color:var(--text-3); text-align:center; padding:20px 0;">Nenhum tipo de ingresso cadastrado ainda. Clique em "Adicionar tipo" para criar o primeiro.</p>`;
+    return;
+  }
+
+  tipos.forEach(tipo => lista.appendChild(_linhaTipoIngresso(tipo)));
+}
+
+function _linhaTipoIngresso(tipo) {
+  const vendidos = Number(tipo.vendidos) || 0;
+  const cortesia = Number(tipo.cortesia) || 0;
+  const total = Number(tipo.quantidade_total) || 0;
+  const ocupados = vendidos + cortesia;
+  const disponiveis = Math.max(0, total - ocupados);
+  const podeExcluir = ocupados === 0;
+
+  const row = document.createElement('div');
+  row.className = 'tipo-row';
+  row.dataset.id = tipo.id;
+
+  row.innerHTML = `
+    <div class="tipo-row-fields">
+      <div class="tf">
+        <label>Nome</label>
+        <input type="text" class="tipo-titulo" value="${tipo.titulo || ''}">
+      </div>
+      <div class="tf">
+        <label>Categoria</label>
+        <input type="text" class="tipo-categoria" value="${tipo.tipo || ''}" placeholder="ex: Pista, VIP...">
+      </div>
+      <div class="tf">
+        <label>Valor (R$)</label>
+        <input type="number" step="0.01" min="0" class="tipo-valor" value="${Number(tipo.valor) || 0}">
+      </div>
+      <div class="tf">
+        <label>Quantidade total</label>
+        <input type="number" min="${ocupados}" class="tipo-total" value="${total}">
+      </div>
+    </div>
+    <div class="tipo-row-stats">
+      <div class="tipo-stat"><span>${vendidos}</span><small>vendidos</small></div>
+      <div class="tipo-stat"><span>${cortesia}</span><small>cortesia</small></div>
+      <div class="tipo-stat"><span>${disponiveis}</span><small>disponíveis</small></div>
+    </div>
+    <div class="tipo-row-actions">
+      <button class="btn-tipo-save" onclick="salvarTipoIngressoExistente(${tipo.id})">Salvar</button>
+      <button class="btn-tipo-delete" onclick="excluirTipoIngressoExistente(${tipo.id})" ${podeExcluir ? '' : 'disabled title="Não é possível excluir: já há vendas/cortesias neste tipo"'}>Excluir</button>
+    </div>
+  `;
+  return row;
+}
+
+async function salvarTipoIngressoExistente(id) {
+  const row = document.querySelector(`.tipo-row[data-id="${id}"]`);
+  if (!row) return;
+
+  const titulo = row.querySelector('.tipo-titulo').value.trim();
+  const tipoCategoria = row.querySelector('.tipo-categoria').value.trim();
+  const valor = parseFloat(row.querySelector('.tipo-valor').value) || 0;
+  const quantidade_total = parseInt(row.querySelector('.tipo-total').value) || 0;
+
+  if (!titulo) {
+    showToast('Dê um nome para o tipo de ingresso.', 'error');
+    return;
+  }
+
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+
+  try {
+    const res = await fetch(`${window.API_BASE}/ingressos/tipos/${id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ titulo, tipo: tipoCategoria || null, valor, quantidade_total })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.erro || 'Erro ao salvar tipo de ingresso.');
+
+    showToast('Tipo de ingresso atualizado!', 'success');
+    await carregarTiposIngressoModal(_ticketModalEventoId);
+    carregarDashboard();
+  } catch (e) {
+    console.error('[salvarTipoIngressoExistente] erro:', e);
+    showToast('Não foi possível salvar: ' + e.message, 'error');
+  }
+}
+
+async function excluirTipoIngressoExistente(id) {
+  if (!confirm('Excluir este tipo de ingresso? Essa ação não pode ser desfeita.')) return;
+
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+
+  try {
+    const res = await fetch(`${window.API_BASE}/ingressos/tipos/${id}`, { method: 'DELETE', headers });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.erro || 'Erro ao excluir tipo de ingresso.');
+
+    showToast('Tipo de ingresso excluído.', 'success');
+    await carregarTiposIngressoModal(_ticketModalEventoId);
+    carregarDashboard();
+  } catch (e) {
+    console.error('[excluirTipoIngressoExistente] erro:', e);
+    showToast('Não foi possível excluir: ' + e.message, 'error');
+  }
+}
+
+function mostrarFormNovoTipo() {
+  const form = document.getElementById('novoTipoForm');
+  if (!form) return;
+  form.innerHTML = `
+    <div class="tipo-row-fields">
+      <div class="tf">
+        <label>Nome</label>
+        <input type="text" id="novoTipoTitulo" placeholder="ex: Pista, VIP, Camarote...">
+      </div>
+      <div class="tf">
+        <label>Categoria</label>
+        <input type="text" id="novoTipoCategoria" placeholder="opcional">
+      </div>
+      <div class="tf">
+        <label>Valor (R$)</label>
+        <input type="number" step="0.01" min="0" id="novoTipoValor" value="0">
+      </div>
+      <div class="tf">
+        <label>Quantidade total</label>
+        <input type="number" min="0" id="novoTipoTotal" value="0">
+      </div>
+    </div>
+    <div class="tipo-row-actions">
+      <button class="btn-tipo-save" onclick="criarNovoTipoIngresso()">Criar tipo</button>
+      <button class="btn-tipo-delete" onclick="esconderFormNovoTipo()">Cancelar</button>
+    </div>
+  `;
+  form.style.display = 'flex';
+  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function esconderFormNovoTipo() {
+  const form = document.getElementById('novoTipoForm');
+  if (!form) return;
+  form.style.display = 'none';
+  form.innerHTML = '';
+}
+
+async function criarNovoTipoIngresso() {
+  const titulo = document.getElementById('novoTipoTitulo')?.value.trim();
+  const tipoCategoria = document.getElementById('novoTipoCategoria')?.value.trim();
+  const valor = parseFloat(document.getElementById('novoTipoValor')?.value) || 0;
+  const quantidade_total = parseInt(document.getElementById('novoTipoTotal')?.value) || 0;
+
+  if (!titulo) {
+    showToast('Dê um nome para o novo tipo de ingresso.', 'error');
+    return;
+  }
+  if (!_ticketModalEventoId) return;
+
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+
+  try {
+    const res = await fetch(`${window.API_BASE}/ingressos/tipos`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        evento_id: _ticketModalEventoId,
+        titulo,
+        tipo: tipoCategoria || null,
+        valor,
+        quantidade_total
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.erro || 'Erro ao criar tipo de ingresso.');
+
+    showToast('Tipo de ingresso criado!', 'success');
+    esconderFormNovoTipo();
+    await carregarTiposIngressoModal(_ticketModalEventoId);
+    carregarDashboard();
+  } catch (e) {
+    console.error('[criarNovoTipoIngresso] erro:', e);
+    showToast('Não foi possível criar: ' + e.message, 'error');
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -668,10 +867,15 @@ function iniciais(nome) {
 function criarLinhaVenda(venda) {
   const tr = document.createElement('tr');
 
-  const statusBackend = (venda.status || '').toLowerCase();
-  const statusExibicao = statusBackend === 'aprovado' ? 'confirmado' : 'pendente';
-  const statusClasse = statusBackend === 'aprovado' ? 'confirmed' : 'pending';
-  const statusIcone = statusBackend === 'aprovado' ? '●' : '○';
+const statusBackend = (venda.status || '').toLowerCase();
+let statusExibicao, statusClasse, statusIcone;
+if (statusBackend === 'aprovado') {
+  statusExibicao = 'confirmado'; statusClasse = 'confirmed'; statusIcone = '●';
+} else if (statusBackend === 'cortesia') {
+  statusExibicao = 'cortesia'; statusClasse = 'courtesy'; statusIcone = '★';
+} else {
+  statusExibicao = 'pendente'; statusClasse = 'pending'; statusIcone = '○';
+}
 
   tr.dataset.status = statusExibicao;
   tr.dataset.name = (venda.nome_comprador || '').toLowerCase();
@@ -825,9 +1029,18 @@ function formatarHora(iso) {
 
 // Bloco de imagem reaproveitado por evento e estabelecimento.
 // Sem imagem cadastrada -> fundo com ícone, nunca imagem quebrada.
+// Se a URL for relativa (/uploads/...), completa com API_BASE, já que
+// o frontend roda em uma porta (Live Server) diferente do backend.
+function _resolverUrlImagem(url) {
+  if (!url) return url;
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+  return `${window.API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 function _blocoImagem(url, iconePathSvg) {
-  if (url) {
-    return `<div class="ev-image" style="background-image:url('${url}')"></div>`;
+  const urlFinal = _resolverUrlImagem(url);
+  if (urlFinal) {
+    return `<div class="ev-image" style="background-image:url('${urlFinal}')"></div>`;
   }
   return `
     <div class="ev-image ev-image--placeholder">
@@ -1251,13 +1464,27 @@ function _campoTextarea(label, id, valor) {
 }
 
 function _campoData(label, id, valorISO) {
-  const valor = valorISO ? new Date(valorISO).toISOString().slice(0, 16) : '';
+  const valor = valorISO ? _paraDatetimeLocal(valorISO) : '';
   return `
     <div class="edit-field">
       <label>${label}</label>
       <input type="datetime-local" id="${id}" value="${valor}">
     </div>`;
 }
+// Converte uma data vinda do banco (ex: "2026-10-31 20:00:00") para o
+// formato que <input type="datetime-local"> espera (AAAA-MM-DDTHH:mm),
+// SEM aplicar conversão de fuso horário (evita o bug de +3h do toISOString).
+function _paraDatetimeLocal(valorISO) {
+  const d = new Date(valorISO);
+  const pad = n => String(n).padStart(2, '0');
+  const ano = d.getFullYear();
+  const mes = pad(d.getMonth() + 1);
+  const dia = pad(d.getDate());
+  const hora = pad(d.getHours());
+  const min = pad(d.getMinutes());
+  return `${ano}-${mes}-${dia}T${hora}:${min}`;
+}
+
 
 function _campoNumero(label, id, valor, min) {
   return `
@@ -1502,7 +1729,7 @@ function openEditModal(tipo, id) {
       <div class="edit-image-block">
         <label>Imagem de capa</label>
         <div class="edit-image-row">
-          <div id="editImagemPreview" class="edit-image-preview" style="${imagemAtual ? `background-image:url('${imagemAtual}')` : ''}"></div>
+          <div id="editImagemPreview" class="edit-image-preview" style="${_resolverUrlImagem(imagemAtual) ? `background-image:url('${_resolverUrlImagem(imagemAtual)}')` : ''}"></div>
           <div>
             <label class="edit-file-label">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1600,19 +1827,23 @@ async function salvarEdicao() {
   const base = _editModalTipo === 'evento' ? `${window.API_BASE}/eventos` : `${window.API_BASE}/estabelecimentos`;
   const campoImagem = _editModalTipo === 'evento' ? 'imagem' : 'img_capa';
 
+  // Campos que NUNCA devem ser reenviados no PUT — ou porque são
+  // calculados no frontend (não existem na tabela) ou porque
+  // reenviar o id/criador_id pode confundir o WHERE da query do backend.
+  const CAMPOS_PROIBIDOS = ['_receita', 'id', 'criador_id', 'criado_em', 'atualizado_em'];
+
   try {
-    // 1) Se trocou a imagem, sobe ela sozinha primeiro (rota de upload já suporta multipart)
     let novaUrlImagem = null;
     if (_editModalNovoArquivoImagem) {
       const fd = new FormData();
       fd.append('imagem', _editModalNovoArquivoImagem);
       const respUpload = await fetch(`${base}/upload-imagem`, { method: 'POST', headers, body: fd });
-      if (!respUpload.ok) throw new Error('Falha ao enviar imagem');
-      const dataUpload = await respUpload.json();
-      novaUrlImagem = dataUpload.url;
+      const uploadTexto = await respUpload.text();
+      console.log('[upload-imagem] status:', respUpload.status, 'resposta:', uploadTexto);
+      if (!respUpload.ok) throw new Error('Falha ao enviar imagem: ' + uploadTexto);
+      novaUrlImagem = JSON.parse(uploadTexto).url;
     }
 
-    // 2) Campos editáveis no formulário
     const camposComuns = { nome: 'edit-nome', descricao: 'edit-descricao', cidade: 'edit-cidade' };
     const camposEvento = { categoria: 'edit-categoria', assunto: 'edit-assunto', local_nome: 'edit-local_nome', estado: 'edit-estado', data_inicio: 'edit-data_inicio', data_fim: 'edit-data_fim' };
     const camposEstab = { tipo: 'edit-tipo', especialidade: 'edit-especialidade', faixa_preco: 'edit-faixa_preco', capacidade: 'edit-capacidade', telefone: 'edit-telefone' };
@@ -1632,28 +1863,46 @@ async function salvarEdicao() {
       editados[campoImagem] = novaUrlImagem;
     }
 
-    // 3) Merge: item original (tudo que veio do GET) + só o que foi editado.
-    // Garante que campos fora do modal não sejam apagados no UPDATE total.
+    // Merge: item original + editado, mas removendo os campos proibidos
     const dados = { ..._editModalItem, ...editados };
+    CAMPOS_PROIBIDOS.forEach(campo => delete dados[campo]);
 
-    // 4) Sempre JSON — nunca mais multipart no PUT
-    const resposta = await fetch(`${base}/${_editModalItem.id}`, {
+    const url = `${base}/${_editModalItem.id}`;
+    console.log('[salvarEdicao] PUT', url);
+    console.log('[salvarEdicao] payload enviado:', JSON.stringify(dados, null, 2));
+
+    const resposta = await fetch(url, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify(dados)
     });
 
-    if (!resposta.ok) throw new Error('Falha ao salvar');
+    // Lê o corpo como texto SEMPRE, mesmo em erro — pra logar o que o backend realmente disse
+    const textoResposta = await resposta.text();
+    console.log('[salvarEdicao] status:', resposta.status, 'resposta do servidor:', textoResposta);
+
+    if (!resposta.ok) {
+      throw new Error(`Servidor respondeu ${resposta.status}: ${textoResposta}`);
+    }
+
+    // Tenta interpretar a resposta como JSON pra conferir se o backend
+    // devolveu o registro atualizado (sinal forte de que salvou de verdade)
+    let corpoJson = null;
+    try { corpoJson = JSON.parse(textoResposta); } catch { /* resposta não é JSON, tudo bem */ }
+    if (corpoJson) {
+      console.log('[salvarEdicao] registro retornado pelo backend:', corpoJson);
+    } else {
+      console.warn('[salvarEdicao] backend respondeu 200 mas sem corpo/JSON — não dá pra confirmar se salvou de fato. Confira no banco.');
+    }
 
     showToast('Alterações salvas com sucesso!', 'success');
     closeEditModal();
-    carregarDashboard(); // recarrega tudo pra refletir o que foi salvo
+    carregarDashboard();
   } catch (erro) {
-    console.error('Erro ao salvar edição:', erro);
-    showToast('Não foi possível salvar. Verifique a conexão com o backend.', 'error');
+    console.error('[salvarEdicao] ERRO:', erro);
+    showToast('Não foi possível salvar: ' + erro.message, 'error');
   }
 }
-
 // ─────────────────────────────────────────────
 // SISTEMA DE TOAST (feedback visual)
 // ─────────────────────────────────────────────
@@ -1803,26 +2052,12 @@ function initNavButtons() {
 }
 
 // ─────────────────────────────────────────────
-// BOTÃO SALVAR INGRESSOS no modal
-// ─────────────────────────────────────────────
-function initSaveTickets() {
-  const btn = document.querySelector('.btn-save-m');
-  if (!btn) return;
-  btn.addEventListener('click', () => {
-    closeTicketModal();
-    showToast('Quantidade de ingressos atualizada com sucesso!', 'success');
-  });
-}
-
-// ─────────────────────────────────────────────
 // INICIALIZAÇÃO
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  initTicketInput();
   initExport();
   initNavButtons();
   initEditButtons();
-  initSaveTickets();
 
   carregarDashboard();
 });

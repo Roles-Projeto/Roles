@@ -63,6 +63,32 @@ async function vendasDoDono(req, res) {
 }
 
 // ====================================================
+// TOTAL DE INGRESSOS POR EVENTO (visão do dono — pro Dashboard)
+// GET /ingressos/totais/:usuario_id
+// ====================================================
+async function totalIngressosPorUsuario(req, res) {
+    const { usuario_id } = req.params;
+    if (!usuario_id) {
+        return res.status(400).json({ erro: "usuario_id não informado." });
+    }
+
+    try {
+        const totais = await db.query(`
+            SELECT i.evento_id, SUM(i.quantidade_total) AS total
+            FROM ingressos i
+            JOIN eventos e ON e.id = i.evento_id
+            WHERE e.usuario_id = ?
+            GROUP BY i.evento_id
+        `, [usuario_id]);
+
+        res.json(totais);
+    } catch (err) {
+        console.error("Erro ao buscar totais de ingressos:", err);
+        res.status(500).json({ erro: "Erro ao buscar totais de ingressos.", detalhe: err.message });
+    }
+}
+
+// ====================================================
 // DETALHE DO EVENTO + TIPOS DE INGRESSO
 // ====================================================
 async function detalheEvento(req, res) {
@@ -88,20 +114,37 @@ async function detalheEvento(req, res) {
 
 // ====================================================
 // COMPRAR INGRESSO
+//
+// REGRA DE CORTESIA: se quem está comprando (usuario_id) for o mesmo
+// usuário dono do evento (eventos.usuario_id), a compra é tratada
+// como cortesia — valor zerado, sem checagem de forma de pagamento,
+// status "cortesia". Como os KPIs do dashboard só somam receita
+// quando status é "aprovado", uma cortesia nunca entra no total de
+// vendas nem no ticket médio — mas ainda aparece na lista de vendas
+// e gera o ingresso normalmente (com QR code).
 // ====================================================
 async function comprarIngresso(req, res) {
+    console.log("🔥🔥🔥 VERSÃO NOVA DO CONTROLLER RODANDO 🔥🔥🔥");
     const { usuario_id, evento_id, itens, forma_pagamento } = req.body;
 
-    if (!usuario_id || !evento_id || !itens?.length || !forma_pagamento) {
+    if (!usuario_id || !evento_id || !itens?.length) {
         return res.status(400).json({ erro: "Dados incompletos." });
     }
 
-    const formasValidas = ["credito", "debito", "boleto", "pix"];
-    if (!formasValidas.includes(forma_pagamento)) {
-        return res.status(400).json({ erro: "Forma de pagamento inválida." });
-    }
-
     try {
+        const eventoRows = await db.query("SELECT usuario_id FROM eventos WHERE id = ?", [evento_id]);
+        const evento = eventoRows[0];
+        if (!evento) return res.status(404).json({ erro: "Evento não encontrado." });
+
+        const ehCortesia = String(evento.usuario_id) === String(usuario_id);
+
+        if (!ehCortesia) {
+            const formasValidas = ["credito", "debito", "boleto", "pix"];
+            if (!formasValidas.includes(forma_pagamento)) {
+                return res.status(400).json({ erro: "Forma de pagamento inválida." });
+            }
+        }
+
         let valor_total = 0;
         const detalhes  = [];
 
@@ -114,17 +157,29 @@ async function comprarIngresso(req, res) {
             if (!tipo) {
                 return res.status(400).json({ erro: `Ingresso ${item.tipo_ingresso_id} inválido.` });
             }
-            valor_total += parseFloat(tipo.valor) * item.quantidade;
+            valor_total += ehCortesia ? 0 : parseFloat(tipo.valor) * item.quantidade;
             detalhes.push({ tipo, quantidade: item.quantidade });
         }
 
-        const status_pagamento = simularPagamento(forma_pagamento);
+        const status_pagamento = ehCortesia ? "cortesia" : simularPagamento(forma_pagamento);
+        const formaFinal = ehCortesia ? "cortesia" : forma_pagamento;
 
         const pedidoResult = await db.query(
             "INSERT INTO pedidos (usuario_id, evento_id, valor_total, forma_pagamento, status) VALUES (?, ?, ?, ?, ?)",
-            [usuario_id, evento_id, valor_total, forma_pagamento, status_pagamento]
+            [usuario_id, evento_id, valor_total, formaFinal, status_pagamento]
         );
         const pedido_id = pedidoResult.insertId ?? pedidoResult[0]?.id;
+
+        // NOVO: grava uma linha em `vendas` pra cada tipo de ingresso
+        // comprado, com o status do pedido. É isso que vai permitir
+        // depois saber "quantos vendidos" POR TIPO (arquibancada, pista,
+        // etc.), e não só o total do evento.
+        for (const d of detalhes) {
+            await db.query(
+                "INSERT INTO vendas (ingresso_id, usuario_id, quantidade, valor_total, status) VALUES (?, ?, ?, ?, ?)",
+                [d.tipo.id, usuario_id, d.quantidade, ehCortesia ? 0 : parseFloat(d.tipo.valor) * d.quantidade, status_pagamento]
+            );
+        }
 
         const ingressosGerados = detalhes.flatMap(d =>
             Array.from({ length: d.quantidade }, () => ({
@@ -136,28 +191,28 @@ async function comprarIngresso(req, res) {
         if (status_pagamento === "aprovado") {
             try {
                 const { enviarEmailIngresso } = require("../services/emailService");
-                const [usuarioRows, eventoRows] = await Promise.all([
+                const [usuarioRows, eventoInfoRows] = await Promise.all([
                     db.query("SELECT nome_completo, email FROM usuarios WHERE id = ?", [usuario_id]),
                     db.query("SELECT nome, data_inicio, local_nome, cidade FROM eventos WHERE id = ?", [evento_id]),
                 ]);
                 const usuario = usuarioRows[0];
-                const evento  = eventoRows[0];
-                if (usuario && evento) {
-                    const d = new Date(evento.data_inicio);
+                const eventoInfo = eventoInfoRows[0];
+                if (usuario && eventoInfo) {
+                    const d = new Date(eventoInfo.data_inicio);
                     enviarEmailIngresso({
                         nomeCliente:     usuario.nome_completo,
                         emailCliente:    usuario.email,
                         pedido_id,
-                        nomeEvento:      evento.nome,
+                        nomeEvento:      eventoInfo.nome,
                         dataEvento:      d.toLocaleDateString("pt-BR"),
                         horaEvento:      d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-                        localEvento:     `${evento.local_nome}, ${evento.cidade}`,
+                        localEvento:     `${eventoInfo.local_nome}, ${eventoInfo.cidade}`,
                         nomeIngresso:    detalhes[0]?.tipo?.titulo || "Ingresso",
                         quantidade:      ingressosGerados.length,
                         subtotal:        valor_total,
                         taxaServico:     valor_total * 0.10,
                         totalPago:       valor_total * 1.10,
-                        forma_pagamento,
+                        forma_pagamento: formaFinal,
                         ingressos:       ingressosGerados,
                     }).catch(e => console.error("❌ Erro ao enviar e-mail:", e.message));
                 }
@@ -167,14 +222,14 @@ async function comprarIngresso(req, res) {
         }
 
         res.status(201).json({
-            mensagem: status_pagamento === "aprovado"
-                ? "Compra realizada com sucesso!"
-                : "Pagamento pendente. Aguardando confirmação.",
+            mensagem: ehCortesia
+                ? "Ingresso de cortesia gerado com sucesso!"
+                : (status_pagamento === "aprovado" ? "Compra realizada com sucesso!" : "Pagamento pendente. Aguardando confirmação."),
             pedido_id,
-            status:         status_pagamento,
+            status:          status_pagamento,
             valor_total,
-            forma_pagamento,
-            ingressos:      ingressosGerados,
+            forma_pagamento: formaFinal,
+            ingressos:       ingressosGerados,
         });
 
     } catch (err) {
@@ -182,7 +237,6 @@ async function comprarIngresso(req, res) {
         res.status(500).json({ erro: "Erro interno ao processar compra.", detalhe: err.message });
     }
 }
-
 // ====================================================
 // MEUS INGRESSOS
 // ====================================================
@@ -349,6 +403,157 @@ async function reenviarEmailIngresso(req, res) {
         res.status(500).json({ erro: "Erro ao reenviar e-mail.", detalhe: err.message });
     }
 }
+
+// ====================================================
+// TIPOS DE INGRESSO — LISTAR (com vendidos/cortesia por tipo)
+// GET /ingressos/tipos/:evento_id
+// Usado pelo modal "Gerenciar ingressos" do dashboard.
+// ====================================================
+async function listarTiposIngresso(req, res) {
+    const { evento_id } = req.params;
+    if (!evento_id) {
+        return res.status(400).json({ erro: "evento_id não informado." });
+    }
+
+    try {
+        const tipos = await db.query(`
+            SELECT
+                i.id, i.evento_id, i.titulo, i.tipo, i.valor, i.quantidade_total,
+                COALESCE(SUM(CASE WHEN v.status = 'aprovado' THEN v.quantidade ELSE 0 END), 0) AS vendidos,
+                COALESCE(SUM(CASE WHEN v.status = 'cortesia' THEN v.quantidade ELSE 0 END), 0) AS cortesia
+            FROM ingressos i
+            LEFT JOIN vendas v ON v.ingresso_id = i.id
+            WHERE i.evento_id = ?
+            GROUP BY i.id, i.evento_id, i.titulo, i.tipo, i.valor, i.quantidade_total
+            ORDER BY i.id ASC
+        `, [evento_id]);
+
+        res.json(tipos);
+    } catch (err) {
+        console.error("Erro ao listar tipos de ingresso:", err);
+        res.status(500).json({ erro: "Erro ao listar tipos de ingresso.", detalhe: err.message });
+    }
+}
+
+// ====================================================
+// TIPOS DE INGRESSO — CRIAR
+// POST /ingressos/tipos
+// body: { evento_id, titulo, tipo, valor, quantidade_total }
+// ====================================================
+async function criarTipoIngresso(req, res) {
+    const { evento_id, titulo, tipo, valor, quantidade_total } = req.body;
+
+    if (!evento_id || !titulo || valor == null || quantidade_total == null) {
+        return res.status(400).json({ erro: "Dados incompletos para criar o tipo de ingresso." });
+    }
+
+    try {
+        const eventoRows = await db.query("SELECT id FROM eventos WHERE id = ?", [evento_id]);
+        if (!eventoRows[0]) return res.status(404).json({ erro: "Evento não encontrado." });
+
+        const result = await db.query(
+            "INSERT INTO ingressos (evento_id, titulo, tipo, valor, quantidade_total) VALUES (?, ?, ?, ?, ?)",
+            [evento_id, titulo, tipo || null, parseFloat(valor), parseInt(quantidade_total)]
+        );
+        const novoId = result.insertId ?? result[0]?.id;
+
+        res.status(201).json({
+            id: novoId,
+            evento_id,
+            titulo,
+            tipo: tipo || null,
+            valor: parseFloat(valor),
+            quantidade_total: parseInt(quantidade_total),
+            vendidos: 0,
+            cortesia: 0,
+        });
+    } catch (err) {
+        console.error("Erro ao criar tipo de ingresso:", err);
+        res.status(500).json({ erro: "Erro ao criar tipo de ingresso.", detalhe: err.message });
+    }
+}
+
+// ====================================================
+// TIPOS DE INGRESSO — EDITAR
+// PUT /ingressos/tipos/:id
+// body: { titulo, tipo, valor, quantidade_total }
+//
+// Não deixa reduzir quantidade_total abaixo do que já foi vendido
+// ou dado como cortesia — evitaria "sumir" com histórico de vendas.
+// ====================================================
+async function atualizarTipoIngresso(req, res) {
+    const { id } = req.params;
+    const { titulo, tipo, valor, quantidade_total } = req.body;
+
+    try {
+        const rows = await db.query("SELECT * FROM ingressos WHERE id = ?", [id]);
+        const atual = rows[0];
+        if (!atual) return res.status(404).json({ erro: "Tipo de ingresso não encontrado." });
+
+        const ocupadosRows = await db.query(`
+            SELECT COALESCE(SUM(quantidade), 0) AS total
+            FROM vendas
+            WHERE ingresso_id = ? AND status IN ('aprovado', 'cortesia')
+        `, [id]);
+        const jaOcupados = Number(ocupadosRows[0]?.total) || 0;
+
+        const novoTotal = quantidade_total != null ? parseInt(quantidade_total) : atual.quantidade_total;
+        if (novoTotal < jaOcupados) {
+            return res.status(400).json({
+                erro: `Quantidade total não pode ser menor que o já ocupado (${jaOcupados} ingressos entre vendidos e cortesia).`
+            });
+        }
+
+        await db.query(
+            "UPDATE ingressos SET titulo = ?, tipo = ?, valor = ?, quantidade_total = ? WHERE id = ?",
+            [
+                titulo ?? atual.titulo,
+                tipo ?? atual.tipo,
+                valor != null ? parseFloat(valor) : atual.valor,
+                novoTotal,
+                id
+            ]
+        );
+
+        res.json({ mensagem: "Tipo de ingresso atualizado com sucesso." });
+    } catch (err) {
+        console.error("Erro ao atualizar tipo de ingresso:", err);
+        res.status(500).json({ erro: "Erro ao atualizar tipo de ingresso.", detalhe: err.message });
+    }
+}
+
+// ====================================================
+// TIPOS DE INGRESSO — EXCLUIR
+// DELETE /ingressos/tipos/:id
+//
+// Bloqueia exclusão se já existir venda aprovada ou cortesia
+// vinculada a esse tipo, pra não perder o histórico.
+// ====================================================
+async function excluirTipoIngresso(req, res) {
+    const { id } = req.params;
+
+    try {
+        const ocupadosRows = await db.query(`
+            SELECT COALESCE(SUM(quantidade), 0) AS total
+            FROM vendas
+            WHERE ingresso_id = ? AND status IN ('aprovado', 'cortesia')
+        `, [id]);
+        const jaOcupados = Number(ocupadosRows[0]?.total) || 0;
+
+        if (jaOcupados > 0) {
+            return res.status(400).json({
+                erro: `Não é possível excluir: já existem ${jaOcupados} ingresso(s) vendido(s)/cortesia neste tipo.`
+            });
+        }
+
+        await db.query("DELETE FROM ingressos WHERE id = ?", [id]);
+        res.json({ mensagem: "Tipo de ingresso excluído com sucesso." });
+    } catch (err) {
+        console.error("Erro ao excluir tipo de ingresso:", err);
+        res.status(500).json({ erro: "Erro ao excluir tipo de ingresso.", detalhe: err.message });
+    }
+}
+
 module.exports = {
     listarEventos,
     detalheEvento,
@@ -357,5 +562,10 @@ module.exports = {
     validarQRCode,
     detalheIngresso,
     reenviarEmailIngresso,
-    vendasDoDono,   // ← novo
+    vendasDoDono,
+    totalIngressosPorUsuario,
+    listarTiposIngresso,
+    criarTipoIngresso,
+    atualizarTipoIngresso,
+    excluirTipoIngresso,
 };

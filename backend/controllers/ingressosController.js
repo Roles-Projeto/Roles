@@ -36,7 +36,7 @@ async function vendasDoDono(req, res) {
     }
 
     try {
-        const vendas = await db.query(`
+              const vendas = await db.query(`
             SELECT
                 p.id,
                 p.evento_id,
@@ -47,7 +47,8 @@ async function vendasDoDono(req, res) {
                 e.nome                                                  AS nome_evento,
                 u.nome_completo                                         AS nome_comprador,
                 u.email                                                 AS email_comprador,
-                (SELECT titulo FROM ingressos WHERE evento_id = p.evento_id LIMIT 1) AS tipo_ingresso
+                (SELECT titulo FROM ingressos WHERE evento_id = p.evento_id LIMIT 1) AS tipo_ingresso,
+                (SELECT COALESCE(SUM(v.quantidade), 0) FROM vendas v WHERE v.pedido_id = p.id) AS quantidade_itens
             FROM pedidos p
             JOIN eventos  e ON e.id = p.evento_id
             JOIN usuarios u ON u.id = p.usuario_id
@@ -148,7 +149,7 @@ async function comprarIngresso(req, res) {
         let valor_total = 0;
         const detalhes  = [];
 
-        for (const item of itens) {
+                for (const item of itens) {
             const rows = await db.query(
                 "SELECT * FROM ingressos WHERE id = ? AND evento_id = ?",
                 [item.tipo_ingresso_id, evento_id]
@@ -157,6 +158,40 @@ async function comprarIngresso(req, res) {
             if (!tipo) {
                 return res.status(400).json({ erro: `Ingresso ${item.tipo_ingresso_id} inválido.` });
             }
+
+            // Tipo pausado pelo organizador — não pode ser comprado,
+            // mesmo que ainda tenha vagas disponíveis.
+            if (tipo.ativo === false) {
+                return res.status(400).json({ erro: `A venda de "${tipo.titulo}" está pausada no momento.` });
+            }
+
+            // Janela de lote (se configurada) — venda só é permitida dentro do período.
+                        // Janela de lote (se configurada) — venda só é permitida dentro do período.
+            const agora = new Date();
+            if (tipo.data_inicio_venda && agora < new Date(tipo.data_inicio_venda)) {
+                return res.status(400).json({ erro: `A venda de "${tipo.titulo}" ainda não começou.` });
+            }
+            if (tipo.data_fim_venda && agora > new Date(tipo.data_fim_venda)) {
+                return res.status(400).json({ erro: `A venda de "${tipo.titulo}" já foi encerrada.` });
+            }
+
+            // Trava de capacidade — nunca deixa vender/gerar cortesia além do
+            // total cadastrado, mesmo que a compra seja cortesia (sem custo,
+            // mas ainda ocupa uma vaga física do evento).
+            const ocupadosRows = await db.query(`
+                SELECT COALESCE(SUM(quantidade), 0) AS total
+                FROM vendas
+                WHERE ingresso_id = ? AND status IN ('aprovado', 'cortesia')
+            `, [tipo.id]);
+            const jaOcupados = Number(ocupadosRows[0]?.total) || 0;
+            const disponiveis = tipo.quantidade_total - jaOcupados;
+
+            if (item.quantidade > disponiveis) {
+                return res.status(400).json({
+                    erro: `Ingressos insuficientes para "${tipo.titulo}": restam apenas ${Math.max(0, disponiveis)}.`
+                });
+            }
+
             valor_total += ehCortesia ? 0 : parseFloat(tipo.valor) * item.quantidade;
             detalhes.push({ tipo, quantidade: item.quantidade });
         }
@@ -164,22 +199,31 @@ async function comprarIngresso(req, res) {
         const status_pagamento = ehCortesia ? "cortesia" : simularPagamento(forma_pagamento);
         const formaFinal = ehCortesia ? "cortesia" : forma_pagamento;
 
-        const pedidoResult = await db.query(
-            "INSERT INTO pedidos (usuario_id, evento_id, valor_total, forma_pagamento, status) VALUES (?, ?, ?, ?, ?)",
-            [usuario_id, evento_id, valor_total, formaFinal, status_pagamento]
-        );
-        const pedido_id = pedidoResult.insertId ?? pedidoResult[0]?.id;
-
-        // NOVO: grava uma linha em `vendas` pra cada tipo de ingresso
-        // comprado, com o status do pedido. É isso que vai permitir
-        // depois saber "quantos vendidos" POR TIPO (arquibancada, pista,
-        // etc.), e não só o total do evento.
-        for (const d of detalhes) {
-            await db.query(
-                "INSERT INTO vendas (ingresso_id, usuario_id, quantidade, valor_total, status) VALUES (?, ?, ?, ?, ?)",
-                [d.tipo.id, usuario_id, d.quantidade, ehCortesia ? 0 : parseFloat(d.tipo.valor) * d.quantidade, status_pagamento]
+               // Pedido + todas as linhas de venda entram na MESMA transação.
+        // Se qualquer INSERT de venda falhar, o pedido inteiro é revertido —
+        // nunca mais fica um pedido "órfão" sem a venda correspondente
+        // (foi exatamente esse tipo de inconsistência que já corrigimos
+        // manualmente uma vez pro evento BTS World Tour).
+        //
+        // Cada linha de `vendas` agora também grava o pedido_id — com a FK
+        // (ON DELETE CASCADE) criada na migration, excluir um pedido passa
+        // a arrastar as vendas correspondentes junto, sem deixar lixo órfão.
+        const pedido_id = await db.transacao(async (tx) => {
+            const pedidoResult = await tx.query(
+                "INSERT INTO pedidos (usuario_id, evento_id, valor_total, forma_pagamento, status) VALUES (?, ?, ?, ?, ?)",
+                [usuario_id, evento_id, valor_total, formaFinal, status_pagamento]
             );
-        }
+            const novoPedidoId = pedidoResult.insertId ?? pedidoResult[0]?.id;
+
+            for (const d of detalhes) {
+                await tx.query(
+                    "INSERT INTO vendas (pedido_id, ingresso_id, usuario_id, quantidade, valor_total, status) VALUES (?, ?, ?, ?, ?, ?)",
+                    [novoPedidoId, d.tipo.id, usuario_id, d.quantidade, ehCortesia ? 0 : parseFloat(d.tipo.valor) * d.quantidade, status_pagamento]
+                );
+            }
+
+            return novoPedidoId;
+        });
 
         const ingressosGerados = detalhes.flatMap(d =>
             Array.from({ length: d.quantidade }, () => ({
@@ -416,15 +460,17 @@ async function listarTiposIngresso(req, res) {
     }
 
     try {
-        const tipos = await db.query(`
+               const tipos = await db.query(`
             SELECT
                 i.id, i.evento_id, i.titulo, i.tipo, i.valor, i.quantidade_total,
+                i.ativo, i.data_inicio_venda, i.data_fim_venda,
                 COALESCE(SUM(CASE WHEN v.status = 'aprovado' THEN v.quantidade ELSE 0 END), 0) AS vendidos,
                 COALESCE(SUM(CASE WHEN v.status = 'cortesia' THEN v.quantidade ELSE 0 END), 0) AS cortesia
             FROM ingressos i
             LEFT JOIN vendas v ON v.ingresso_id = i.id
             WHERE i.evento_id = ?
-            GROUP BY i.id, i.evento_id, i.titulo, i.tipo, i.valor, i.quantidade_total
+            GROUP BY i.id, i.evento_id, i.titulo, i.tipo, i.valor, i.quantidade_total,
+                     i.ativo, i.data_inicio_venda, i.data_fim_venda
             ORDER BY i.id ASC
         `, [evento_id]);
 
@@ -441,7 +487,7 @@ async function listarTiposIngresso(req, res) {
 // body: { evento_id, titulo, tipo, valor, quantidade_total }
 // ====================================================
 async function criarTipoIngresso(req, res) {
-    const { evento_id, titulo, tipo, valor, quantidade_total } = req.body;
+    const { evento_id, titulo, tipo, valor, quantidade_total, ativo, data_inicio_venda, data_fim_venda } = req.body;
 
     if (!evento_id || !titulo || valor == null || quantidade_total == null) {
         return res.status(400).json({ erro: "Dados incompletos para criar o tipo de ingresso." });
@@ -451,9 +497,13 @@ async function criarTipoIngresso(req, res) {
         const eventoRows = await db.query("SELECT id FROM eventos WHERE id = ?", [evento_id]);
         if (!eventoRows[0]) return res.status(404).json({ erro: "Evento não encontrado." });
 
+        const ativoFinal = ativo === false ? false : true;
+        const inicioFinal = data_inicio_venda || null;
+        const fimFinal = data_fim_venda || null;
+
         const result = await db.query(
-            "INSERT INTO ingressos (evento_id, titulo, tipo, valor, quantidade_total) VALUES (?, ?, ?, ?, ?)",
-            [evento_id, titulo, tipo || null, parseFloat(valor), parseInt(quantidade_total)]
+            "INSERT INTO ingressos (evento_id, titulo, tipo, valor, quantidade_total, ativo, data_inicio_venda, data_fim_venda) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [evento_id, titulo, tipo || null, parseFloat(valor), parseInt(quantidade_total), ativoFinal, inicioFinal, fimFinal]
         );
         const novoId = result.insertId ?? result[0]?.id;
 
@@ -464,6 +514,9 @@ async function criarTipoIngresso(req, res) {
             tipo: tipo || null,
             valor: parseFloat(valor),
             quantidade_total: parseInt(quantidade_total),
+            ativo: ativoFinal,
+            data_inicio_venda: inicioFinal,
+            data_fim_venda: fimFinal,
             vendidos: 0,
             cortesia: 0,
         });
@@ -472,7 +525,6 @@ async function criarTipoIngresso(req, res) {
         res.status(500).json({ erro: "Erro ao criar tipo de ingresso.", detalhe: err.message });
     }
 }
-
 // ====================================================
 // TIPOS DE INGRESSO — EDITAR
 // PUT /ingressos/tipos/:id
@@ -483,7 +535,7 @@ async function criarTipoIngresso(req, res) {
 // ====================================================
 async function atualizarTipoIngresso(req, res) {
     const { id } = req.params;
-    const { titulo, tipo, valor, quantidade_total } = req.body;
+    const { titulo, tipo, valor, quantidade_total, ativo, data_inicio_venda, data_fim_venda } = req.body;
 
     try {
         const rows = await db.query("SELECT * FROM ingressos WHERE id = ?", [id]);
@@ -504,13 +556,20 @@ async function atualizarTipoIngresso(req, res) {
             });
         }
 
+        const ativoFinal = ativo != null ? !!ativo : atual.ativo;
+        const inicioFinal = data_inicio_venda !== undefined ? (data_inicio_venda || null) : atual.data_inicio_venda;
+        const fimFinal = data_fim_venda !== undefined ? (data_fim_venda || null) : atual.data_fim_venda;
+
         await db.query(
-            "UPDATE ingressos SET titulo = ?, tipo = ?, valor = ?, quantidade_total = ? WHERE id = ?",
+            "UPDATE ingressos SET titulo = ?, tipo = ?, valor = ?, quantidade_total = ?, ativo = ?, data_inicio_venda = ?, data_fim_venda = ? WHERE id = ?",
             [
                 titulo ?? atual.titulo,
                 tipo ?? atual.tipo,
                 valor != null ? parseFloat(valor) : atual.valor,
                 novoTotal,
+                ativoFinal,
+                inicioFinal,
+                fimFinal,
                 id
             ]
         );
@@ -521,7 +580,6 @@ async function atualizarTipoIngresso(req, res) {
         res.status(500).json({ erro: "Erro ao atualizar tipo de ingresso.", detalhe: err.message });
     }
 }
-
 // ====================================================
 // TIPOS DE INGRESSO — EXCLUIR
 // DELETE /ingressos/tipos/:id

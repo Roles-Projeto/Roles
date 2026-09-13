@@ -107,11 +107,13 @@ router.post("/", verificarToken, async (req, res) => {
          visibilidade, horario, comodidades, img_logo, img_capa,
          categoria_card, fotos_galeria, pratos)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
-      usuarioId, nome, tipo, especialidade, faixa_preco, capacidade, descricao,
-      local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
-      endereco, telefone, website, responsavel, cnpj,
-      visibilidade || "publico", horario || "", comodidades,
-      img_logo, img_capa, categoria_card,
+            usuarioId, nome, tipo ?? null, especialidade ?? null, faixa_preco ?? null,
+      capacidade !== undefined && capacidade !== null && capacidade !== "" ? Number(capacidade) : null,
+      descricao ?? null, local_nome ?? null, cep ?? null, rua ?? null, numero ?? null,
+      complemento ?? null, bairro ?? null, cidade ?? null, estado ?? null,
+      endereco ?? null, telefone ?? null, website ?? null, responsavel ?? null, cnpj ?? null,
+      visibilidade || "publico", horario || "", comodidades ?? null,
+      img_logo ?? null, img_capa ?? null, categoria_card ?? null,
       JSON.stringify(fotos_galeria || []), JSON.stringify(pratos || [])
     ]);
 
@@ -153,13 +155,14 @@ router.put("/:id", verificarToken, async (req, res) => {
         visibilidade=?, horario=?, comodidades=?, img_logo=?,
         img_capa=?, categoria_card=?, fotos_galeria=?, pratos=?
       WHERE id=?`, [
-      nome, tipo, especialidade, faixa_preco, capacidade,
-      descricao, local_nome, cep, rua, numero,
-      complemento, bairro, cidade, estado, endereco,
-      telefone, website, responsavel, cnpj,
-      visibilidade, horario || "", comodidades, img_logo,
-      img_capa, categoria_card,
-      JSON.stringify(fotos_galeria || []), JSON.stringify(pratos || []), id
+            nome ?? null, tipo ?? null, especialidade ?? null, faixa_preco ?? null,
+      capacidade !== undefined && capacidade !== null && capacidade !== "" ? Number(capacidade) : null,
+      descricao ?? null, local_nome ?? null, cep ?? null, rua ?? null, numero ?? null,
+      complemento ?? null, bairro ?? null, cidade ?? null, estado ?? null, endereco ?? null,
+      telefone ?? null, website ?? null, responsavel ?? null, cnpj ?? null,
+      visibilidade ?? "publico", horario ?? "", comodidades ?? null, img_logo ?? null,
+      img_capa ?? null, categoria_card ?? null,
+      JSON.stringify(fotos_galeria ?? []), JSON.stringify(pratos ?? []), id
     ]);
 
     res.json({ mensagem: "Estabelecimento atualizado com sucesso!" });

@@ -74,21 +74,21 @@
               </svg>
               Novo estabelecimento
             </button>
-            <button class="btn-export" id="btnExport">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              Exportar relatório
-            </button>
+                        <div class="export-dropdown" id="exportDropdown">
+              <button class="btn-export" id="btnExportToggle">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Exportar relatório
+              </button>
+              <div class="export-menu" id="exportMenu">
+                <button class="export-menu-item" id="btnExportXlsx">Planilha (.xlsx)</button>
+                <button class="export-menu-item" id="btnExportPdf">PDF (.pdf)</button>
+                <button class="export-menu-item" id="btnExportDocx">Word (.docx)</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -588,6 +588,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/frontend/js/dashboard.js"></script>
     <script src="/frontend/js/footer.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <script>
       requireDashboard();
     </script>

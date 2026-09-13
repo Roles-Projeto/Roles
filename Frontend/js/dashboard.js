@@ -77,18 +77,15 @@ async function carregarDashboard() {
   }
 }
 
-// Conta pedidos aprovados por evento_id (proxy de "vendidos" — a query
-// vendasDoDono não traz quantidade de ingressos por pedido, só o total
-// em dinheiro, então aqui 1 pedido aprovado = 1 unidade "vendida".
-// Isso fica impreciso se algum pedido tiver mais de 1 ingresso —
-// pra corrigir de verdade, precisa de uma coluna quantidade em pedidos
-// ou uma tabela pedido_itens).
+// Conta ingressos vendidos por evento_id usando a quantidade real de cada
+// pedido (vendas.quantidade, somada em vendasDoDono). Pedidos antigos/sem
+// esse dado caem no fallback de 1 unidade, pra nunca zerar histórico.
 function calcularVendidosPorEvento(vendas) {
   const mapa = {};
   vendas.forEach(v => {
     if ((v.status || '').toLowerCase() !== 'aprovado') return;
     if (!mapa[v.evento_id]) mapa[v.evento_id] = { qtd: 0, receita: 0 };
-    mapa[v.evento_id].qtd += 1;
+    mapa[v.evento_id].qtd += Number(v.quantidade_itens) || 1;
     mapa[v.evento_id].receita += parseFloat(v.valor_total) || 0;
   });
   return mapa;
@@ -284,7 +281,7 @@ function _mostrarVazio(secaoId, tipo) {
 // ─────────────────────────────────────────────
 function atualizarKPIs(vendasAprovadas, eventos, estabs, vendidosPorEvento, ingressosPorEvento) {
   const receitaTotal = vendasAprovadas.reduce((s, v) => s + (parseFloat(v.valor_total) || 0), 0);
-  const ingressosVendidos = vendasAprovadas.length; // proxy — ver nota em calcularVendidosPorEvento
+  const ingressosVendidos = vendasAprovadas.reduce((s, v) => s + (Number(v.quantidade_itens) || 1), 0);
 
   // Eventos "ativos" = data_inicio ainda não passou (ou sem data definida)
   const agora = new Date();
@@ -680,9 +677,16 @@ function _linhaTipoIngresso(tipo) {
   const vendidos = Number(tipo.vendidos) || 0;
   const cortesia = Number(tipo.cortesia) || 0;
   const total = Number(tipo.quantidade_total) || 0;
+  const valor = Number(tipo.valor) || 0;
   const ocupados = vendidos + cortesia;
   const disponiveis = Math.max(0, total - ocupados);
   const podeExcluir = ocupados === 0;
+  const esgotado = total > 0 && disponiveis === 0;
+  const receita = vendidos * valor;
+  const ativo = tipo.ativo !== false;
+
+  const inicioVenda = tipo.data_inicio_venda ? _paraDatetimeLocal(tipo.data_inicio_venda) : '';
+  const fimVenda = tipo.data_fim_venda ? _paraDatetimeLocal(tipo.data_fim_venda) : '';
 
   const row = document.createElement('div');
   row.className = 'tipo-row';
@@ -700,17 +704,39 @@ function _linhaTipoIngresso(tipo) {
       </div>
       <div class="tf">
         <label>Valor (R$)</label>
-        <input type="number" step="0.01" min="0" class="tipo-valor" value="${Number(tipo.valor) || 0}">
+        <input type="number" step="0.01" min="0" class="tipo-valor" value="${valor}">
       </div>
       <div class="tf">
         <label>Quantidade total</label>
         <input type="number" min="${ocupados}" class="tipo-total" value="${total}">
       </div>
     </div>
+    <div class="tipo-row-fields tipo-row-fields--lote">
+      <div class="tf tf--switch">
+        <label>Venda ativa</label>
+        <label class="tipo-switch">
+          <input type="checkbox" class="tipo-ativo" ${ativo ? 'checked' : ''}>
+          <span class="tipo-switch-track"></span>
+        </label>
+      </div>
+      <div class="tf">
+        <label>Início do lote (opcional)</label>
+        <input type="datetime-local" class="tipo-inicio-venda" value="${inicioVenda}">
+      </div>
+      <div class="tf">
+        <label>Fim do lote (opcional)</label>
+        <input type="datetime-local" class="tipo-fim-venda" value="${fimVenda}">
+      </div>
+    </div>
+    <div class="tipo-badges">
+      ${esgotado ? `<span class="tipo-badge-esgotado">Esgotado</span>` : ''}
+      ${!ativo ? `<span class="tipo-badge-pausado">Pausado</span>` : ''}
+    </div>
     <div class="tipo-row-stats">
       <div class="tipo-stat"><span>${vendidos}</span><small>vendidos</small></div>
       <div class="tipo-stat"><span>${cortesia}</span><small>cortesia</small></div>
       <div class="tipo-stat"><span>${disponiveis}</span><small>disponíveis</small></div>
+      <div class="tipo-stat"><span>${formatarMoeda(receita)}</span><small>receita</small></div>
     </div>
     <div class="tipo-row-actions">
       <button class="btn-tipo-save" onclick="salvarTipoIngressoExistente(${tipo.id})">Salvar</button>
@@ -719,7 +745,6 @@ function _linhaTipoIngresso(tipo) {
   `;
   return row;
 }
-
 async function salvarTipoIngressoExistente(id) {
   const row = document.querySelector(`.tipo-row[data-id="${id}"]`);
   if (!row) return;
@@ -728,9 +753,17 @@ async function salvarTipoIngressoExistente(id) {
   const tipoCategoria = row.querySelector('.tipo-categoria').value.trim();
   const valor = parseFloat(row.querySelector('.tipo-valor').value) || 0;
   const quantidade_total = parseInt(row.querySelector('.tipo-total').value) || 0;
+  const ativo = row.querySelector('.tipo-ativo').checked;
+  const data_inicio_venda = row.querySelector('.tipo-inicio-venda').value || null;
+  const data_fim_venda = row.querySelector('.tipo-fim-venda').value || null;
 
   if (!titulo) {
     showToast('Dê um nome para o tipo de ingresso.', 'error');
+    return;
+  }
+
+  if (data_inicio_venda && data_fim_venda && new Date(data_inicio_venda) >= new Date(data_fim_venda)) {
+    showToast('O início do lote precisa ser antes do fim.', 'error');
     return;
   }
 
@@ -741,7 +774,7 @@ async function salvarTipoIngressoExistente(id) {
     const res = await fetch(`${window.API_BASE}/ingressos/tipos/${id}`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify({ titulo, tipo: tipoCategoria || null, valor, quantidade_total })
+      body: JSON.stringify({ titulo, tipo: tipoCategoria || null, valor, quantidade_total, ativo, data_inicio_venda, data_fim_venda })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.erro || 'Erro ao salvar tipo de ingresso.');
@@ -797,6 +830,23 @@ function mostrarFormNovoTipo() {
         <input type="number" min="0" id="novoTipoTotal" value="0">
       </div>
     </div>
+    <div class="tipo-row-fields tipo-row-fields--lote">
+      <div class="tf tf--switch">
+        <label>Venda ativa</label>
+        <label class="tipo-switch">
+          <input type="checkbox" id="novoTipoAtivo" checked>
+          <span class="tipo-switch-track"></span>
+        </label>
+      </div>
+      <div class="tf">
+        <label>Início do lote (opcional)</label>
+        <input type="datetime-local" id="novoTipoInicioVenda">
+      </div>
+      <div class="tf">
+        <label>Fim do lote (opcional)</label>
+        <input type="datetime-local" id="novoTipoFimVenda">
+      </div>
+    </div>
     <div class="tipo-row-actions">
       <button class="btn-tipo-save" onclick="criarNovoTipoIngresso()">Criar tipo</button>
       <button class="btn-tipo-delete" onclick="esconderFormNovoTipo()">Cancelar</button>
@@ -818,9 +868,16 @@ async function criarNovoTipoIngresso() {
   const tipoCategoria = document.getElementById('novoTipoCategoria')?.value.trim();
   const valor = parseFloat(document.getElementById('novoTipoValor')?.value) || 0;
   const quantidade_total = parseInt(document.getElementById('novoTipoTotal')?.value) || 0;
+  const ativo = document.getElementById('novoTipoAtivo')?.checked ?? true;
+  const data_inicio_venda = document.getElementById('novoTipoInicioVenda')?.value || null;
+  const data_fim_venda = document.getElementById('novoTipoFimVenda')?.value || null;
 
   if (!titulo) {
     showToast('Dê um nome para o novo tipo de ingresso.', 'error');
+    return;
+  }
+  if (data_inicio_venda && data_fim_venda && new Date(data_inicio_venda) >= new Date(data_fim_venda)) {
+    showToast('O início do lote precisa ser antes do fim.', 'error');
     return;
   }
   if (!_ticketModalEventoId) return;
@@ -837,7 +894,10 @@ async function criarNovoTipoIngresso() {
         titulo,
         tipo: tipoCategoria || null,
         valor,
-        quantidade_total
+        quantidade_total,
+        ativo,
+        data_inicio_venda,
+        data_fim_venda
       })
     });
     const data = await res.json();
@@ -867,15 +927,15 @@ function iniciais(nome) {
 function criarLinhaVenda(venda) {
   const tr = document.createElement('tr');
 
-const statusBackend = (venda.status || '').toLowerCase();
-let statusExibicao, statusClasse, statusIcone;
-if (statusBackend === 'aprovado') {
-  statusExibicao = 'confirmado'; statusClasse = 'confirmed'; statusIcone = '●';
-} else if (statusBackend === 'cortesia') {
-  statusExibicao = 'cortesia'; statusClasse = 'courtesy'; statusIcone = '★';
-} else {
-  statusExibicao = 'pendente'; statusClasse = 'pending'; statusIcone = '○';
-}
+  const statusBackend = (venda.status || '').toLowerCase();
+  let statusExibicao, statusClasse, statusIcone;
+  if (statusBackend === 'aprovado') {
+    statusExibicao = 'confirmado'; statusClasse = 'confirmed'; statusIcone = '●';
+  } else if (statusBackend === 'cortesia') {
+    statusExibicao = 'cortesia'; statusClasse = 'courtesy'; statusIcone = '★';
+  } else {
+    statusExibicao = 'pendente'; statusClasse = 'pending'; statusIcone = '○';
+  }
 
   tr.dataset.status = statusExibicao;
   tr.dataset.name = (venda.nome_comprador || '').toLowerCase();
@@ -890,7 +950,7 @@ if (statusBackend === 'aprovado') {
   tr.innerHTML = `
     <td><span class="td-av">${iniciais(venda.nome_comprador)}</span> ${venda.nome_comprador || '—'}</td>
     <td>${venda.nome_evento || '—'}</td>
-    <td>—</td>
+    <td>${venda.quantidade_itens ?? '—'}</td>
     <td>${formatarMoeda(venda.valor_total)}</td>
     <td>${dataFormatada}</td>
     <td><span class="status-badge ${statusClasse}">${statusIcone} ${statusExibicao}</span></td>
@@ -1033,7 +1093,7 @@ function formatarHora(iso) {
 // o frontend roda em uma porta (Live Server) diferente do backend.
 function _resolverUrlImagem(url) {
   if (!url) return url;
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
   return `${window.API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 
@@ -1109,7 +1169,7 @@ function criarCardEvento(evento, vendidos) {
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>Editar
       </button>
-      <button class="ev-btn ev-btn--gray" onclick="showSection('vendas', null)">
+      <button class="ev-btn ev-btn--gray" onclick="openRelatorioEvento(${evento.id})">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
         </svg>Relatório
@@ -1120,6 +1180,12 @@ function criarCardEvento(evento, vendidos) {
           <path d="M2 15v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2"/>
           <line x1="12" y1="5" x2="12" y2="19"/>
         </svg>Ingressos
+      </button>
+      <button class="ev-btn ev-btn--danger" onclick="excluirEventoCard(${evento.id})">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>Excluir
       </button>
     </div>
   `;
@@ -1234,7 +1300,11 @@ function renderizarReceitaPorLocal(eventos, vendasAprovadas) {
 }
 
 // ─────────────────────────────────────────────
-// NOTIFICAÇÕES SIMULADAS A PARTIR DE VENDAS REAIS
+// NOTIFICAÇÕES — A PARTIR DE VENDAS REAIS, COM LEITURA PERSISTIDA
+//
+// "Lida" agora é guardado no localStorage (chave rolesNotifLidas),
+// não mais recalculado do zero a cada carregarDashboard(). Assim,
+// marcar como lida sobrevive a um F5.
 // ─────────────────────────────────────────────
 function tempoRelativo(iso) {
   if (!iso) return '';
@@ -1246,6 +1316,21 @@ function tempoRelativo(iso) {
   if (h < 24) return `Há ${h} hora${h === 1 ? '' : 's'}`;
   const dias = Math.floor(h / 24);
   return `Há ${dias} dia${dias === 1 ? '' : 's'}`;
+}
+
+function _getNotifLidasSet() {
+  try {
+    const raw = localStorage.getItem('rolesNotifLidas');
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function _salvarNotifLidasSet(set) {
+  try {
+    localStorage.setItem('rolesNotifLidas', JSON.stringify([...set]));
+  } catch { /* localStorage indisponível — segue sem persistir */ }
 }
 
 function renderizarNotificacoesReais(vendas) {
@@ -1264,20 +1349,22 @@ function renderizarNotificacoesReais(vendas) {
     return;
   }
 
-  const naoLidas = ordenadas.slice(0, 3);
-  const anteriores = ordenadas.slice(3);
+  const lidas = _getNotifLidasSet();
+  const naoLidas = ordenadas.filter(v => !lidas.has(String(v.id)));
+  const anteriores = ordenadas.filter(v => lidas.has(String(v.id)));
 
-  const label1 = document.createElement('p');
-  label1.className = 'notif-group-label';
-  label1.textContent = 'Recentes · ' + naoLidas.length;
-  container.appendChild(label1);
-
-  naoLidas.forEach(v => container.appendChild(criarItemNotificacao(v, true)));
+  if (naoLidas.length > 0) {
+    const label1 = document.createElement('p');
+    label1.className = 'notif-group-label';
+    label1.textContent = 'Recentes · ' + naoLidas.length;
+    container.appendChild(label1);
+    naoLidas.forEach(v => container.appendChild(criarItemNotificacao(v, true)));
+  }
 
   if (anteriores.length > 0) {
     const label2 = document.createElement('p');
     label2.className = 'notif-group-label';
-    label2.style.marginTop = '24px';
+    label2.style.marginTop = naoLidas.length > 0 ? '24px' : '0';
     label2.textContent = 'Anteriores';
     container.appendChild(label2);
     anteriores.forEach(v => container.appendChild(criarItemNotificacao(v, false)));
@@ -1292,6 +1379,7 @@ function criarItemNotificacao(venda, novo) {
   const div = document.createElement('div');
   div.className = 'notif-item' + (novo ? ' notif-unread' : '');
   div.dataset.cat = 'venda';
+  div.dataset.vendaId = venda.id;
   div.innerHTML = `
     <div class="ni-icon ${aprovado ? 'ni-green' : 'ni-gray'}">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1319,8 +1407,14 @@ function filterNotif(btn, cat) {
 }
 
 function markAllRead() {
-  document.querySelectorAll('.notif-unread').forEach(el => el.classList.remove('notif-unread'));
-  document.querySelectorAll('.ni-new').forEach(el => el.remove());
+  const lidas = _getNotifLidasSet();
+  document.querySelectorAll('#notifList .notif-item').forEach(item => {
+    if (item.dataset.vendaId) lidas.add(String(item.dataset.vendaId));
+    item.classList.remove('notif-unread');
+    const tag = item.querySelector('.ni-new');
+    if (tag) tag.remove();
+  });
+  _salvarNotifLidasSet(lidas);
   setUnreadCount(0);
   showToast('Todas as notificações foram marcadas como lidas.', 'success');
 }
@@ -1333,6 +1427,11 @@ function initNotifClicks() {
         item.classList.remove('notif-unread');
         const tag = item.querySelector('.ni-new');
         if (tag) tag.remove();
+
+        const lidas = _getNotifLidasSet();
+        if (item.dataset.vendaId) lidas.add(String(item.dataset.vendaId));
+        _salvarNotifLidasSet(lidas);
+
         setUnreadCount(Math.max(0, unreadCount - 1));
       }
     });
@@ -1435,14 +1534,40 @@ const DIAS_SEMANA = [
 
 // ─────────────────────────────────────────────
 // MODAL DE EDIÇÃO COMPLETO (evento OU estabelecimento)
-//
-// PENDENTE DE BACKEND: a função salvarEdicao() abaixo já monta o
-// FormData certo (com upload de imagem via Supabase Storage, se um
-// arquivo novo for escolhido) e chama PUT em /eventos/:id ou
-// /estabelecimentos/:id. Assim que vocês me passarem essas rotas,
-// eu só confirmo/ajusto o nome exato dos campos do body — a UI e o
-// fluxo já ficam prontos agora.
 // ─────────────────────────────────────────────
+
+async function excluirEventoCard(id) {
+  if (!confirm('Excluir este evento? Essa ação não pode ser desfeita e remove os ingressos e vendas associados.')) return;
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+  try {
+    const res = await fetch(`${window.API_BASE}/eventos/${id}`, { method: 'DELETE', headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.erro || 'Erro ao excluir evento.');
+    showToast('Evento excluído.', 'success');
+    carregarDashboard();
+  } catch (e) {
+    console.error('[excluirEventoCard] erro:', e);
+    showToast('Não foi possível excluir: ' + e.message, 'error');
+  }
+}
+
+async function excluirEstabelecimentoCard(id) {
+  if (!confirm('Excluir este estabelecimento? Essa ação não pode ser desfeita.')) return;
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+  try {
+    const res = await fetch(`${window.API_BASE}/estabelecimentos/${id}`, { method: 'DELETE', headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.erro || 'Erro ao excluir estabelecimento.');
+    showToast('Estabelecimento excluído.', 'success');
+    carregarDashboard();
+  } catch (e) {
+    console.error('[excluirEstabelecimentoCard] erro:', e);
+    showToast('Não foi possível excluir: ' + e.message, 'error');
+  }
+}
+
 let _editModalItem = null;
 let _editModalTipo = null; // 'evento' | 'estabelecimento'
 let _editModalNovoArquivoImagem = null;
@@ -1600,24 +1725,72 @@ function _injectHorarioStyle() {
 // Tenta interpretar o valor salvo como JSON estruturado.
 // Se for texto antigo (formato livre), devolve null + guarda o texto
 // original pra mostrar como aviso, sem perder o dado.
+
+// Tenta extrair dias/horários de um texto legado no padrão
+// "Segunda-feira: 08:00–22:00, Terça-feira: 08:00–22:00, ...".
+// Cobre variações com/sem "-feira", com hífen normal ou travessão (–)
+// entre os horários. Se não reconhecer nada, devolve null.
+function _tentarParsearHorarioLegado(texto) {
+  const mapaDias = {
+    'segunda': 'seg', 'segunda-feira': 'seg', 'seg': 'seg',
+    'terça': 'ter', 'terca': 'ter', 'terça-feira': 'ter', 'terca-feira': 'ter', 'ter': 'ter',
+    'quarta': 'qua', 'quarta-feira': 'qua', 'qua': 'qua',
+    'quinta': 'qui', 'quinta-feira': 'qui', 'qui': 'qui',
+    'sexta': 'sex', 'sexta-feira': 'sex', 'sex': 'sex',
+    'sábado': 'sab', 'sabado': 'sab', 'sab': 'sab',
+    'domingo': 'dom', 'dom': 'dom'
+  };
+
+  const resultado = {};
+  const partes = texto.split(',');
+
+  partes.forEach(parte => {
+    const m = parte.match(/([A-Za-zÀ-ÿ\-]+)\s*:\s*(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/);
+    if (!m) return;
+
+    const chave = mapaDias[m[1].trim().toLowerCase()];
+    if (!chave) return;
+
+    resultado[chave] = {
+      fechado: false,
+      abre: `${m[2].padStart(2, '0')}:${m[3]}`,
+      fecha: `${m[4].padStart(2, '0')}:${m[5]}`
+    };
+  });
+
+  return Object.keys(resultado).length > 0 ? resultado : null;
+}
 function _parseHorarioSalvo(valor) {
-  if (!valor) return { estruturado: null, legado: '' };
+  if (!valor) return { estruturado: null, legado: '', autoDetectado: false };
   try {
     const obj = JSON.parse(valor);
-    if (obj && typeof obj === 'object') return { estruturado: obj, legado: '' };
-  } catch { /* não é JSON — é texto legado */ }
-  return { estruturado: null, legado: valor };
+    if (obj && typeof obj === 'object') return { estruturado: obj, legado: '', autoDetectado: false };
+  } catch { /* não é JSON — tenta interpretar como texto legado */ }
+
+  const detectado = _tentarParsearHorarioLegado(valor);
+  if (detectado) {
+    return { estruturado: detectado, legado: valor, autoDetectado: true };
+  }
+  return { estruturado: null, legado: valor, autoDetectado: false };
 }
-
 function _campoHorarioEstruturado(valorAtual) {
-  const { estruturado, legado } = _parseHorarioSalvo(valorAtual);
+  const { estruturado, legado, autoDetectado } = _parseHorarioSalvo(valorAtual);
 
-  const avisoLegado = legado
-    ? `<div class="horario-legado-aviso">⚠️ O horário salvo estava em formato livre: "<strong>${legado}</strong>". Configure abaixo dia a dia — ao salvar, isso substitui o texto antigo.</div>`
-    : '';
+  let avisoLegado = '';
+  if (legado && autoDetectado) {
+    avisoLegado = `<div class="horario-legado-aviso">ℹ️ O horário salvo estava em formato livre: "<strong>${legado}</strong>". Pré-preenchemos os campos abaixo com o que conseguimos reconhecer — confira e ajuste se precisar antes de salvar.</div>`;
+  } else if (legado && !autoDetectado) {
+    avisoLegado = `<div class="horario-legado-aviso">⚠️ O horário salvo estava em formato livre: "<strong>${legado}</strong>", e não conseguimos reconhecer os dias automaticamente. Configure abaixo dia a dia — ao salvar, isso substitui o texto antigo.</div>`;
+  }
 
   const linhas = DIAS_SEMANA.map(({ key, label }) => {
-    const dia = (estruturado && estruturado[key]) || { abre: '', fecha: '', fechado: !estruturado };
+    // Se o parser conseguiu reconhecer PELO MENOS UM dia do texto legado,
+    // qualquer dia que não apareceu na lista original é tratado como
+    // fechado (o padrão de horário comercial costuma listar só os dias
+    // que funcionam). Já quando não há nenhum dado (nunca configurado),
+    // o dia fica neutro/aberto pra edição, sem assumir nada.
+    const diaEncontrado = estruturado && estruturado[key];
+    const dia = diaEncontrado || { abre: '', fecha: '', fechado: !!estruturado };
     return `
       <div class="horario-row" data-dia="${key}">
         <label class="horario-dia">${label}</label>
@@ -1801,6 +1974,583 @@ function closeEditModal() {
 }
 
 // ─────────────────────────────────────────────
+// RELATÓRIO — evento e estabelecimento
+// ─────────────────────────────────────────────
+
+// Guarda os tipos de ingresso do evento cujo relatório está aberto no
+// momento, pra alimentar o detalhamento "por tipo" no PDF/Word/Excel
+// sem precisar re-buscar a cada clique de download.
+let _tiposIngressoRelatorioAtual = [];
+
+function _statsEvento(eventoId) {
+  const vendasEvento = _vendasReais.filter(v => String(v.evento_id) === String(eventoId));
+  const aprovadas = vendasEvento.filter(v => (v.status || '').toLowerCase() === 'aprovado');
+  const receita = aprovadas.reduce((s, v) => s + (parseFloat(v.valor_total) || 0), 0);
+  const vendidos = aprovadas.reduce((s, v) => s + (Number(v.quantidade_itens) || 1), 0);
+  const total = _ingressosPorEventoReais[eventoId] || 0;
+  const ocupacao = total > 0 ? Math.round((vendidos / total) * 100) : 0;
+  const ticketMedio = vendidos > 0 ? receita / vendidos : 0;
+  return { vendasEvento, receita, vendidos, total, ocupacao, ticketMedio };
+}
+
+// Correspondência aproximada: não existe estabelecimento_id em eventos,
+// então usamos local_nome do evento == nome do estabelecimento (case-insensitive).
+// Isso pode errar se o local_nome do evento foi digitado diferente do nome
+// cadastrado do estabelecimento — por isso o aviso na tela do relatório.
+function _statsEstabelecimento(estab) {
+  const nomeEstab = (estab.nome || '').trim().toLowerCase();
+  const eventosRelacionados = _eventosReais.filter(e =>
+    nomeEstab && (e.local_nome || '').trim().toLowerCase() === nomeEstab
+  );
+  const idsEventos = new Set(eventosRelacionados.map(e => String(e.id)));
+  const vendasRelacionadas = _vendasReais.filter(v => idsEventos.has(String(v.evento_id)));
+  const aprovadas = vendasRelacionadas.filter(v => (v.status || '').toLowerCase() === 'aprovado');
+  const receita = aprovadas.reduce((s, v) => s + (parseFloat(v.valor_total) || 0), 0);
+  const vendidos = aprovadas.reduce((s, v) => s + (Number(v.quantidade_itens) || 1), 0);
+  return { eventosRelacionados, vendasRelacionadas, receita, vendidos };
+}
+
+function _linhaRelatorioParaExport(v) {
+  const dataFormatada = v.criado_em
+    ? new Date(v.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '—';
+  const statusBackend = (v.status || '').toLowerCase();
+  const statusExibicao = statusBackend === 'aprovado' ? 'Confirmado' : statusBackend === 'cortesia' ? 'Cortesia' : 'Pendente';
+  return [
+    v.nome_comprador || '—',
+    v.nome_evento || '—',
+    String(v.quantidade_itens ?? '—'),
+    formatarMoeda(v.valor_total),
+    dataFormatada,
+    statusExibicao
+  ];
+}
+
+function _slugArquivo(texto) {
+  return (texto || 'relatorio')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '') || 'relatorio';
+}
+
+// Monta as linhas de "vendas por tipo de ingresso" a partir dos dados
+// já usados no modal "Gerenciar ingressos" (mesma fonte, GET /ingressos/tipos/:evento_id) —
+// dá o detalhamento correto por tipo (Pista, VIP etc.), coisa que a tabela
+// de vendas sozinha não mostra porque não guarda o tipo comprado por pedido.
+function _porTipoParaRelatorio(tiposIngresso) {
+  if (!Array.isArray(tiposIngresso) || tiposIngresso.length === 0) return [];
+  return tiposIngresso.map(t => {
+    const vendidos = Number(t.vendidos) || 0;
+    const cortesia = Number(t.cortesia) || 0;
+    const total = Number(t.quantidade_total) || 0;
+    const valor = Number(t.valor) || 0;
+    const disponiveis = Math.max(0, total - vendidos - cortesia);
+    const receita = vendidos * valor;
+    return {
+      titulo: t.titulo || 'Sem nome',
+      vendidos, cortesia, disponiveis, total, receita
+    };
+  }).sort((a, b) => b.vendidos - a.vendidos);
+}
+
+function _dadosRelatorioEvento(eventoId, tiposIngresso = []) {
+  const evento = _eventosReais.find(e => String(e.id) === String(eventoId));
+  if (!evento) return null;
+  const { vendasEvento, receita, vendidos, total, ocupacao, ticketMedio } = _statsEvento(eventoId);
+  const linhas = [...vendasEvento].sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+  return {
+    titulo: `Relatório · ${evento.nome || 'Evento'}`,
+    subtitulo: `${evento.local_nome || evento.cidade || 'Local não informado'} · ${formatarDataCurta(evento.data_inicio)}`,
+    aviso: null,
+    kpis: [
+      { label: 'Receita', valor: formatarMoeda(receita) },
+      { label: 'Vendidos', valor: String(vendidos) },
+      { label: 'Ocupação', valor: total > 0 ? ocupacao + '%' : '—' },
+      { label: 'Ticket médio', valor: formatarMoeda(ticketMedio) }
+    ],
+    porTipo: _porTipoParaRelatorio(tiposIngresso),
+    linhas: linhas.map(_linhaRelatorioParaExport)
+  };
+}
+
+function _dadosRelatorioEstabelecimento(estabId) {
+  const estab = _estabsReais.find(e => String(e.id) === String(estabId));
+  if (!estab) return null;
+  const { eventosRelacionados, vendasRelacionadas, receita, vendidos } = _statsEstabelecimento(estab);
+  const linhas = [...vendasRelacionadas].sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+  return {
+    titulo: `Relatório · ${estab.nome || 'Estabelecimento'}`,
+    subtitulo: estab.cidade || '',
+    aviso: 'Não existe vínculo direto entre eventos e estabelecimentos no banco. As vendas abaixo são aproximadas por correspondência de nome com o campo "local" do evento.',
+    kpis: [
+      { label: 'Avaliação', valor: estab.nota != null ? Number(estab.nota).toFixed(1) : '—' },
+      { label: 'Avaliações', valor: String(estab.avaliacoes || 0) },
+      { label: 'Receita aprox.', valor: formatarMoeda(receita) },
+      { label: 'Ingressos aprox.', valor: String(vendidos) }
+    ],
+    porTipo: [],
+    linhas: linhas.map(_linhaRelatorioParaExport)
+  };
+}
+
+function _dadosRelatorioGeral() {
+  const linhas = [..._vendasReais].sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+  return {
+    titulo: 'Relatório geral · Dashboard',
+    subtitulo: new Date().toLocaleString('pt-BR'),
+    aviso: null,
+    kpis: [
+      { label: 'Receita total', valor: document.getElementById('total-vendas')?.innerText || '—' },
+      { label: 'Ingressos vendidos', valor: document.getElementById('ingressos-vendidos')?.innerText || '—' },
+      { label: 'Ticket médio', valor: document.getElementById('ticket-medio')?.innerText || '—' },
+      { label: 'Taxa de ocupação', valor: document.getElementById('taxa-ocupacao')?.innerText || '—' },
+      { label: 'Avaliação média', valor: document.getElementById('avaliacao-media')?.innerText || '—' }
+    ],
+    porTipo: [],
+    linhas: linhas.map(_linhaRelatorioParaExport)
+  };
+}
+
+function _sanitizarTextoPdf(txt) {
+  // jsPDF com fontes padrão (helvetica/times/courier) só sabe desenhar
+  // caracteres Latin-1 — emojis e símbolos fora disso viram lixo visual.
+  // Removemos qualquer coisa fora dessa faixa antes de desenhar no PDF.
+  return String(txt ?? '').replace(/[^\x00-\xFF]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+// Desenha um mini gráfico de barras horizontais no PDF (sem depender de
+// canvas/chart.js) — cada barra representa "vendidos" de um tipo de
+// ingresso, proporcional ao maior valor do grupo. Retorna a posição Y
+// final, pra continuar desenhando depois dela.
+function _desenharBarrasPdf(doc, porTipo, startY, pageWidth) {
+  if (!porTipo || porTipo.length === 0) return startY;
+
+  const areaX = 14;
+  const areaWidth = pageWidth - 28;
+  const labelWidth = 46;
+  const barAreaWidth = areaWidth - labelWidth - 34;
+  const barHeight = 6;
+  const rowGap = 4;
+  const maxVendidos = Math.max(...porTipo.map(t => t.vendidos), 1);
+
+  let y = startY;
+  porTipo.forEach(t => {
+    const larguraBarra = Math.max(2, (t.vendidos / maxVendidos) * barAreaWidth);
+
+    doc.setFontSize(8.5);
+    doc.setTextColor(60, 60, 60);
+    doc.text(_sanitizarTextoPdf(t.titulo).slice(0, 26), areaX, y + barHeight - 1.2);
+
+    // Trilho de fundo
+    doc.setFillColor(235, 235, 240);
+    doc.roundedRect(areaX + labelWidth, y, barAreaWidth, barHeight, 1.5, 1.5, 'F');
+
+    // Barra dourada proporcional
+    doc.setFillColor(255, 182, 39);
+    doc.roundedRect(areaX + labelWidth, y, larguraBarra, barHeight, 1.5, 1.5, 'F');
+
+    doc.setFontSize(8);
+    doc.setTextColor(90, 90, 90);
+    doc.text(String(t.vendidos), areaX + labelWidth + barAreaWidth + 4, y + barHeight - 1.2);
+
+    y += barHeight + rowGap;
+  });
+
+  return y + 4;
+}
+
+function gerarPDFRelatorio(dados, nomeArquivo) {
+  if (!dados) return;
+  if (!window.jspdf) { showToast('Biblioteca de PDF não carregou. Confira sua conexão.', 'error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  // Faixa dourada de cabeçalho
+  doc.setFillColor(255, 182, 39);
+  doc.rect(0, 0, pageWidth, 30, 'F');
+  doc.setTextColor(36, 26, 2);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(17);
+  doc.text(_sanitizarTextoPdf(dados.titulo), 14, 16);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(_sanitizarTextoPdf(dados.subtitulo), 14, 24);
+
+  let cursorY = 40;
+
+  if (dados.aviso) {
+    const linhasAviso = doc.splitTextToSize(_sanitizarTextoPdf(dados.aviso), pageWidth - 28);
+    const alturaBox = linhasAviso.length * 5 + 8;
+    doc.setFillColor(58, 39, 18);
+    doc.roundedRect(14, cursorY, pageWidth - 28, alturaBox, 2, 2, 'F');
+    doc.setTextColor(255, 138, 61);
+    doc.setFontSize(9);
+    doc.text(linhasAviso, 18, cursorY + 6);
+    cursorY += alturaBox + 8;
+  }
+
+  doc.setTextColor(20, 20, 20);
+  doc.autoTable({
+    startY: cursorY,
+    head: [dados.kpis.map(k => _sanitizarTextoPdf(k.label))],
+    body: [dados.kpis.map(k => _sanitizarTextoPdf(k.valor))],
+    theme: 'grid',
+    headStyles: { fillColor: [255, 182, 39], textColor: [36, 26, 2], fontStyle: 'bold', halign: 'center' },
+    bodyStyles: { halign: 'center', fontStyle: 'bold', fontSize: 11 },
+    margin: { left: 14, right: 14 }
+  });
+
+  cursorY = doc.lastAutoTable.finalY + 12;
+
+  // ── Seção "Vendas por tipo de ingresso" (tabela + mini gráfico de barras) ──
+  if (dados.porTipo && dados.porTipo.length > 0) {
+    doc.setFillColor(255, 182, 39);
+    doc.rect(14, cursorY - 5, 3, 12, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(20, 20, 20);
+    doc.text('Vendas por tipo de ingresso', 21, cursorY + 3);
+
+    doc.autoTable({
+      startY: cursorY + 10,
+      head: [['Tipo', 'Vendidos', 'Cortesia', 'Disponíveis', 'Receita']],
+      body: dados.porTipo.map(t => [
+        _sanitizarTextoPdf(t.titulo),
+        String(t.vendidos),
+        String(t.cortesia),
+        String(t.disponiveis),
+        formatarMoeda(t.receita)
+      ]),
+      theme: 'grid',
+      headStyles: { fillColor: [28, 24, 52], textColor: 255 },
+      styles: { fontSize: 9, cellPadding: 3 },
+      margin: { left: 14, right: 14 }
+    });
+
+    cursorY = doc.lastAutoTable.finalY + 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(90, 90, 90);
+    doc.text('Comparativo de vendidos por tipo', 14, cursorY);
+    cursorY += 6;
+
+    cursorY = _desenharBarrasPdf(doc, dados.porTipo, cursorY, pageWidth);
+    cursorY += 6;
+  }
+
+  // Marcador dourado antes do título da seção
+  doc.setFillColor(255, 182, 39);
+  doc.rect(14, cursorY - 5, 3, 12, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(20, 20, 20);
+  doc.text('Vendas', 21, cursorY + 3);
+
+  doc.autoTable({
+    startY: cursorY + 10,
+    head: [['Cliente', 'Evento', 'Qtd', 'Total', 'Data', 'Status']],
+    body: (dados.linhas.length ? dados.linhas : [['—', '—', '—', '—', '—', '—']])
+      .map(l => l.map(_sanitizarTextoPdf)),
+    theme: 'striped',
+    headStyles: { fillColor: [28, 24, 52], textColor: 255 },
+    alternateRowStyles: { fillColor: [245, 245, 250] },
+    styles: { fontSize: 8, cellPadding: 3 },
+    margin: { left: 14, right: 14 },
+    didDrawPage: () => {
+      const pagina = doc.internal.getCurrentPageInfo().pageNumber;
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`Roles - gerado em ${_sanitizarTextoPdf(new Date().toLocaleString('pt-BR'))}`, 14, pageHeight - 8);
+      doc.text(`Pagina ${pagina}`, pageWidth - 26, pageHeight - 8);
+    }
+  });
+
+  doc.save(nomeArquivo);
+  showToast('PDF gerado com sucesso!', 'success');
+}
+
+async function gerarDocxRelatorio(dados, nomeArquivo) {
+  if (!dados) return;
+  if (!window.docx || !window.saveAs) { showToast('Biblioteca de Word não carregou. Confira sua conexão.', 'error'); return; }
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } = window.docx;
+
+  const celula = (texto, header) => new TableCell({
+    width: { size: 2000, type: WidthType.DXA },
+    shading: header ? { fill: 'FFB627' } : undefined,
+    children: [new Paragraph({ children: [new TextRun({ text: String(texto), bold: !!header })] })]
+  });
+  const linhaTabela = (valores, header = false) =>
+    new TableRow({ children: valores.map(v => celula(v, header)) });
+
+  const kpisTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [linhaTabela(dados.kpis.map(k => k.label), true), linhaTabela(dados.kpis.map(k => k.valor))]
+  });
+
+  const vendasHeader = ['Cliente', 'Evento', 'Qtd', 'Total', 'Data', 'Status'];
+  const vendasRows = (dados.linhas.length ? dados.linhas : [['—', '—', '—', '—', '—', '—']]).map(l => linhaTabela(l));
+  const vendasTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [linhaTabela(vendasHeader, true), ...vendasRows]
+  });
+
+  const filhos = [
+    new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: dados.titulo, bold: true })] }),
+    new Paragraph({ children: [new TextRun({ text: dados.subtitulo || '', color: '888888' })] }),
+    new Paragraph({ text: '' })
+  ];
+
+  if (dados.aviso) {
+    filhos.push(new Paragraph({ children: [new TextRun({ text: '⚠ ' + dados.aviso, italics: true, color: 'B36A14' })] }));
+    filhos.push(new Paragraph({ text: '' }));
+  }
+
+  filhos.push(kpisTable, new Paragraph({ text: '' }));
+
+  if (dados.porTipo && dados.porTipo.length > 0) {
+    const porTipoHeader = ['Tipo', 'Vendidos', 'Cortesia', 'Disponíveis', 'Receita'];
+    const porTipoRows = dados.porTipo.map(t => linhaTabela([
+      t.titulo, String(t.vendidos), String(t.cortesia), String(t.disponiveis), formatarMoeda(t.receita)
+    ]));
+    const porTipoTable = new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [linhaTabela(porTipoHeader, true), ...porTipoRows]
+    });
+
+    filhos.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: 'Vendas por tipo de ingresso', bold: true })] }));
+    filhos.push(porTipoTable, new Paragraph({ text: '' }));
+  }
+
+  filhos.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: 'Vendas', bold: true })] }));
+  filhos.push(vendasTable);
+
+  const documento = new Document({ sections: [{ children: filhos }] });
+  const blob = await Packer.toBlob(documento);
+  saveAs(blob, nomeArquivo);
+  showToast('Word gerado com sucesso!', 'success');
+}
+
+function gerarXLSXRelatorio(dados, nomeArquivo) {
+  if (!dados) return;
+  if (!window.XLSX) { showToast('Biblioteca de Excel não carregou. Confira sua conexão.', 'error'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  const resumo = dados.kpis.map(k => ({ Indicador: k.label, Valor: k.valor }));
+  if (dados.aviso) resumo.push({ Indicador: 'Aviso', Valor: dados.aviso });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumo), 'Resumo');
+
+  if (dados.porTipo && dados.porTipo.length > 0) {
+    const porTipo = dados.porTipo.map(t => ({
+      Tipo: t.titulo,
+      Vendidos: t.vendidos,
+      Cortesia: t.cortesia,
+      Disponíveis: t.disponiveis,
+      'Quantidade total': t.total,
+      Receita: t.receita
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(porTipo), 'Por tipo de ingresso');
+  }
+
+  const vendas = dados.linhas.map(l => ({
+    Cliente: l[0], Evento: l[1], Quantidade: l[2], Total: l[3], Data: l[4], Status: l[5]
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(vendas.length ? vendas : [{ Cliente: '—' }]), 'Vendas');
+
+  const info = [
+    { Informação: 'Título', Valor: dados.titulo },
+    { Informação: 'Gerado em', Valor: new Date().toLocaleString('pt-BR') }
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(info), 'Informações');
+
+  XLSX.writeFile(wb, nomeArquivo);
+  showToast('Excel gerado com sucesso!', 'success');
+}
+
+function _garantirRelatorioOverlay() {
+  let overlay = document.getElementById('relatorioOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'relatorioOverlay';
+    overlay.className = 'edit-ov';
+    document.body.appendChild(overlay);
+  }
+  return overlay;
+}
+
+function _preencherTabelaRelatorio(vendas) {
+  const tbody = document.getElementById('relatorioTableBody');
+  if (!tbody) return;
+  if (!vendas || vendas.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-3);">Nenhuma venda encontrada.</td></tr>`;
+    return;
+  }
+  vendas.forEach(v => tbody.appendChild(criarLinhaVenda(v)));
+}
+
+// Monta o bloco visual "Vendas por tipo de ingresso" dentro do modal na
+// tela, reaproveitando as classes .perf-row/.perf-bar já existentes no
+// CSS (mesmo visual da seção "Receita por local" da Visão Geral).
+function _blocoPorTipoHTML(porTipo) {
+  if (!porTipo || porTipo.length === 0) return '';
+
+  const max = Math.max(...porTipo.map(t => t.vendidos), 1);
+  const cores = ['#FFB627', '#FFCE73', '#FF8A3D', '#35D399', '#6AA9FF', '#FF5C7A'];
+
+  const linhas = porTipo.map((t, i) => {
+    const pct = Math.round((t.vendidos / max) * 100);
+    return `
+      <div class="perf-row">
+        <span class="perf-dot" style="background:${cores[i % cores.length]}"></span>
+        <span class="perf-name">${t.titulo}</span>
+        <div class="perf-bar"><div style="width:${pct}%; background:${cores[i % cores.length]}"></div></div>
+        <span class="perf-val">${t.vendidos} vendidos · ${formatarMoeda(t.receita)}</span>
+      </div>`;
+  }).join('');
+
+  return `
+    <h3 style="font-size:13px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.04em; margin-bottom:12px;">
+      Vendas por tipo de ingresso
+    </h3>
+    <div class="perf-list" style="margin-bottom:24px;">${linhas}</div>
+  `;
+}
+
+async function openRelatorioEvento(eventoId) {
+  const evento = _eventosReais.find(e => String(e.id) === String(eventoId));
+  if (!evento) return;
+
+  const { vendasEvento, receita, vendidos, total, ocupacao, ticketMedio } = _statsEvento(eventoId);
+  const linhas = [...vendasEvento].sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+
+  // Busca os tipos de ingresso do evento (mesma rota do modal "Gerenciar
+  // ingressos") pra montar o detalhamento por tipo no relatório.
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+  try {
+    const res = await fetch(`${window.API_BASE}/ingressos/tipos/${eventoId}`, { headers });
+    _tiposIngressoRelatorioAtual = res.ok ? await res.json() : [];
+  } catch (e) {
+    console.warn('Erro ao carregar tipos de ingresso para o relatório:', e);
+    _tiposIngressoRelatorioAtual = [];
+  }
+  const porTipo = _porTipoParaRelatorio(_tiposIngressoRelatorioAtual);
+
+  const overlay = _garantirRelatorioOverlay();
+  overlay.innerHTML = `
+    <div class="edit-box edit-box--wide">
+      <div class="edit-head">
+        <div>
+          <h2>Relatório · ${evento.nome || 'Evento'}</h2>
+          <p>${evento.local_nome || evento.cidade || 'Local não informado'} · ${formatarDataCurta(evento.data_inicio)}</p>
+        </div>
+        <button class="edit-close-btn" onclick="closeRelatorioModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="ev-stats" style="margin-bottom:20px;">
+        <div class="ev-stat"><h4>${formatarMoeda(receita)}</h4><p>receita</p></div>
+        <div class="ev-stat"><h4>${vendidos}</h4><p>vendidos</p></div>
+        <div class="ev-stat"><h4>${total > 0 ? ocupacao + '%' : '—'}</h4><p>ocupação</p></div>
+        <div class="ev-stat"><h4>${formatarMoeda(ticketMedio)}</h4><p>ticket médio</p></div>
+      </div>
+
+      ${_blocoPorTipoHTML(porTipo)}
+
+      <div class="table-wrap">
+        <table class="sales-table">
+          <thead><tr><th>Cliente</th><th>Evento</th><th>Qtd</th><th>Total</th><th>Data</th><th>Status</th></tr></thead>
+          <tbody id="relatorioTableBody"></tbody>
+        </table>
+        <div class="table-foot"><span>${linhas.length} transaç${linhas.length === 1 ? 'ão' : 'ões'}</span></div>
+      </div>
+
+      <div class="edit-foot">
+        <button class="edit-btn-cancel" onclick="closeRelatorioModal()">Fechar</button>
+        <button class="edit-btn-cancel" onclick="gerarXLSXRelatorio(_dadosRelatorioEvento(${evento.id}, _tiposIngressoRelatorioAtual), 'relatorio_${_slugArquivo(evento.nome)}.xlsx')">Baixar Excel</button>
+        <button class="edit-btn-cancel" onclick="gerarPDFRelatorio(_dadosRelatorioEvento(${evento.id}, _tiposIngressoRelatorioAtual), 'relatorio_${_slugArquivo(evento.nome)}.pdf')">Baixar PDF</button>
+        <button class="edit-btn-save" onclick="gerarDocxRelatorio(_dadosRelatorioEvento(${evento.id}, _tiposIngressoRelatorioAtual), 'relatorio_${_slugArquivo(evento.nome)}.docx')">Baixar Word</button>
+      </div>
+    </div>
+  `;
+  _preencherTabelaRelatorio(linhas);
+  overlay.style.display = 'flex';
+}
+
+function openRelatorioEstabelecimento(estabId) {
+  const estab = _estabsReais.find(e => String(e.id) === String(estabId));
+  if (!estab) return;
+
+  const { eventosRelacionados, vendasRelacionadas, receita, vendidos } = _statsEstabelecimento(estab);
+  const linhas = [...vendasRelacionadas].sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+
+  const overlay = _garantirRelatorioOverlay();
+  overlay.innerHTML = `
+    <div class="edit-box edit-box--wide">
+      <div class="edit-head">
+        <div>
+          <h2>Relatório · ${estab.nome || 'Estabelecimento'}</h2>
+          <p>${estab.cidade || ''}</p>
+        </div>
+        <button class="edit-close-btn" onclick="closeRelatorioModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div style="font-size:11.5px; color:var(--orange); background:#3A2712; border:1px solid #5A3A1E; border-radius:8px; padding:9px 12px; margin-bottom:18px; line-height:1.5;">
+        ⚠️ Não existe vínculo direto entre eventos e estabelecimentos no banco. As vendas abaixo são aproximadas por correspondência entre o nome deste estabelecimento e o campo "local" do evento — confira se os eventos listados realmente são deste local.
+      </div>
+
+      <div class="ev-stats" style="margin-bottom:20px;">
+        <div class="ev-stat"><h4>${estab.nota != null ? Number(estab.nota).toFixed(1) + ' ⭐' : '—'}</h4><p>avaliação</p></div>
+        <div class="ev-stat"><h4>${estab.avaliacoes || 0}</h4><p>avaliações</p></div>
+        <div class="ev-stat"><h4>${formatarMoeda(receita)}</h4><p>receita aprox.</p></div>
+        <div class="ev-stat"><h4>${vendidos}</h4><p>ingressos aprox.</p></div>
+      </div>
+
+      <h3 style="font-size:13px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.04em; margin-bottom:10px;">
+        Eventos correspondentes (${eventosRelacionados.length})
+      </h3>
+      ${eventosRelacionados.length === 0
+        ? `<p style="font-size:13px; color:var(--text-3); margin-bottom:20px;">Nenhum evento com local igual a "${estab.nome}".</p>`
+        : `<ul style="margin:0 0 20px; padding-left:18px; font-size:13px; color:var(--text-2); line-height:1.8;">
+            ${eventosRelacionados.map(e => `<li>${e.nome || 'Sem nome'} — ${formatarDataCurta(e.data_inicio)}</li>`).join('')}
+          </ul>`}
+
+      <div class="table-wrap">
+        <table class="sales-table">
+          <thead><tr><th>Cliente</th><th>Evento</th><th>Qtd</th><th>Total</th><th>Data</th><th>Status</th></tr></thead>
+          <tbody id="relatorioTableBody"></tbody>
+        </table>
+        <div class="table-foot"><span>${linhas.length} transaç${linhas.length === 1 ? 'ão' : 'ões'}</span></div>
+      </div>
+
+      <div class="edit-foot">
+        <button class="edit-btn-cancel" onclick="closeRelatorioModal()">Fechar</button>
+        <button class="edit-btn-cancel" onclick="gerarXLSXRelatorio(_dadosRelatorioEstabelecimento(${estab.id}), 'relatorio_${_slugArquivo(estab.nome)}.xlsx')">Baixar Excel</button>
+        <button class="edit-btn-cancel" onclick="gerarPDFRelatorio(_dadosRelatorioEstabelecimento(${estab.id}), 'relatorio_${_slugArquivo(estab.nome)}.pdf')">Baixar PDF</button>
+        <button class="edit-btn-save" onclick="gerarDocxRelatorio(_dadosRelatorioEstabelecimento(${estab.id}), 'relatorio_${_slugArquivo(estab.nome)}.docx')">Baixar Word</button>
+      </div>
+    </div>
+  `;
+  _preencherTabelaRelatorio(linhas);
+  overlay.style.display = 'flex';
+}
+
+function closeRelatorioModal() {
+  const overlay = document.getElementById('relatorioOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+// ─────────────────────────────────────────────
 // SALVAR EDIÇÃO — evento ou estabelecimento
 //
 // Correções aplicadas (evitando os dois bugs mapeados com o backend real):
@@ -1957,6 +2707,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeTicketModal();
     closeEditModal();
+    closeRelatorioModal();
   }
 });
 
@@ -1965,8 +2716,9 @@ document.addEventListener('click', e => {
   if (e.target === modalOv) closeTicketModal();
   const editOv = document.getElementById('editModalOverlay');
   if (e.target === editOv) closeEditModal();
+  const relOv = document.getElementById('relatorioOverlay');
+  if (e.target === relOv) closeRelatorioModal();
 });
-
 // ─────────────────────────────────────────────
 // BOTÕES DE EDITAR (delegação de eventos)
 // ─────────────────────────────────────────────
@@ -1984,46 +2736,57 @@ function initEditButtons() {
 }
 
 // ─────────────────────────────────────────────
-// EXPORTAÇÃO EXCEL
+// EXPORTAÇÃO — dropdown com Excel / PDF / Word
 // ─────────────────────────────────────────────
 function initExport() {
-  const btn = document.getElementById('btnExport');
-  if (!btn) return;
+  const toggle = document.getElementById('btnExportToggle');
+  const menu = document.getElementById('exportMenu');
+  if (!toggle || !menu) return;
 
-  btn.addEventListener('click', e => {
+  toggle.addEventListener('click', e => {
     e.preventDefault();
-    const wb = XLSX.utils.book_new();
-
-    const resumo = [
-      { Indicador: 'Total de Vendas', Valor: document.getElementById('total-vendas')?.innerText || '' },
-      { Indicador: 'Eventos Ativos', Valor: document.getElementById('eventos-ativos')?.innerText || '' },
-      { Indicador: 'Ticket Médio', Valor: document.getElementById('ticket-medio')?.innerText || '' },
-      { Indicador: 'Taxa de Ocupação', Valor: document.getElementById('taxa-ocupacao')?.innerText || '' },
-      { Indicador: 'Avaliação Média', Valor: document.getElementById('avaliacao-media')?.innerText || '' }
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumo), 'Resumo');
-
-    const vendas = [];
-    document.querySelectorAll('#salesTableBody tr').forEach(row => {
-      const cols = row.querySelectorAll('td');
-      if (cols.length < 6) return;
-      vendas.push({
-        Cliente: cols[0]?.innerText.trim() || '',
-        Evento: cols[1]?.innerText || '',
-        Quantidade: cols[2]?.innerText || '',
-        Total: cols[3]?.innerText || '',
-        Data: cols[4]?.innerText || '',
-        Status: cols[5]?.innerText.trim() || ''
-      });
-    });
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(vendas), 'Histórico de Vendas');
-
-    const info = [{ Informação: 'Relatório gerado em', Valor: new Date().toLocaleString('pt-BR') }];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(info), 'Informações');
-
-    XLSX.writeFile(wb, 'relatorio_dashboard_completo.xlsx');
-    showToast('Relatório exportado com sucesso!', 'success');
+    e.stopPropagation();
+    menu.classList.toggle('open');
   });
+  document.addEventListener('click', () => menu.classList.remove('open'));
+
+  document.getElementById('btnExportXlsx')?.addEventListener('click', () => { menu.classList.remove('open'); exportarXLSX(); });
+  document.getElementById('btnExportPdf')?.addEventListener('click', () => { menu.classList.remove('open'); gerarPDFRelatorio(_dadosRelatorioGeral(), 'relatorio_dashboard.pdf'); });
+  document.getElementById('btnExportDocx')?.addEventListener('click', () => { menu.classList.remove('open'); gerarDocxRelatorio(_dadosRelatorioGeral(), 'relatorio_dashboard.docx'); });
+}
+
+function exportarXLSX() {
+  const wb = XLSX.utils.book_new();
+
+  const resumo = [
+    { Indicador: 'Total de Vendas', Valor: document.getElementById('total-vendas')?.innerText || '' },
+    { Indicador: 'Eventos Ativos', Valor: document.getElementById('eventos-ativos')?.innerText || '' },
+    { Indicador: 'Ticket Médio', Valor: document.getElementById('ticket-medio')?.innerText || '' },
+    { Indicador: 'Taxa de Ocupação', Valor: document.getElementById('taxa-ocupacao')?.innerText || '' },
+    { Indicador: 'Avaliação Média', Valor: document.getElementById('avaliacao-media')?.innerText || '' }
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumo), 'Resumo');
+
+  const vendas = [];
+  document.querySelectorAll('#salesTableBody tr').forEach(row => {
+    const cols = row.querySelectorAll('td');
+    if (cols.length < 6) return;
+    vendas.push({
+      Cliente: cols[0]?.innerText.trim() || '',
+      Evento: cols[1]?.innerText || '',
+      Quantidade: cols[2]?.innerText || '',
+      Total: cols[3]?.innerText || '',
+      Data: cols[4]?.innerText || '',
+      Status: cols[5]?.innerText.trim() || ''
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(vendas), 'Histórico de Vendas');
+
+  const info = [{ Informação: 'Relatório gerado em', Valor: new Date().toLocaleString('pt-BR') }];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(info), 'Informações');
+
+  XLSX.writeFile(wb, 'relatorio_dashboard_completo.xlsx');
+  showToast('Relatório exportado com sucesso!', 'success');
 }
 
 // ─────────────────────────────────────────────
@@ -2124,10 +2887,16 @@ function criarCardEstabelecimento(estab) {
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
         </svg>Visualizar
       </button>
-      <button class="ev-btn ev-btn--gray" onclick="showSection('vendas', null)">
+      <button class="ev-btn ev-btn--gray" onclick="openRelatorioEstabelecimento(${estab.id})">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
         </svg>Relatório
+      </button>
+      <button class="ev-btn ev-btn--danger" onclick="excluirEstabelecimentoCard(${estab.id})">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>Excluir
       </button>
     </div>
   `;

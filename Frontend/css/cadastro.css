@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* =========================
    IMPORTS
 ========================= */
@@ -43,7 +50,7 @@
    BODY / FUNDO
 ========================= */
 body {
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   color: var(--text-primary);
   min-height: 100vh;
   background: var(--grad-bg);
@@ -182,7 +189,7 @@ body::after {
   background: var(--surface);
   border-radius: var(--radius-md);
   padding: 13px 16px;
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
@@ -254,7 +261,7 @@ body::after {
   padding: 13px 16px;
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--border);
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 400;
   color: var(--text-primary);
@@ -408,7 +415,7 @@ body::after {
   border-radius: var(--radius-md);
   background: var(--grad-primary);
   color: white;
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -606,7 +613,7 @@ body::after {
   padding: 14px 20px;
   border: none;
   border-radius: var(--radius-md);
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 15px;
   font-weight: 700;
   color: white;
@@ -647,7 +654,7 @@ body::after {
   border: 1.5px solid rgba(124, 58, 237, 0.20);
   background: #f5f0ff;
   color: var(--primary);
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -675,7 +682,7 @@ body::after {
 .container #reenviarCodigo {
   background: none;
   border: none;
-  font-family: "Poppins", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: var(--primary);
@@ -746,125 +753,291 @@ body::after {
     letter-spacing: 6px;
   }
 }
-/* ── MODAL VERIFICAÇÃO ── */
+
+/* Modal — funciona fora do .container também */
 #modalCodigo {
     position: fixed;
     inset: 0;
-    background: rgba(10,3,25,0.65);
+    background: rgba(10, 3, 25, 0.60);
     backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 9999;
     padding: 20px;
 }
+
 #modalCodigo.hidden { display: none !important; }
 
-.modal-card {
+#modalCodigo .modal-card {
     width: 100%;
     max-width: 420px;
-    background: #fff;
+    background: #ffffff;
     border-radius: 24px;
     padding: 36px 32px 30px;
     position: relative;
-    box-shadow: 0 30px 80px rgba(10,3,25,0.28);
+    box-shadow: 0 30px 80px rgba(10,3,25,0.28), 0 0 0 1px rgba(124,58,237,0.10);
     animation: modalUp 0.35s cubic-bezier(0.22,1,0.36,1) both;
 }
-@keyframes modalUp {
-    from { opacity:0; transform: translateY(24px) scale(0.96); }
-    to   { opacity:1; transform: translateY(0) scale(1); }
-}
-.modal-card::before {
-    content:""; position:absolute; top:0; left:0; right:0;
-    height:4px; border-radius:24px 24px 0 0;
-    background: linear-gradient(145deg,#1a0a3d,#5b0ea6,#7c3aed);
-}
-.fechar {
-    position:absolute; top:18px; right:18px;
-    width:32px; height:32px; border-radius:50%;
-    border:1.5px solid rgba(108,29,206,0.14);
-    background:#f9f7ff; color:#5b5576;
-    font-size:18px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-}
-.fechar:hover { background:#f0ebff; color:#5b0ea6; }
-.modal-card h2 {
-    text-align:center; font-size:21px; font-weight:800;
-    margin-bottom:8px; margin-top:4px;
-}
-.modal-card p { text-align:center; font-size:13.5px; color:#5b5576; margin-bottom:16px; }
-.btn-opcao {
-    width:100%; display:flex; align-items:center; justify-content:center;
-    gap:10px; padding:13px 20px; margin-bottom:10px;
-    border-radius:16px; border:1.5px solid rgba(124,58,237,0.20);
-    background:#f5f0ff; color:#5b0ea6;
-    font-family:'Poppins',sans-serif; font-size:14px; font-weight:600;
-    cursor:pointer; transition:all 0.2s;
-}
-.btn-opcao:hover { background:#ede5ff; transform:translateY(-1px); }
-.btn-verificar {
-    width:100%; padding:14px 20px; border:none; border-radius:16px;
-    background:linear-gradient(145deg,#1a0a3d,#5b0ea6,#7c3aed);
-    color:#fff; font-family:'Poppins',sans-serif;
-    font-size:15px; font-weight:700; cursor:pointer;
-    margin-top:14px; display:flex; align-items:center; justify-content:center; gap:10px;
-    transition:all 0.25s;
-}
-.btn-verificar:hover { transform:translateY(-2px); }
-#codigo {
-    width:100%; text-align:center; font-size:22px; font-weight:700;
-    letter-spacing:8px; padding:16px 20px;
-    border-radius:10px; border:1.5px solid rgba(108,29,206,0.14);
-    background:#f9f7ff; outline:none;
-}
-#codigo:focus { border-color:#7c3aed; box-shadow:0 0 0 3px rgba(124,58,237,0.10); }
-.reenviar { margin-top:16px; font-size:13px; color:#9b96b0; text-align:center; line-height:1.8; }
-.btn-reenviar { background:none; border:none; font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#5b0ea6; cursor:pointer; }
-.btn-reenviar:disabled { color:#9b96b0; cursor:not-allowed; }
-#outraForma { display:inline-block; font-weight:600; color:#f50057; cursor:pointer; }
-#areaTelefone { margin-top:12px; display:flex; flex-direction:column; gap:10px; }
-.icone-seguranca { display:none; }
-.spinner { display:inline-block; width:20px; height:20px; border:2.5px solid rgba(255,255,255,0.35); border-top-color:#fff; border-radius:50%; animation:girar 0.7s linear infinite; }
-.hidden { display:none !important; }
-@keyframes girar { to { transform:rotate(360deg); } }
 
-/* ── FIX BOTÃO OLHO ── */
-.input-wrap .btn-olho {
+#modalCodigo .modal-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    border-radius: 24px 24px 0 0;
+    background: linear-gradient(145deg,#1a0a3d 0%,#5b0ea6 45%,#7c3aed 100%);
+}
+
+#modalCodigo .fechar {
+    position: absolute; top: 18px; right: 18px;
+    width: 32px; height: 32px;
+    border-radius: 9999px;
+    border: 1.5px solid rgba(124,58,237,0.14);
+    background: #f9f7ff;
+    color: #5b5576;
+    font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+}
+#modalCodigo .fechar:hover { background: #f0ebff; color: #5b0ea6; }
+
+#modalCodigo h2 {
+    text-align: center;
+    font-size: 21px; font-weight: 800;
+    color: #0f0720;
+    letter-spacing: -0.3px;
+    margin-bottom: 8px; margin-top: 4px;
+}
+
+#modalCodigo p {
+    text-align: center;
+    color: #5b5576;
+    font-size: 13.5px; line-height: 1.55;
+    margin-bottom: 16px;
+}
+
+#modalCodigo .btn-opcao {
+    width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 13px 20px; margin-bottom: 10px;
+    border-radius: 16px;
+    border: 1.5px solid rgba(124,58,237,0.20);
+    background: #f5f0ff;
+    color: #5b0ea6;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+#modalCodigo .btn-opcao:hover {
+    background: #ede5ff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(91,14,166,0.08);
+}
+
+#modalCodigo #codigo {
+    text-align: center;
+    font-size: 22px; font-weight: 700;
+    letter-spacing: 8px;
+    padding: 16px 20px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(124,58,237,0.14);
+    background: #f9f7ff;
+    color: #0f0720;
+    width: 100%; outline: none;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+}
+#modalCodigo #codigo:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.10);
+    background: #fff;
+}
+
+#modalCodigo .btn-verificar {
+    width: 100%; padding: 14px 20px;
+    border: none; border-radius: 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px; font-weight: 700;
+    color: white; cursor: pointer;
+    background: linear-gradient(145deg,#1a0a3d 0%,#5b0ea6 45%,#7c3aed 100%);
+    margin-top: 14px;
+    box-shadow: 0 8px 24px rgba(91,14,166,0.28);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 50px;
+    transition: all 0.25s ease;
+}
+#modalCodigo .btn-verificar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(91,14,166,0.36);
+}
+
+#modalCodigo .reenviar {
+    margin-top: 16px;
+    font-size: 13px; color: #9b96b0;
+    text-align: center; line-height: 1.8;
+}
+
+@keyframes modalUp {
+    from { opacity: 0; transform: translateY(24px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Botão reenviar código ── */
+#reenviarCodigo {
+    background: none;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5b0ea6;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s;
+}
+#reenviarCodigo:disabled {
+    color: #9b96b0;
+    cursor: not-allowed;
+}
+#reenviarCodigo:not(:disabled):hover {
+    color: #f50057;
+    text-decoration: underline;
+}
+
+#outraForma {
+    display: inline-block;
+    font-weight: 600;
+    color: #f50057;
+    cursor: pointer;
+    transition: color 0.2s;
+    font-size: 13px;
+}
+#outraForma:hover {
+    color: #c2003e;
+    text-decoration: underline;
+}
+
+/* ── Toggle olho (senha) ── */
+.btn-olho {
     position: absolute;
     right: 14px;
     background: none;
     border: none;
     cursor: pointer;
     color: #9b96b0;
-    font-size: 16px;
+    font-size: 15px;
     padding: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: color 0.2s;
+    line-height: 1;
 }
-.input-wrap .btn-olho:hover { color: #7c3aed; }
-.input-wrap input[type="password"],
-.input-wrap input[type="text"] {
-    padding-right: 48px;
+.btn-olho:hover {
+    color: #7c3aed;
+}
+/* =========================
+   CAMPOS DO FORM DE CADASTRO
+========================= */
+.campo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
 }
 
-/* ── FIX FORÇA SENHA ── */
-.forca-senha-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 6px;
-    opacity: 0;
-    transition: opacity 0.3s;
+.campo-form label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.2px;
 }
-.forca-barra { display:flex; gap:4px; flex:1; }
-.forca-segmento { flex:1; height:4px; border-radius:999px; background:#e8e0f0; transition:background 0.3s; }
-.forca-label { font-size:11px; font-weight:700; min-width:38px; text-align:right; }
 
-/* ── FIX ERROS ── */
-.erro {
-    color: #e63946;
-    font-size: 11.5px;
-    font-weight: 500;
-    min-height: 16px;
+.input-com-icone {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-com-icone input {
+  width: 100%;
+  padding: 13px 16px 13px 40px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface-2);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.input-com-icone input:focus {
+  background: var(--surface);
+  border-color: var(--primary-mid);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.10);
+}
+
+.input-com-icone i {
+  position: absolute;
+  left: 14px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.icone-olho {
+  position: absolute;
+  right: 14px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.erro-campo {
+  color: var(--error);
+  font-size: 11.5px;
+  font-weight: 500;
+  min-height: 14px;
+}
+
+.btn-criar-conta {
+  width: 100%;
+  margin-top: 6px;
+  padding: 15px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--grad-primary);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 24px rgba(91, 14, 166, 0.30);
+}
+
+.btn-criar-conta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(91, 14, 166, 0.38);
+}
+
+.texto-login,
+.texto-termos {
+  text-align: center;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.texto-login a,
+.texto-termos a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.texto-login a:hover,
+.texto-termos a:hover {
+  text-decoration: underline;
 }

@@ -5,8 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="page-title">Detalhes do Local</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="../css/footer.css">
     <link rel="stylesheet" href="../css/detalheslocais.css">
@@ -17,64 +16,76 @@
         <div id="header-container"></div>
     </header>
 
-    <!-- HERO: imagem de fundo + overlay escuro + info em baixo -->
+    <!-- HERO -->
     <div class="hero-section" id="hero-section">
         <div class="hero-overlay"></div>
 
-        <!-- Botão voltar (canto superior esquerdo) -->
         <a href="javascript:history.back()" class="hero-back-btn">
             <i class="fas fa-arrow-left"></i> Voltar
         </a>
 
-        <!-- Ações no canto superior direito -->
         <div class="hero-top-actions">
-            <!-- CORAÇÃO: alterna entre favorito e não favorito -->
             <button class="hero-icon-btn" id="btn-favoritar" title="Favoritar" onclick="toggleFavorito()">
                 <i class="far fa-heart" id="icon-heart"></i>
             </button>
-            <!-- COMPARTILHAR: usa Web Share API ou copia link -->
             <button class="hero-icon-btn" id="btn-compartilhar" title="Compartilhar" onclick="compartilharLocal()">
                 <i class="fas fa-share-nodes"></i>
             </button>
         </div>
 
-        <!-- Info na parte inferior do hero -->
         <div class="hero-info">
             <p class="hero-category" id="local-type">Tipo de Local</p>
             <h1 class="hero-name" id="local-name">Nome do Local</h1>
-            <p class="hero-meta">
-                <i class="fas fa-star"></i> <span id="local-rating">0.0 (0 avaliações)</span>
-                &nbsp;|&nbsp;
-                <i class="fas fa-map-marker-alt"></i> <span id="hero-address">Endereço</span>
-            </p>
+            <div class="hero-meta">
+                <span class="hero-meta-pill">
+                    <i class="fas fa-star"></i>
+                    <span id="local-rating">0.0 (0 avaliações)</span>
+                </span>
+                <span class="hero-meta-sep"></span>
+                <span class="hero-meta-pill">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span id="hero-address">Endereço</span>
+                </span>
+            </div>
         </div>
     </div>
 
     <main class="main-content">
+
+        <!-- Abas -->
         <div class="tab-navigation">
-            <button class="tab-button active" data-tab="visao-geral"><i class="fas fa-eye"></i> Visão Geral</button>
-            <button class="tab-button" data-tab="menu"><i class="fas fa-tags"></i> Pratos Promocionais</button>
-            <button class="tab-button" data-tab="fotos"><i class="fas fa-camera"></i> Fotos</button>
-            <button class="tab-button" data-tab="avaliacoes"><i class="fas fa-comments"></i> Avaliações</button>
+            <button class="tab-button active" data-tab="visao-geral">
+                <i class="fas fa-eye"></i> Visão Geral
+            </button>
+            <button class="tab-button" data-tab="menu">
+                <i class="fas fa-tags"></i> Pratos Promocionais
+            </button>
+            <button class="tab-button" data-tab="fotos">
+                <i class="fas fa-camera"></i> Fotos
+            </button>
+            <button class="tab-button" data-tab="avaliacoes">
+                <i class="fas fa-comments"></i> Avaliações
+            </button>
         </div>
 
         <div class="content-container">
 
-            <!-- ABA: VISÃO GERAL -->
+            <!-- ── ABA VISÃO GERAL ── -->
             <div class="tab-content active" id="visao-geral">
                 <section class="general-info-section">
                     <h3>Sobre o Local</h3>
                     <p id="local-description">Descrição completa do local será inserida aqui dinamicamente.</p>
+
                     <div class="attributes" id="local-attributes"></div>
 
                     <div class="details-row">
                         <div class="detail-item">
-                            <h4><i class="far fa-clock"></i> Horário de Funcionamento</h4>
-                            <p id="local-hours">19:00 - 22:00</p>
+                            <h4><i class="far fa-clock"></i> Horário</h4>
+                            <p id="local-hours">—</p>
                         </div>
                         <div class="detail-item">
                             <h4><i class="fas fa-phone"></i> Contato</h4>
-                            <p id="local-contact-phone">(62) 4444-4444</p>
+                            <p id="local-contact-phone">—</p>
                         </div>
                     </div>
                 </section>
@@ -92,7 +103,7 @@
                 </section>
             </div>
 
-            <!-- ABA: PRATOS PROMOCIONAIS -->
+            <!-- ── ABA PRATOS PROMOCIONAIS ── -->
             <div class="tab-content" id="menu">
                 <section class="promocionais-section">
                     <h3>🔥 Pratos Promocionais da Semana</h3>
@@ -102,8 +113,8 @@
                         <h4>Promoções de Pratos Principais</h4>
                         <div class="menu-item-row destaque-promocional">
                             <div class="item-details">
-                                <h5 style="margin-bottom: 5px;">Massa Carbonara (Promoção!)</h5>
-                                <p style="font-size: 0.9em; color: #555;">Deliciosa massa italiana, hoje com 30% de desconto!</p>
+                                <h5>Massa Carbonara (Promoção!)</h5>
+                                <p>Deliciosa massa italiana, hoje com 30% de desconto!</p>
                             </div>
                             <div class="item-price-container">
                                 <span class="item-price-sale">R$ 35</span>
@@ -112,8 +123,8 @@
                         </div>
                         <div class="menu-item-row">
                             <div class="item-details">
-                                <h5 style="margin-bottom: 5px;">Prato Vegano do Dia</h5>
-                                <p style="font-size: 0.9em; color: #555;">Opção saudável com preço fixo e ingredientes frescos.</p>
+                                <h5>Prato Vegano do Dia</h5>
+                                <p>Opção saudável com preço fixo e ingredientes frescos.</p>
                             </div>
                             <span class="item-price">R$ 45</span>
                         </div>
@@ -123,8 +134,8 @@
                         <h4>Combos Especiais</h4>
                         <div class="menu-item-row">
                             <div class="item-details">
-                                <h5 style="margin-bottom: 5px;">Combo Casal</h5>
-                                <p style="font-size: 0.9em; color: #555;">Duas taças de vinho + Filé Mignon com preço fechado.</p>
+                                <h5>Combo Casal</h5>
+                                <p>Duas taças de vinho + Filé Mignon com preço fechado.</p>
                             </div>
                             <span class="item-price">R$ 130</span>
                         </div>
@@ -132,7 +143,7 @@
                 </section>
             </div>
 
-            <!-- ABA: FOTOS -->
+            <!-- ── ABA FOTOS ── -->
             <div class="tab-content" id="fotos">
                 <section class="photos-section">
                     <h3>Galeria de Fotos</h3>
@@ -140,35 +151,25 @@
                 </section>
             </div>
 
-            <!-- ABA: AVALIAÇÕES -->
+            <!-- ── ABA AVALIAÇÕES ── -->
             <div class="tab-content" id="avaliacoes">
                 <section class="reviews-section">
 
-                    <!-- Cabeçalho com média geral (atualizada dinamicamente) -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-                        <h3 style="margin:0;">Avaliações</h3>
-                        <span style="color:#ffc107; font-weight:600; font-size:0.95em;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                        <h3 style="margin:0; border:none; padding:0;">Avaliações</h3>
+                        <span style="color:var(--gold); font-weight:700; font-size:13px; display:flex; align-items:center; gap:5px;">
                             <i class="fas fa-star"></i>
                             <span id="avg-display">0.0 (0 avaliações)</span>
                         </span>
                     </div>
 
-                    <!-- FORMULÁRIO DE NOVA AVALIAÇÃO -->
+                    <!-- Formulário -->
                     <div class="review-form" id="review-form">
-                        <h4 style="margin-bottom:12px;">Deixe sua avaliação</h4>
+                        <h4>Deixe sua avaliação</h4>
 
-                        <input
-                            type="text"
-                            id="review-name"
-                            placeholder="Seu nome"
-                            maxlength="50"
-                            style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:8px;
-                                   font-family:'Poppins',sans-serif; font-size:0.9em; margin-bottom:10px;
-                                   box-sizing:border-box;"
-                        />
+                        <input type="text" id="review-name" placeholder="Seu nome" maxlength="50" />
 
-                        <!-- Seletor de estrelas clicáveis -->
-                        <div class="star-selector" id="star-selector" style="display:flex; gap:6px; margin-bottom:10px; font-size:1.8em; cursor:pointer;">
+                        <div class="star-selector" id="star-selector">
                             <span class="star-opt" data-val="1">☆</span>
                             <span class="star-opt" data-val="2">☆</span>
                             <span class="star-opt" data-val="3">☆</span>
@@ -176,91 +177,129 @@
                             <span class="star-opt" data-val="5">☆</span>
                         </div>
 
-                        <textarea
-                            id="review-text"
-                            placeholder="Conte como foi sua experiência..."
-                            rows="3"
-                            style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:8px;
-                                   font-family:'Poppins',sans-serif; font-size:0.9em; resize:vertical;
-                                   margin-bottom:10px; box-sizing:border-box;"
-                        ></textarea>
+                        <textarea id="review-text" placeholder="Conte como foi sua experiência..." rows="3"></textarea>
 
-                        <button
-                            onclick="enviarAvaliacao()"
-                            style="background:#222; color:#fff; border:none; padding:9px 22px;
-                                   border-radius:8px; font-family:'Poppins',sans-serif; font-size:0.9em;
-                                   font-weight:500; cursor:pointer; transition:background 0.2s;"
-                            onmouseover="this.style.background='#444'"
-                            onmouseout="this.style.background='#222'"
-                        >Enviar avaliação</button>
+                        <button class="btn-enviar-avaliacao" onclick="enviarAvaliacao()">
+                            <i class="fas fa-paper-plane"></i> Enviar avaliação
+                        </button>
                     </div>
 
-                    <!-- LISTA DE AVALIAÇÕES (dinâmica) -->
-                    <div class="review-list" id="review-list">
-                        <!-- Avaliações são inseridas aqui pelo JS -->
-                    </div>
+                    <div class="review-list" id="review-list"></div>
 
                 </section>
             </div>
 
-            <!-- SIDEBAR -->
+            <!-- ── SIDEBAR ── -->
             <aside class="sidebar">
                 <div class="sidebar-cards">
-                    <div class="info-card">
-                        <!-- Nota e contagem atualizadas dinamicamente -->
-                        <p class="sidebar-rating" id="sidebar-rating">
-                            <i class="fas fa-star"></i>
-                            <span id="sidebar-rating-value">0.0</span> (<span id="sidebar-rating-count">0</span>)
-                        </p>
-                        <p class="sidebar-type" id="sidebar-type">Restaurante</p>
 
-                        <!-- Faixa de preço em R$ -->
-                        <p class="sidebar-price" id="sidebar-price-symbol">R$ 30 a R$ 80</p>
+                    <!-- Card principal -->
+                    <div class="info-card info-card-main">
 
-                        <hr>
-                        <div class="contact-details">
-                            <p><strong><i class="far fa-clock"></i> Horário:</strong> <span id="sidebar-hours">19:00 - 22:00</span></p>
-                            <p><strong><i class="fas fa-phone"></i> Telefone:</strong> <span id="sidebar-phone">(62) 4444-4444</span></p>
-                            <p><strong><i class="fas fa-map-marker-alt"></i> Endereço:</strong> <span id="sidebar-address">Centro, Goiânia</span></p>
+                        <!-- Rating -->
+                        <div class="sidebar-rating-block">
+                            <span class="sidebar-rating-num" id="sidebar-rating-value">0.0</span>
+                            <div class="sidebar-rating-detail">
+                                <div class="sidebar-stars" id="sidebar-stars">
+                                    <i class="far fa-star empty"></i>
+                                    <i class="far fa-star empty"></i>
+                                    <i class="far fa-star empty"></i>
+                                    <i class="far fa-star empty"></i>
+                                    <i class="far fa-star empty"></i>
+                                </div>
+                                <span class="sidebar-rating-count">
+                                    <span id="sidebar-rating-count">0</span> avaliações
+                                </span>
+                            </div>
                         </div>
 
-                        <button class="btn-secondary" id="btn-como-chegar">
+                        <!-- Tipo -->
+                        <div class="sidebar-type-badge">
+                            <i class="fas fa-tag"></i>
+                            <span id="sidebar-type">Restaurante</span>
+                        </div>
+
+                        <!-- Faixa de preço -->
+                        <div class="sidebar-price-block">
+                            <span class="sidebar-price-label">Faixa de preço</span>
+                            <span class="sidebar-price-value" id="sidebar-price-symbol">—</span>
+                        </div>
+
+                        <hr>
+
+                        <!-- Contato -->
+                        <div class="contact-details">
+                            <div class="contact-row">
+                                <div class="contact-row-icon"><i class="far fa-clock"></i></div>
+                                <div class="contact-row-text">
+                                    <span class="contact-row-label">Horário</span>
+                                    <span class="contact-row-value" id="sidebar-hours">—</span>
+                                </div>
+                            </div>
+                            <div class="contact-row">
+                                <div class="contact-row-icon"><i class="fas fa-phone"></i></div>
+                                <div class="contact-row-text">
+                                    <span class="contact-row-label">Telefone</span>
+                                    <span class="contact-row-value" id="sidebar-phone">—</span>
+                                </div>
+                            </div>
+                            <div class="contact-row">
+                                <div class="contact-row-icon"><i class="fas fa-map-marker-alt"></i></div>
+                                <div class="contact-row-text">
+                                    <span class="contact-row-label">Endereço</span>
+                                    <span class="contact-row-value" id="sidebar-address">—</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" id="btn-como-chegar">
                             <i class="fas fa-directions"></i> Como Chegar
                         </button>
-
-                        <a id="btn-ligar" href="tel:" class="btn-secondary"
-                           style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <a id="btn-ligar" href="tel:" class="btn-secondary" style="text-decoration:none;">
                             <i class="fas fa-phone-alt"></i> Ligar Agora
                         </a>
                     </div>
 
+                    <!-- Card info compacto -->
                     <div class="info-card info-card-compact">
                         <h3>Informações</h3>
-                        <p><i class="fas fa-map-marker-alt"></i> <span id="info-address">Centro, Goiânia</span></p>
-                        <p><i class="fas fa-phone"></i> <span id="info-phone">(62) 4444-4444</span></p>
-                        <p><i class="far fa-clock"></i> <span id="info-hours">19:00 - 22:00</span></p>
+                        <div class="contact-row">
+                            <div class="contact-row-icon"><i class="fas fa-map-marker-alt"></i></div>
+                            <div class="contact-row-text">
+                                <span class="contact-row-label">Endereço</span>
+                                <span class="contact-row-value" id="info-address">—</span>
+                            </div>
+                        </div>
+                        <div class="contact-row">
+                            <div class="contact-row-icon"><i class="fas fa-phone"></i></div>
+                            <div class="contact-row-text">
+                                <span class="contact-row-label">Telefone</span>
+                                <span class="contact-row-value" id="info-phone">—</span>
+                            </div>
+                        </div>
+                        <div class="contact-row">
+                            <div class="contact-row-icon"><i class="far fa-clock"></i></div>
+                            <div class="contact-row-text">
+                                <span class="contact-row-label">Horário</span>
+                                <span class="contact-row-value" id="info-hours">—</span>
+                            </div>
+                        </div>
                     </div>
+
                 </div>
             </aside>
 
         </div>
     </main>
 
-    <!-- Toast de notificação -->
-    <div id="toast-notification" style="
-        position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
-        background:#222; color:#fff; padding:11px 24px; border-radius:24px;
-        font-family:'Poppins',sans-serif; font-size:0.88em; font-weight:500;
-        transition:transform 0.3s ease; z-index:9999; white-space:nowrap; pointer-events:none;
-    "></div>
+    <!-- Toast -->
+    <div id="toast-notification"></div>
 
     <script src="/frontend/js/config.js"></script>
     <script src="../js/footer.js" defer></script>
     <script src="../js/loadheader.js"></script>
     <script src="../js/detalheslocais.js"></script>
-
-    <!-- Script de funcionalidades: favoritar, compartilhar, avaliações -->
     <script src="../js/detalhes-funcionalidades.js"></script>
-</body>
 
+</body>
 </html>

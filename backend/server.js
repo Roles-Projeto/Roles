@@ -10,16 +10,67 @@
 
 require("dotenv").config();
 
-const express = require("express");
-const cors    = require("cors");
-const path    = require("path");
-const fs      = require("fs");
+const express   = require("express");
+const cors      = require("cors");
+const path      = require("path");
+const fs        = require("fs");
+const helmet    = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 
+/* ─── Segurança de headers HTTP ─── */
+/* ─── Segurança de headers HTTP ─── */
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: false,
+}));
+
+app.use((req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+});
+
+
+
+/* ─── Rate limiting geral — 100 requests por IP a cada 15 min ─── */
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { erro: "Muitas requisições. Tente novamente em 15 minutos." }
+});
+app.use("/api", limiter);
+
+/* ─── Rate limiting para login — 10 tentativas por 15 min ─── */
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { erro: "Muitas tentativas de login. Tente novamente em 15 minutos." }
+});
+app.use("/usuarios/login", loginLimiter);
+
 /* ─── Middlewares globais ─── */
+const allowedOrigins = [
+    "http://127.0.0.1:5502",
+    "http://localhost:5502",
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://projeto-integrador-roles.onrender.com",
+];
+
 app.use(cors({
-    origin: "*",
+    origin: (origin, callback) => {
+        // requests sem origin (ex: Postman, mesma origem) passam direto
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Não permitido pelo CORS"));
+        }
+    },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
@@ -49,6 +100,11 @@ function caseInsensitiveStatic(baseDir) {
   };
 }
 
+app.get("/frontend/html/:arquivo", (req, res) => {
+  const nomeArquivo = req.params.arquivo.replace(".html", "");
+  res.redirect(`/frontend/${nomeArquivo}/${req.params.arquivo}`);
+});
+
 app.use("/frontend", caseInsensitiveStatic(path.join(__dirname, "..", "Frontend")));
 app.use("/frontend", express.static(path.join(__dirname, "..", "Frontend")));
 app.use("/uploads",  express.static(path.join(__dirname, "uploads")));
@@ -67,12 +123,14 @@ const { ingressosRouter, pedidosRouter } = require("./routes/ingressosRoutes");
 
 // Rotas opcionais — carregadas só se o arquivo existir
 function tryRequire(routePath) {
-  const full = path.join(__dirname, routePath);
-  if (fs.existsSync(full)) return require(full);
-  console.warn(`⚠️  Rota não encontrada (ignorada): ${routePath}`);
-  return null;
+  try {
+    const mod = require(path.join(__dirname, routePath));
+    return mod;
+  } catch (e) {
+    console.warn(`⚠️  Rota não encontrada (ignorada): ${routePath} — ${e.message}`);
+    return null;
+  }
 }
-
 const favoritosRoutes = tryRequire("./routes/favoritos");
 const visitasRoutes   = tryRequire("./routes/visitas");
 const comprasRoutes   = tryRequire("./routes/compras");

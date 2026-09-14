@@ -56,6 +56,39 @@ function converterSQL(sql) {
   return result;
 }
 
+// Roda uma série de queries dentro de uma transação real do Postgres.
+// Uso: await db.transacao(async (tx) => { await tx.query(...); await tx.query(...); });
+// Se qualquer query dentro do callback lançar erro, TUDO é revertido (ROLLBACK)
+// e nada fica salvo pela metade. Se tudo der certo, comita (COMMIT) no final.
+async function transacao(callback) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const tx = {
+      query: (sql, params = []) => {
+        const pgSql = converterParams(converterSQL(sql));
+        return client.query(pgSql, params).then(r => {
+          const rows = r.rows;
+          if (r.command === 'INSERT' && rows.length > 0 && rows[0].id) {
+            rows.insertId = rows[0].id;
+          }
+          return rows;
+        });
+      }
+    };
+
+    const resultado = await callback(tx);
+    await client.query('COMMIT');
+    return resultado;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 const db = {
   query: (sql, params = [], callback) => {
     const pgSql = converterParams(converterSQL(sql));
@@ -84,5 +117,7 @@ const db = {
     });
   }
 };
+
+db.transacao = transacao;
 
 module.exports = db;

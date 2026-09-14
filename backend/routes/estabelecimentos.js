@@ -57,7 +57,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// NOVA ROTA — estabelecimentos do usuário logado (pro Dashboard)
+// Estabelecimentos do usuário logado (pro Dashboard)
 router.get("/meus", verificarToken, async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
@@ -84,7 +84,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Cadastro agora exige token e salva usuario_id
+// Cadastro exige token e salva usuario_id
 router.post("/", verificarToken, async (req, res) => {
   try {
     const usuarioId = req.usuario.id; // vem do token, não do body
@@ -107,11 +107,13 @@ router.post("/", verificarToken, async (req, res) => {
          visibilidade, horario, comodidades, img_logo, img_capa,
          categoria_card, fotos_galeria, pratos)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
-      usuarioId, nome, tipo, especialidade, faixa_preco, capacidade, descricao,
-      local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
-      endereco, telefone, website, responsavel, cnpj,
-      visibilidade || "publico", horario || "", comodidades,
-      img_logo, img_capa, categoria_card,
+            usuarioId, nome, tipo ?? null, especialidade ?? null, faixa_preco ?? null,
+      capacidade !== undefined && capacidade !== null && capacidade !== "" ? Number(capacidade) : null,
+      descricao ?? null, local_nome ?? null, cep ?? null, rua ?? null, numero ?? null,
+      complemento ?? null, bairro ?? null, cidade ?? null, estado ?? null,
+      endereco ?? null, telefone ?? null, website ?? null, responsavel ?? null, cnpj ?? null,
+      visibilidade || "publico", horario || "", comodidades ?? null,
+      img_logo ?? null, img_capa ?? null, categoria_card ?? null,
       JSON.stringify(fotos_galeria || []), JSON.stringify(pratos || [])
     ]);
 
@@ -122,9 +124,20 @@ router.post("/", verificarToken, async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+// Edição — exige token e checa se o estabelecimento é do usuário logado
+router.put("/:id", verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const usuarioId = req.usuario.id;
+
+    const existentes = await db.query("SELECT usuario_id FROM estabelecimentos WHERE id = ?", [id]);
+    if (!existentes || existentes.length === 0) {
+      return res.status(404).json({ erro: "Estabelecimento não encontrado." });
+    }
+    if (String(existentes[0].usuario_id) !== String(usuarioId)) {
+      return res.status(403).json({ erro: "Você não tem permissão para editar este estabelecimento." });
+    }
+
     const {
       nome, tipo, especialidade, faixa_preco, capacidade, descricao,
       local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
@@ -142,13 +155,14 @@ router.put("/:id", async (req, res) => {
         visibilidade=?, horario=?, comodidades=?, img_logo=?,
         img_capa=?, categoria_card=?, fotos_galeria=?, pratos=?
       WHERE id=?`, [
-      nome, tipo, especialidade, faixa_preco, capacidade,
-      descricao, local_nome, cep, rua, numero,
-      complemento, bairro, cidade, estado, endereco,
-      telefone, website, responsavel, cnpj,
-      visibilidade, horario || "", comodidades, img_logo,
-      img_capa, categoria_card,
-      JSON.stringify(fotos_galeria || []), JSON.stringify(pratos || []), id
+            nome ?? null, tipo ?? null, especialidade ?? null, faixa_preco ?? null,
+      capacidade !== undefined && capacidade !== null && capacidade !== "" ? Number(capacidade) : null,
+      descricao ?? null, local_nome ?? null, cep ?? null, rua ?? null, numero ?? null,
+      complemento ?? null, bairro ?? null, cidade ?? null, estado ?? null, endereco ?? null,
+      telefone ?? null, website ?? null, responsavel ?? null, cnpj ?? null,
+      visibilidade ?? "publico", horario ?? "", comodidades ?? null, img_logo ?? null,
+      img_capa ?? null, categoria_card ?? null,
+      JSON.stringify(fotos_galeria ?? []), JSON.stringify(pratos ?? []), id
     ]);
 
     res.json({ mensagem: "Estabelecimento atualizado com sucesso!" });
@@ -158,9 +172,21 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+// Exclusão — exige token e checa dono também (antes não tinha nenhuma proteção)
+router.delete("/:id", verificarToken, async (req, res) => {
   try {
-    await db.query("DELETE FROM estabelecimentos WHERE id = ?", [req.params.id]);
+    const { id } = req.params;
+    const usuarioId = req.usuario.id;
+
+    const existentes = await db.query("SELECT usuario_id FROM estabelecimentos WHERE id = ?", [id]);
+    if (!existentes || existentes.length === 0) {
+      return res.status(404).json({ erro: "Estabelecimento não encontrado." });
+    }
+    if (String(existentes[0].usuario_id) !== String(usuarioId)) {
+      return res.status(403).json({ erro: "Você não tem permissão para remover este estabelecimento." });
+    }
+
+    await db.query("DELETE FROM estabelecimentos WHERE id = ?", [id]);
     res.json({ mensagem: "Estabelecimento removido com sucesso!" });
   } catch (err) {
     console.error("Erro ao remover estabelecimento:", err);

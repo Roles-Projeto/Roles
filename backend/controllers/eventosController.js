@@ -63,17 +63,19 @@ exports.criarEvento = (req, res) => {
   const {
     nome, assunto, categoria, imagem, data_inicio, data_fim,
     descricao, local_nome, cep, rua, cidade, estado, nome_produtor, ingressos,
+    usuario_id, // ← NOVO: ID do usuário/organizador dono do evento
   } = req.body;
 
   if (!nome || !data_inicio || !data_fim)
     return res.status(400).json({ erro: "Nome, data de início e data de término são obrigatórios." });
 
   const sql = `INSERT INTO eventos (nome, assunto, categoria, imagem, data_inicio, data_fim,
-       descricao, local_nome, cep, rua, cidade, estado, nome_produtor)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+       descricao, local_nome, cep, rua, cidade, estado, nome_produtor, usuario_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
   const valores = [nome, assunto||null, categoria||null, imagem||null, data_inicio, data_fim,
-    descricao||null, local_nome||null, cep||null, rua||null, cidade||null, estado||null, nome_produtor||null];
+    descricao||null, local_nome||null, cep||null, rua||null, cidade||null, estado||null, nome_produtor||null,
+    usuario_id || null]; // ← NOVO
 
   connection.query(sql, valores, (err, result) => {
     if (err) return res.status(500).json({ erro: "Erro ao salvar evento.", detalhes: err.message });

@@ -3,6 +3,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const supabase = require('../db/supabaseClient');
+const { analisarImagemPorUrl, analisarTexto } = require('../services/sightengineService');
+const { classificarImagem, classificarTexto } = require('../services/moderacaoService');
 
 // ── Alternância de armazenamento de imagem ──
 // USE_SUPABASE_STORAGE=true  -> memoryStorage + Supabase Storage (usar em produção)
@@ -57,23 +59,81 @@ exports.usarSupabase = USAR_SUPABASE;
 const connection = require("../db/db_config");
 
 // =====================================================
+// MODERAÇÃO (Sightengine) — roda antes de salvar o evento
+// =====================================================
+// Analisa a imagem (por URL, já que ela já foi upada pro Supabase antes
+// desse ponto) e o texto (nome + descrição). Se a Sightengine falhar por
+// erro de rede/instabilidade, deixamos o evento passar (fail-open) — só
+// registramos no console. Pra travar a criação nesse caso em vez de deixar
+// passar, é só trocar os ".catch(...)" abaixo por não capturar o erro.
+async function moderarEvento(imagemUrl, nome, descricao) {
+  const textoParaAnalise = [nome, descricao].filter(Boolean).join(' ');
+
+  const [resultadoImagem, resultadoTexto] = await Promise.all([
+    imagemUrl
+      ? analisarImagemPorUrl(imagemUrl).catch((e) => {
+          console.error('⚠️  Falha ao moderar imagem do evento:', e.message);
+          return null;
+        })
+      : Promise.resolve(null),
+    textoParaAnalise
+      ? analisarTexto(textoParaAnalise).catch((e) => {
+          console.error('⚠️  Falha ao moderar texto do evento:', e.message);
+          return null;
+        })
+      : Promise.resolve(null),
+  ]);
+
+  const decisaoImagem = resultadoImagem ? classificarImagem(resultadoImagem) : 'APROVADA';
+  const decisaoTexto = resultadoTexto ? classificarTexto(resultadoTexto) : 'APROVADA';
+
+  const decisoes = [decisaoImagem, decisaoTexto];
+  const decisaoFinal = decisoes.includes('BLOQUEADA')
+    ? 'BLOQUEADA'
+    : decisoes.includes('REVISAO')
+      ? 'REVISAO'
+      : 'APROVADA';
+
+  console.log(`🛡️  [MODERAÇÃO] imagem=${decisaoImagem} texto=${decisaoTexto} final=${decisaoFinal}`);
+
+  return { decisaoFinal, decisaoImagem, decisaoTexto };
+}
+
+// =====================================================
 // CRIAR EVENTO
 // =====================================================
-exports.criarEvento = (req, res) => {
+exports.criarEvento = async (req, res) => {
   const {
     nome, assunto, categoria, imagem, data_inicio, data_fim,
     descricao, local_nome, cep, rua, cidade, estado, nome_produtor, ingressos,
+    usuario_id, // ← NOVO: ID do usuário/organizador dono do evento
   } = req.body;
 
   if (!nome || !data_inicio || !data_fim)
     return res.status(400).json({ erro: "Nome, data de início e data de término são obrigatórios." });
 
+  try {
+    const { decisaoFinal, decisaoImagem, decisaoTexto } = await moderarEvento(imagem, nome, descricao);
+
+    if (decisaoFinal !== 'APROVADA') {
+      return res.status(422).json({
+        erro: "Seu evento não pôde ser publicado porque a imagem ou a descrição foram identificadas como inadequadas pelas nossas regras de conteúdo. Revise o material e tente novamente.",
+        decisao: decisaoFinal,
+        detalhes: { imagem: decisaoImagem, texto: decisaoTexto },
+      });
+    }
+  } catch (erroModeracao) {
+    console.error('⚠️  Erro inesperado na moderação do evento:', erroModeracao.message);
+    // segue o fluxo normal (fail-open) em caso de erro inesperado
+  }
+
   const sql = `INSERT INTO eventos (nome, assunto, categoria, imagem, data_inicio, data_fim,
-       descricao, local_nome, cep, rua, cidade, estado, nome_produtor)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+       descricao, local_nome, cep, rua, cidade, estado, nome_produtor, usuario_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
   const valores = [nome, assunto||null, categoria||null, imagem||null, data_inicio, data_fim,
-    descricao||null, local_nome||null, cep||null, rua||null, cidade||null, estado||null, nome_produtor||null];
+    descricao||null, local_nome||null, cep||null, rua||null, cidade||null, estado||null, nome_produtor||null,
+    usuario_id || null]; // ← NOVO
 
   connection.query(sql, valores, (err, result) => {
     if (err) return res.status(500).json({ erro: "Erro ao salvar evento.", detalhes: err.message });

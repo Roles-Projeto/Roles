@@ -1,6 +1,7 @@
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-const API_BASE = isLocal ? "http://localhost:3000" : window.location.origin; // ← ADICIONA
+const API_BASE = isLocal ? "http://localhost:3000" : window.location.origin;
 const API_URL = isLocal ? "http://localhost:3000/eventos" : "/eventos";
+
 function atualizarBotaoDeCompra(precoNumerico, precoFormatado) {
     const botaoComprar = document.querySelector('.botao-comprar');
     const valorIngressoElement = document.querySelector('.card-garantia-ingresso .valor-ingresso');
@@ -40,7 +41,6 @@ function inicializarLogicaSelecao() {
             const precoTexto = opcaoPai.querySelector('.preco-ingresso').textContent;
             const precoNumerico = parseFloat(precoTexto.replace('R$', '').replace(',', '.').trim()) || 0;
 
-            // Atualiza ingresso selecionado no estado global
             if (window._eventoAtual) {
                 window._eventoAtual.ingressoNome = nomeIngresso;
                 window._eventoAtual.ingressoPreco = precoNumerico;
@@ -128,6 +128,50 @@ async function carregarDetalhesEvento() {
             eventosOrganizados.textContent = '';
         }
 
+        console.log("Dados do evento recebidos da API:", evento);
+
+        const btnVerPerfil = document.getElementById("btnVerPerfil") || document.querySelector(".js-link-ver-perfil");
+
+        // Extrai o ID do organizador cobrindo propriedades diretas e objetos aninhados
+        const idOrganizador =
+            evento.usuario_id ||
+            evento.organizador_id ||
+            evento.usuarioId ||
+            evento.organizadorId ||
+            evento.id_usuario ||
+            evento.usuario?.id ||
+            evento.organizador?.id ||
+            evento.criador?.id;
+
+        if (btnVerPerfil) {
+            if (idOrganizador) {
+                btnVerPerfil.href = `/frontend/eventos/VerPerfil.html?id=${idOrganizador}`;
+                btnVerPerfil.removeAttribute("aria-disabled");
+                btnVerPerfil.style.pointerEvents = "";
+                btnVerPerfil.style.opacity = "";
+                btnVerPerfil.title = "";
+                console.log("Link do perfil definido para:", btnVerPerfil.href);
+            } else {
+                // A API não retornou nenhum campo que identifique o dono do evento.
+                // IMPORTANTE: em vez de deixar o link apontar para VerPerfil.html
+                // sem ?id= (o que fazia a página cair no perfil do usuário logado),
+                // desabilitamos o botão. A correção definitiva precisa ser feita
+                // no BACKEND: a rota GET /eventos/:id precisa incluir o id do
+                // organizador do evento na resposta (ex.: usuario_id).
+                console.warn(
+                    "Chave do organizador não encontrada no objeto retornado pela API. " +
+                    "Corrija o backend para incluir o id do dono do evento (ex: usuario_id) " +
+                    "na resposta de GET /eventos/:id.",
+                    evento
+                );
+                btnVerPerfil.removeAttribute("href");
+                btnVerPerfil.setAttribute("aria-disabled", "true");
+                btnVerPerfil.style.pointerEvents = "none";
+                btnVerPerfil.style.opacity = "0.5";
+                btnVerPerfil.title = "Perfil do organizador indisponível no momento";
+            }
+        }
+
         // Ingressos
         const ingressosContainer = document.querySelector('.ingressos-disponiveis');
         const loadingIngressos = document.getElementById('loading-ingressos');
@@ -176,12 +220,12 @@ async function carregarDetalhesEvento() {
                     imagem: evento.imagem || '',
                     ingressoNome: ingresso.titulo,
                     ingressoPreco: preco,
-                    evento_id: evento.id,       // ← ID do evento
-                    tipo_ingresso_id: ingresso.id      // ← ID do tipo de ingresso
+                    evento_id: evento.id,
+                    tipo_ingresso_id: ingresso.id
                 };
                 localStorage.setItem('eventoSelecionado', JSON.stringify(window._eventoAtual));
             }
-        }); // ← fecha forEach
+        });
 
         inicializarLogicaSelecao();
 
@@ -228,11 +272,12 @@ function inicializarAcaoBotaoComprar() {
         botaoComprar.addEventListener('click', realizarAcaoComprar);
     }
 }
+
 document.addEventListener('DOMContentLoaded', async function () {
     await carregarDetalhesEvento();
     inicializarAcaoBotaoComprar();
 
-    // ── Avaliações ──
+    // Avaliações
     const params = new URLSearchParams(window.location.search);
     const eventId = params.get('id');
     if (eventId) await carregarAvaliacoesEvento(eventId);
@@ -244,9 +289,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (inputNome) { inputNome.value = nomeLogado; inputNome.readOnly = true; }
     }
 
-    // ── Registra visita ──
-
-    // ── Registra visita ──
+    // Registra visita
     const userId = localStorage.getItem('userId');
     if (userId && window._eventoAtual) {
         const e = window._eventoAtual;

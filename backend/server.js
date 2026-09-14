@@ -32,8 +32,6 @@ app.use((req, res, next) => {
     next();
 });
 
-
-
 /* ─── Rate limiting geral — 100 requests por IP a cada 15 min ─── */
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -99,11 +97,6 @@ function caseInsensitiveStatic(baseDir) {
     next();
   };
 }
-
-app.get("/frontend/html/:arquivo", (req, res) => {
-  const nomeArquivo = req.params.arquivo.replace(".html", "");
-  res.redirect(`/frontend/${nomeArquivo}/${req.params.arquivo}`);
-});
 
 app.use("/frontend", caseInsensitiveStatic(path.join(__dirname, "..", "Frontend")));
 app.use("/frontend", express.static(path.join(__dirname, "..", "Frontend")));

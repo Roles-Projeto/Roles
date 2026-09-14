@@ -438,6 +438,152 @@ async function toggleAlertaDispositivo(req, res) {
 }
 
 /* ════════════════════════════════════════
+   PERFIL PÚBLICO DO ORGANIZADOR (usuário)
+   GET /usuarios/:id/perfil
+════════════════════════════════════════ */
+async function buscarPerfilOrganizador(req, res) {
+    const { id } = req.params;
+
+    try {
+        const usuarios = await connection.query(
+            `SELECT id, nome_completo, sobrenome, email, telefone,
+                    foto_perfil, bio, criado_em
+             FROM usuarios WHERE id = ?`,
+            [id]
+        );
+
+        if (!usuarios.length) {
+            return res.status(404).json({ erro: "Usuario nao encontrado." });
+        }
+        const usuario = usuarios[0];
+
+        // Total de eventos e eventos ativos (data_fim ainda não passou)
+        const eventosRows = await connection.query(`
+            SELECT COUNT(*) AS total,
+                   COUNT(*) FILTER (WHERE data_fim >= NOW()) AS ativos
+            FROM eventos
+            WHERE usuario_id = ?`, [id]);
+
+        // Participantes únicos (pessoas distintas que compraram ingresso
+        // pra algum evento deste organizador)
+        const participantesRows = await connection.query(`
+            SELECT COUNT(DISTINCT v.usuario_id) AS total
+            FROM vendas v
+            JOIN ingressos i ON i.id = v.ingresso_id
+            JOIN eventos e ON e.id = i.evento_id
+            WHERE e.usuario_id = ?`, [id]);
+
+        // Avaliação real (média + quantidade), ligada aos eventos do organizador
+        const avaliacaoRows = await connection.query(`
+            SELECT COALESCE(AVG(a.nota), 0)::numeric(3,1) AS media, COUNT(*) AS total
+            FROM avaliacoes a
+            JOIN eventos e ON e.id = a.evento_id
+            WHERE e.usuario_id = ?`, [id]);
+
+        // Distribuição de notas (1 a 5 estrelas)
+        const distribuicaoRows = await connection.query(`
+            SELECT a.nota, COUNT(*) AS total
+            FROM avaliacoes a
+            JOIN eventos e ON e.id = a.evento_id
+            WHERE e.usuario_id = ?
+            GROUP BY a.nota`, [id]);
+
+        // Lista completa das avaliações, mais recentes primeiro
+        const avaliacoesListaRows = await connection.query(`
+            SELECT a.* FROM avaliacoes a
+            JOIN eventos e ON e.id = a.evento_id
+            WHERE e.usuario_id = ?
+            ORDER BY a.created_at DESC`, [id]);
+
+        // Seguidores reais
+        const seguidoresRows = await connection.query(`
+            SELECT COUNT(*) AS total FROM seguidores WHERE organizador_id = ?`, [id]);
+
+        // Próximos e passados eventos, pra preencher as abas
+        const proximosRows = await connection.query(`
+            SELECT * FROM eventos
+            WHERE usuario_id = ? AND data_inicio >= NOW()
+            ORDER BY data_inicio ASC`, [id]);
+
+        const passadosRows = await connection.query(`
+            SELECT * FROM eventos
+            WHERE usuario_id = ? AND data_fim < NOW()
+            ORDER BY data_fim DESC`, [id]);
+
+        res.json({
+            ...usuario,
+            total_eventos: parseInt(eventosRows[0].total, 10),
+            eventos_ativos: parseInt(eventosRows[0].ativos, 10),
+            participantes_totais: parseInt(participantesRows[0].total, 10),
+            avaliacao_media: parseFloat(avaliacaoRows[0].media),
+            avaliacao_total: parseInt(avaliacaoRows[0].total, 10),
+            avaliacoes_distribuicao: distribuicaoRows,
+            avaliacoes_lista: avaliacoesListaRows,
+            seguidores_totais: parseInt(seguidoresRows[0].total, 10),
+            eventos_proximos: proximosRows,
+            eventos_passados: passadosRows
+        });
+    } catch (err) {
+        console.error("❌ ERRO buscarPerfilOrganizador:", err.message);
+        res.status(500).json({ erro: "Erro ao buscar perfil.", detalhes: err.message });
+    }
+}
+
+/* ════════════════════════════════════════
+   SEGUIR / DEIXAR DE SEGUIR (toggle)
+   POST /usuarios/:id/seguir  (protegida por token)
+════════════════════════════════════════ */
+async function toggleSeguir(req, res) {
+    const organizadorId = req.params.id;
+    const seguidorId = req.usuario.id;
+
+    if (parseInt(organizadorId, 10) === seguidorId) {
+        return res.status(400).json({ erro: "Você não pode seguir a si mesmo." });
+    }
+
+    try {
+        const jaSegue = await connection.query(
+            "SELECT id FROM seguidores WHERE seguidor_id = ? AND organizador_id = ?",
+            [seguidorId, organizadorId]
+        );
+
+        if (jaSegue.length) {
+            await connection.query(
+                "DELETE FROM seguidores WHERE seguidor_id = ? AND organizador_id = ?",
+                [seguidorId, organizadorId]
+            );
+            return res.json({ seguindo: false });
+        } else {
+            await connection.query(
+                "INSERT INTO seguidores (seguidor_id, organizador_id) VALUES (?, ?)",
+                [seguidorId, organizadorId]
+            );
+            return res.json({ seguindo: true });
+        }
+    } catch (err) {
+        console.error("❌ ERRO toggleSeguir:", err.message);
+        res.status(500).json({ erro: "Erro ao processar.", detalhes: err.message });
+    }
+}
+
+/* ════════════════════════════════════════
+   VERIFICA SE O USUÁRIO LOGADO JÁ SEGUE
+   GET /usuarios/:id/seguindo  (protegida por token)
+════════════════════════════════════════ */
+async function verificarSegue(req, res) {
+    try {
+        const rows = await connection.query(
+            "SELECT id FROM seguidores WHERE seguidor_id = ? AND organizador_id = ?",
+            [req.usuario.id, req.params.id]
+        );
+        res.json({ seguindo: rows.length > 0 });
+    } catch (err) {
+        console.error("❌ ERRO verificarSegue:", err.message);
+        res.status(500).json({ erro: "Erro interno.", detalhes: err.message });
+    }
+}
+
+/* ════════════════════════════════════════
    EXPORTS
 ════════════════════════════════════════ */
 module.exports = {
@@ -451,4 +597,7 @@ module.exports = {
     redefinirSenha,
     alterarSenha,
     toggleAlertaDispositivo,
+    buscarPerfilOrganizador,
+    toggleSeguir,
+    verificarSegue,
 };

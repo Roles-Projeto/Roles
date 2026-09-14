@@ -71,27 +71,29 @@ function waitForHeaderAndApply(name, email, photo, tries = 0) {
 }
 
 /* ═══════════════════════════════════════════
-   GET USER ID
+   GET USER ID (Obtido com segurança via JWT)
 ═══════════════════════════════════════════ */
 function getUserId() {
-    const directKeys = ['cachedProfileUserId', 'userId', 'id', 'user_id', 'usuarioId', 'usuario_id'];
-    for (const key of directKeys) {
-        const val = localStorage.getItem(key);
-        if (val && val !== 'undefined' && val !== 'null') return val;
-    }
-    const jsonKeys = ['user', 'userData', 'usuario', 'loggedUser', 'currentUser'];
-    for (const key of jsonKeys) {
-        try {
-            const raw = localStorage.getItem(key);
-            if (!raw) continue;
-            const obj = JSON.parse(raw);
-            const id  = obj?.id || obj?.userId || obj?.user_id || obj?.usuarioId;
+    // 1. Tenta recuperar o token do localStorage
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('jwt');
+    
+    if (token) {
+        const payload = parseJwt(token);
+        if (payload) {
+            // Retorna a propriedade de ID presente no payload do seu backend
+            const id = payload.id || payload.userId || payload.user_id || payload.sub;
             if (id) return String(id);
-        } catch (_) {}
+        }
     }
+
+    // 2. Fallback temporário apenas se o token não existir
+    const fallbackId = localStorage.getItem('userId') || localStorage.getItem('id');
+    if (fallbackId && fallbackId !== 'undefined' && fallbackId !== 'null') {
+        return String(fallbackId);
+    }
+
     return null;
 }
-
 /* ═══════════════════════════════════════════
    TOAST
 ═══════════════════════════════════════════ */
@@ -1306,6 +1308,22 @@ async function loadVisitas() {
     showState('visitas', 'list');
 }
 
+function parseJwt(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join('')
+        );
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        return null;
+    }
+}
+
 /* ═══════════════════════════════════════════
    SESSÕES
 ═══════════════════════════════════════════ */
@@ -1572,3 +1590,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector(`.nav-item[data-section="${section}"]`)?.click();
     }
 });
+function logout() {
+    localStorage.clear(); // Remove todas as chaves presas de sessões anteriores
+    window.location.href = '/frontend/login/login.html';
+}

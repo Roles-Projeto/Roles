@@ -20,44 +20,6 @@ const confirmarBtn = document.getElementById("confirmarPublicacao");
 let currentStep = 0;
 
 // ====================================================
-// ID DO USUÁRIO LOGADO (ROBUSTO)
-// ====================================================
-// Antes este arquivo usava só `localStorage.getItem("userId")` para saber
-// quem estava criando o evento. Se o login salvasse o id com outra chave
-// (ex: "id", "usuarioId", "user_id") ou só dentro do token JWT, o evento
-// era criado com usuario_id = NULL no banco — e por isso a página de
-// detalhes do evento nunca conseguia linkar para o perfil do organizador.
-//
-// Esta função tenta várias chaves comuns no localStorage e, se não achar
-// nada, tenta decodificar o token JWT (mesma lógica usada em VerPerfil.js).
-function pegarIdUsuarioLogado() {
-    const chavesDiretas = ["userId", "usuarioId", "user_id", "id"];
-    for (const chave of chavesDiretas) {
-        const valor = localStorage.getItem(chave);
-        if (valor) return valor;
-    }
-
-    const token = localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("jwt");
-    if (!token) return null;
-
-    try {
-        const base64Url = token.split(".")[1];
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-        const jsonPayload = decodeURIComponent(
-            atob(base64)
-                .split("")
-                .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-                .join("")
-        );
-        const payload = JSON.parse(jsonPayload);
-        return payload?.id || payload?.userId || payload?.user_id || payload?.sub || null;
-    } catch (err) {
-        console.error("Erro ao decodificar token para obter o id do usuário:", err);
-        return null;
-    }
-}
-
-// ====================================================
 // MOSTRAR ETAPA
 // ====================================================
 function showStep(index) {
@@ -282,17 +244,6 @@ confirmarBtn.addEventListener("click", async () => {
         return `${date} ${time}:00`;
     };
 
-    // ID do organizador logado — usado pelo backend como usuario_id do evento.
-    // Se isso vier vazio, o evento é salvo sem dono e a página de detalhes
-    // não consegue linkar para o perfil do organizador depois.
-    const usuarioLogadoId = pegarIdUsuarioLogado();
-    if (!usuarioLogadoId) {
-        console.warn(
-            "Não foi possível identificar o usuário logado (nenhuma chave conhecida no " +
-            "localStorage nem token JWT válido). O evento será salvo sem organizador vinculado."
-        );
-    }
-
     const evento = {
         nome: document.getElementById("event-name")?.value?.trim(),
         assunto: document.getElementById("assunto")?.value,
@@ -308,7 +259,6 @@ confirmarBtn.addEventListener("click", async () => {
         estado: document.getElementById("estado")?.value?.trim(),
         nome_produtor: document.getElementById("producer-name")?.value?.trim(),
         ingressos: listaIngressos,
-        usuario_id: usuarioLogadoId,
     };
 
     try {

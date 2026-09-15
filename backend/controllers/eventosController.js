@@ -56,7 +56,7 @@ exports.uploadParaSupabase = async (file) => {
 // Indica ao route handler qual modo está ativo, sem precisar reler o env var lá.
 exports.usarSupabase = USAR_SUPABASE;
 
-const connection = require("../db/db_config");
+const db = require("../db/db_config");
 
 // =====================================================
 // MODERAÇÃO (Sightengine) — roda antes de salvar o evento
@@ -101,54 +101,57 @@ async function moderarEvento(imagemUrl, nome, descricao) {
 
 // =====================================================
 // CRIAR EVENTO
+// Exige login (req.usuario vem do middleware verificarToken,
+// que precisa estar na rota — ver routes/eventos.js) e salva
+// o usuario_id de quem criou. Roda a moderação (Sightengine) na
+// imagem e no texto antes de gravar; se for reprovado, não salva.
 // =====================================================
 exports.criarEvento = async (req, res) => {
-  const {
-    nome, assunto, categoria, imagem, data_inicio, data_fim,
-    descricao, local_nome, cep, rua, cidade, estado, nome_produtor, ingressos,
-    usuario_id, // ← NOVO: ID do usuário/organizador dono do evento
-  } = req.body;
-
-  if (!nome || !data_inicio || !data_fim)
-    return res.status(400).json({ erro: "Nome, data de início e data de término são obrigatórios." });
-
   try {
-    const { decisaoFinal, decisaoImagem, decisaoTexto } = await moderarEvento(imagem, nome, descricao);
+    const usuarioId = req.usuario?.id;
+    if (!usuarioId) return res.status(401).json({ erro: "Usuário não autenticado." });
 
-    if (decisaoFinal !== 'APROVADA') {
-      return res.status(422).json({
-        erro: "Seu evento não pôde ser publicado porque a imagem ou a descrição foram identificadas como inadequadas pelas nossas regras de conteúdo. Revise o material e tente novamente.",
-        decisao: decisaoFinal,
-        detalhes: { imagem: decisaoImagem, texto: decisaoTexto },
-      });
+    const {
+      nome, assunto, categoria, imagem, data_inicio, data_fim,
+      descricao, local_nome, cep, rua, cidade, estado, nome_produtor, ingressos,
+    } = req.body;
+
+    if (!nome || !data_inicio || !data_fim)
+      return res.status(400).json({ erro: "Nome, data de início e data de término são obrigatórios." });
+
+    // ── MODERAÇÃO (Sightengine) — roda antes de salvar o evento ──
+    try {
+      const { decisaoFinal, decisaoImagem, decisaoTexto } = await moderarEvento(imagem, nome, descricao);
+
+      if (decisaoFinal !== 'APROVADA') {
+        return res.status(422).json({
+          erro: "Seu evento não pôde ser publicado porque a imagem ou a descrição foram identificadas como inadequadas pelas nossas regras de conteúdo. Revise o material e tente novamente.",
+          decisao: decisaoFinal,
+          detalhes: { imagem: decisaoImagem, texto: decisaoTexto },
+        });
+      }
+    } catch (erroModeracao) {
+      console.error('⚠️  Erro inesperado na moderação do evento:', erroModeracao.message);
+      // segue o fluxo normal (fail-open) em caso de erro inesperado na moderação
     }
-  } catch (erroModeracao) {
-    console.error('⚠️  Erro inesperado na moderação do evento:', erroModeracao.message);
-    // segue o fluxo normal (fail-open) em caso de erro inesperado
-  }
 
-  const sql = `INSERT INTO eventos (nome, assunto, categoria, imagem, data_inicio, data_fim,
-       descricao, local_nome, cep, rua, cidade, estado, nome_produtor, usuario_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO eventos
+        (usuario_id, nome, assunto, categoria, imagem, data_inicio, data_fim,
+         descricao, local_nome, cep, rua, cidade, estado, nome_produtor)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-  const valores = [nome, assunto||null, categoria||null, imagem||null, data_inicio, data_fim,
-    descricao||null, local_nome||null, cep||null, rua||null, cidade||null, estado||null, nome_produtor||null,
-    usuario_id || null]; // ← NOVO
+    const valores = [
+      usuarioId, nome, assunto || null, categoria || null, imagem || null, data_inicio, data_fim,
+      descricao || null, local_nome || null, cep || null, rua || null, cidade || null, estado || null, nome_produtor || null
+    ];
 
-  connection.query(sql, valores, (err, result) => {
-    if (err) return res.status(500).json({ erro: "Erro ao salvar evento.", detalhes: err.message });
-
+    const result = await db.query(sql, valores);
     const eventoId = result.insertId;
 
-    if (!ingressos || ingressos.length === 0)
+    if (!ingressos || ingressos.length === 0) {
       return res.status(201).json({ mensagem: "Evento criado com sucesso!", eventoId });
+    }
 
-    // ── Monta INSERT multi-linha compatível com Postgres ──
-    // Em vez de "VALUES ?" (sintaxe exclusiva do mysql2), geramos
-    // "(?, ?, ?, ?, ?), (?, ?, ?, ?, ?), ..." e um array de valores
-    // já achatado (flatMap), na mesma ordem. O db_config.js converte
-    // cada "?" pra $1, $2... na ordem em que aparecem, então isso
-    // funciona igual pro Postgres.
     const placeholders = ingressos.map(() => "(?, ?, ?, ?, ?)").join(", ");
     const sqlIng = `INSERT INTO ingressos (evento_id, titulo, tipo, valor, quantidade_total) VALUES ${placeholders}`;
     const vals = ingressos.flatMap(i => [
@@ -159,85 +162,144 @@ exports.criarEvento = async (req, res) => {
       parseInt(i.quantidade_total) || 1,
     ]);
 
-    connection.query(sqlIng, vals, (errIng) => {
-      if (errIng) return res.status(500).json({ erro: "Evento salvo, mas erro ao salvar ingressos.", detalhes: errIng.message });
+    try {
+      await db.query(sqlIng, vals);
       res.status(201).json({ mensagem: "Evento e ingressos criados com sucesso!", eventoId });
-    });
-  });
+    } catch (errIng) {
+      res.status(500).json({ erro: "Evento salvo, mas erro ao salvar ingressos.", detalhes: errIng.message });
+    }
+  } catch (err) {
+    console.error("Erro ao salvar evento:", err);
+    res.status(500).json({ erro: "Erro ao salvar evento.", detalhes: err.message });
+  }
 };
 
 // =====================================================
 // LISTAR EVENTOS
+//
+// Dois modos, dependendo se vem ?criador_id= na URL:
+//
+// - SEM criador_id (listagem pública, ex: página de eventos do site):
+//   só eventos futuros, de todo mundo.
+//
+// - COM criador_id (usado pelo Dashboard):
+//   traz TODOS os eventos daquele usuário (passados e futuros),
+//   já que o dono precisa ver o histórico completo.
 // =====================================================
-exports.listarEventos = (req, res) => {
-  const sql = `
-    SELECT e.*, MIN(i.valor) AS preco_minimo,
-      GROUP_CONCAT(i.titulo SEPARATOR ', ') AS tipos_ingresso
-    FROM eventos e
-    LEFT JOIN ingressos i ON i.evento_id = e.id
-    WHERE e.data_inicio >= NOW()
-    GROUP BY e.id
-    ORDER BY e.data_inicio ASC
-  `;
-  connection.query(sql, [], (err, results) => {
-    if (err) return res.status(500).json({ erro: "Erro ao buscar eventos.", detalhes: err.message });
+exports.listarEventos = async (req, res) => {
+  try {
+    const { criador_id } = req.query;
+
+    const filtroWhere = criador_id
+      ? "WHERE e.usuario_id = ?"
+      : "WHERE e.data_inicio >= NOW()";
+
+    const sql = `
+      SELECT e.*, MIN(i.valor) AS preco_minimo,
+        STRING_AGG(i.titulo, ', ') AS tipos_ingresso
+      FROM eventos e
+      LEFT JOIN ingressos i ON i.evento_id = e.id
+      ${filtroWhere}
+      GROUP BY e.id
+      ORDER BY e.data_inicio ${criador_id ? "DESC" : "ASC"}
+    `;
+
+    const params = criador_id ? [criador_id] : [];
+    const results = await db.query(sql, params);
     res.json(results);
-  });
+  } catch (err) {
+    console.error("Erro ao buscar eventos:", err);
+    res.status(500).json({ erro: "Erro ao buscar eventos.", detalhes: err.message });
+  }
 };
 
 // =====================================================
 // BUSCAR EVENTO POR ID
 // =====================================================
-exports.buscarEvento = (req, res) => {
-  const { id } = req.params;
+exports.buscarEvento = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  connection.query("SELECT * FROM eventos WHERE id = ?", [id], (err, results) => {
-    if (err) return res.status(500).json({ erro: "Erro ao buscar evento." });
-    if (results.length === 0) return res.status(404).json({ erro: "Evento não encontrado." });
+    const eventos = await db.query("SELECT * FROM eventos WHERE id = ?", [id]);
+    if (!eventos || eventos.length === 0) {
+      return res.status(404).json({ erro: "Evento não encontrado." });
+    }
+    const evento = eventos[0];
 
-    const evento = results[0];
-
-    // Busca os ingressos desse evento
-    connection.query("SELECT * FROM ingressos WHERE evento_id = ?", [id], (errIng, ingressos) => {
-      if (errIng) return res.status(500).json({ erro: "Erro ao buscar ingressos." });
-
-      res.json({ ...evento, ingressos });
-    });
-  });
+    const ingressos = await db.query("SELECT * FROM ingressos WHERE evento_id = ?", [id]);
+    res.json({ ...evento, ingressos });
+  } catch (err) {
+    console.error("Erro ao buscar evento:", err);
+    res.status(500).json({ erro: "Erro ao buscar evento.", detalhes: err.message });
+  }
 };
 
 // =====================================================
 // EDITAR EVENTO
+// Exige login e checa se o evento pertence ao usuário logado.
 // =====================================================
-exports.editarEvento = (req, res) => {
-  const { id } = req.params;
-  const {
-    nome, assunto, categoria, imagem, data_inicio, data_fim,
-    descricao, local_nome, cep, rua, cidade, estado, nome_produtor,
-  } = req.body;
+exports.editarEvento = async (req, res) => {
+  try {
+    const usuarioId = req.usuario?.id;
+    if (!usuarioId) return res.status(401).json({ erro: "Usuário não autenticado." });
 
-  if (!nome || !data_inicio || !data_fim)
-    return res.status(400).json({ erro: "Nome, data de início e data de término são obrigatórios." });
+    const { id } = req.params;
 
-  const sql = `UPDATE eventos SET nome=?, assunto=?, categoria=?, imagem=?, data_inicio=?, data_fim=?,
-    descricao=?, local_nome=?, cep=?, rua=?, cidade=?, estado=?, nome_produtor=? WHERE id=?`;
+    const existentes = await db.query("SELECT usuario_id FROM eventos WHERE id = ?", [id]);
+    if (!existentes || existentes.length === 0) {
+      return res.status(404).json({ erro: "Evento não encontrado." });
+    }
+    if (String(existentes[0].usuario_id) !== String(usuarioId)) {
+      return res.status(403).json({ erro: "Você não tem permissão para editar este evento." });
+    }
 
-  const valores = [nome, assunto||null, categoria||null, imagem||null, data_inicio, data_fim,
-    descricao||null, local_nome||null, cep||null, rua||null, cidade||null, estado||null, nome_produtor||null, id];
+    const {
+      nome, assunto, categoria, imagem, data_inicio, data_fim,
+      descricao, local_nome, cep, rua, cidade, estado, nome_produtor,
+    } = req.body;
 
-  connection.query(sql, valores, (err, result) => {
-    if (err) return res.status(500).json({ erro: "Erro ao editar evento.", detalhes: err.message });
+    if (!nome || !data_inicio || !data_fim)
+      return res.status(400).json({ erro: "Nome, data de início e data de término são obrigatórios." });
+
+    const sql = `UPDATE eventos SET nome=?, assunto=?, categoria=?, imagem=?, data_inicio=?, data_fim=?,
+      descricao=?, local_nome=?, cep=?, rua=?, cidade=?, estado=?, nome_produtor=? WHERE id=?`;
+
+    const valores = [
+      nome, assunto || null, categoria || null, imagem || null, data_inicio, data_fim,
+      descricao || null, local_nome || null, cep || null, rua || null, cidade || null, estado || null, nome_produtor || null, id
+    ];
+
+    await db.query(sql, valores);
     res.json({ mensagem: "Evento atualizado com sucesso!" });
-  });
+  } catch (err) {
+    console.error("Erro ao editar evento:", err);
+    res.status(500).json({ erro: "Erro ao editar evento.", detalhes: err.message });
+  }
 };
 
 // =====================================================
 // EXCLUIR EVENTO
+// Exige login e checa se o evento pertence ao usuário logado.
 // =====================================================
-exports.excluirEvento = (req, res) => {
-  const { id } = req.params;
-  connection.query("DELETE FROM eventos WHERE id = ?", [id], (err, result) => {
-    if (err) return res.status(500).json({ erro: "Erro ao excluir evento.", detalhes: err.message });
+exports.excluirEvento = async (req, res) => {
+  try {
+    const usuarioId = req.usuario?.id;
+    if (!usuarioId) return res.status(401).json({ erro: "Usuário não autenticado." });
+
+    const { id } = req.params;
+
+    const existentes = await db.query("SELECT usuario_id FROM eventos WHERE id = ?", [id]);
+    if (!existentes || existentes.length === 0) {
+      return res.status(404).json({ erro: "Evento não encontrado." });
+    }
+    if (String(existentes[0].usuario_id) !== String(usuarioId)) {
+      return res.status(403).json({ erro: "Você não tem permissão para excluir este evento." });
+    }
+
+    await db.query("DELETE FROM eventos WHERE id = ?", [id]);
     res.json({ mensagem: "Evento excluído com sucesso!" });
-  });
+  } catch (err) {
+    console.error("Erro ao excluir evento:", err);
+    res.status(500).json({ erro: "Erro ao excluir evento.", detalhes: err.message });
+  }
 };

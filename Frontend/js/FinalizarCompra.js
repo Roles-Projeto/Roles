@@ -101,6 +101,78 @@ function setFieldStatus(inputId, isValid, feedbackId, msgErro) {
     return isValid;
 }
 
+/* ==================================================
+   TOAST DE FEEDBACK (substitui os alert() nativos)
+================================================== */
+function _injectToastStyleCompra() {
+    if (document.getElementById('compraToastStyle')) return;
+    const s = document.createElement('style');
+    s.id = 'compraToastStyle';
+    s.textContent = `
+        @keyframes compraToastIn  { from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)} }
+        @keyframes compraToastOut { from{opacity:1; transform:translateY(0)} to{opacity:0; transform:translateY(14px)} }
+        .compra-toast {
+            position:fixed; bottom:28px; right:28px; z-index:99999;
+            max-width:380px; background:#1C1834; color:#F1EDFA;
+            padding:16px 18px; border-radius:12px;
+            font-family:'Inter', sans-serif; font-size:13.5px; font-weight:500; line-height:1.5;
+            display:flex; align-items:flex-start; gap:12px;
+            border:1px solid #322850;
+            box-shadow:0 10px 28px rgba(0,0,0,.45);
+            animation: compraToastIn .25s ease;
+        }
+        .compra-toast-icon {
+            width:26px; height:26px; border-radius:50%; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center;
+            font-size:13px; font-weight:800; color:#160f28;
+        }
+        .compra-toast-text { flex:1; }
+        .compra-toast-close {
+            background:none; border:none; color:#9689B8; cursor:pointer;
+            font-size:16px; line-height:1; padding:0; flex-shrink:0; margin-left:auto;
+        }
+        .compra-toast-close:hover { color:#F1EDFA; }
+        @media (max-width:480px) {
+            .compra-toast { left:16px; right:16px; bottom:16px; max-width:none; }
+        }
+    `;
+    document.head.appendChild(s);
+}
+
+function showToast(mensagem, tipo = "info") {
+    _injectToastStyleCompra();
+    document.querySelectorAll(".compra-toast").forEach(t => t.remove());
+
+    const cores   = { success: "#35D399", error: "#FF5C7A", warn: "#FFB627", info: "#6AA9FF" };
+    const icones  = { success: "✓",       error: "✕",       warn: "!",       info: "i" };
+
+    const toast = document.createElement("div");
+    toast.className = "compra-toast";
+
+    const bolinha = document.createElement("span");
+    bolinha.className = "compra-toast-icon";
+    bolinha.style.background = cores[tipo] || cores.info;
+    bolinha.textContent = icones[tipo] || icones.info;
+
+    const texto = document.createElement("span");
+    texto.className = "compra-toast-text";
+    texto.textContent = mensagem;
+
+    const fechar = document.createElement("button");
+    fechar.className = "compra-toast-close";
+    fechar.innerHTML = "&times;";
+    fechar.onclick = () => toast.remove();
+
+    toast.appendChild(bolinha);
+    toast.appendChild(texto);
+    toast.appendChild(fechar);
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = "compraToastOut .25s ease forwards";
+        setTimeout(() => toast.remove(), 260);
+    }, 5000);
+}
 function validarDadosPessoais() {
     return [
         setFieldStatus("nome", Validador.nome(document.getElementById("nome").value), "fb-nome", "Insira seu nome completo"),
@@ -461,13 +533,12 @@ async function loadEventData() {
 ================================================== */
 async function finalizarCompra(forma_pagamento) {
 
-    const usuarioId = getUserId();
+        const usuarioId = getUserId();
     if (!usuarioId) {
-        alert("Você precisa estar logado para comprar ingressos.");
-        window.location.href = "/frontend/login/login.html";
+        showToast("Você precisa estar logado para comprar ingressos.", "warn");
+        setTimeout(() => { window.location.href = "/frontend/login/login.html"; }, 1800);
         return;
     }
-
     const btnCartao = document.getElementById("btn-pagar-cartao");
     const btnPix = document.getElementById("btn-pix-pay");
     const btnAtivo = forma_pagamento === "credito" ? btnCartao : btnPix;
@@ -483,8 +554,8 @@ async function finalizarCompra(forma_pagamento) {
 
     console.log("🛒 finalizarCompra →", { usuarioId, eventoId, tipoIngressoId, forma_pagamento, quantidade });
 
-    if (!eventoId || !tipoIngressoId) {
-        alert("Erro: dados do evento não encontrados. Volte e selecione o ingresso novamente.");
+        if (!eventoId || !tipoIngressoId) {
+        showToast("Dados do evento não encontrados. Volte e selecione o ingresso novamente.", "error");
         if (btnAtivo) { btnAtivo.disabled = false; btnAtivo.textContent = "Tentar novamente"; }
         return;
     }
@@ -504,9 +575,9 @@ async function finalizarCompra(forma_pagamento) {
         });
         const data = await res.json();
 
-        if (!res.ok) {
+                if (!res.ok) {
             console.error("❌ Erro da API:", data);
-            alert("Erro ao processar compra: " + (data.erro || "Tente novamente."));
+            showToast(data.erro || "Não foi possível processar sua compra. Tente novamente.", "error");
             if (btnAtivo) { btnAtivo.disabled = false; btnAtivo.textContent = "Tentar novamente"; }
             return;
         }
@@ -536,9 +607,9 @@ async function finalizarCompra(forma_pagamento) {
 
         window.location.href = "confirmacao.html";
 
-    } catch (err) {
+        } catch (err) {
         console.error("❌ Erro na requisição:", err);
-        alert("Erro de conexão com o servidor. Verifique se o backend está rodando.");
+        showToast("Erro de conexão com o servidor. Tente novamente em instantes.", "error");
         if (btnAtivo) { btnAtivo.disabled = false; btnAtivo.textContent = "Tentar novamente"; }
     }
 }
@@ -551,8 +622,8 @@ async function finalizarCompra(forma_pagamento) {
 ================================================== */
 document.addEventListener("DOMContentLoaded", async () => {
     if (typeof estaLogado === "function" ? !estaLogado() : !getUserId()) {
-        alert("Você precisa estar logado ou criar uma conta para comprar ingressos.");
-        window.location.href = "/frontend/login/login.html";
+        showToast("Você precisa estar logado ou criar uma conta para comprar ingressos.", "warn");
+        setTimeout(() => { window.location.href = "/frontend/login/login.html"; }, 1800);
         return;
     }
 

@@ -57,7 +57,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// NOVA ROTA — estabelecimentos do usuário logado (pro Dashboard)
+// Estabelecimentos do usuário logado (pro Dashboard)
 router.get("/meus", verificarToken, async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
@@ -69,131 +69,6 @@ router.get("/meus", verificarToken, async (req, res) => {
   } catch (err) {
     console.error("Erro ao listar meus estabelecimentos:", err);
     res.status(500).json({ erro: "Erro interno ao buscar seus estabelecimentos." });
-  }
-});
-
-// ── PERFIL COMPLETO DO ORGANIZADOR (com estatísticas reais) ──
-// IMPORTANTE: precisa vir ANTES de "/:id" pra não conflitar
-router.get("/:id/perfil", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const estRows = await db.query("SELECT * FROM estabelecimentos WHERE id = ?", [id]);
-    if (!estRows.length) {
-      return res.status(404).json({ erro: "Estabelecimento não encontrado." });
-    }
-    const est = parseRow(estRows[0]);
-    const usuarioId = est.usuario_id;
-
-    // Total de eventos e eventos ativos (data_fim ainda não passou)
-    const eventosRows = await db.query(`
-      SELECT COUNT(*) AS total,
-             COUNT(*) FILTER (WHERE data_fim >= NOW()) AS ativos
-      FROM eventos
-      WHERE usuario_id = ?`, [usuarioId]);
-
-    // Participantes únicos (pessoas distintas que compraram ingresso pra algum evento deste organizador)
-    const participantesRows = await db.query(`
-      SELECT COUNT(DISTINCT v.usuario_id) AS total
-      FROM vendas v
-      JOIN ingressos i ON i.id = v.ingresso_id
-      JOIN eventos e ON e.id = i.evento_id
-      WHERE e.usuario_id = ?`, [usuarioId]);
-
-    // Avaliação real (média + quantidade), calculada a partir da tabela avaliacoes
-    const avaliacaoRows = await db.query(`
-      SELECT COALESCE(AVG(nota), 0)::numeric(3,1) AS media, COUNT(*) AS total
-      FROM avaliacoes
-      WHERE estabelecimento_id = ?`, [id]);
-
-    // Distribuição de notas (quantas avaliações têm nota 1, 2, 3, 4, 5)
-    const distribuicaoRows = await db.query(`
-      SELECT nota, COUNT(*) AS total
-      FROM avaliacoes
-      WHERE estabelecimento_id = ?
-      GROUP BY nota`, [id]);
-
-    // Lista completa das avaliações, mais recentes primeiro
-    const avaliacoesListaRows = await db.query(`
-      SELECT * FROM avaliacoes
-      WHERE estabelecimento_id = ?
-      ORDER BY created_at DESC`, [id]);
-
-    // Seguidores reais
-    const seguidoresRows = await db.query(`
-      SELECT COUNT(*) AS total FROM seguidores WHERE estabelecimento_id = ?`, [id]);
-
-    // Próximos e passados eventos, pra preencher as abas
-    const proximosRows = await db.query(`
-      SELECT * FROM eventos
-      WHERE usuario_id = ? AND data_inicio >= NOW()
-      ORDER BY data_inicio ASC`, [usuarioId]);
-
-    const passadosRows = await db.query(`
-      SELECT * FROM eventos
-      WHERE usuario_id = ? AND data_fim < NOW()
-      ORDER BY data_fim DESC`, [usuarioId]);
-
-    res.json({
-      ...est,
-      total_eventos: parseInt(eventosRows[0].total, 10),
-      eventos_ativos: parseInt(eventosRows[0].ativos, 10),
-      participantes_totais: parseInt(participantesRows[0].total, 10),
-      avaliacao_media: parseFloat(avaliacaoRows[0].media),
-      avaliacao_total: parseInt(avaliacaoRows[0].total, 10),
-      avaliacoes_distribuicao: distribuicaoRows,
-      avaliacoes_lista: avaliacoesListaRows,
-      seguidores_totais: parseInt(seguidoresRows[0].total, 10),
-      eventos_proximos: proximosRows,
-      eventos_passados: passadosRows
-    });
-  } catch (err) {
-    console.error("Erro ao buscar perfil do estabelecimento:", err);
-    res.status(500).json({ erro: "Erro interno ao buscar perfil." });
-  }
-});
-
-// ── SEGUIR / DEIXAR DE SEGUIR (toggle) ──
-router.post("/:id/seguir", verificarToken, async (req, res) => {
-  try {
-    const estabelecimentoId = req.params.id;
-    const usuarioId = req.usuario.id;
-
-    const jaSegue = await db.query(
-      "SELECT id FROM seguidores WHERE usuario_id = ? AND estabelecimento_id = ?",
-      [usuarioId, estabelecimentoId]
-    );
-
-    if (jaSegue.length) {
-      await db.query(
-        "DELETE FROM seguidores WHERE usuario_id = ? AND estabelecimento_id = ?",
-        [usuarioId, estabelecimentoId]
-      );
-      return res.json({ seguindo: false });
-    } else {
-      await db.query(
-        "INSERT INTO seguidores (usuario_id, estabelecimento_id) VALUES (?, ?)",
-        [usuarioId, estabelecimentoId]
-      );
-      return res.json({ seguindo: true });
-    }
-  } catch (err) {
-    console.error("Erro ao seguir/deixar de seguir:", err);
-    res.status(500).json({ erro: "Erro interno ao processar." });
-  }
-});
-
-// ── VERIFICA SE O USUÁRIO LOGADO JÁ SEGUE ──
-router.get("/:id/seguindo", verificarToken, async (req, res) => {
-  try {
-    const rows = await db.query(
-      "SELECT id FROM seguidores WHERE usuario_id = ? AND estabelecimento_id = ?",
-      [req.usuario.id, req.params.id]
-    );
-    res.json({ seguindo: rows.length > 0 });
-  } catch (err) {
-    console.error("Erro ao verificar se segue:", err);
-    res.status(500).json({ erro: "Erro interno." });
   }
 });
 
@@ -209,7 +84,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Cadastro agora exige token e salva usuario_id
+// Cadastro exige token e salva usuario_id
 router.post("/", verificarToken, async (req, res) => {
   try {
     const usuarioId = req.usuario.id; // vem do token, não do body
@@ -232,11 +107,13 @@ router.post("/", verificarToken, async (req, res) => {
          visibilidade, horario, comodidades, img_logo, img_capa,
          categoria_card, fotos_galeria, pratos)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
-      usuarioId, nome, tipo, especialidade, faixa_preco, capacidade, descricao,
-      local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
-      endereco, telefone, website, responsavel, cnpj,
-      visibilidade || "publico", horario || "", comodidades,
-      img_logo, img_capa, categoria_card,
+            usuarioId, nome, tipo ?? null, especialidade ?? null, faixa_preco ?? null,
+      capacidade !== undefined && capacidade !== null && capacidade !== "" ? Number(capacidade) : null,
+      descricao ?? null, local_nome ?? null, cep ?? null, rua ?? null, numero ?? null,
+      complemento ?? null, bairro ?? null, cidade ?? null, estado ?? null,
+      endereco ?? null, telefone ?? null, website ?? null, responsavel ?? null, cnpj ?? null,
+      visibilidade || "publico", horario || "", comodidades ?? null,
+      img_logo ?? null, img_capa ?? null, categoria_card ?? null,
       JSON.stringify(fotos_galeria || []), JSON.stringify(pratos || [])
     ]);
 
@@ -247,9 +124,20 @@ router.post("/", verificarToken, async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+// Edição — exige token e checa se o estabelecimento é do usuário logado
+router.put("/:id", verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const usuarioId = req.usuario.id;
+
+    const existentes = await db.query("SELECT usuario_id FROM estabelecimentos WHERE id = ?", [id]);
+    if (!existentes || existentes.length === 0) {
+      return res.status(404).json({ erro: "Estabelecimento não encontrado." });
+    }
+    if (String(existentes[0].usuario_id) !== String(usuarioId)) {
+      return res.status(403).json({ erro: "Você não tem permissão para editar este estabelecimento." });
+    }
+
     const {
       nome, tipo, especialidade, faixa_preco, capacidade, descricao,
       local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
@@ -267,13 +155,14 @@ router.put("/:id", async (req, res) => {
         visibilidade=?, horario=?, comodidades=?, img_logo=?,
         img_capa=?, categoria_card=?, fotos_galeria=?, pratos=?
       WHERE id=?`, [
-      nome, tipo, especialidade, faixa_preco, capacidade,
-      descricao, local_nome, cep, rua, numero,
-      complemento, bairro, cidade, estado, endereco,
-      telefone, website, responsavel, cnpj,
-      visibilidade, horario || "", comodidades, img_logo,
-      img_capa, categoria_card,
-      JSON.stringify(fotos_galeria || []), JSON.stringify(pratos || []), id
+            nome ?? null, tipo ?? null, especialidade ?? null, faixa_preco ?? null,
+      capacidade !== undefined && capacidade !== null && capacidade !== "" ? Number(capacidade) : null,
+      descricao ?? null, local_nome ?? null, cep ?? null, rua ?? null, numero ?? null,
+      complemento ?? null, bairro ?? null, cidade ?? null, estado ?? null, endereco ?? null,
+      telefone ?? null, website ?? null, responsavel ?? null, cnpj ?? null,
+      visibilidade ?? "publico", horario ?? "", comodidades ?? null, img_logo ?? null,
+      img_capa ?? null, categoria_card ?? null,
+      JSON.stringify(fotos_galeria ?? []), JSON.stringify(pratos ?? []), id
     ]);
 
     res.json({ mensagem: "Estabelecimento atualizado com sucesso!" });
@@ -283,9 +172,21 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+// Exclusão — exige token e checa dono também (antes não tinha nenhuma proteção)
+router.delete("/:id", verificarToken, async (req, res) => {
   try {
-    await db.query("DELETE FROM estabelecimentos WHERE id = ?", [req.params.id]);
+    const { id } = req.params;
+    const usuarioId = req.usuario.id;
+
+    const existentes = await db.query("SELECT usuario_id FROM estabelecimentos WHERE id = ?", [id]);
+    if (!existentes || existentes.length === 0) {
+      return res.status(404).json({ erro: "Estabelecimento não encontrado." });
+    }
+    if (String(existentes[0].usuario_id) !== String(usuarioId)) {
+      return res.status(403).json({ erro: "Você não tem permissão para remover este estabelecimento." });
+    }
+
+    await db.query("DELETE FROM estabelecimentos WHERE id = ?", [id]);
     res.json({ mensagem: "Estabelecimento removido com sucesso!" });
   } catch (err) {
     console.error("Erro ao remover estabelecimento:", err);

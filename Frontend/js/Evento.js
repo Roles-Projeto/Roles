@@ -33,12 +33,12 @@ function aplicarImagemHero(categoria) {
   const imgUrl = imagensPorCategoria[categoria] || imagensPorCategoria['todas'];
   const cor    = coresPorCategoria[categoria]    || '#1a1a2e';
   hero.style.backgroundColor   = cor;
-  hero.style.transition        = 'opacity 0.35s ease';
-  hero.style.opacity           = '0.85';
+  hero.style.transition         = 'opacity 0.35s ease';
+  hero.style.opacity            = '0.85';
   hero.style.backgroundImage    = `url('${imgUrl}')`;
-  hero.style.backgroundSize    = 'cover';
+  hero.style.backgroundSize     = 'cover';
   hero.style.backgroundPosition = 'center 40%';
-  hero.style.backgroundRepeat  = 'no-repeat';
+  hero.style.backgroundRepeat   = 'no-repeat';
   setTimeout(() => { hero.style.opacity = '1'; }, 50);
   const img = new Image();
   img.onerror = () => { hero.style.backgroundImage = 'none'; hero.style.backgroundColor = cor; };
@@ -127,9 +127,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   let filtroData           = 'todas';
   let filtroCategoria      = 'todas';
 
-  // Clique no card inteiro (ignora botões e links explicitamente)
+  // Clique no card inteiro
   container.addEventListener("click", e => {
-    if (e.target.closest("button, a, .btn-comprar, .btn-detalhes, .btn-confirmar")) return;
+    if (e.target.closest("button, a")) return;
     const card = e.target.closest(".evento-card");
     if (!card) return;
     const id = card.getAttribute("data-id");
@@ -205,15 +205,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   function criarCard(evento) {
     const article = document.createElement("article");
     article.classList.add("evento-card");
-    const mapCategoria = {
-      'festas': 'festa', 'festa': 'festa',
-      'shows': 'show', 'show': 'show',
-      'festivais': 'festival', 'festival': 'festival',
-      'gastronomia': 'gastronomia',
-      'workshop': 'workshop', 'workshops': 'workshop',
-    };
-    const catNormalizada = mapCategoria[(evento.assunto || "").toLowerCase()] || (evento.assunto || "").toLowerCase();
-    article.setAttribute("data-categoria", catNormalizada);
+   const mapCategoria = {
+  'festas': 'festa', 'festa': 'festa',
+  'shows': 'show', 'show': 'show',
+  'festivais': 'festival', 'festival': 'festival',
+  'gastronomia': 'gastronomia',
+  'workshop': 'workshop', 'workshops': 'workshop',
+};
+const catNormalizada = mapCategoria[(evento.assunto || "").toLowerCase()] || (evento.assunto || "").toLowerCase();
+article.setAttribute("data-categoria", catNormalizada);
     article.setAttribute("data-nome",      evento.nome);
     article.setAttribute("data-id",        evento.id);
     article.setAttribute("data-data",      evento.data_inicio || "");
@@ -228,12 +228,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         ? evento.imagem
         : `${API_BASE}${evento.imagem}`;
 
-    // Ajuste no link do botão de ação para direcionar diretamente para o fluxo de compra
     const btnAcao = isGratuito
-      ? `<a href="/frontend/detalheseventos/presencaconfirmada.html?id=${evento.id}" class="btn-confirmar" role="button" onclick="event.stopPropagation()">
+      ? `<a href="/frontend/detalheseventos/presencaconfirmada.html" class="btn-confirmar" role="button">
            <i class="fa-solid fa-check"></i> Confirmar
          </a>`
-      : `<a href="/frontend/detalheseventos/detalheevento.html?id=${evento.id}&buy=true" class="btn-comprar" role="button" onclick="event.stopPropagation()">
+      : `<a href="/frontend/detalheseventos/detalheevento.html?id=${evento.id}" class="btn-comprar" role="button">
            <i class="fa-solid fa-ticket"></i> Comprar
          </a>`;
 
@@ -253,7 +252,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div class="card-footer">
           <span class="preco">${preco}</span>
           <div class="acoes">
-            <a href="/frontend/detalheseventos/detalheevento.html?id=${evento.id}" class="btn-detalhes" role="button" onclick="event.stopPropagation()">
+            <a href="/frontend/detalheseventos/detalheevento.html?id=${evento.id}" class="btn-detalhes" role="button">
               <i class="fa-solid fa-circle-info"></i> Detalhes
             </a>
             ${btnAcao}

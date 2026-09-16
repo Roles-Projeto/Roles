@@ -146,6 +146,7 @@ async function carregarPerfilOrganizador() {
       // Eventos e avaliações dependem do usuario_id — só dá pra buscar
       // quando o perfil veio por ID de verdade (não pelo fallback de nome).
       carregarEventosEAvaliacoesOrganizador(id);
+      carregarStatusSeguidor(id);
       return;
     }
     // Se a API ainda não tiver essa rota, cai para o próximo caso (nome, se houver).
@@ -222,8 +223,12 @@ async function carregarEventosEAvaliacoesOrganizador(usuarioId) {
 
   } catch (err) {
     console.warn('Não foi possível carregar eventos/avaliações reais do organizador:', err);
-    if (containerProximos) containerProximos.innerHTML = '<p class="sem-dados">Não foi possível carregar os eventos.</p>';
-    if (containerPassados) containerPassados.innerHTML = '<p class="sem-dados">Não foi possível carregar os eventos.</p>';
+    const msgErro = '<p class="sem-dados">Não foi possível carregar os dados. Tente novamente mais tarde.</p>';
+    if (containerProximos) containerProximos.innerHTML = msgErro;
+    if (containerPassados) containerPassados.innerHTML = msgErro;
+
+    const listaAvaliacoes = document.getElementById('lista-avaliacoes');
+    if (listaAvaliacoes) listaAvaliacoes.innerHTML = msgErro;
   }
 }
 
@@ -398,17 +403,103 @@ function renderizarAvaliacoesOrganizador(eventos, avaliacoesPorEvento, avaliacoe
   }).join('');
 }
 
-// ── Botão Seguir — toggle ─────────────────────────────
-function toggleSeguir(btn) {
-  const seguindo = btn.classList.toggle('seguindo');
-  if (seguindo) {
-    btn.innerHTML = '<i class="fa-solid fa-check"></i> Seguindo';
-    const el = document.getElementById('seguidores');
-    if (el) el.textContent = (parseInt(el.textContent.replace('.','')) + 1).toLocaleString('pt-BR');
-  } else {
-    btn.innerHTML = '<i class="fa-solid fa-plus"></i> Seguir';
-    const el = document.getElementById('seguidores');
-    if (el) el.textContent = (parseInt(el.textContent.replace('.','')) - 1).toLocaleString('pt-BR');
+/* ═══════════════════════════════════════════════════════
+   SEGUIR / DEIXAR DE SEGUIR (real — usa a tabela `seguidores`)
+═══════════════════════════════════════════════════════ */
+
+// ⚠️ Ajuste a chave abaixo se o seu app salvar o token de login com outro
+//    nome no localStorage (ex.: 'authToken', 'accessToken').
+function getTokenAuth() {
+  return localStorage.getItem('token');
+}
+
+async function carregarStatusSeguidor(organizadorId) {
+  const btnSeguir = document.getElementById('btn-seguir');
+  const elSeguidores = document.getElementById('seguidores');
+
+  // Contagem de seguidores (pública, não depende de login)
+  try {
+    const res = await fetch(`${API_BASE_PERFIL}/seguidores/count/${organizadorId}`);
+    if (res.ok) {
+      const { total } = await res.json();
+      if (elSeguidores) elSeguidores.textContent = Number(total || 0).toLocaleString('pt-BR');
+    }
+  } catch (err) {
+    console.warn('Não foi possível carregar a contagem de seguidores:', err);
+  }
+
+  // Se não tiver botão de seguir na tela (ex: é o próprio perfil), para por aqui.
+  if (!btnSeguir || btnSeguir.disabled) return;
+
+  // Status "já sigo / não sigo" só dá pra saber se tiver usuário logado.
+  const token = getTokenAuth();
+  if (!token) return;
+
+  try {
+    const res = await fetch(`${API_BASE_PERFIL}/seguidores/verificar/${organizadorId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return; // ex.: token expirado — deixa o botão no estado padrão "Seguir"
+    const { segue } = await res.json();
+    if (segue) {
+      btnSeguir.classList.add('seguindo');
+      btnSeguir.innerHTML = '<i class="fa-solid fa-check"></i> Seguindo';
+    }
+  } catch (err) {
+    console.warn('Não foi possível verificar status de seguidor:', err);
+  }
+}
+
+// ── Botão Seguir — real (POST/DELETE em /seguidores) ──────────────────
+async function toggleSeguir(btn) {
+  const params = new URLSearchParams(window.location.search);
+  const organizadorId = params.get('id');
+  if (!organizadorId) {
+    alert('Não é possível seguir: organizador sem ID válido nesta página.');
+    return;
+  }
+
+  const token = getTokenAuth();
+  if (!token) {
+    alert('Você precisa estar logado para seguir um organizador.');
+    return;
+  }
+
+  const jaSeguindo = btn.classList.contains('seguindo');
+  const elSeguidores = document.getElementById('seguidores');
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE_PERFIL}/seguidores${jaSeguindo ? `/${organizadorId}` : ''}`, {
+      method: jaSeguindo ? 'DELETE' : 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: jaSeguindo ? undefined : JSON.stringify({ organizador_id: organizadorId })
+    });
+
+    const dados = await res.json();
+    if (!res.ok) throw new Error(dados.detalhes || dados.erro || 'Erro ao atualizar status de seguidor.');
+
+    // Sucesso — atualiza botão e contagem real (recontando no backend,
+    // em vez de só somar/subtrair 1 no front, pra evitar dessincronizar).
+    btn.classList.toggle('seguindo', !jaSeguindo);
+    btn.innerHTML = !jaSeguindo
+      ? '<i class="fa-solid fa-check"></i> Seguindo'
+      : '<i class="fa-solid fa-plus"></i> Seguir';
+
+    const resCount = await fetch(`${API_BASE_PERFIL}/seguidores/count/${organizadorId}`);
+    if (resCount.ok) {
+      const { total } = await resCount.json();
+      if (elSeguidores) elSeguidores.textContent = Number(total || 0).toLocaleString('pt-BR');
+    }
+
+  } catch (err) {
+    console.error('Erro ao seguir/deixar de seguir:', err);
+    alert(`Não foi possível atualizar: ${err.message}`);
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -497,7 +588,10 @@ async function enviarAvaliacao() {
     });
 
     const dados = await res.json();
-    if (!res.ok) throw new Error(dados.erro || 'Erro ao enviar avaliação.');
+    if (!res.ok) {
+      console.error('Resposta de erro do backend ao salvar avaliação:', dados);
+      throw new Error(dados.detalhes || dados.erro || 'Erro ao enviar avaliação.');
+    }
 
     // Reseta o formulário
     nomeInput.value   = '';

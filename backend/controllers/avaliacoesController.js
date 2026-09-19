@@ -2,18 +2,21 @@
 
 const connection = require("../db/db_config");
 
-// ─── LISTAR avaliações de um evento OU de um estabelecimento ─────────
+// ─── LISTAR avaliações de um evento, estabelecimento OU organizador ───────────
 // GET /avaliacoes?evento_id=X
 // GET /avaliacoes?estabelecimento_id=X
+// GET /avaliacoes?organizador_id=X
 function listarAvaliacoes(req, res) {
-    const { evento_id, estabelecimento_id } = req.query;
+    const { evento_id, estabelecimento_id, organizador_id } = req.query;
 
-    if (!evento_id && !estabelecimento_id) {
-        return res.status(400).json({ erro: "Informe evento_id ou estabelecimento_id." });
+    if (!evento_id && !estabelecimento_id && !organizador_id) {
+        return res.status(400).json({ erro: "Informe evento_id, estabelecimento_id ou organizador_id." });
     }
 
-    const coluna = evento_id ? "evento_id" : "estabelecimento_id";
-    const valor = evento_id || estabelecimento_id;
+    const coluna = evento_id
+        ? "evento_id"
+        : (estabelecimento_id ? "estabelecimento_id" : "organizador_id");
+    const valor = evento_id || estabelecimento_id || organizador_id;
 
     connection.query(
         `SELECT id, usuario_id, nome_autor, nota, comentario, created_at
@@ -30,13 +33,13 @@ function listarAvaliacoes(req, res) {
 
 // ─── CRIAR avaliação ──────────────────────────────────────────────────────────
 // POST /avaliacoes
-// Body: { evento_id | estabelecimento_id, nota, comentario, nome_autor }
+// Body: { evento_id | estabelecimento_id | organizador_id, nota, comentario, nome_autor }
 // Header: Authorization: Bearer <token>  (opcional)
 function criarAvaliacao(req, res) {
-    const { evento_id, estabelecimento_id, nota, comentario } = req.body;
+    const { evento_id, estabelecimento_id, organizador_id, nota, comentario } = req.body;
 
-    if (!evento_id && !estabelecimento_id) {
-        return res.status(400).json({ erro: "Informe evento_id ou estabelecimento_id." });
+    if (!evento_id && !estabelecimento_id && !organizador_id) {
+        return res.status(400).json({ erro: "Informe evento_id, estabelecimento_id ou organizador_id." });
     }
 
     if (!nota) {
@@ -49,6 +52,12 @@ function criarAvaliacao(req, res) {
 
     const usuario = req.usuario; // vem do middleware authOpcional
 
+    // Impede o organizador de avaliar a si mesmo (só é possível checar quando
+    // a requisição vem autenticada; anônimo não tem como ser bloqueado aqui).
+    if (organizador_id && usuario && String(usuario.id) === String(organizador_id)) {
+        return res.status(400).json({ erro: "Você não pode avaliar o seu próprio perfil." });
+    }
+
     if (usuario) {
         connection.query(
             "SELECT nome_completo FROM usuarios WHERE id = ?",
@@ -56,20 +65,28 @@ function criarAvaliacao(req, res) {
             (err, rows) => {
                 if (err) return res.status(500).json({ erro: "Erro ao buscar usuário." });
                 const nome_autor = rows[0]?.nome_completo || "Usuário";
-                inserir(evento_id, estabelecimento_id, usuario.id, nome_autor, nota, comentario, res);
+                inserir(evento_id, estabelecimento_id, organizador_id, usuario.id, nome_autor, nota, comentario, res);
             }
         );
     } else {
         const nome_autor = (req.body.nome_autor || "").trim() || "Anônimo";
-        inserir(evento_id, estabelecimento_id, null, nome_autor, nota, comentario, res);
+        inserir(evento_id, estabelecimento_id, organizador_id, null, nome_autor, nota, comentario, res);
     }
 }
 
-function inserir(evento_id, estabelecimento_id, usuario_id, nome_autor, nota, comentario, res) {
+function inserir(evento_id, estabelecimento_id, organizador_id, usuario_id, nome_autor, nota, comentario, res) {
     connection.query(
-        `INSERT INTO avaliacoes (evento_id, estabelecimento_id, usuario_id, nome_autor, nota, comentario)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [evento_id || null, estabelecimento_id || null, usuario_id || null, nome_autor, nota, comentario || null],
+        `INSERT INTO avaliacoes (evento_id, estabelecimento_id, organizador_id, usuario_id, nome_autor, nota, comentario)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+            evento_id || null,
+            estabelecimento_id || null,
+            organizador_id || null,
+            usuario_id || null,
+            nome_autor,
+            nota,
+            comentario || null
+        ],
         (err, result) => {
             if (err) return res.status(500).json({ erro: "Erro ao salvar avaliação.", detalhes: err.message });
             res.status(201).json({ mensagem: "Avaliação enviada!", id: result.insertId });

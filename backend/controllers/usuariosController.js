@@ -5,12 +5,19 @@ console.log("🔥 CONTROLLER CARREGADO - CAMINHO:", __filename);
 const bcrypt     = require("bcrypt");
 const connection = require("../db/db_config");
 const nodemailer = require("nodemailer");
+const jwt        = require("jsonwebtoken");
 
 // ── Cole aqui o base64 completo que você gerou com o PowerShell ──
 const fs   = require("fs");
 const path = require("path");
 
 const LOGO_PATH = path.join(__dirname, "../../Frontend/imagens/logo-roles.png");
+
+// IMPORTANTE: ajuste isso para o mesmo segredo/variável de ambiente
+// que seu authController usa para ASSINAR o token no login.
+// Se o nome da variável no seu .env for diferente de JWT_SECRET,
+// troque abaixo.
+const JWT_SECRET = process.env.JWT_SECRET;
 
 /* ════════════════════════════════════════
    TEMPLATE BASE DE EMAIL
@@ -80,6 +87,21 @@ function gerarCodigo() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// Extrai o id do usuário logado a partir do header Authorization: Bearer <token>.
+// Retorna null se não houver token ou se for inválido (não derruba a rota,
+// só trata como "não logado").
+function pegarIdDoTokenReq(req) {
+    const auth = req.headers.authorization || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+    if (!token || !JWT_SECRET) return null;
+    try {
+        const payload = jwt.verify(token, JWT_SECRET);
+        return payload.id || payload.userId || payload.user_id || payload.sub || null;
+    } catch (err) {
+        return null;
+    }
+}
+
 async function enviarEmailCodigo(email, codigo) {
     console.log("📩 TENTANDO ENVIAR EMAIL PARA:", email);
     console.log("🔑 CÓDIGO GERADO:", codigo);
@@ -121,7 +143,6 @@ async function cadastrarUsuario(req, res) {
 
         const cpfLimpo = cpf.replace(/\D/g, "");
 
-        // Verifica no banco se e-mail OU cpf já existem
         const existe = await connection.query(
             "SELECT id, email, cpf FROM usuarios WHERE email = ? OR cpf = ?",
             [email, cpfLimpo]
@@ -210,6 +231,155 @@ async function buscarUsuarioPorId(req, res) {
     } catch (err) {
         console.error("❌ ERRO buscarUsuarioPorId:", err.message);
         res.status(500).json({ erro: "Erro ao buscar usuario.", detalhes: err.message });
+    }
+}
+
+/* ════════════════════════════════════════
+   PERFIL AGREGADO DO ORGANIZADOR
+   GET /usuarios/:id/perfil
+════════════════════════════════════════ */
+async function buscarPerfilOrganizador(req, res) {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ erro: "ID do usuario e obrigatorio." });
+
+    try {
+        const usuarioRows = await connection.query(
+            `SELECT id, nome_completo, sobrenome, email, telefone,
+                    foto_perfil, bio, cidade, estado, criado_em
+             FROM usuarios WHERE id = ?`,
+            [id]
+        );
+
+        if (!usuarioRows || usuarioRows.length === 0) {
+            return res.status(404).json({ erro: "Usuario nao encontrado." });
+        }
+
+        const usuario = usuarioRows[0];
+
+        const totalEventosRows = await connection.query(
+            "SELECT COUNT(*) AS total FROM eventos WHERE usuario_id = ?",
+            [id]
+        );
+        const totalEventos = parseInt(totalEventosRows[0]?.total ?? 0, 10);
+
+        const eventosAtivosRows = await connection.query(
+            "SELECT COUNT(*) AS total FROM eventos WHERE usuario_id = ? AND data_inicio >= NOW()",
+            [id]
+        );
+        const eventosAtivos = parseInt(eventosAtivosRows[0]?.total ?? 0, 10);
+
+        const seguidoresRows = await connection.query(
+            "SELECT COUNT(*) AS total FROM seguidores WHERE organizador_id = ?",
+            [id]
+        );
+        const seguidoresTotais = parseInt(seguidoresRows[0]?.total ?? 0, 10);
+
+        const avaliacaoRows = await connection.query(
+            `SELECT AVG(a.nota) AS media, COUNT(a.id) AS total
+             FROM avaliacoes a
+             JOIN eventos e ON e.id = a.evento_id
+             WHERE e.usuario_id = ?`,
+            [id]
+        );
+        const avaliacaoMedia = avaliacaoRows[0]?.media ? Number(avaliacaoRows[0].media) : 0;
+        const avaliacaoTotal = parseInt(avaliacaoRows[0]?.total ?? 0, 10);
+
+        const eventosProximos = await connection.query(
+            `SELECT id, nome, imagem, data_inicio, data_fim, local_nome, cidade
+             FROM eventos
+             WHERE usuario_id = ? AND data_inicio >= NOW()
+             ORDER BY data_inicio ASC
+             LIMIT 10`,
+            [id]
+        );
+
+        const eventosPassados = await connection.query(
+            `SELECT id, nome, imagem, data_inicio, data_fim, local_nome, cidade
+             FROM eventos
+             WHERE usuario_id = ? AND data_fim < NOW()
+             ORDER BY data_fim DESC
+             LIMIT 10`,
+            [id]
+        );
+
+        res.json({
+            ...usuario,
+            total_eventos: totalEventos,
+            eventos_ativos: eventosAtivos,
+            seguidores_totais: seguidoresTotais,
+            avaliacao_media: avaliacaoMedia,
+            avaliacao_total: avaliacaoTotal,
+            participantes_totais: 0,
+            eventos_proximos: eventosProximos,
+            eventos_passados: eventosPassados,
+        });
+    } catch (err) {
+        console.error("❌ ERRO buscarPerfilOrganizador:", err.message);
+        res.status(500).json({ erro: "Erro ao buscar perfil do organizador.", detalhes: err.message });
+    }
+}
+
+/* ════════════════════════════════════════
+   SEGUIR / DEIXAR DE SEGUIR (toggle)
+   POST /usuarios/:id/seguir
+════════════════════════════════════════ */
+async function seguirOrganizador(req, res) {
+    const { id } = req.params;
+    const meuId = pegarIdDoTokenReq(req);
+
+    if (!meuId) {
+        return res.status(401).json({ erro: "Você precisa estar logado para seguir um organizador." });
+    }
+    if (String(meuId) === String(id)) {
+        return res.status(400).json({ erro: "Você não pode seguir a si mesmo." });
+    }
+
+    try {
+        const existente = await connection.query(
+            "SELECT id FROM seguidores WHERE seguidor_id = ? AND organizador_id = ?",
+            [meuId, id]
+        );
+
+        if (existente && existente.length > 0) {
+            await connection.query(
+                "DELETE FROM seguidores WHERE seguidor_id = ? AND organizador_id = ?",
+                [meuId, id]
+            );
+            return res.json({ seguindo: false });
+        }
+
+        await connection.query(
+            "INSERT INTO seguidores (seguidor_id, organizador_id, criado_em) VALUES (?, ?, NOW())",
+            [meuId, id]
+        );
+        return res.json({ seguindo: true });
+    } catch (err) {
+        console.error("❌ ERRO seguirOrganizador:", err.message);
+        res.status(500).json({ erro: "Erro ao processar ação de seguir.", detalhes: err.message });
+    }
+}
+
+/* ════════════════════════════════════════
+   VERIFICAR SE JÁ SIGO
+   GET /usuarios/:id/seguindo
+════════════════════════════════════════ */
+async function verificarSeguindo(req, res) {
+    const { id } = req.params;
+    const meuId = pegarIdDoTokenReq(req);
+
+    if (!meuId) {
+        return res.json({ seguindo: false });
+    }
+
+    try {
+        const existente = await connection.query(
+            "SELECT id FROM seguidores WHERE seguidor_id = ? AND organizador_id = ?",
+            [meuId, id]
+        );
+        res.json({ seguindo: existente && existente.length > 0 });
+    } catch (err) {
+        console.error("❌ ERRO verificarSeguindo:", err.message);
+        res.status(500).json({ erro: "Erro ao verificar status de seguir.", detalhes: err.message });
     }
 }
 
@@ -451,4 +621,7 @@ module.exports = {
     redefinirSenha,
     alterarSenha,
     toggleAlertaDispositivo,
+    buscarPerfilOrganizador,
+    seguirOrganizador,
+    verificarSeguindo,
 };

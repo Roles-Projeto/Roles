@@ -114,6 +114,7 @@ const avaliacoesRoutes       = require("./routes/avaliacoes");
 const adminRoutes            = require("./routes/admin");
 const { ingressosRouter, pedidosRouter } = require("./routes/ingressosRoutes");
 
+
 // Rotas opcionais — carregadas só se o arquivo existir
 function tryRequire(routePath) {
   try {
@@ -141,6 +142,7 @@ app.use("/avaliacoes",       avaliacoesRoutes);
 app.use("/admin",            adminRoutes);
 app.use("/ingressos",        ingressosRouter);
 app.use("/pedidos",          pedidosRouter);
+app.use("/seguidores", require("./routes/seguidoresRoutes"));
 
 if (favoritosRoutes) app.use("/favoritos", favoritosRoutes);
 if (visitasRoutes)   app.use("/visitas",   visitasRoutes);

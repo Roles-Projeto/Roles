@@ -116,7 +116,7 @@ async function carregarDetalhesEvento() {
         document.querySelector('.hora-resumo').textContent = horaFormatada;
         document.querySelector('.local-resumo').textContent = evento.local_nome || '';
 
-        // Organizador
+        // ── Organizador ──────────────────────────────────────────
         const nomeProdutora = document.getElementById('nome-produtora');
         const eventosOrganizados = document.getElementById('eventos-organizados');
         if (nomeProdutora) {
@@ -126,6 +126,23 @@ async function carregarDetalhesEvento() {
         }
         if (eventosOrganizados) {
             eventosOrganizados.textContent = '';
+        }
+
+        // Link dinâmico para o perfil do organizador (ANTES: href fixo no HTML, sem parâmetro)
+        const linkVerPerfil = document.querySelector('.js-link-ver-perfil');
+        if (linkVerPerfil) {
+            // Aceita vários nomes possíveis de campo, dependendo de como o backend expõe o organizador.
+            const organizadorId =
+                evento.organizador_id ?? evento.produtor_id ?? evento.usuario_id ?? null;
+
+            if (organizadorId) {
+                // Caso ideal: existe um ID real de organizador vindo do backend
+                linkVerPerfil.href = `/frontend/eventos/VerPerfil.html?id=${encodeURIComponent(organizadorId)}`;
+            } else if (evento.nome_produtor) {
+                // Fallback: sem ID ainda no backend, usa o nome (menos robusto, mas evita link quebrado)
+                linkVerPerfil.href = `/frontend/eventos/VerPerfil.html?nome=${encodeURIComponent(evento.nome_produtor)}`;
+            }
+            // Se não houver nem ID nem nome, deixa o href padrão do HTML como último recurso.
         }
 
         // Ingressos
@@ -243,8 +260,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         const inputNome = document.getElementById('review-name-evento');
         if (inputNome) { inputNome.value = nomeLogado; inputNome.readOnly = true; }
     }
-
-    // ── Registra visita ──
 
     // ── Registra visita ──
     const userId = localStorage.getItem('userId');

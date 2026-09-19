@@ -262,7 +262,34 @@
     <script src="/frontend/js/loadHeader.js"></script>
     <script src="/frontend/js/Home.js"></script>
     <script src="/frontend/js/filtrohome.js"></script>
+
     <!-- ✅ CORREÇÃO: <script src="/monitor.js"></script> removido — arquivo inexistente causava flash na tela -->
+
+    <!-- ================================================
+         CHAT BOT - Assistente Rolês (somente na home)
+         Widget carregado de um arquivo separado (HTML+CSS+JS
+         juntos) na pasta Frontend/frontend/components/.
+         Se você salvar o roles-chat-widget.html em outro
+         caminho, ajuste a URL do fetch abaixo.
+    ================================================ -->
+    <div id="roles-chat-container"></div>
+
+    <script>
+        fetch("/frontend/components/roles-chat-widget.html")
+            .then((res) => res.text())
+            .then((html) => {
+                const container = document.getElementById("roles-chat-container");
+                container.innerHTML = html;
+
+                // innerHTML não executa <script> automaticamente — precisa recriar
+                container.querySelectorAll("script").forEach((oldScript) => {
+                    const newScript = document.createElement("script");
+                    newScript.textContent = oldScript.textContent;
+                    document.body.appendChild(newScript);
+                });
+            })
+            .catch((err) => console.error("Erro ao carregar o widget de chat:", err));
+    </script>
 
 </body>
 

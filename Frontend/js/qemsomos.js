@@ -1,0 +1,74 @@
+document.addEventListener("DOMContentLoaded", function () {
+
+    const anoAtual = new Date().getFullYear();
+
+    const footerHTML = `
+    <footer class="roles-footer-main">
+        <div class="roles-footer-wrapper">
+
+            <div class="roles-footer-column">
+                <div class="roles-footer-logo">Rolês</div>
+                <p class="roles-footer-description">
+                    Seu guia definitivo para encontrar os melhores lugares para sair e se divertir na cidade!
+                </p>
+                <div class="roles-footer-social">
+                    <a href="#" aria-label="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" aria-label="Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" aria-label="TikTok">
+                        <i class="fab fa-tiktok"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="roles-footer-column">
+                <h4 class="roles-footer-title">Explore</h4>
+                <ul>
+                    <li><a href="/frontend/locais/locais.html">Todos os Locais</a></li>
+                    <li><a href="/frontend/eventos/eventos.html">Todos os Eventos</a></li>
+                    <li><a href="#">Baixar App</a></li>
+                </ul>
+            </div>
+
+            <div class="roles-footer-column">
+                <h4 class="roles-footer-title">Empresa</h4>
+                <ul>
+                    <li><a href="/frontend/quemSomos/quemsomos.html">Quem somos</a></li>
+                    <li><a href="/frontend/Contato/contato.html">Contato</a></li>
+                    <li><a href="/frontend/Cadastro/cadastro.html">Cadastrar Local</a></li>
+                    <li><a href="/frontend/empresario/empresario.html">Para empresas</a></li>
+                    <li><a href="/frontend/termoDeUso/termoDeUso.html">Termo de Uso</a></li>
+                </ul>
+            </div>
+
+            <div class="roles-footer-column roles-footer-contact">
+                <h4 class="roles-footer-title">Contato</h4>
+                <p class="roles-footer-contact-line">Goiânia, GO</p>
+                <p class="roles-footer-contact-line">
+                    <a href="mailto:roles.suporte@gmail.com">roles.suporte@gmail.com</a>
+                </p>
+                <p class="roles-footer-contact-line">(62) 0000-1234</p>
+            </div>
+
+        </div>
+
+        <div class="roles-footer-bottom">
+            <p class="roles-footer-copy">&copy; ${anoAtual} Rolês. Todos os direitos reservados.</p>
+            <nav class="roles-footer-legal" aria-label="Links legais">
+                <a href="/frontend/termodeuso/termodeuso.html">Privacidade</a>
+                <a href="/frontend/termodeuso/termodeuso.html">Termos</a>
+            </nav>
+        </div>
+    </footer>
+    `;
+
+    const existingFooter = document.querySelector('footer');
+    if (existingFooter) {
+        existingFooter.outerHTML = footerHTML;
+    } else {
+        document.body.insertAdjacentHTML('beforeend', footerHTML);
+    }
+});

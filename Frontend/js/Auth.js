@@ -79,7 +79,7 @@ function requireDashboard() {
  * Mostra para qualquer usuário logado — com ou sem conteúdo.
  */
 function controlarLinkDashboard() {
-    const linkDashboard = document.getElementById('dashboard');
+    const linkDashboard = document.getElementById('menu-link-dashboard');
     if (!linkDashboard) return;
 
     if (estaLogado()) {
@@ -101,7 +101,8 @@ function _redirecionarLogin(customPath) {
 
 function _limparSessao() {
     ['token','userIsLoggedIn','userType','userId',
-     'profileName','profileEmail','profilePhotoUrl','temDashboard']
+     'profileName','profileEmail','profilePhotoUrl',
+     'userRole','admin_token','temDashboard']
         .forEach(k => localStorage.removeItem(k));
 }
 

@@ -105,3 +105,4 @@ function iniciarPoller() {
 }
 
 module.exports = { iniciarPoller };
+

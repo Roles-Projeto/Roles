@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* ═══════════════════════════════════════════════════
    TICKET CARDS — adicionar ao perfil.css
    Cole este bloco no final do arquivo perfil.css

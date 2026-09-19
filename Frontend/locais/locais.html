@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rolês - Locais</title>
-    <link rel="stylesheet" href="../header/css/style.css">
+    <title>Rolê.AI - Locais</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../css/footer.css">
     <link rel="stylesheet" href="../css/locais.css">
@@ -19,17 +19,23 @@
 
     <main>
 
+        <!-- HERO -->
         <section class="todos-locais1">
+            <a href="/frontend/index.html" class="btn-voltar">
+                <i class="fa-solid fa-arrow-left"></i> Voltar
+            </a>
             <h1>Todos os Locais</h1>
             <p>Descubra os melhores lugares para sair e se divertir na sua cidade</p>
-
             <div class="search-box1">
-                <i class="fa-solid fa-magnifying-glass icon"></i>
-                <input type="text" placeholder="Buscar locais, bairros, tipos..." id="search-locais" />
+                <i class="fa-solid fa-magnifying-glass icon" aria-hidden="true"></i>
+                <input type="text" placeholder="Buscar locais, bairros, tipos..." id="search-locais" aria-label="Buscar locais" />
+            </div>
         </section>
 
+        <!-- CONTEÚDO -->
         <div class="content-container1">
 
+            <!-- Barra de filtros -->
             <section class="barra-filtros1">
                 <div class="filtro-esquerda1">
                     <i class="fa-solid fa-filter icone-filtro"></i>
@@ -45,9 +51,9 @@
                 </div>
             </section>
 
+            <!-- Contador + pills -->
             <section class="opçoes">
                 <p class="mover">Encontrado <strong id="contador-locais">0</strong> locais</p>
-
                 <div class="botoes" id="botoes-categoria-locais">
                     <button class="opçoes-abaixo ativo" data-categoria="todos">Todos</button>
                     <button class="opçoes-abaixo" data-categoria="baladas">Baladas</button>
@@ -57,12 +63,13 @@
                 </div>
             </section>
 
+            <!-- Grid de cards -->
             <section>
                 <div class="cards-container" id="cards-container-locais">
 
                     <div class="card" data-categoria-card="bares">
                         <div class="card-img">
-                            <img src="/frontend/imagens/1º imagem cad.png" alt="Pinga Fogo">
+                            <img src="/frontend/imagens/1º imagem cad.png" alt="Pinga Fogo" loading="lazy">
                             <span class="categoria">Bar</span>
                             <span class="nota">⭐ 4.5</span>
                         </div>
@@ -88,7 +95,7 @@
 
                     <div class="card" data-categoria-card="restaurantes">
                         <div class="card-img">
-                            <img src="/frontend/imagens/2º imagem card.png" alt="Kabanas Restaurante">
+                            <img src="/frontend/imagens/2º imagem card.png" alt="Kabanas Restaurante" loading="lazy">
                             <span class="categoria">Restaurante</span>
                             <span class="nota">⭐ 4.6</span>
                         </div>
@@ -114,7 +121,7 @@
 
                     <div class="card" data-categoria-card="baladas">
                         <div class="card-img">
-                            <img src="/frontend/imagens/3º imagem card.png" alt="Roxy">
+                            <img src="/frontend/imagens/3º imagem card.png" alt="Roxy" loading="lazy">
                             <span class="categoria">Balada</span>
                             <span class="nota">⭐ 4.7</span>
                         </div>
@@ -140,7 +147,7 @@
 
                     <div class="card" data-categoria-card="shows">
                         <div class="card-img">
-                            <img src="/frontend/imagens/4º imagem cad.png" alt="Guardian Comedy Club">
+                            <img src="/frontend/imagens/4º imagem cad.png" alt="Guardian Comedy Club" loading="lazy">
                             <span class="categoria">Stand-up</span>
                             <span class="nota">⭐ 4.6</span>
                         </div>
@@ -166,7 +173,7 @@
 
                     <div class="card" data-categoria-card="restaurantes">
                         <div class="card-img">
-                            <img src="/frontend/imagens/5º imagem cad.png" alt="Pizzaria da 8">
+                            <img src="/frontend/imagens/5º imagem cad.png" alt="Pizzaria da 8" loading="lazy">
                             <span class="categoria">Restaurante</span>
                             <span class="nota">⭐ 4.4</span>
                         </div>
@@ -192,7 +199,7 @@
 
                     <div class="card" data-categoria-card="shows">
                         <div class="card-img">
-                            <img src="/frontend/imagens/6º imagem cad.png" alt="Teatro Rio Vermelho">
+                            <img src="/frontend/imagens/6º imagem cad.png" alt="Teatro Rio Vermelho" loading="lazy">
                             <span class="categoria">Show</span>
                             <span class="nota">⭐ 4.5</span>
                         </div>
@@ -217,23 +224,31 @@
                     </div>
 
                 </div>
+
+                <!-- Botões Ver Mais / Ver Menos -->
+                <div class="ver-mais-container">
+                    <button class="btn-ver-mais" id="btn-ver-mais" style="display:none">
+                        <i class="fa-solid fa-rotate"></i> Ver Mais
+                    </button>
+                    <button class="btn-ver-mais" id="btn-ver-menos" style="display:none">
+                        <i class="fa-solid fa-chevron-up"></i> Ver Menos
+                    </button>
+                </div>
             </section>
 
-            <section class="stats-section">
-                <button class="ver-mais">Ver Todos os Locais</button>
-                <div class="cards-stats">
-                    <div class="stat-card">
-                        <h2><i class="fa-solid fa-map-location-dot"></i></h2>
-                        <p>Locais cadastrados</p>
-                    </div>
-                    <div class="stat-card">
-                        <h2><i class="fa-solid fa-tags"></i></h2>
-                        <p>Categorias disponíveis</p>
-                    </div>
-                    <div class="stat-card">
-                        <h2>⭐</h2>
-                        <p>Avaliação média</p>
-                    </div>
+            <!-- Estatísticas -->
+            <section class="estatisticas">
+                <div class="item">
+                    <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+                    <p>10+<br><span>Locais cadastrados</span></p>
+                </div>
+                <div class="item">
+                    <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+                    <p>5<br><span>Categorias disponíveis</span></p>
+                </div>
+                <div class="item">
+                    <i class="fa-solid fa-star" aria-hidden="true"></i>
+                    <p>4.5<br><span>Avaliação média</span></p>
                 </div>
             </section>
 

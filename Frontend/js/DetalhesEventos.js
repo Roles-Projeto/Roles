@@ -870,18 +870,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     const botaoMobile = document.querySelector('.barra-compra-botao');
     if (botaoMobile) botaoMobile.addEventListener('click', realizarAcaoComprar);
 
-    // ── Avaliações ──
-    const params = new URLSearchParams(window.location.search);
-    const eventId = params.get('id');
-    if (eventId) await carregarAvaliacoesEvento(eventId);
-    setupStarSelectorEvento();
-
-    const nomeLogado = localStorage.getItem('profileName');
-    if (nomeLogado) {
-        const inputNome = document.getElementById('review-name-evento');
-        if (inputNome) { inputNome.value = nomeLogado; inputNome.readOnly = true; }
-    }
-
     // ── Registra visita ──
     const userId = localStorage.getItem('userId');
     if (userId && window._eventoAtual) {

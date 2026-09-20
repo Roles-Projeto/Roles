@@ -215,12 +215,12 @@ body {
   width: 92% !important;
   margin-left: auto !important;
   margin-right: auto !important;
-  margin-top: 40px;
-  margin-bottom: 40px;
+  margin-top: 56px;
+  margin-bottom: 56px;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 44px;
+  gap: 64px;
 }
 
 .conteudo-principal-evento {
@@ -232,7 +232,7 @@ body {
 
 .colunas-evento {
   display: flex;
-  gap: 44px;
+  gap: 56px;
   align-items: flex-start;
 }
 
@@ -260,7 +260,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 1.4px;
   color: var(--p600);
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
 /* ═══════════════════════════════════════
@@ -281,17 +281,17 @@ body {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 24px;
+  padding: 30px 26px;
   box-shadow: var(--shadow-sm);
 }
 
 .mapa-setores {
   border-right: 1px solid var(--border);
-  padding-right: 32px;
+  padding-right: 40px;
 }
 .ingressos-e-mapa .ingressos-disponiveis {
   border-right: 1px solid var(--border);
-  padding-right: 32px;
+  padding-right: 40px;
 }
 
 .titulo-secao,
@@ -301,7 +301,7 @@ body {
   font-size: 1.15rem;
   font-weight: 800;
   color: var(--text-dark);
-  margin-bottom: 16px;
+  margin-bottom: 22px;
   letter-spacing: -0.3px;
 }
 .titulo-secao i,
@@ -338,8 +338,8 @@ body {
 
 .informacoes-extras {
   display: flex;
-  gap: 32px;
-  padding-top: 20px;
+  gap: 36px;
+  padding-top: 26px;
   border-top: 1px solid var(--border);
 }
 
@@ -418,7 +418,7 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 14px 10px 14px 12px;
+  padding: 18px 14px 18px 20px;
   margin: 0;
   border: none;
   border-left: 3px solid transparent;
@@ -534,14 +534,14 @@ body {
   background: none;
   border: none;
   padding: 0;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
 
 .linha-detalhe {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
+  padding: 9px 0;
   border-bottom: none;
   font-size: 13px;
 }
@@ -664,7 +664,7 @@ body {
 ═══════════════════════════════════════ */
 .ingressos-e-mapa {
   display: flex;
-  gap: 32px;
+  gap: 40px;
   align-items: stretch;
 }
 .ingressos-e-mapa .ingressos-disponiveis { flex: 1 1 0; min-width: 0; }
@@ -676,7 +676,7 @@ body {
 }
 
 /* Mapa */
-.mapa-svg-wrap { width: 100%; }
+.mapa-svg-wrap { width: 100%; margin-bottom: 4px; }
 #svg-mapa-setores { width: 100%; height: auto; }
 
 .mapa-setor {
@@ -742,19 +742,19 @@ body {
 
 /* Legenda de setores com preço (explica as cores do mapa) */
 .mapa-legenda-precos {
-  margin-top: 14px;
-  padding-top: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
 .item-legenda-preco {
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-size: 13px;
-  padding: 6px 4px;
+  padding: 8px 6px;
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s;
@@ -835,7 +835,7 @@ body {
   gap: 12px;
   background: none;
   border: none;
-  padding: 14px 4px;
+  padding: 18px 8px;
   margin: 0;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
@@ -919,14 +919,14 @@ body {
   .detalhes-evento {
     display: grid;
     grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-    gap: 20px 44px;
+    gap: 28px 56px;
     align-items: stretch;
   }
   .detalhes-evento > * { margin-bottom: 0; }
   .detalhes-evento > .sobre-evento     { grid-column: 1; grid-row: 1 / span 2; }
-  .detalhes-evento > .organizador      { grid-column: 2; grid-row: 1; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
-  .detalhes-evento > .card-transparencia { grid-column: 2; grid-row: 2; align-self: start; padding-top: 24px; }
-  .detalhes-evento > .avaliacoes       { grid-column: 1 / -1; padding-top: 32px; border-top: 1px solid var(--border); }
+  .detalhes-evento > .organizador      { grid-column: 2; grid-row: 1; padding-bottom: 28px; border-bottom: 1px solid var(--border); }
+  .detalhes-evento > .card-transparencia { grid-column: 2; grid-row: 2; align-self: start; padding-top: 28px; }
+  .detalhes-evento > .avaliacoes       { grid-column: 1 / -1; padding-top: 40px; border-top: 1px solid var(--border); }
 }
 
 /* Telas médias: ingressos ocupam a linha toda, mapa e pagamento lado a lado embaixo */

@@ -194,7 +194,8 @@ async function carregarDetalhesEvento() {
                     ingressoNome: ingresso.titulo,
                     ingressoPreco: preco,
                     evento_id: evento.id,       // ← ID do evento
-                    tipo_ingresso_id: ingresso.id      // ← ID do tipo de ingresso
+                    tipo_ingresso_id: ingresso.id,      // ← ID do tipo de ingresso
+                    categoria: evento.categoria || null // ← ADICIONADO: usado pelo sistema de recomendação
                 };
                 localStorage.setItem('eventoSelecionado', JSON.stringify(window._eventoAtual));
             }
@@ -277,6 +278,21 @@ document.addEventListener('DOMContentLoaded', async function () {
                 item_id: e.evento_id || 0,
                 imagem: e.imagem || '',
                 url: window.location.href
+            })
+        }).catch(() => { });
+
+        // ── ADICIONADO: registra clique para o sistema de recomendação ──
+        // Toda vez que o usuário abre a página de detalhes de um evento,
+        // isso conta como um "clique" naquela categoria — é o dado que
+        // alimenta o recomendacaoService.js.
+        fetch(`${API_BASE}/recomendacoes/interacoes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                usuarioId: userId,
+                eventoId: e.evento_id || null,
+                tipo: 'clique',
+                categoria: e.categoria || null
             })
         }).catch(() => { });
     }

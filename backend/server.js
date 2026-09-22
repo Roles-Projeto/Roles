@@ -113,7 +113,7 @@ const contatoRoutes          = require("./routes/contato");
 const avaliacoesRoutes       = require("./routes/avaliacoes");
 const adminRoutes            = require("./routes/admin");
 const { ingressosRouter, pedidosRouter } = require("./routes/ingressosRoutes");
-
+const recomendacaoRoutes     = require("./routes/recomendacaoRoutes");
 
 // Rotas opcionais — carregadas só se o arquivo existir
 function tryRequire(routePath) {
@@ -143,6 +143,7 @@ app.use("/admin",            adminRoutes);
 app.use("/ingressos",        ingressosRouter);
 app.use("/pedidos",          pedidosRouter);
 app.use("/seguidores", require("./routes/seguidoresRoutes"));
+app.use("/recomendacoes",    recomendacaoRoutes);
 
 if (favoritosRoutes) app.use("/favoritos", favoritosRoutes);
 if (visitasRoutes)   app.use("/visitas",   visitasRoutes);
@@ -158,6 +159,7 @@ const API_PREFIXES = [
   "/usuarios", "/auth", "/eventos", "/estabelecimentos",
   "/contato", "/avaliacoes", "/admin", "/ingressos",
   "/pedidos", "/favoritos", "/visitas", "/compras", "/historico",
+  "/recomendacoes",
 ];
 
 app.use((req, res) => {

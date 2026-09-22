@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teste — Motor de Recomendação Rolês</title>
+<style>
+  :root{
+    --bg: #16121e;
+    --panel: #1f1a2b;
+    --panel-line: #322a44;
+    --ink: #f1ede7;
+    --muted: #948da8;
+    --accent: #ffb238;
+    --accent-dim: #ffb23822;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.45;
+  }
+  .wrap{ max-width: 760px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  header h1{
+    font-size: clamp(26px, 4vw, 36px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 8px;
+  }
+  header p{
+    color: var(--muted);
+    margin: 0 0 24px;
+    font-size: 15px;
+  }
+
+  .controls{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    border: 1px solid var(--panel-line);
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 24px;
+  }
+  .field{ display: flex; flex-direction: column; gap: 4px; }
+  .field label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .field input{
+    background: #14101d;
+    border: 1px solid var(--panel-line);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 14px;
+    width: 110px;
+  }
+  .btn{
+    background: #6c4cff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn:hover{ background: #7d5fff; }
+  .hint{ font-size: 12px; color: var(--muted); flex-basis: 100%; }
+
+  .status{
+    border: 1px solid var(--panel-line);
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .status.ok{ border-color: #2f6b52; color: #8fe3bd; background: #12241d; }
+  .status.err{ border-color: #6b2f2f; color: #ffb3b3; background: #241212; }
+
+  .col{
+    border: 1px solid var(--panel-line);
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 28px;
+  }
+  .col h2{ margin: 0 0 4px; font-size: 18px; }
+  .col .sub{ color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+
+  .top-pick{
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 22px;
+    background: linear-gradient(160deg, var(--accent-dim), transparent);
+    border: 1px solid #5a441c;
+  }
+  .top-pick .label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 6px; }
+  .top-pick .name{ font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .top-pick .meta{ font-size: 13px; color: var(--muted); }
+
+  .list{ display: flex; flex-direction: column; gap: 10px; }
+  .row{ display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; }
+  .row .name{ font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .score{ font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--muted); text-align: right; }
+  .bar-track{ grid-column: 1 / -1; height: 6px; border-radius: 999px; background: #ffffff12; overflow: hidden; }
+  .bar-fill{ height: 100%; border-radius: 999px; background: var(--accent); }
+  .row.top .name{ font-weight: 700; }
+
+  footer{
+    margin-top: 24px;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Teste do motor de recomendação</h1>
+      <p>Digite o ID do usuário e acompanhe a recomendação dele em tempo real — a página busca dados novos sozinha a cada 1 segundo.</p>
+    </header>
+
+    <div class="controls">
+      <div class="field">
+        <label>ID do usuário</label>
+        <input type="number" id="inputId" value="3">
+      </div>
+      <button class="btn" onclick="salvarEAtualizar()">Atualizar agora</button>
+      <span class="hint">O ID digitado fica salvo — se der F5, a página abre com o mesmo usuário. Pode ir clicando nos eventos em outra aba do site que os cards aqui mudam sozinhos.</span>
+    </div>
+
+    <div id="status" class="status">Buscando dados em localhost:3000...</div>
+
+    <div class="col">
+      <h2 id="titulo">Perfil do usuário</h2>
+      <div class="sub" id="sub"></div>
+      <div id="top" class="top-pick"></div>
+      <div id="list" class="list"></div>
+    </div>
+
+    <footer>Cada barra representa o scoreFinal calculado pelo recomendacaoService.js — comportamento (70%) + proximidade (30%).</footer>
+  </div>
+
+<script>
+const API_BASE = "http://localhost:3000";
+
+function salvarEAtualizar() {
+  const id = document.getElementById("inputId").value;
+  localStorage.setItem("teste_recomendacao_id", id);
+  iniciar();
+}
+
+async function carregar(usuarioId) {
+  const res = await fetch(`${API_BASE}/recomendacoes/${usuarioId}`);
+  if (!res.ok) throw new Error(`Erro ${res.status} ao buscar usuário ${usuarioId}`);
+  const dados = await res.json();
+  return dados.sort((a, b) => b.scoreFinal - a.scoreFinal);
+}
+
+function renderizar(eventos) {
+  const topEl = document.getElementById("top");
+  const listEl = document.getElementById("list");
+  const subEl = document.getElementById("sub");
+
+  if (!eventos.length) {
+    topEl.innerHTML = `<div class="label">Nenhum evento retornado</div>`;
+    listEl.innerHTML = "";
+    return;
+  }
+
+  const top = eventos[0];
+  subEl.textContent = `Categoria com maior afinidade agora: ${top.categoria}`;
+  topEl.innerHTML = `
+    <div class="label">Recomendação principal</div>
+    <div class="name">${top.nome}</div>
+    <div class="meta">${top.categoria} · score ${top.scoreFinal.toFixed(2)}</div>
+  `;
+
+  const maxScore = Math.max(...eventos.map(e => e.scoreFinal), 0.01);
+  listEl.innerHTML = eventos.map((e, i) => `
+    <div class="row ${i === 0 ? 'top' : ''}">
+      <div class="name">${e.nome}</div>
+      <div class="score">${e.scoreFinal.toFixed(2)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(e.scoreFinal / maxScore) * 100}%"></div></div>
+    </div>
+  `).join("");
+}
+
+async function iniciar() {
+  const statusEl = document.getElementById("status");
+  const id = document.getElementById("inputId").value || "1";
+  document.getElementById("titulo").textContent = `Perfil do usuário ${id}`;
+
+  try {
+    const dados = await carregar(id);
+    renderizar(dados);
+    const top = dados[0];
+    const agora = new Date().toLocaleTimeString('pt-BR');
+    statusEl.className = "status ok";
+    statusEl.textContent = top
+      ? `✓ Recomendação principal: "${top.nome}" (${top.categoria}, score ${top.scoreFinal.toFixed(2)}) — última checagem: ${agora}`
+      : `Nenhum evento retornado — última checagem: ${agora}`;
+  } catch (erro) {
+    statusEl.className = "status err";
+    statusEl.textContent = `Não foi possível conectar ao backend em ${API_BASE}. Confira se o servidor está rodando (node server.js). Detalhe: ${erro.message}`;
+  }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  const id = localStorage.getItem("teste_recomendacao_id");
+  if (id) document.getElementById("inputId").value = id;
+  iniciar();
+  setInterval(iniciar, 1000);
+});
+</script>
+</body>
+</html>

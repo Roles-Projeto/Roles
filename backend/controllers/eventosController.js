@@ -214,7 +214,23 @@ exports.listarEventos = async (req, res) => {
 };
 
 // =====================================================
+// STATUS DE VENDA DE UM TIPO DE INGRESSO
+// Mesma regra usada na compra (ingressosController):
+// pausado > em_breve > encerrado > esgotado > disponivel
+// =====================================================
+function getStatusVenda(tipo, disponiveis, agora = new Date()) {
+  if (tipo.ativo === false || tipo.ativo === 0) return "pausado";
+  if (tipo.data_inicio_venda && agora < new Date(tipo.data_inicio_venda)) return "em_breve";
+  if (tipo.data_fim_venda && agora > new Date(tipo.data_fim_venda)) return "encerrado";
+  if (disponiveis <= 0) return "esgotado";
+  return "disponivel";
+}
+
+// =====================================================
 // BUSCAR EVENTO POR ID
+// Cada ingresso volta com:
+//   disponivel   = quantidade_total - vendidos/cortesias aprovados
+//   status_venda = disponivel | pausado | em_breve | encerrado | esgotado
 // =====================================================
 exports.buscarEvento = async (req, res) => {
   try {
@@ -226,7 +242,27 @@ exports.buscarEvento = async (req, res) => {
     }
     const evento = eventos[0];
 
-    const ingressos = await db.query("SELECT * FROM ingressos WHERE evento_id = ?", [id]);
+    const ingressosDb = await db.query(`
+      SELECT i.*,
+        COALESCE((
+          SELECT SUM(v.quantidade) FROM vendas v
+          WHERE v.ingresso_id = i.id AND v.status IN ('aprovado', 'cortesia')
+        ), 0) AS ocupados
+      FROM ingressos i
+      WHERE i.evento_id = ?
+      ORDER BY i.id ASC
+    `, [id]);
+
+    const agora = new Date();
+    const ingressos = ingressosDb.map((t) => {
+      const disponivel = Math.max(0, Number(t.quantidade_total) - (Number(t.ocupados) || 0));
+      return {
+        ...t,
+        disponivel,
+        status_venda: getStatusVenda(t, disponivel, agora),
+      };
+    });
+
     res.json({ ...evento, ingressos });
   } catch (err) {
     console.error("Erro ao buscar evento:", err);

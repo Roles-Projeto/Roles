@@ -99,12 +99,34 @@ async function detalheEvento(req, res) {
         const evento = rows[0];
         if (!evento) return res.status(404).json({ erro: "Evento não encontrado." });
 
-        const tipos = await db.query(`
-            SELECT id, titulo AS nome, tipo, valor AS preco,
-                   quantidade_total, quantidade_total AS disponivel
-            FROM ingressos
-            WHERE evento_id = ?
+        const tiposDb = await db.query(`
+            SELECT
+                i.id, i.titulo AS nome, i.tipo, i.valor AS preco,
+                i.quantidade_total, i.ativo, i.data_inicio_venda, i.data_fim_venda,
+                COALESCE((
+                    SELECT SUM(v.quantidade) FROM vendas v
+                    WHERE v.ingresso_id = i.id AND v.status IN ('aprovado', 'cortesia')
+                ), 0) AS ocupados
+            FROM ingressos i
+            WHERE i.evento_id = ?
+            ORDER BY i.id ASC
         `, [id]);
+
+        const agora = new Date();
+        const tipos = tiposDb.map(t => {
+            const disponivel = Math.max(0, t.quantidade_total - (Number(t.ocupados) || 0));
+            return {
+                id: t.id,
+                nome: t.nome,
+                tipo: t.tipo,
+                preco: t.preco,
+                quantidade_total: t.quantidade_total,
+                disponivel,
+                status_venda: getStatusVenda(t, disponivel, agora),
+                venda_abre_em: t.data_inicio_venda || null,
+                venda_encerra_em: t.data_fim_venda || null,
+            };
+        });
 
         res.json({ ...evento, tipos_ingresso: tipos });
     } catch (err) {
@@ -112,7 +134,6 @@ async function detalheEvento(req, res) {
         res.status(500).json({ erro: "Erro interno.", detalhe: err.message });
     }
 }
-
 // ====================================================
 // COMPRAR INGRESSO
 //
@@ -125,7 +146,6 @@ async function detalheEvento(req, res) {
 // e gera o ingresso normalmente (com QR code).
 // ====================================================
 async function comprarIngresso(req, res) {
-    console.log("🔥🔥🔥 VERSÃO NOVA DO CONTROLLER RODANDO 🔥🔥🔥");
     const { usuario_id, evento_id, itens, forma_pagamento } = req.body;
 
     if (!usuario_id || !evento_id || !itens?.length) {
@@ -161,7 +181,7 @@ async function comprarIngresso(req, res) {
 
             // Tipo pausado pelo organizador — não pode ser comprado,
             // mesmo que ainda tenha vagas disponíveis.
-            if (tipo.ativo === false) {
+            if (tipo.ativo === false || tipo.ativo === 0) {
                 return res.status(400).json({ erro: `A venda de "${tipo.titulo}" está pausada no momento.` });
             }
 
@@ -378,6 +398,14 @@ async function detalheIngresso(req, res) {
 function gerarCodigoQR(pedido_id, tipo_id, usuario_id) {
     const dados = `${pedido_id}-${tipo_id}-${usuario_id}-${Date.now()}-${Math.random()}`;
     return crypto.createHash("sha256").update(dados).digest("hex");
+}
+
+function getStatusVenda(tipo, disponiveis, agora = new Date()) {
+    if (tipo.ativo === false || tipo.ativo === 0) return "pausado";
+    if (tipo.data_inicio_venda && agora < new Date(tipo.data_inicio_venda)) return "em_breve";
+    if (tipo.data_fim_venda && agora > new Date(tipo.data_fim_venda)) return "encerrado";
+    if (disponiveis <= 0) return "esgotado";
+    return "disponivel";
 }
 
 function simularPagamento(forma_pagamento) {

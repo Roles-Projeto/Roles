@@ -157,7 +157,7 @@ function salvarEAtualizar() {
 }
 
 async function carregar(usuarioId) {
-  const res = await fetch(`${API_BASE}/recomendacoes/${usuarioId}`);
+  const res = await fetch(`${API_BASE}/recomendacoes/${usuarioId}?_=${Date.now()}`, { cache: "no-store" });
   if (!res.ok) throw new Error(`Erro ${res.status} ao buscar usuário ${usuarioId}`);
   const dados = await res.json();
   return dados.sort((a, b) => b.scoreFinal - a.scoreFinal);

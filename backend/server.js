@@ -1,13 +1,3 @@
-/**
- * =====================================================
- *  ROLÊS — servidor raiz
- *  Compatível com Express 4 e 5
- *
- *  RODAR LOCAL:  npx nodemon server.js
- *  Acesse:       http://localhost:3000/frontend/index.html
- * =====================================================
- */
-
 require("dotenv").config();
 
 const express   = require("express");
@@ -19,8 +9,6 @@ const rateLimit = require("express-rate-limit");
 
 const app = express();
 
-/* ─── Segurança de headers HTTP ─── */
-/* ─── Segurança de headers HTTP ─── */
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
     crossOriginEmbedderPolicy: false,
@@ -32,7 +20,6 @@ app.use((req, res, next) => {
     next();
 });
 
-/* ─── Rate limiting geral — 100 requests por IP a cada 15 min ─── */
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -40,7 +27,6 @@ const limiter = rateLimit({
 });
 app.use("/api", limiter);
 
-/* ─── Rate limiting para login — 10 tentativas por 15 min ─── */
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -48,7 +34,6 @@ const loginLimiter = rateLimit({
 });
 app.use("/usuarios/login", loginLimiter);
 
-/* ─── Middlewares globais ─── */
 const allowedOrigins = [
     "http://127.0.0.1:5502",
     "http://localhost:5502",
@@ -61,7 +46,6 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: (origin, callback) => {
-        // requests sem origin (ex: Postman, mesma origem) passam direto
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -75,15 +59,15 @@ app.use(cors({
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-/* ─── Log de requisições ─── */
 app.use((req, res, next) => {
   console.log(`🌐 ${req.method} ${req.url}`);
   next();
 });
 
-/* ─────────────────────────────────────────────────────
-   ARQUIVOS ESTÁTICOS
-───────────────────────────────────────────────────── */
+app.get('/service-worker.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'service-worker.js'));
+});
+
 function caseInsensitiveStatic(baseDir) {
   return (req, res, next) => {
     const filePath = path.join(baseDir, req.url);
@@ -102,9 +86,6 @@ app.use("/frontend", caseInsensitiveStatic(path.join(__dirname, "..", "Frontend"
 app.use("/frontend", express.static(path.join(__dirname, "..", "Frontend")));
 app.use("/uploads",  express.static(path.join(__dirname, "uploads")));
 
-/* ─────────────────────────────────────────────────────
-   ROTAS DA API
-───────────────────────────────────────────────────── */
 const usuariosRoutes         = require("./routes/usuarios");
 const authRoutes             = require("./routes/auth");
 const eventosRoutes          = require("./routes/eventos");
@@ -115,7 +96,6 @@ const adminRoutes            = require("./routes/admin");
 const { ingressosRouter, pedidosRouter } = require("./routes/ingressosRoutes");
 const recomendacaoRoutes     = require("./routes/recomendacaoRoutes");
 
-// Rotas opcionais — carregadas só se o arquivo existir
 function tryRequire(routePath) {
   try {
     const mod = require(path.join(__dirname, routePath));
@@ -129,9 +109,6 @@ const favoritosRoutes = tryRequire("./routes/favoritos");
 const visitasRoutes   = tryRequire("./routes/visitas");
 const comprasRoutes   = tryRequire("./routes/compras");
 const historicoRoutes = tryRequire("./routes/historico");
-
-// const { iniciarPoller } = require("./services/gmailPoller");
-// iniciarPoller();
 
 app.use("/usuarios",         usuariosRoutes);
 app.use("/usuarios",         authRoutes);
@@ -150,11 +127,6 @@ if (visitasRoutes)   app.use("/visitas",   visitasRoutes);
 if (comprasRoutes)   app.use("/compras",   comprasRoutes);
 if (historicoRoutes) app.use("/historico", historicoRoutes);
 
-/* ─────────────────────────────────────────────────────
-   FALLBACK SPA
-   Serve o index.html APENAS para rotas de frontend.
-   Rotas de API desconhecidas retornam 404 JSON.
-───────────────────────────────────────────────────── */
 const API_PREFIXES = [
   "/usuarios", "/auth", "/eventos", "/estabelecimentos",
   "/contato", "/avaliacoes", "/admin", "/ingressos",
@@ -177,13 +149,11 @@ app.use((req, res) => {
   }
 });
 
-/* ─── Handler de erros ─── */
 app.use((err, req, res, next) => {
   console.error("❌ ERRO:", err.message);
   res.status(500).json({ erro: "Erro interno.", detalhes: err.message });
 });
 
-/* ─── Inicia servidor ─── */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {

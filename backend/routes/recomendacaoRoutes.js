@@ -59,6 +59,34 @@ router.post("/usuarios/:usuarioId/localizacao", async (req, res) => {
     }
 });
 
+// POST /recomendacoes/push/inscrever
+// Chame isso quando o navegador gerar a inscrição de push (pushManager.subscribe)
+// Body: { usuarioId, inscricao: { endpoint, keys: { p256dh, auth } } }
+// Além de salvar, dispara uma notificação de boas-vindas imediata vinda do servidor.
+router.post("/push/inscrever", async (req, res) => {
+    try {
+        const { usuarioId, inscricao } = req.body;
+
+        if (!usuarioId || !inscricao || !inscricao.endpoint || !inscricao.keys) {
+            return res.status(400).json({ erro: "Dados de inscrição incompletos." });
+        }
+
+        // 1. Guarda a subscrição no banco
+        await notificacaoService.salvarInscricaoPush(Number(usuarioId), inscricao);
+
+        // 2. Dispara a notificação de boas-vindas, vinda do servidor
+        await notificacaoService.enviarNotificacaoUsuario(Number(usuarioId), {
+            titulo: "Notificações Ativadas! 🎉",
+            mensagem: "Agora vais receber avisos sobre os melhores rolês perto de ti.",
+            url: "/frontend/index.html",
+        });
+
+        res.status(201).json({ mensagem: "Inscrição de push salva com sucesso!" });
+    } catch (err) {
+        res.status(500).json({ erro: "Erro ao salvar inscrição de push.", detalhes: err.message });
+    }
+});
+
 // ============================================================
 // ROTA DE TESTE — só pra facilitar o desenvolvimento.
 // Acessa direto pelo navegador, sem precisar de Postman/PowerShell:

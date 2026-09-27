@@ -685,10 +685,19 @@ body {
   cursor: pointer;
   transition: fill 0.2s, stroke 0.2s, filter 0.2s;
 }
+
+/* Setores do template "Arena / Estádio" */
 [data-setor="arquibancada"].mapa-setor { fill: #e4e2ec; }
 [data-setor="cadeira superior"].mapa-setor { fill: #c8bcf0; }
 [data-setor="cadeira inferior"].mapa-setor { fill: #8f6bea; }
 [data-setor="pista"].mapa-setor { fill: #5a2fd4; }
+
+/* Setores dos templates "Casa de Show" (camarote), "Teatro" (plateia/balcão)
+   e "Simples" (geral) — adicionados junto com o mapa dinâmico por evento */
+[data-setor="camarote"].mapa-setor { fill: var(--ink); }
+[data-setor="plateia"].mapa-setor  { fill: #5a2fd4; }
+[data-setor="balcao"].mapa-setor   { fill: #c8bcf0; }
+[data-setor="geral"].mapa-setor    { fill: #5a2fd4; }
 
 .mapa-setor:hover { filter: brightness(1.06); stroke: var(--ink); stroke-width: 3; }
 .mapa-setor.mapa-setor-selecionado { stroke: var(--ink); stroke-width: 3; filter: brightness(1.08); }
@@ -820,6 +829,12 @@ body {
 .dot-cadeira-inferior { background: #8f6bea; }
 .dot-pista { background: #5a2fd4; }
 .dot-vip { background: var(--ink); }
+
+/* Pontos de legenda dos templates novos (casa de show, teatro, simples) */
+.dot-camarote { background: var(--ink); }
+.dot-plateia  { background: #5a2fd4; }
+.dot-balcao   { background: #c8bcf0; }
+.dot-geral    { background: #5a2fd4; }
 
 /* ═══════════════════════════════════════
    INGRESSOS AGRUPADOS EM ACCORDION POR SETOR

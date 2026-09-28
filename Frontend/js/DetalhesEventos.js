@@ -13,14 +13,97 @@ const QUANTIDADE_HABILITADA = true;
 const MAX_VISIVEL_POR_SETOR = 2;     // ingressos mostrados por setor antes do "Ver mais"
 const LIMITE_DESCRICAO_CURTA = 320;  // acima disso a descrição fica recolhida com "Ler mais"
 
-// Setores conhecidos (mesma chave do data-setor do SVG do mapa)
-const SETORES = [
-    { chave: 'arquibancada',     nome: 'Arquibancada',     dot: 'dot-arquibancada' },
-    { chave: 'cadeira superior', nome: 'Cadeira Superior', dot: 'dot-cadeira-superior' },
-    { chave: 'cadeira inferior', nome: 'Cadeira Inferior', dot: 'dot-cadeira-inferior' },
-    { chave: 'pista',            nome: 'Pista',            dot: 'dot-pista' },
-    { chave: 'vip',              nome: 'VIP',              dot: 'dot-vip' }
-];
+/* ═══════════════════════════════════════════
+   TEMPLATES DE MAPA
+   Cada template define os setores disponíveis e o SVG a ser
+   injetado dinamicamente, de acordo com o tipo_mapa/mapa_config
+   que vem do evento (definidos na criação do evento).
+═══════════════════════════════════════════ */
+const TEMPLATES_MAPA = {
+    arena: {
+        setores: [
+            { chave: 'arquibancada',     nome: 'Arquibancada',     dot: 'dot-arquibancada' },
+            { chave: 'cadeira superior', nome: 'Cadeira Superior', dot: 'dot-cadeira-superior' },
+            { chave: 'cadeira inferior', nome: 'Cadeira Inferior', dot: 'dot-cadeira-inferior' },
+            { chave: 'pista',            nome: 'Pista',            dot: 'dot-pista' },
+            { chave: 'vip',              nome: 'VIP',              dot: 'dot-vip' }
+        ],
+        svg: `<svg viewBox="0 0 560 360" id="svg-mapa-setores" role="img" aria-label="Mapa de setores do evento">
+            <ellipse cx="225" cy="180" rx="195" ry="150" class="mapa-setor" data-setor="arquibancada" />
+            <ellipse cx="225" cy="180" rx="155" ry="120" class="mapa-setor" data-setor="cadeira superior" />
+            <ellipse cx="225" cy="180" rx="115" ry="88" class="mapa-setor" data-setor="cadeira inferior" />
+            <ellipse cx="225" cy="180" rx="75" ry="57" class="mapa-setor" data-setor="pista" />
+
+            <rect x="195" y="165" width="60" height="30" rx="6" class="mapa-palco" />
+            <text x="225" y="184" text-anchor="middle" class="mapa-texto-palco">PALCO</text>
+
+            <text x="225" y="222" text-anchor="middle" class="mapa-texto-setor mapa-texto-clara">PISTA</text>
+            <text x="225" y="49" text-anchor="middle" class="mapa-texto-setor mapa-texto-escura">ARQUIBANCADA</text>
+
+            <path d="M 330,100 L 395,60" class="mapa-linha-guia" />
+            <text x="400" y="57" text-anchor="start" class="mapa-texto-setor mapa-texto-pequeno">CADEIRA</text>
+            <text x="400" y="69" text-anchor="start" class="mapa-texto-setor mapa-texto-pequeno">SUPERIOR</text>
+
+            <path d="M 145,258 L 85,295" class="mapa-linha-guia" />
+            <text x="80" y="298" text-anchor="end" class="mapa-texto-setor mapa-texto-pequeno">CADEIRA</text>
+            <text x="80" y="310" text-anchor="end" class="mapa-texto-setor mapa-texto-pequeno">INFERIOR</text>
+
+            <rect x="450" y="140" width="90" height="90" rx="12" class="mapa-setor mapa-setor-vip" data-setor="vip" />
+            <text x="495" y="180" class="mapa-texto-vip">SOUNDCHECK</text>
+            <text x="495" y="198" class="mapa-texto-vip mapa-texto-vip-destaque">VIP</text>
+        </svg>`
+    },
+    pista_camarote: {
+        setores: [
+            { chave: 'pista',    nome: 'Pista',    dot: 'dot-pista' },
+            { chave: 'camarote', nome: 'Camarote', dot: 'dot-camarote' }
+        ],
+        svg: `<svg viewBox="0 0 560 360" id="svg-mapa-setores" role="img" aria-label="Mapa de setores do evento">
+            <rect x="150" y="60" width="160" height="50" rx="8" class="mapa-palco" />
+            <text x="230" y="90" text-anchor="middle" class="mapa-texto-palco">PALCO</text>
+
+            <rect x="60" y="140" width="340" height="180" rx="16" class="mapa-setor" data-setor="pista" />
+            <text x="230" y="240" text-anchor="middle" class="mapa-texto-setor mapa-texto-clara">PISTA</text>
+
+            <rect x="420" y="140" width="110" height="180" rx="16" class="mapa-setor mapa-setor-vip" data-setor="camarote" />
+            <text x="475" y="228" class="mapa-texto-vip mapa-texto-vip-destaque" text-anchor="middle" style="font-size:13px;">CAMAROTE</text>
+        </svg>`
+    },
+    teatro: {
+        setores: [
+            { chave: 'plateia', nome: 'Plateia', dot: 'dot-plateia' },
+            { chave: 'balcao',  nome: 'Balcão',  dot: 'dot-balcao' }
+        ],
+        svg: `<svg viewBox="0 0 560 360" id="svg-mapa-setores" role="img" aria-label="Mapa de setores do evento">
+            <rect x="140" y="30" width="280" height="36" rx="6" class="mapa-palco" />
+            <text x="280" y="53" text-anchor="middle" class="mapa-texto-palco">PALCO</text>
+
+            <rect x="60" y="90" width="440" height="140" rx="14" class="mapa-setor" data-setor="plateia" />
+            <text x="280" y="165" text-anchor="middle" class="mapa-texto-setor mapa-texto-clara">PLATEIA</text>
+
+            <rect x="60" y="250" width="440" height="90" rx="14" class="mapa-setor" data-setor="balcao" />
+            <text x="280" y="300" text-anchor="middle" class="mapa-texto-setor mapa-texto-escura">BALCÃO</text>
+        </svg>`
+    },
+    simples: {
+        setores: [
+            { chave: 'geral', nome: 'Geral', dot: 'dot-geral' }
+        ],
+        svg: `<svg viewBox="0 0 560 360" id="svg-mapa-setores" role="img" aria-label="Mapa de setores do evento">
+            <rect x="140" y="60" width="280" height="40" rx="6" class="mapa-palco" />
+            <text x="280" y="85" text-anchor="middle" class="mapa-texto-palco">PALCO</text>
+
+            <rect x="60" y="130" width="440" height="190" rx="16" class="mapa-setor" data-setor="geral" />
+            <text x="280" y="230" text-anchor="middle" class="mapa-texto-setor mapa-texto-clara">GERAL</text>
+        </svg>`
+    }
+};
+
+// Setores conhecidos (mesma chave do data-setor do SVG do mapa).
+// Antes era uma lista fixa com os 5 setores do arena — agora é dinâmica,
+// trocada por renderizarMapaEvento() de acordo com o tipo_mapa/mapa_config
+// que vier do evento carregado.
+let SETORES = TEMPLATES_MAPA.arena.setores;
 
 /* ═══════════════════════════════════════════
    STATUS DE VENDA DOS INGRESSOS
@@ -422,6 +505,43 @@ function inicializarMapaSetores(ingressos) {
 }
 
 /* ═══════════════════════════════════════════
+   RENDERIZAÇÃO DO MAPA CONFORME O EVENTO
+   Lê tipo_mapa/mapa_config vindos do backend e injeta o SVG
+   do template correspondente, ou esconde a seção do mapa
+   quando o evento não tiver mapa configurado.
+═══════════════════════════════════════════ */
+function renderizarMapaEvento(evento) {
+    const secaoMapa = document.querySelector('.mapa-setores');
+    const wrap = document.querySelector('.mapa-svg-wrap');
+    const tipo = evento.tipo_mapa;
+
+    // Evento antigo (criado antes da feature existir): tipo_mapa nunca foi
+    // definido (null/undefined) -> mantém o comportamento de sempre existir
+    // um mapa, usando o template arena como padrão.
+    if (tipo == null) {
+        SETORES = TEMPLATES_MAPA.arena.setores;
+        if (wrap) wrap.innerHTML = TEMPLATES_MAPA.arena.svg;
+        if (secaoMapa) secaoMapa.style.display = '';
+        return;
+    }
+
+    // "nenhum" (escolhido de propósito) ou "imagem" (ainda não implementada)
+    // -> esconde a seção do mapa inteira
+    if (tipo !== 'ilustrativo') {
+        if (secaoMapa) secaoMapa.style.display = 'none';
+        SETORES = [];
+        return;
+    }
+
+    const chaveTemplate = evento.mapa_config?.template;
+    const template = TEMPLATES_MAPA[chaveTemplate] || TEMPLATES_MAPA.arena;
+
+    SETORES = template.setores;
+    if (wrap) wrap.innerHTML = template.svg;
+    if (secaoMapa) secaoMapa.style.display = '';
+}
+
+/* ═══════════════════════════════════════════
    LEGENDA DE PREÇOS POR SETOR
    Explica as cores do mapa com o preço mínimo de cada setor,
    e permite clicar para destacar os ingressos.
@@ -747,6 +867,10 @@ async function carregarDetalhesEvento() {
             maxQuantidade: 1,
             categoria: evento.categoria || null // ← usado pelo sistema de recomendação (recomendacaoService.js)
         };
+
+        // Mapa do evento — escolhe o template certo (ou esconde) de acordo
+        // com o tipo_mapa/mapa_config que veio do backend
+        renderizarMapaEvento(evento);
 
         // Ingressos
         const ingressosContainer = document.querySelector('.ingressos-disponiveis');

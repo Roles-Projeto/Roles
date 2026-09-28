@@ -791,3 +791,33 @@ footer iframe { min-height: 22rem; display: block; }
 }
 
 .badge-em-alta i { font-size: 10px; }
+/* ===== Locais e Eventos em fileira com rolagem lateral ===== */
+.populares-grid,
+.eventos-grid {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 4px 20px;
+}
+
+.populares-grid > *,
+.eventos-grid > * {
+  flex: 0 0 300px;
+  scroll-snap-align: start;
+}
+
+@media (max-width: 768px) {
+  .populares-grid,
+  .eventos-grid {
+    gap: 16px;
+    padding: 8px 16px 20px;
+  }
+
+  .populares-grid > *,
+  .eventos-grid > * {
+    flex: 0 0 260px;
+  }
+}

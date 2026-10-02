@@ -170,25 +170,210 @@ function initHeader() {
     // ----------------------------------------------------------
     // CARD DE CIDADE
     // ----------------------------------------------------------
-    const cityBtn    = document.querySelector('.city-btn');
+    const cityBtn = document.querySelector('.city-btn');
     const cityBtnMobile = document.getElementById('cityBtnMobile');
-    const cityCard   = document.getElementById('city-card');
-    const overlay    = document.getElementById('city-overlay');
-    const closeCard  = document.getElementById('close-card');
+    const cityCard = document.getElementById('city-card');
+    const overlay = document.getElementById('city-overlay');
+    const closeCard = document.getElementById('close-card');
     const citySearch = document.getElementById('city-search');
     const useLocation = document.getElementById('use-location');
-    const cityItems = document.querySelectorAll('.city-list li');
 
     if (cityCard) document.body.appendChild(cityCard);
     if (overlay) document.body.appendChild(overlay);
 
-    const abrirCard = () => { if (cityCard) cityCard.style.display = 'block'; if (overlay) overlay.style.display = 'block'; };
+    // Lista de cidades (se não existir no HTML, cria uma)
+    let cityList = cityCard ? cityCard.querySelector('.city-list') : null;
+    if (cityCard && !cityList) {
+        cityList = document.createElement('ul');
+        cityList.className = 'city-list';
+        cityCard.appendChild(cityList);
+    }
+
+    // ---- Cidades em destaque (aparecem quando o campo está vazio) ----
+    const DESTAQUES = [
+        { nome: 'Goiânia', uf: 'GO' },
+        { nome: 'Aparecida de Goiânia', uf: 'GO' },
+        { nome: 'Senador Canedo', uf: 'GO' },
+        { nome: 'Trindade', uf: 'GO' },
+        { nome: 'Caldas Novas', uf: 'GO' },
+        { nome: 'Pirenópolis', uf: 'GO' },
+        { nome: 'Goiás', uf: 'GO', apelido: 'Goiás Velho' },
+        { nome: 'Nova Veneza', uf: 'GO' },
+        { nome: 'Terezópolis de Goiás', uf: 'GO' },
+        { nome: 'Brasília', uf: 'DF' }
+    ];
+
+    // ---- As 27 capitais do Brasil ----
+    const CAPITAIS = [
+        ['Rio Branco', 'AC'], ['Maceió', 'AL'], ['Macapá', 'AP'], ['Manaus', 'AM'],
+        ['Salvador', 'BA'], ['Fortaleza', 'CE'], ['Brasília', 'DF'], ['Vitória', 'ES'],
+        ['Goiânia', 'GO'], ['São Luís', 'MA'], ['Cuiabá', 'MT'], ['Campo Grande', 'MS'],
+        ['Belo Horizonte', 'MG'], ['Belém', 'PA'], ['João Pessoa', 'PB'], ['Curitiba', 'PR'],
+        ['Recife', 'PE'], ['Teresina', 'PI'], ['Rio de Janeiro', 'RJ'], ['Natal', 'RN'],
+        ['Porto Alegre', 'RS'], ['Porto Velho', 'RO'], ['Boa Vista', 'RR'],
+        ['Florianópolis', 'SC'], ['São Paulo', 'SP'], ['Aracaju', 'SE'], ['Palmas', 'TO']
+    ].map(([nome, uf]) => ({ nome, uf }));
+
+    // ---- API do IBGE (gratuita, sem chave) ----
+    const IBGE_URL = 'https://servicodados.ibge.gov.br/api/v1/localidades';
+    const CIDADES_CACHE = 'roles_cidades_v1_';
+
+    let cidadesRegiao = [];   // todas de Goiás + DF
+    let cidadesBrasil = [];   // todas do Brasil (carrega só quando a pessoa digita)
+    let carregouBrasil = false;
+    let carregandoBrasil = false;
+
+    const normalizarCidade = (s) =>
+        (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+    function lerCacheCidades(chave) {
+        try {
+            const bruto = localStorage.getItem(CIDADES_CACHE + chave);
+            return bruto ? JSON.parse(bruto) : null;
+        } catch (e) { return null; }
+    }
+
+    function salvarCacheCidades(chave, dados) {
+        try { localStorage.setItem(CIDADES_CACHE + chave, JSON.stringify(dados)); } catch (e) { }
+    }
+
+    function mapearMunicipios(municipios) {
+        return municipios.map((m) => ({
+            nome: m.nome,
+            uf: (m.microrregiao && m.microrregiao.mesorregiao && m.microrregiao.mesorregiao.UF && m.microrregiao.mesorregiao.UF.sigla)
+                || (m['regiao-imediata'] && m['regiao-imediata']['regiao-intermediaria'] && m['regiao-imediata']['regiao-intermediaria'].UF && m['regiao-imediata']['regiao-intermediaria'].UF.sigla)
+                || ''
+        }));
+    }
+
+    async function buscarMunicipios(url, chave) {
+        const cache = lerCacheCidades(chave);
+        if (cache) return cache;
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('Erro ao buscar cidades no IBGE');
+        const dados = mapearMunicipios(await resp.json());
+        salvarCacheCidades(chave, dados);
+        return dados;
+    }
+
+    async function carregarRegiao() {
+        if (cidadesRegiao.length) return;
+        try {
+            const [go, df] = await Promise.all([
+                buscarMunicipios(`${IBGE_URL}/estados/52/municipios`, 'GO'),
+                buscarMunicipios(`${IBGE_URL}/estados/53/municipios`, 'DF')
+            ]);
+            cidadesRegiao = [...go, ...df];
+        } catch (e) {
+            console.error('Erro ao carregar cidades de Goiás/DF:', e);
+            cidadesRegiao = []; // se falhar, ainda funcionam destaques + capitais
+        }
+    }
+
+    async function carregarBrasil() {
+        if (carregouBrasil || carregandoBrasil) return;
+        carregandoBrasil = true;
+        try {
+            cidadesBrasil = await buscarMunicipios(`${IBGE_URL}/municipios`, 'BR');
+            carregouBrasil = true;
+        } catch (e) {
+            console.error('Erro ao carregar cidades do Brasil:', e);
+        }
+        carregandoBrasil = false;
+    }
+
+    // ---- Filtro da busca ----
+    function filtrarCidades(termo) {
+        const t = normalizarCidade(termo);
+        if (!t) return DESTAQUES;
+
+        const vistos = new Set();
+        const resultado = [];
+        const fontes = [DESTAQUES, CAPITAIS, cidadesRegiao, cidadesBrasil];
+
+        for (const fonte of fontes) {
+            for (const c of fonte) {
+                const alvo = normalizarCidade(`${c.nome} ${c.apelido || ''} ${c.uf}`);
+                if (!alvo.includes(t)) continue;
+                const chave = `${normalizarCidade(c.nome)}-${c.uf}`;
+                if (vistos.has(chave)) continue;
+                vistos.add(chave);
+                resultado.push(c);
+            }
+        }
+
+        // 1º as que começam com o termo, 2º as de GO/DF, 3º ordem alfabética
+        resultado.sort((a, b) => {
+            const aIni = normalizarCidade(a.nome).startsWith(t) ? 0 : 1;
+            const bIni = normalizarCidade(b.nome).startsWith(t) ? 0 : 1;
+            if (aIni !== bIni) return aIni - bIni;
+            const aReg = (a.uf === 'GO' || a.uf === 'DF') ? 0 : 1;
+            const bReg = (b.uf === 'GO' || b.uf === 'DF') ? 0 : 1;
+            if (aReg !== bReg) return aReg - bReg;
+            return a.nome.localeCompare(b.nome, 'pt-BR');
+        });
+
+        return resultado.slice(0, 40);
+    }
+
+    // ---- Desenha a lista no card ----
+    function renderizarCidades(cidades) {
+        if (!cityList) return;
+        cityList.innerHTML = '';
+
+        if (!cidades.length) {
+            const vazio = document.createElement('li');
+            vazio.className = 'city-vazio';
+            vazio.style.cssText = 'color:#888;cursor:default;justify-content:center;';
+            vazio.textContent = 'Nenhuma cidade encontrada';
+            cityList.appendChild(vazio);
+            return;
+        }
+
+        cidades.forEach((c) => {
+            const li = document.createElement('li');
+            li.dataset.city = c.nome;
+            li.dataset.uf = c.uf || '';
+
+            const icone = document.createElement('i');
+            icone.className = 'fas fa-map-marker-alt';
+            li.appendChild(icone);
+
+            const texto = document.createElement('span');
+            texto.textContent = c.nome;
+            li.appendChild(texto);
+
+            // Mostra a sigla do estado quando não for Goiás
+            if (c.uf && c.uf !== 'GO') {
+                const uf = document.createElement('small');
+                uf.style.cssText = 'color:#999;font-size:12px;';
+                uf.textContent = `- ${c.uf}`;
+                li.appendChild(uf);
+            }
+
+            cityList.appendChild(li);
+        });
+    }
+
+    const abrirCard = () => {
+        if (cityCard) cityCard.style.display = 'block';
+        if (overlay) overlay.style.display = 'block';
+        if (citySearch) citySearch.value = '';
+        renderizarCidades(DESTAQUES);
+        if (cityList) cityList.scrollTop = 0;
+    };
     const fecharCard = () => { if (cityCard) cityCard.style.display = 'none'; if (overlay) overlay.style.display = 'none'; };
 
-    function selecionarCidade(nome) {
+    function selecionarCidade(nome, uf) {
         if (cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${nome}`;
         if (cityBtnMobile) cityBtnMobile.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${nome}`;
         localStorage.setItem('cidade', nome);
+        if (uf) localStorage.setItem('cidadeUF', uf);
+        else localStorage.removeItem('cidadeUF');
+
+        // Avisa o resto do site que a cidade mudou (útil pra filtrar eventos depois)
+        window.dispatchEvent(new CustomEvent('roles:cidade', { detail: { nome, uf: uf || '' } }));
+
         fecharCard();
     }
 
@@ -196,17 +381,36 @@ function initHeader() {
     cityBtnMobile?.addEventListener('click', abrirCard);
     closeCard?.addEventListener('click', fecharCard);
     overlay?.addEventListener('click', fecharCard);
-    cityItems.forEach(i => i.addEventListener('click', () => selecionarCidade(i.dataset.city)));
+
+    // Clique em uma cidade da lista (delegação, porque a lista é redesenhada)
+    cityList?.addEventListener('click', (e) => {
+        const item = e.target.closest('li[data-city]');
+        if (!item) return;
+        selecionarCidade(item.dataset.city, item.dataset.uf);
+    });
 
     const savedCity = localStorage.getItem('cidade');
     if (savedCity && cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${savedCity}`;
     if (savedCity && cityBtnMobile) cityBtnMobile.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${savedCity}`;
 
+    // Já deixa Goiás + DF prontos em segundo plano
+    carregarRegiao();
+    renderizarCidades(DESTAQUES);
+
+    // Busca de cidade (com pequeno atraso pra não pesar)
+    let atrasoCidade;
     citySearch?.addEventListener('input', () => {
-        const val = citySearch.value.toLowerCase();
-        cityItems.forEach(i => {
-            i.style.display = i.dataset.city.toLowerCase().includes(val) ? 'flex' : 'none';
-        });
+        clearTimeout(atrasoCidade);
+        atrasoCidade = setTimeout(async () => {
+            const termo = citySearch.value;
+            renderizarCidades(filtrarCidades(termo));
+
+            // Com 3+ letras, carrega o Brasil inteiro (só uma vez) e atualiza a lista
+            if (normalizarCidade(termo).length >= 3 && !carregouBrasil) {
+                await carregarBrasil();
+                if (citySearch.value === termo) renderizarCidades(filtrarCidades(termo));
+            }
+        }, 150);
     });
 
     if (useLocation) {

@@ -7,197 +7,853 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
     <link rel="stylesheet" href="/frontend/css/footer.css">
     <link rel="stylesheet" href="/frontend/css/login.css">
 </head>
 
 <body>
-    <header><div id="header-container"></div></header>
+
+    <header>
+        <div id="header-container"></div>
+    </header>
 
     <main class="login-main">
+
         <div class="login-split">
 
-            <!-- ════════ LADO ESQUERDO — hero ════════ -->
+            <!-- ═══════════════════════════════════════
+                 LADO ESQUERDO — HERO
+            ═══════════════════════════════════════ -->
+
             <div class="login-hero">
+
                 <div class="orb orb-1"></div>
                 <div class="orb orb-2"></div>
                 <div class="orb orb-3"></div>
 
                 <div class="hero-content">
-                    <div class="hero-logo">Rolês</div>
+
+                    <div class="hero-logo">
+                        Rolês
+                    </div>
+
                     <h2 class="hero-headline">
                         Descubra onde<br>
                         <em>a noite te leva.</em>
                     </h2>
+
                     <p class="hero-sub">
                         Eventos, bares, restaurantes e muito mais —
                         tudo num só lugar.
                     </p>
+
                 </div>
+
             </div>
 
-            <!-- ════════ LADO DIREITO — card ════════ -->
+
+            <!-- ═══════════════════════════════════════
+                 LADO DIREITO — CARD
+            ═══════════════════════════════════════ -->
+
             <div class="login-form-side">
+
                 <div class="login-box">
 
-                    <!-- ─── LOGIN ─── -->
+
+                    <!-- ═══════════════════════════════════════
+                         LOGIN
+                    ═══════════════════════════════════════ -->
+
                     <div id="loginContent">
 
                         <div class="card-top">
+
                             <div class="card-icon">
                                 <i class="fas fa-user"></i>
                             </div>
-                            <h1>Bem-vindo de volta</h1>
-                            <p id="main-text" class="text-muted">
+
+                            <h1>
+                                Bem-vindo de volta
+                            </h1>
+
+                            <p
+                                id="main-text"
+                                class="text-muted">
                                 Encontre os melhores lugares para sair e se divertir
                             </p>
+
                         </div>
 
-                        <!-- Notificação inline -->
-                        <div id="notificacaoLogin" class="notificacao" role="alert"></div>
 
-                        <form id="login-form" novalidate>
+                        <!-- NOTIFICAÇÃO -->
+
+                        <div
+                            id="notificacaoLogin"
+                            class="notificacao"
+                            role="alert">
+                        </div>
+
+
+                        <!-- FORMULÁRIO -->
+
+                        <form
+                            id="login-form"
+                            novalidate>
+
+                            <!-- E-MAIL -->
 
                             <div class="field-group">
-                                <label for="email">E-mail</label>
+
+                                <label for="email">
+                                    E-mail
+                                </label>
+
                                 <div class="input-wrap">
+
                                     <i class="fas fa-envelope input-icon"></i>
-                                    <input type="email" id="email"
-                                           placeholder="seu@email.com"
-                                           autocomplete="email" required>
+
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        placeholder="seu@email.com"
+                                        autocomplete="email"
+                                        required>
+
                                 </div>
+
                             </div>
+
+
+                            <!-- SENHA -->
 
                             <div class="field-group">
+
                                 <div class="label-row">
-                                    <label for="password">Senha</label>
-                                    <a href="#" class="forgot-link" id="forgotPasswordLink">
+
+                                    <label for="password">
+                                        Senha
+                                    </label>
+
+                                    <a
+                                        href="#"
+                                        class="forgot-link"
+                                        id="forgotPasswordLink">
+
                                         Esqueci minha senha
+
                                     </a>
+
                                 </div>
+
+
                                 <div class="input-wrap password-container">
+
                                     <i class="fas fa-lock input-icon"></i>
-                                    <input type="password" id="password"
-                                           placeholder="Sua senha"
-                                           autocomplete="current-password" required>
-                                    <span class="material-symbols-outlined toggle-pw"
-                                          id="togglePassword">visibility</span>
+
+                                    <input
+                                        type="password"
+                                        id="password"
+                                        placeholder="Sua senha"
+                                        autocomplete="current-password"
+                                        required>
+
+                                    <span
+                                        class="material-symbols-outlined toggle-pw"
+                                        id="togglePassword">
+
+                                        visibility
+
+                                    </span>
+
                                 </div>
+
                             </div>
 
-                            <button type="submit" class="btn-entrar">
-                                <span>Entrar</span>
+
+                            <!-- BOTÃO LOGIN -->
+
+                            <button
+                                type="submit"
+                                class="btn-entrar">
+
+                                <span>
+                                    Entrar
+                                </span>
+
                                 <i class="fas fa-arrow-right"></i>
+
                             </button>
 
                         </form>
 
+
+                        <!-- DIVISOR -->
+
                         <div class="or-divider">
+
                             <span></span>
-                            <p>ou</p>
+
+                            <p>
+                                ou
+                            </p>
+
                             <span></span>
+
                         </div>
 
-                        <p id="sub-text" class="social-label">Entre rapidamente com</p>
+
+                        <p
+                            id="sub-text"
+                            class="social-label">
+
+                            Entre rapidamente com
+
+                        </p>
+
+
+                        <!-- GOOGLE -->
 
                         <div class="social-row">
-                            <button class="btn-social google-btn" type="button">
-                                <img src="https://developers.google.com/identity/images/g-logo.png"
-                                     alt="Google" class="social-icon">
-                                <span>Continuar com Google</span>
+
+                            <button
+                                class="btn-social google-btn"
+                                type="button">
+
+                                <img
+                                    src="https://developers.google.com/identity/images/g-logo.png"
+                                    alt="Google"
+                                    class="social-icon">
+
+                                <span>
+                                    Continuar com Google
+                                </span>
+
                             </button>
+
                         </div>
+
+
+                        <!-- CADASTRO -->
 
                         <p class="card-footer register-link">
+
                             Não tem conta?
-                            <a href="/Frontend/Cadastro/cadastro.html" id="btnCadastrar">
+
+                            <a
+                                href="/Frontend/Cadastro/cadastro.html"
+                                id="btnCadastrar">
+
                                 Criar conta grátis
+
                             </a>
+
                         </p>
 
-                    </div><!-- /#loginContent -->
+                    </div>
 
-                    <!-- ─── RECUPERAR SENHA ─── -->
-                    <div id="forgotPasswordBox" class="forgot-password-box">
+
+                    <!-- ═══════════════════════════════════════
+                         VERIFICAÇÃO 2FA
+                    ═══════════════════════════════════════ -->
+
+                    <div
+                        id="twoFactorBox"
+                        class="two-factor-box">
 
                         <div class="card-top">
-                            <div class="card-icon" style="background: linear-gradient(135deg,#1a0a3d,#5b0ea6);">
-                                <i class="fas fa-key"></i>
+
+                            <div class="card-icon">
+                                <i class="fas fa-envelope-circle-check"></i>
                             </div>
-                            <h1>Esqueceu sua senha?</h1>
+
+                            <h1>
+                                Verificação em duas etapas
+                            </h1>
+
+                            <p
+                                class="text-muted"
+                                id="twoFactorTexto">
+
+                                Enviamos um código de 6 dígitos
+                                para o seu e-mail.
+
+                            </p>
+
                         </div>
 
-                        <!-- Notificação recuperação -->
-                        <div id="notificacaoRecuperar" class="notificacao" role="alert"></div>
 
-                        <!-- ETAPA 1 — e-mail -->
-                        <div id="etapaEmail">
-                            <p class="text-muted">
-                                Enviaremos um código de verificação para seu e-mail.
-                            </p>
-                            <div class="field-group">
-                                <label for="recoveryEmail">E-mail cadastrado</label>
-                                <div class="input-wrap">
-                                    <i class="fas fa-envelope input-icon"></i>
-                                    <input type="email" id="recoveryEmail"
-                                           placeholder="seu@email.com">
-                                </div>
-                            </div>
-                            <button id="sendRecoveryBtn" class="btn-entrar" type="button">
-                                <span>Enviar código</span>
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
+                        <!-- NOTIFICAÇÃO 2FA -->
+
+                        <div
+                            id="notificacao2fa"
+                            class="notificacao"
+                            role="alert">
                         </div>
 
-                        <!-- ETAPA 2 — código + nova senha -->
-                        <div id="etapaRedefinir" style="display:none;">
-                            <p class="text-muted">
-                                Digite o código enviado para seu e-mail e defina uma nova senha.
-                            </p>
-                            <div class="field-group">
-                                <label for="codigoRecuperacao">Código recebido</label>
-                                <div class="input-wrap">
-                                    <i class="fas fa-shield-alt input-icon"></i>
-                                    <input type="text" id="codigoRecuperacao"
-                                           placeholder="Digite o código">
-                                </div>
-                            </div>
-                            <div class="field-group">
-                                <label for="novaSenha">Nova senha</label>
-                                <div class="input-wrap">
-                                    <i class="fas fa-lock input-icon"></i>
-                                    <input type="password" id="novaSenha"
-                                           placeholder="Nova senha">
-                                </div>
-                            </div>
-                            <button id="redefinirSenhaBtn" class="btn-entrar" type="button">
-                                <span>Redefinir senha</span>
-                                <i class="fas fa-check"></i>
-                            </button>
-                            <p class="spam-aviso">
-                                Não recebeu o código? Verifique o spam ou
-                                <a href="#" id="reenviarCodigo">reenviar código</a>
-                            </p>
+
+                        <!-- E-MAIL DO USUÁRIO -->
+
+                        <div
+                            id="email2faExibido"
+                            class="text-muted"
+                            style="
+                                text-align:center;
+                                margin-bottom:20px;
+                                font-weight:600;
+                            ">
                         </div>
 
-                        <p class="back-login" id="backToLogin">
-                            <i class="fas fa-arrow-left"></i> Voltar para o login
+
+                        <!-- CÓDIGO DE 6 DÍGITOS -->
+
+                        <div
+                            id="etapaCodigoApp"
+                            class="otp-row"
+                            role="group"
+                            aria-label="Código de 6 dígitos">
+
+                            <input
+                                type="text"
+                                class="otp-input"
+                                inputmode="numeric"
+                                maxlength="1"
+                                autocomplete="one-time-code"
+                                aria-label="Dígito 1">
+
+                            <input
+                                type="text"
+                                class="otp-input"
+                                inputmode="numeric"
+                                maxlength="1"
+                                aria-label="Dígito 2">
+
+                            <input
+                                type="text"
+                                class="otp-input"
+                                inputmode="numeric"
+                                maxlength="1"
+                                aria-label="Dígito 3">
+
+                            <input
+                                type="text"
+                                class="otp-input"
+                                inputmode="numeric"
+                                maxlength="1"
+                                aria-label="Dígito 4">
+
+                            <input
+                                type="text"
+                                class="otp-input"
+                                inputmode="numeric"
+                                maxlength="1"
+                                aria-label="Dígito 5">
+
+                            <input
+                                type="text"
+                                class="otp-input"
+                                inputmode="numeric"
+                                maxlength="1"
+                                aria-label="Dígito 6">
+
+                        </div>
+
+
+                        <!-- BOTÃO VERIFICAR -->
+
+                        <button
+                            id="verificar2faBtn"
+                            class="btn-entrar"
+                            type="button">
+
+                            <span>
+                                Verificar código
+                            </span>
+
+                            <i class="fas fa-check"></i>
+
+                        </button>
+
+
+                        <!-- AVISO -->
+
+                        <p
+                            class="spam-aviso"
+                            id="avisoEmail2fa">
+
+                            Não recebeu o código?
+                            Verifique sua caixa de spam.
+
                         </p>
 
-                    </div><!-- /#forgotPasswordBox -->
 
-                </div><!-- /.login-box -->
-            </div><!-- /.login-form-side -->
+                        <!-- VOLTAR -->
 
-        </div><!-- /.login-split -->
+                        <p
+                            class="back-login"
+                            id="backToLogin2fa">
+
+                            <i class="fas fa-arrow-left"></i>
+
+                            Voltar para o login
+
+                        </p>
+
+                    </div>
+
+
+                    <!-- ═══════════════════════════════════════
+                         CONFIGURAÇÃO INICIAL DO 2FA
+                         AGORA FEITA POR E-MAIL
+                    ═══════════════════════════════════════ -->
+
+                    <div
+                        id="twoFactorSetupBox"
+                        class="two-factor-box two-factor-setup-box">
+
+                        <div class="card-top">
+
+                            <div class="card-icon">
+                                <i class="fas fa-envelope-circle-check"></i>
+                            </div>
+
+                            <h1>
+                                Ative sua proteção
+                            </h1>
+
+                            <p class="text-muted">
+
+                                Sua conta ainda não possui
+                                verificação em duas etapas.
+
+                            </p>
+
+                        </div>
+
+
+                        <!-- NOTIFICAÇÃO -->
+
+                        <div
+                            id="notificacaoSetup2fa"
+                            class="notificacao"
+                            role="alert">
+                        </div>
+
+
+                        <!-- EXPLICAÇÃO -->
+
+                        <div
+                            class="two-factor-setup-step">
+
+                            <div class="setup-step-number">
+                                1
+                            </div>
+
+                            <div class="setup-step-content">
+
+                                <h3>
+                                    Confira seu e-mail
+                                </h3>
+
+                                <p>
+                                    Enviamos um código de segurança
+                                    de 6 dígitos para o endereço
+                                    cadastrado na sua conta.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- E-MAIL -->
+
+                        <div
+                            id="emailSetup2faExibido"
+                            class="text-muted"
+                            style="
+                                text-align:center;
+                                margin:20px 0;
+                                font-weight:600;
+                            ">
+                        </div>
+
+
+                        <!-- SEGUNDO PASSO -->
+
+                        <div
+                            class="two-factor-setup-step">
+
+                            <div class="setup-step-number">
+                                2
+                            </div>
+
+                            <div class="setup-step-content">
+
+                                <h3>
+                                    Digite o código recebido
+                                </h3>
+
+                                <p>
+                                    O código possui 6 dígitos e
+                                    é válido por alguns minutos.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- CÓDIGO DE ATIVAÇÃO -->
+
+                        <div
+                            class="otp-row setup-otp-row"
+                            id="setupOtpRow"
+                            role="group"
+                            aria-label="Código de ativação de 6 dígitos">
+
+                            <input
+                                type="text"
+                                class="setup-otp-input"
+                                inputmode="numeric"
+                                maxlength="1"
+                                autocomplete="one-time-code"
+                                aria-label="Dígito 1">
+
+                            <input
+                                type="text"
+                                class="setup-otp-input"
+                                inputmode="numeric"
+                                maxlength="1"
+                                aria-label="Dígito 2">
+
+                            <input
+                                type="text"
+                                class="setup-otp-input"
+                                inputmode="numeric"
+                                maxlength="1"
+                                aria-label="Dígito 3">
+
+                            <input
+                                type="text"
+                                class="setup-otp-input"
+                                inputmode="numeric"
+                                maxlength="1"
+                                aria-label="Dígito 4">
+
+                            <input
+                                type="text"
+                                class="setup-otp-input"
+                                inputmode="numeric"
+                                maxlength="1"
+                                aria-label="Dígito 5">
+
+                            <input
+                                type="text"
+                                class="setup-otp-input"
+                                inputmode="numeric"
+                                maxlength="1"
+                                aria-label="Dígito 6">
+
+                        </div>
+
+
+                        <!-- ATIVAR -->
+
+                        <button
+                            id="ativar2faInicialBtn"
+                            class="btn-entrar"
+                            type="button">
+
+                            <span>
+                                Ativar proteção e continuar
+                            </span>
+
+                            <i class="fas fa-shield-halved"></i>
+
+                        </button>
+
+
+                        <!-- CÓDIGOS DE RECUPERAÇÃO -->
+
+                        <div
+                            id="setupRecoveryCodes"
+                            class="setup-recovery-codes"
+                            style="display:none;">
+
+                            <div class="setup-recovery-icon">
+                                <i class="fas fa-key"></i>
+                            </div>
+
+                            <h3>
+                                Guarde seus códigos de recuperação
+                            </h3>
+
+                            <p>
+                                Esses códigos permitem acessar sua
+                                conta caso você não consiga receber
+                                o código por e-mail.
+                            </p>
+
+                            <p class="setup-recovery-warning">
+
+                                <i class="fas fa-triangle-exclamation"></i>
+
+                                Cada código pode ser usado apenas uma vez.
+                                Guarde-os em um local seguro.
+
+                            </p>
+
+                            <div
+                                id="setupRecoveryCodesList"
+                                class="setup-recovery-list">
+                            </div>
+
+                        </div>
+
+
+                        <!-- VOLTAR -->
+
+                        <p
+                            class="back-login"
+                            id="fecharSetup2fa">
+
+                            <i class="fas fa-arrow-left"></i>
+
+                            Voltar para o login
+
+                        </p>
+
+                    </div>
+
+
+                    <!-- ═══════════════════════════════════════
+                         RECUPERAR SENHA
+                    ═══════════════════════════════════════ -->
+
+                    <div
+                        id="forgotPasswordBox"
+                        class="forgot-password-box">
+
+                        <div class="card-top">
+
+                            <div
+                                class="card-icon"
+                                style="
+                                    background:
+                                    linear-gradient(
+                                        135deg,
+                                        #1a0a3d,
+                                        #5b0ea6
+                                    );
+                                ">
+
+                                <i class="fas fa-key"></i>
+
+                            </div>
+
+                            <h1>
+                                Esqueceu sua senha?
+                            </h1>
+
+                        </div>
+
+
+                        <!-- NOTIFICAÇÃO -->
+
+                        <div
+                            id="notificacaoRecuperar"
+                            class="notificacao"
+                            role="alert">
+                        </div>
+
+
+                        <!-- ═══════════════════════════════
+                             ETAPA 1 — E-MAIL
+                        ═══════════════════════════════ -->
+
+                        <div id="etapaEmail">
+
+                            <p class="text-muted">
+
+                                Enviaremos um código de verificação
+                                para seu e-mail.
+
+                            </p>
+
+
+                            <div class="field-group">
+
+                                <label for="recoveryEmail">
+                                    E-mail cadastrado
+                                </label>
+
+                                <div class="input-wrap">
+
+                                    <i class="fas fa-envelope input-icon"></i>
+
+                                    <input
+                                        type="email"
+                                        id="recoveryEmail"
+                                        placeholder="seu@email.com">
+
+                                </div>
+
+                            </div>
+
+
+                            <button
+                                id="sendRecoveryBtn"
+                                class="btn-entrar"
+                                type="button">
+
+                                <span>
+                                    Enviar código
+                                </span>
+
+                                <i class="fas fa-paper-plane"></i>
+
+                            </button>
+
+                        </div>
+
+
+                        <!-- ═══════════════════════════════
+                             ETAPA 2 — CÓDIGO + SENHA
+                        ═══════════════════════════════ -->
+
+                        <div
+                            id="etapaRedefinir"
+                            style="display:none;">
+
+                            <p class="text-muted">
+
+                                Digite o código enviado para seu
+                                e-mail e defina uma nova senha.
+
+                            </p>
+
+
+                            <!-- CÓDIGO -->
+
+                            <div class="field-group">
+
+                                <label for="codigoRecuperacao">
+                                    Código recebido
+                                </label>
+
+                                <div class="input-wrap">
+
+                                    <i class="fas fa-shield-alt input-icon"></i>
+
+                                    <input
+                                        type="text"
+                                        id="codigoRecuperacao"
+                                        placeholder="Digite o código">
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- NOVA SENHA -->
+
+                            <div class="field-group">
+
+                                <label for="novaSenha">
+                                    Nova senha
+                                </label>
+
+                                <div class="input-wrap">
+
+                                    <i class="fas fa-lock input-icon"></i>
+
+                                    <input
+                                        type="password"
+                                        id="novaSenha"
+                                        placeholder="Nova senha">
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- BOTÃO -->
+
+                            <button
+                                id="redefinirSenhaBtn"
+                                class="btn-entrar"
+                                type="button">
+
+                                <span>
+                                    Redefinir senha
+                                </span>
+
+                                <i class="fas fa-check"></i>
+
+                            </button>
+
+
+                            <p class="spam-aviso">
+
+                                Não recebeu o código?
+
+                                Verifique o spam ou
+
+                                <a
+                                    href="#"
+                                    id="reenviarCodigo">
+
+                                    reenviar código
+
+                                </a>
+
+                            </p>
+
+                        </div>
+
+
+                        <!-- VOLTAR -->
+
+                        <p
+                            class="back-login"
+                            id="backToLogin">
+
+                            <i class="fas fa-arrow-left"></i>
+
+                            Voltar para o login
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </main>
 
+
+    <!-- ═══════════════════════════════════════
+         SCRIPTS
+    ═══════════════════════════════════════ -->
+
     <script src="/frontend/js/config.js"></script>
-    <script src="/frontend/js/footer.js" defer></script>
+
+    <script
+        src="/frontend/js/footer.js"
+        defer>
+    </script>
+
     <script src="/frontend/js/loadHeader.js"></script>
+
     <script src="/frontend/js/Login.js"></script>
+
 </body>
 </html>

@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 *,
@@ -7,7 +14,7 @@
 }
 
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     padding: 0;
     margin: 0;
     background: #f7f7fb !important;
@@ -32,8 +39,8 @@ main {
 /* ===== HERO ===== */
 .categoria-hero {
     position: relative;
-    min-height: 320px;
-    padding-top: 100px;
+    min-height: 380px;
+    padding-top: 140px;
     overflow: hidden;
     display: flex;
     align-items: flex-end;
@@ -77,6 +84,45 @@ main {
     z-index: 1;
 }
 
+/* ===== BOTÃO VOLTAR ===== */
+.btn-voltar {
+    position: absolute;
+    top: 24px;
+    left: 32px;
+    z-index: 10;
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 9px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.2);
+    transition: all 0.2s ease;
+}
+
+.btn-voltar:hover {
+    color: #fff;
+    background: rgba(0,0,0,0.5);
+    gap: 11px;
+}
+
+.btn-voltar i {
+    font-size: 11px;
+    transition: transform 0.2s;
+}
+
+.btn-voltar:hover i {
+    transform: translateX(-2px);
+}
+
 .categoria-header {
     position: relative;
     z-index: 3;
@@ -90,35 +136,6 @@ main {
     gap: 0;
 }
 
-.btn-voltar {
-    color: rgba(255,255,255,0.75);
-    text-decoration: none;
-    font-size: 11px;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    margin-bottom: 32px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    transition: color 0.2s, gap 0.2s;
-    backdrop-filter: none;
-}
-
-.btn-voltar:hover {
-    color: #fff;
-    gap: 10px;
-}
-
-.btn-voltar i {
-    font-size: 10px;
-    transition: transform 0.2s;
-}
-
-.btn-voltar:hover i {
-    transform: translateX(-2px);
-}
-
 .categoria-info {
     display: flex;
     align-items: center;
@@ -127,7 +144,7 @@ main {
 }
 
 .categoria-info h1 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 3rem;
     font-weight: 800;
     margin: 0;
@@ -201,7 +218,7 @@ main {
     background: none;
     border: none;
     padding: 12px 20px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 13px;
     font-weight: 600;
     color: #b0b0c0;
@@ -228,7 +245,7 @@ main {
     background: #faf9ff;
     border: 1.5px solid #e8e4f8;
     padding: 8px 16px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 11.5px;
     font-weight: 600;
     color: #7b6cb0;
@@ -448,7 +465,7 @@ main {
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     transition: all 0.2s;
     letter-spacing: 0.02em;
     box-shadow: 0 4px 12px rgba(93,63,211,0.25);
@@ -505,7 +522,6 @@ main {
 
 .tag-evento {
     position: absolute;
-    
     left: 12px;
     padding: 4px 12px;
     border-radius: 8px;
@@ -613,7 +629,7 @@ main {
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     transition: all 0.2s;
     letter-spacing: 0.02em;
 }
@@ -634,7 +650,7 @@ main {
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     transition: all 0.2s;
     letter-spacing: 0.02em;
     box-shadow: 0 4px 12px rgba(93,63,211,0.25);
@@ -781,6 +797,40 @@ main {
     background: #f0eef9;
 }
 
+/* ===== OVERRIDES — cards e textos ===== */
+.card-local  { background: #ffffff !important; color: #1a1a2e !important; }
+.card-evento { background: #ffffff !important; color: #1a1a2e !important; }
+.categoria-content { background: #ffffff !important; color: #1a1a2e !important; }
+.categoria-content .card-local *,
+.categoria-content .card-evento * { color: unset; }
+.card-content          { background: #ffffff !important; }
+.card-content h3       { color: #1a1a2e !important; font-size: 0.97rem !important; }
+.evento-content h3     { color: #1a1a2e !important; }
+.descricao             { color: #888 !important; }
+.descricao-evento      { color: #888 !important; }
+.endereco              { color: #9b9bb0 !important; }
+.preco-faixa           { color: #5d3fd3 !important; background: #f3f0fd !important; }
+.horario               { color: #aaa !important; }
+.avaliacoes-count      { color: #c0bcd8 !important; }
+.evento-data-local p,
+.evento-local,
+.evento-interessados   { color: #aaa !important; }
+.preco-evento          { color: #16a34a !important; background: #f0fdf4 !important; border-color: #bbf7d0 !important; }
+.atributo              { background: #f5f2ff !important; color: #7060c0 !important; border-color: #e8e0fa !important; }
+.btn-detalhes-evento   { background: #f5f2ff !important; color: #5d3fd3 !important; border: 1.5px solid #e8e0fa !important; }
+.btn-detalhes-evento:hover { background: #ece6fd !important; color: #5d3fd3 !important; }
+.btn-confirmar-evento  { background: linear-gradient(135deg, #6b4fe0 0%, #5036c0 100%) !important; color: #fff !important; }
+.btn-detalhes          { background: linear-gradient(135deg, #6b4fe0 0%, #5036c0 100%) !important; color: #fff !important; }
+.card-image-wrap       { background: #f0eef9 !important; position: relative !important; }
+.card-image-wrap img   { display: block !important; width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: 1 !important; }
+.card-image-wrap .tag  { position: absolute !important; bottom: 12px !important; top: auto !important; left: 12px !important; background: rgba(255,255,255,0.95) !important; color: #5d3fd3 !important; font-size: 10px !important; padding: 4px 12px !important; border-radius: 8px !important; width: auto !important; height: auto !important; font-weight: 700 !important; letter-spacing: 0.08em !important; }
+.card-image-wrap .avaliacao { position: absolute !important; top: 12px !important; right: 12px !important; background: rgba(255,255,255,0.95) !important; color: #f59e0b !important; font-size: 12px !important; }
+.tab-button            { color: #b0b0c0 !important; background: none !important; }
+.tab-button.active     { color: #5d3fd3 !important; border-bottom-color: #5d3fd3 !important; }
+.tabs-container        { border-bottom-color: #f0f0f5 !important; }
+.btn-filtros           { background: #faf9ff !important; color: #7b6cb0 !important; border-color: #e8e4f8 !important; }
+.fonte-dados           { color: #ccc !important; }
+
 /* ===== RESPONSIVO ===== */
 @media (max-width: 768px) {
     .categoria-info h1 { font-size: 2.2rem; }
@@ -790,4 +840,5 @@ main {
     .eventos-grid      { grid-template-columns: 1fr; }
     .categoria-hero    { min-height: 260px; }
     .categoria-hero::before { display: none; }
+    .btn-voltar        { left: 20px; top: 20px; }
 }

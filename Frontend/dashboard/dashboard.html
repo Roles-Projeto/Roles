@@ -3,11 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/frontend/css/footer.css">
     <script src="/frontend/js/auth.js"></script>
     <title>Rolês — Dashboard Empresarial</title>
     <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
     />
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="/frontend/css/dashboard.css" />
@@ -19,12 +20,26 @@
 
     <main class="main-content">
       <div class="dash-wrap">
+        <a href="/frontend/index.html" class="btn-voltar-dash">
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M10 3L5 8l5 5" />
+          </svg>
+          Voltar
+        </a>
         <!-- BARRA SUPERIOR -->
         <div class="topbar">
           <div class="topbar-left">
-            <span class="page-eyebrow">Painel do Empresário</span>
+            <span class="page-eyebrow">Painel do empresário</span>
             <h1 class="page-title">
               Dashboard <span class="brand-dot">.</span>
+              <span class="bulbs"><span></span><span></span><span></span></span>
             </h1>
           </div>
           <div class="topbar-right">
@@ -40,7 +55,7 @@
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Criar Evento
+              Criar evento
             </button>
             <button
               class="btn-quick btn-quick--outline"
@@ -57,57 +72,37 @@
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Novo Estabelecimento
+              Novo estabelecimento
             </button>
-            <button class="btn-export" id="btnExport">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              Exportar Relatório
-            </button>
+                        <div class="export-dropdown" id="exportDropdown">
+              <button class="btn-export" id="btnExportToggle">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Exportar relatório
+              </button>
+              <div class="export-menu" id="exportMenu">
+                <button class="export-menu-item" id="btnExportXlsx">Planilha (.xlsx)</button>
+                <button class="export-menu-item" id="btnExportPdf">PDF (.pdf)</button>
+                <button class="export-menu-item" id="btnExportDocx">Word (.docx)</button>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- ALERTA -->
-        <div class="alert-banner" id="alertBanner">
+        <div class="alert-banner" id="alertBanner" style="display:none">
           <div class="alert-inner">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
-            <span
-              ><strong>3 notificações não lidas</strong> — Novas vendas e
-              atualizações aguardam sua atenção.</span
-            >
-            <button
-              class="alert-link"
-              onclick="showSection('notificacoes', null)"
-            >
-              Ver agora →
-            </button>
+            <span><strong>0 notificações não lidas</strong> — novas vendas e atualizações aguardam sua atenção.</span>
+            <button class="alert-link" onclick="showSection('notificacoes', null)">Ver agora →</button>
           </div>
-          <button
-            class="alert-close"
-            onclick="this.closest('.alert-banner').style.display = 'none'"
-          >
-            ✕
-          </button>
+          <button class="alert-close" onclick="this.closest('.alert-banner').style.display = 'none'">✕</button>
         </div>
 
         <!-- TABS -->
@@ -129,7 +124,7 @@
               <rect x="14" y="14" width="7" height="7" />
               <rect x="3" y="14" width="7" height="7" />
             </svg>
-            Visão Geral
+            Visão geral
           </button>
           <button
             class="dnav-tab"
@@ -178,19 +173,12 @@
             Vendas
           </button>
           <button class="dnav-tab" onclick="showSection('notificacoes', this)">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
             Notificações
-            <span class="dnav-badge">3</span>
+            <span class="dnav-badge" style="display:none">0</span>
           </button>
         </nav>
 
@@ -212,22 +200,8 @@
                 </svg>
               </div>
               <div class="kpi-body">
-                <span class="kpi-label">Receita Total</span>
-                <span class="kpi-value" id="total-vendas">R$ 45.780,50</span>
-                <span class="kpi-trend kpi-trend--up">
-                  <svg
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                  >
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
-                  </svg>
-                  +12,5% este mês
-                </span>
+                <span class="kpi-label">Receita total</span>
+                <span class="kpi-value" id="total-vendas">—</span>
               </div>
             </div>
             <div class="kpi-card">
@@ -246,22 +220,8 @@
                 </svg>
               </div>
               <div class="kpi-body">
-                <span class="kpi-label">Ingressos Vendidos</span>
-                <span class="kpi-value">342</span>
-                <span class="kpi-trend kpi-trend--up">
-                  <svg
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                  >
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
-                  </svg>
-                  +8,2% este mês
-                </span>
+                <span class="kpi-label">Ingressos vendidos</span>
+                <span class="kpi-value" id="ingressos-vendidos">—</span>
               </div>
             </div>
             <div class="kpi-card">
@@ -274,27 +234,50 @@
                   stroke="currentColor"
                   stroke-width="2"
                 >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+              <div class="kpi-body">
+                <span class="kpi-label">Ticket médio</span>
+                <span class="kpi-value" id="ticket-medio">—</span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-icon--coral">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M21 10c0-4-4-7-9-7S3 6 3 10s4 7 9 7a9.7 9.7 0 0 0 3-.46L21 19l-1.5-4.5A6.9 6.9 0 0 0 21 10z" />
                 </svg>
               </div>
               <div class="kpi-body">
                 <span class="kpi-label">Visualizações</span>
-                <span class="kpi-value" id="eventos-ativos">8.945</span>
-                <span class="kpi-trend kpi-trend--up">
-                  <svg
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                  >
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
-                  </svg>
-                  +23,1% este mês
-                </span>
+                <span class="kpi-value" id="eventos-ativos">—</span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-icon--teal">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3.5 2" />
+                </svg>
+              </div>
+              <div class="kpi-body">
+                <span class="kpi-label">Taxa de ocupação</span>
+                <span class="kpi-value" id="taxa-ocupacao">—</span>
               </div>
             </div>
             <div class="kpi-card">
@@ -313,9 +296,9 @@
                 </svg>
               </div>
               <div class="kpi-body">
-                <span class="kpi-label">Avaliação Média</span>
-                <span class="kpi-value" id="avaliacao-media">4.7 ⭐</span>
-                <span class="kpi-desc">216 avaliações no total</span>
+                <span class="kpi-label">Avaliação média</span>
+                <span class="kpi-value" id="avaliacao-media">—</span>
+                <span class="kpi-desc" id="avaliacao-desc">—</span>
               </div>
             </div>
           </div>
@@ -324,7 +307,7 @@
             <div class="chart-card chart-card--wide">
               <div class="chart-card-header">
                 <div>
-                  <h3>Receita Mensal</h3>
+                  <h3>Receita mensal</h3>
                   <p>Evolução dos últimos meses</p>
                 </div>
                 <div class="period-tabs">
@@ -347,7 +330,7 @@
             <div class="chart-card">
               <div class="chart-card-header">
                 <div>
-                  <h3>Ingressos por Evento</h3>
+                  <h3>Ingressos por evento</h3>
                   <p>Vendidos vs. disponíveis</p>
                 </div>
               </div>
@@ -359,138 +342,37 @@
             <div class="panel panel--sales">
               <div class="panel-header">
                 <div>
-                  <h3>Vendas Recentes</h3>
+                  <h3>Vendas recentes</h3>
                   <p>Últimas transações</p>
                 </div>
                 <button class="link-btn" onclick="showSection('vendas', null)">
                   Ver todas →
                 </button>
               </div>
-              <div class="sales-feed">
-                <div class="sf-row">
-                  <div class="sf-av">AS</div>
-                  <div class="sf-info">
-                    <span>Ana Silva</span><small>2x Live Jazz Night</small>
-                  </div>
-                  <div class="sf-right">
-                    <strong>R$ 240,00</strong
-                    ><span class="chip chip--green">Pago</span>
-                  </div>
-                </div>
-                <div class="sf-row">
-                  <div class="sf-av">CS</div>
-                  <div class="sf-info">
-                    <span>Carlos Santos</span
-                    ><small>4x Festival Eletrônico</small>
-                  </div>
-                  <div class="sf-right">
-                    <strong>R$ 582,00</strong
-                    ><span class="chip chip--green">Pago</span>
-                  </div>
-                </div>
-                <div class="sf-row">
-                  <div class="sf-av">MO</div>
-                  <div class="sf-info">
-                    <span>Maria Oliveira</span><small>1x Live Jazz Night</small>
-                  </div>
-                  <div class="sf-right">
-                    <strong>R$ 120,00</strong
-                    ><span class="chip chip--green">Pago</span>
-                  </div>
-                </div>
-                <div class="sf-row">
-                  <div class="sf-av">JP</div>
-                  <div class="sf-info">
-                    <span>João Pedro</span><small>3x Festival Eletrônico</small>
-                  </div>
-                  <div class="sf-right">
-                    <strong>R$ 436,50</strong
-                    ><span class="chip chip--green">Pago</span>
-                  </div>
-                </div>
-                <div class="sf-row">
-                  <div class="sf-av">BC</div>
-                  <div class="sf-info">
-                    <span>Beatriz Costa</span><small>2x Live Jazz Night</small>
-                  </div>
-                  <div class="sf-right">
-                    <strong>R$ 240,00</strong
-                    ><span class="chip chip--orange">Pendente</span>
-                  </div>
-                </div>
+              <div class="sales-feed" id="salesFeedRecent">
+                <p class="loading-placeholder" style="font-size:13px; color:var(--text-3); text-align:center; padding:20px 0;">Carregando vendas recentes...</p>
               </div>
             </div>
 
             <div class="panel panel--aside">
               <div class="panel-header">
                 <div>
-                  <h3>Próximos Eventos</h3>
+                  <h3>Próximos eventos</h3>
                   <p>Agenda dos próximos 30 dias</p>
                 </div>
               </div>
               <div class="upcoming-list">
-                <div class="upcoming-item">
-                  <div class="up-date"><span>14</span><small>OUT</small></div>
-                  <div class="up-info">
-                    <span>Live Jazz Night</span
-                    ><small>Sunset Lounge · 20:00</small>
-                  </div>
-                  <div class="up-occ">
-                    <div class="occ-bar">
-                      <div style="width: 78%; background: #7c3aed"></div>
-                    </div>
-                    <small>78%</small>
-                  </div>
-                </div>
-                <div class="upcoming-item">
-                  <div class="up-date"><span>19</span><small>OUT</small></div>
-                  <div class="up-info">
-                    <span>Festival Eletrônico</span
-                    ><small>Espaço Cultural Mix · 22:00</small>
-                  </div>
-                  <div class="up-occ">
-                    <div class="occ-bar">
-                      <div style="width: 62%; background: #17c947"></div>
-                    </div>
-                    <small>62%</small>
-                  </div>
-                </div>
-                <div class="upcoming-item">
-                  <div class="up-date"><span>24</span><small>OUT</small></div>
-                  <div class="up-info">
-                    <span>Happy Hour Especial</span
-                    ><small>Sunset Lounge · 18:00</small>
-                  </div>
-                  <div class="up-occ">
-                    <div class="occ-bar">
-                      <div style="width: 0%; background: #ccc"></div>
-                    </div>
-                    <small style="color: #bbb">Não iniciado</small>
-                  </div>
-                </div>
+                <p class="loading-placeholder" style="font-size:13px; color:var(--text-3); text-align:center; padding:20px 0;">Carregando agenda...</p>
               </div>
               <div class="panel-divider"></div>
               <div class="panel-header">
                 <div>
-                  <h3>Receita por Local</h3>
+                  <h3>Receita por local</h3>
                   <p>Participação por estabelecimento</p>
                 </div>
               </div>
               <div class="perf-list">
-                <div class="perf-row">
-                  <span class="perf-dot" style="background: #7c3aed"></span>
-                  <span class="perf-name">Sunset Lounge</span>
-                  <div class="perf-bar"><div style="width: 62%"></div></div>
-                  <span class="perf-val">R$ 28.450</span>
-                </div>
-                <div class="perf-row">
-                  <span class="perf-dot" style="background: #a78bfa"></span>
-                  <span class="perf-name">Espaço Cultural Mix</span>
-                  <div class="perf-bar">
-                    <div style="width: 38%; background: #a78bfa"></div>
-                  </div>
-                  <span class="perf-val">R$ 17.330</span>
-                </div>
+                <p class="loading-placeholder" style="font-size:13px; color:var(--text-3); text-align:center; padding:20px 0;">Carregando receita por local...</p>
               </div>
             </div>
           </div>
@@ -500,7 +382,7 @@
         <section id="estabelecimentos" class="dsection">
           <div class="sec-header">
             <div>
-              <h2>Seus Estabelecimentos</h2>
+              <h2>Seus estabelecimentos</h2>
               <p>Gerencie seus locais cadastrados</p>
             </div>
             <button class="btn-create">
@@ -515,268 +397,18 @@
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Novo Estabelecimento
+              Novo estabelecimento
             </button>
           </div>
 
-          <div class="ev-card">
-            <div class="ev-top">
-              <div class="ev-info">
-                <h3 class="ev-title">Sunset Lounge</h3>
-                <span class="ev-chip ev-chip--on">aberto</span>
-              </div>
-              <div class="ev-revenue">
-                R$ 28.450<br /><small>receita total</small>
-              </div>
-            </div>
-            <div class="ev-meta">
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                  <circle cx="12" cy="10" r="3" /></svg
-                >Av. T-10, 1234 — Setor Bueno, Goiânia</span
-              >
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polygon
-                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                  /></svg
-                >4.8 · 127 avaliações</span
-              >
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" /></svg
-                >4.523 visualizações</span
-              >
-            </div>
-            <div class="ev-stats">
-              <div class="ev-stat">
-                <h4>4.8 ⭐</h4>
-                <p>avaliação</p>
-              </div>
-              <div class="ev-stat">
-                <h4>4.523</h4>
-                <p>visualizações</p>
-              </div>
-              <div class="ev-stat">
-                <h4>R$ 28.450</h4>
-                <p>receita</p>
-              </div>
-            </div>
-            <div class="ev-prog">
-              <div class="ev-bar">
-                <div
-                  class="ev-fill"
-                  style="width: 96%; background: #7c3aed"
-                ></div>
-              </div>
-              <p class="ev-bar-txt">127 avaliações · capacidade 80 pessoas</p>
-            </div>
-            <div class="ev-actions">
-              <button class="ev-btn ev-btn--purple">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                  />
-                  <path
-                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                  /></svg
-                >Editar
-              </button>
-              <button class="ev-btn">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" /></svg
-                >Visualizar
-              </button>
-              <button
-                class="ev-btn ev-btn--gray"
-                onclick="showSection('vendas', null)"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <line x1="18" y1="20" x2="18" y2="10" />
-                  <line x1="12" y1="20" x2="12" y2="4" />
-                  <line x1="6" y1="20" x2="6" y2="14" /></svg
-                >Relatório
-              </button>
-            </div>
-          </div>
-
-          <div class="ev-card">
-            <div class="ev-top">
-              <div class="ev-info">
-                <h3 class="ev-title">Espaço Cultural Mix</h3>
-                <span class="ev-chip ev-chip--on">aberto</span>
-              </div>
-              <div class="ev-revenue">
-                R$ 17.330,50<br /><small>receita total</small>
-              </div>
-            </div>
-            <div class="ev-meta">
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                  <circle cx="12" cy="10" r="3" /></svg
-                >Rua 84, 567 — Setor Sul, Goiânia</span
-              >
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polygon
-                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                  /></svg
-                >4.6 · 89 avaliações</span
-              >
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" /></svg
-                >3.234 visualizações</span
-              >
-            </div>
-            <div class="ev-stats">
-              <div class="ev-stat">
-                <h4>4.6 ⭐</h4>
-                <p>avaliação</p>
-              </div>
-              <div class="ev-stat">
-                <h4>3.234</h4>
-                <p>visualizações</p>
-              </div>
-              <div class="ev-stat">
-                <h4>R$ 17.330</h4>
-                <p>receita</p>
-              </div>
-            </div>
-            <div class="ev-prog">
-              <div class="ev-bar">
-                <div
-                  class="ev-fill"
-                  style="width: 74%; background: #17c947"
-                ></div>
-              </div>
-              <p class="ev-bar-txt">89 avaliações · capacidade 120 pessoas</p>
-            </div>
-            <div class="ev-actions">
-              <button class="ev-btn ev-btn--purple">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                  />
-                  <path
-                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                  /></svg
-                >Editar
-              </button>
-              <button class="ev-btn">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" /></svg
-                >Visualizar
-              </button>
-              <button
-                class="ev-btn ev-btn--gray"
-                onclick="showSection('vendas', null)"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <line x1="18" y1="20" x2="18" y2="10" />
-                  <line x1="12" y1="20" x2="12" y2="4" />
-                  <line x1="6" y1="20" x2="6" y2="14" /></svg
-                >Relatório
-              </button>
-            </div>
-          </div>
+          <p class="loading-placeholder" style="font-size:13px; color:var(--text-3); text-align:center; padding:60px 0;">Carregando estabelecimentos...</p>
         </section>
 
         <!-- ===== EVENTOS ===== -->
         <section id="eventos" class="dsection">
           <div class="sec-header">
             <div>
-              <h2>Seus Eventos</h2>
+              <h2>Seus eventos</h2>
               <p>Gerencie eventos e vendas de ingressos</p>
             </div>
             <button class="btn-create">
@@ -791,407 +423,19 @@
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Criar Evento
+              Criar evento
             </button>
           </div>
 
-          <div class="ev-card">
-            <div class="ev-top">
-              <div class="ev-info">
-                <h3 class="ev-title">Live Jazz Night</h3>
-                <span class="ev-chip ev-chip--on">ativo</span>
-              </div>
-              <div class="ev-revenue">
-                R$ 18.720<br /><small>receita</small>
-              </div>
-            </div>
-            <div class="ev-meta">
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                  <circle cx="12" cy="10" r="3" /></svg
-                >Sunset Lounge</span
-              >
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" /></svg
-                >14/10/2025</span
-              >
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" /></svg
-                >20:00</span
-              >
-            </div>
-            <div class="ev-stats">
-              <div class="ev-stat">
-                <h4>156</h4>
-                <p>vendidos</p>
-              </div>
-              <div class="ev-stat">
-                <h4>44</h4>
-                <p>disponíveis</p>
-              </div>
-              <div class="ev-stat">
-                <h4>78%</h4>
-                <p>ocupação</p>
-              </div>
-            </div>
-            <div class="ev-prog">
-              <div class="ev-bar">
-                <div
-                  class="ev-fill"
-                  style="width: 78%; background: #ff7a00"
-                ></div>
-              </div>
-              <p class="ev-bar-txt">156 / 200 ingressos</p>
-            </div>
-            <div class="ev-actions">
-              <button class="ev-btn ev-btn--purple">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                  />
-                  <path
-                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                  /></svg
-                >Editar
-              </button>
-              <button
-                class="ev-btn ev-btn--gray btn-report"
-                onclick="showSection('vendas', null)"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <line x1="18" y1="20" x2="18" y2="10" />
-                  <line x1="12" y1="20" x2="12" y2="4" />
-                  <line x1="6" y1="20" x2="6" y2="14" /></svg
-                >Relatório
-              </button>
-              <button
-                class="ev-btn ev-btn--orange btn-tickets"
-                onclick="openTicketModal()"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M2 9V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2" />
-                  <path d="M2 15v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2" />
-                  <line x1="12" y1="5" x2="12" y2="19" /></svg
-                >Ingressos
-              </button>
-            </div>
-          </div>
+          <p class="loading-placeholder" style="font-size:13px; color:var(--text-3); text-align:center; padding:60px 0;">Carregando eventos...</p>
 
-          <div class="ev-card">
-            <div class="ev-top">
-              <div class="ev-info">
-                <h3 class="ev-title">Festival Eletrônico</h3>
-                <span class="ev-chip ev-chip--on">ativo</span>
-              </div>
-              <div class="ev-revenue">
-                R$ 27.060,50<br /><small>receita</small>
-              </div>
-            </div>
-            <div class="ev-meta">
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                  <circle cx="12" cy="10" r="3" /></svg
-                >Espaço Cultural Mix</span
-              >
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" /></svg
-                >19/10/2025</span
-              >
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" /></svg
-                >22:00</span
-              >
-            </div>
-            <div class="ev-stats">
-              <div class="ev-stat">
-                <h4>186</h4>
-                <p>vendidos</p>
-              </div>
-              <div class="ev-stat">
-                <h4>114</h4>
-                <p>disponíveis</p>
-              </div>
-              <div class="ev-stat">
-                <h4>62%</h4>
-                <p>ocupação</p>
-              </div>
-            </div>
-            <div class="ev-prog">
-              <div class="ev-bar">
-                <div
-                  class="ev-fill"
-                  style="width: 62%; background: #17c947"
-                ></div>
-              </div>
-              <p class="ev-bar-txt">186 / 300 ingressos</p>
-            </div>
-            <div class="ev-actions">
-              <button class="ev-btn ev-btn--purple">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                  />
-                  <path
-                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                  /></svg
-                >Editar
-              </button>
-              <button
-                class="ev-btn ev-btn--gray btn-report"
-                onclick="showSection('vendas', null)"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <line x1="18" y1="20" x2="18" y2="10" />
-                  <line x1="12" y1="20" x2="12" y2="4" />
-                  <line x1="6" y1="20" x2="6" y2="14" /></svg
-                >Relatório
-              </button>
-              <button
-                class="ev-btn ev-btn--orange btn-tickets"
-                onclick="openTicketModal()"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M2 9V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2" />
-                  <path d="M2 15v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2" />
-                  <line x1="12" y1="5" x2="12" y2="19" /></svg
-                >Ingressos
-              </button>
-            </div>
-          </div>
-
-          <div class="ev-card ev-card--dim">
-            <div class="ev-top">
-              <div class="ev-info">
-                <h3 class="ev-title">Happy Hour Especial</h3>
-                <span class="ev-chip ev-chip--sched">agendado</span>
-              </div>
-              <div class="ev-revenue">R$ 0<br /><small>receita</small></div>
-            </div>
-            <div class="ev-meta">
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                  <circle cx="12" cy="10" r="3" /></svg
-                >Sunset Lounge</span
-              >
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" /></svg
-                >24/10/2025</span
-              >
-              <span class="ev-mi"
-                ><svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" /></svg
-                >18:00</span
-              >
-            </div>
-            <div class="ev-stats">
-              <div class="ev-stat">
-                <h4>0</h4>
-                <p>vendidos</p>
-              </div>
-              <div class="ev-stat">
-                <h4>100</h4>
-                <p>disponíveis</p>
-              </div>
-              <div class="ev-stat">
-                <h4>0%</h4>
-                <p>ocupação</p>
-              </div>
-            </div>
-            <div class="ev-prog">
-              <div class="ev-bar">
-                <div class="ev-fill" style="width: 0%"></div>
-              </div>
-              <p class="ev-bar-txt">
-                0 / 100 ingressos · vendas ainda não iniciadas
-              </p>
-            </div>
-            <div class="ev-actions">
-              <button class="ev-btn ev-btn--purple">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                  />
-                  <path
-                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                  /></svg
-                >Editar
-              </button>
-              <button
-                class="ev-btn ev-btn--gray btn-report"
-                onclick="showSection('vendas', null)"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <line x1="18" y1="20" x2="18" y2="10" />
-                  <line x1="12" y1="20" x2="12" y2="4" />
-                  <line x1="6" y1="20" x2="6" y2="14" /></svg
-                >Relatório
-              </button>
-              <button
-                class="ev-btn ev-btn--orange btn-tickets"
-                onclick="openTicketModal()"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M2 9V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2" />
-                  <path d="M2 15v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2" />
-                  <line x1="12" y1="5" x2="12" y2="19" /></svg
-                >Ingressos
-              </button>
-            </div>
-          </div>
-
-          <!-- MODAL INGRESSOS -->
+                    <!-- MODAL INGRESSOS -->
           <div id="ticketModal" class="modal-ov">
-            <div class="modal-box">
+            <div class="modal-box modal-box--tipos">
               <div class="modal-head">
                 <div>
-                  <h2>Gerenciar Ingressos</h2>
-                  <p>Live Jazz Night · Sunset Lounge</p>
+                  <h2>Gerenciar ingressos</h2>
+                  <p id="ticketModalSubtitle">—</p>
                 </div>
                 <button class="modal-close-btn" onclick="closeTicketModal()">
                   <svg
@@ -1209,53 +453,34 @@
               </div>
               <div class="modal-grid">
                 <div class="mf">
-                  <label>Tipo</label>
-                  <p>VIP</p>
-                </div>
-                <div class="mf">
                   <label>Data</label>
-                  <p>14/10/2025</p>
+                  <p id="ticketModalData">—</p>
                 </div>
                 <div class="mf">
                   <label>Horário</label>
-                  <p>20:00 – 02:00</p>
-                </div>
-                <div class="mf">
-                  <label>Duração</label>
-                  <p>1 dia</p>
-                </div>
-                <div class="mf">
-                  <label>Início das vendas</label>
-                  <p>01/10/2025 – 10:00</p>
-                </div>
-                <div class="mf">
-                  <label>Fim das vendas</label>
-                  <p>14/10/2025 – 19:00</p>
+                  <p id="ticketModalHorario">—</p>
                 </div>
               </div>
-              <div class="modal-qty">
-                <div class="qf">
-                  <label>Quantidade total</label
-                  ><input type="number" id="totalTickets" value="200" />
-                </div>
-                <div class="qf">
-                  <label>Vendidos</label
-                  ><input type="number" value="156" disabled />
-                </div>
-                <div class="qf">
-                  <label>Disponíveis</label
-                  ><input
-                    type="number"
-                    id="availableTickets"
-                    value="44"
-                    disabled
-                  />
-                </div>
+
+              <div class="tipos-ingresso-header">
+                <h3>Tipos de ingresso</h3>
+                <button class="btn-add-tipo" onclick="mostrarFormNovoTipo()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Adicionar tipo
+                </button>
               </div>
+
+              <div id="tiposIngressoList" class="tipos-ingresso-list">
+                <p class="loading-placeholder" style="font-size:13px; color:var(--text-3); text-align:center; padding:20px 0;">Carregando tipos de ingresso...</p>
+              </div>
+
+              <div id="novoTipoForm" class="tipo-row tipo-row--new" style="display:none"></div>
+
               <div class="modal-foot">
-                <button class="btn-save-m">Salvar alterações</button>
                 <button class="btn-cancel-m" onclick="closeTicketModal()">
-                  Cancelar
+                  Fechar
                 </button>
               </div>
             </div>
@@ -1266,7 +491,7 @@
         <section id="vendas" class="dsection">
           <div class="sec-header">
             <div>
-              <h2>Histórico de Vendas</h2>
+              <h2>Histórico de vendas</h2>
               <p>Todas as transações de ingressos</p>
             </div>
             <div class="sec-filters">
@@ -1295,8 +520,9 @@
                 onchange="filterSales()"
               >
                 <option value="">Todos os status</option>
-                <option value="confirmado">Confirmado</option>
-                <option value="pendente">Pendente</option>
+<option value="confirmado">Confirmado</option>
+<option value="cortesia">Cortesia</option>
+<option value="pendente">Pendente</option>
               </select>
             </div>
           </div>
@@ -1313,82 +539,14 @@
                 </tr>
               </thead>
               <tbody id="salesTableBody">
-                <tr
-                  data-status="confirmado"
-                  data-name="ana silva"
-                  data-event="live jazz night"
-                >
-                  <td><span class="td-av">AS</span> Ana Silva</td>
-                  <td>Live Jazz Night</td>
-                  <td>2</td>
-                  <td>R$ 240,00</td>
-                  <td>07/10/2025 14:32</td>
-                  <td>
-                    <span class="status-badge confirmed">● confirmado</span>
-                  </td>
-                </tr>
-                <tr
-                  data-status="confirmado"
-                  data-name="carlos santos"
-                  data-event="festival eletronico"
-                >
-                  <td><span class="td-av">CS</span> Carlos Santos</td>
-                  <td>Festival Eletrônico</td>
-                  <td>4</td>
-                  <td>R$ 582,00</td>
-                  <td>07/10/2025 13:15</td>
-                  <td>
-                    <span class="status-badge confirmed">● confirmado</span>
-                  </td>
-                </tr>
-                <tr
-                  data-status="confirmado"
-                  data-name="maria oliveira"
-                  data-event="live jazz night"
-                >
-                  <td><span class="td-av">MO</span> Maria Oliveira</td>
-                  <td>Live Jazz Night</td>
-                  <td>1</td>
-                  <td>R$ 120,00</td>
-                  <td>07/10/2025 11:45</td>
-                  <td>
-                    <span class="status-badge confirmed">● confirmado</span>
-                  </td>
-                </tr>
-                <tr
-                  data-status="confirmado"
-                  data-name="joao pedro"
-                  data-event="festival eletronico"
-                >
-                  <td><span class="td-av">JP</span> João Pedro</td>
-                  <td>Festival Eletrônico</td>
-                  <td>3</td>
-                  <td>R$ 436,50</td>
-                  <td>06/10/2025 19:20</td>
-                  <td>
-                    <span class="status-badge confirmed">● confirmado</span>
-                  </td>
-                </tr>
-                <tr
-                  data-status="pendente"
-                  data-name="beatriz costa"
-                  data-event="live jazz night"
-                >
-                  <td><span class="td-av">BC</span> Beatriz Costa</td>
-                  <td>Live Jazz Night</td>
-                  <td>2</td>
-                  <td>R$ 240,00</td>
-                  <td>06/10/2025 16:10</td>
-                  <td><span class="status-badge pending">○ pendente</span></td>
+                <tr class="loading-placeholder">
+                  <td colspan="6" style="text-align:center; padding:24px; color:var(--text-3);">Carregando vendas...</td>
                 </tr>
               </tbody>
             </table>
             <div class="table-foot">
-              <span id="tableCount">5 transações</span>
-              <span
-                >Total visível:
-                <strong id="tableTotal">R$ 1.618,50</strong></span
-              >
+              <span id="tableCount">0 transações</span>
+              <span>Total visível: <strong id="tableTotal">R$ 0,00</strong></span>
             </div>
           </div>
         </section>
@@ -1397,7 +555,7 @@
         <section id="notificacoes" class="dsection">
           <div class="sec-header">
             <div>
-              <h2>Central de Notificações</h2>
+              <h2>Central de notificações</h2>
               <p>Atividades e alertas do seu negócio</p>
             </div>
             <button class="link-btn" onclick="markAllRead()">
@@ -1419,153 +577,7 @@
             </button>
           </div>
           <div id="notifList" class="notif-list">
-            <p class="notif-group-label">Não lidas · 3</p>
-            <div class="notif-item notif-unread" data-cat="venda">
-              <div class="ni-icon ni-green">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M2 9V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2" />
-                  <path d="M2 15v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2" />
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                </svg>
-              </div>
-              <div class="ni-body">
-                <p class="ni-title">Nova venda realizada</p>
-                <p class="ni-desc">
-                  Ana Silva comprou <strong>2 ingressos</strong> para
-                  <strong>Live Jazz Night</strong> · R$ 240,00
-                </p>
-                <span class="ni-time">Há 5 minutos</span>
-              </div>
-              <span class="ni-new">Nova</span>
-            </div>
-            <div class="notif-item notif-unread" data-cat="venda">
-              <div class="ni-icon ni-green">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M2 9V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2" />
-                  <path d="M2 15v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2" />
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                </svg>
-              </div>
-              <div class="ni-body">
-                <p class="ni-title">Nova venda realizada</p>
-                <p class="ni-desc">
-                  Carlos Santos comprou <strong>4 ingressos</strong> para
-                  <strong>Festival Eletrônico</strong> · R$ 582,00
-                </p>
-                <span class="ni-time">Há 1 hora</span>
-              </div>
-              <span class="ni-new">Nova</span>
-            </div>
-            <div class="notif-item notif-unread" data-cat="avaliacao">
-              <div class="ni-icon ni-yellow">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polygon
-                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                  />
-                </svg>
-              </div>
-              <div class="ni-body">
-                <p class="ni-title">Nova avaliação 5 estrelas</p>
-                <p class="ni-desc">
-                  Seu estabelecimento <strong>Sunset Lounge</strong> recebeu uma
-                  avaliação 5★ de um cliente.
-                </p>
-                <span class="ni-time">Há 2 horas</span>
-              </div>
-              <span class="ni-new">Nova</span>
-            </div>
-            <p class="notif-group-label" style="margin-top: 24px">Anteriores</p>
-            <div class="notif-item" data-cat="venda">
-              <div class="ni-icon ni-gray">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M2 9V7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2" />
-                  <path d="M2 15v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2" />
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                </svg>
-              </div>
-              <div class="ni-body">
-                <p class="ni-title">Venda confirmada</p>
-                <p class="ni-desc">
-                  Maria Oliveira comprou <strong>1 ingresso</strong> para
-                  <strong>Live Jazz Night</strong> · R$ 120,00
-                </p>
-                <span class="ni-time">Há 3 horas</span>
-              </div>
-            </div>
-            <div class="notif-item" data-cat="sistema">
-              <div class="ni-icon ni-purple">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg>
-              </div>
-              <div class="ni-body">
-                <p class="ni-title">Marco de ocupação atingido</p>
-                <p class="ni-desc">
-                  <strong>Festival Eletrônico</strong> ultrapassou 60% de
-                  ocupação. 114 ingressos ainda disponíveis.
-                </p>
-                <span class="ni-time">Há 5 horas</span>
-              </div>
-            </div>
-            <div class="notif-item" data-cat="sistema">
-              <div class="ni-icon ni-gray">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-              </div>
-              <div class="ni-body">
-                <p class="ni-title">Pagamento pendente</p>
-                <p class="ni-desc">
-                  Beatriz Costa possui pagamento <strong>pendente</strong> de R$
-                  240,00 — <strong>Live Jazz Night</strong>.
-                </p>
-                <span class="ni-time">Há 8 horas</span>
-              </div>
-            </div>
+            <p class="loading-placeholder" style="font-size:13px; color:var(--text-3); text-align:center; padding:40px 0;">Carregando notificações...</p>
           </div>
         </section>
       </div>
@@ -1575,6 +587,11 @@
     <script src="/frontend/js/loadHeader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/frontend/js/dashboard.js"></script>
+    <script src="/frontend/js/footer.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <script>
       requireDashboard();
     </script>

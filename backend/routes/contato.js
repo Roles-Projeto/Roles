@@ -1,39 +1,28 @@
-// =====================================================
-//  backend/routes/contato.js
-//  POST /contato  — salva no banco + envia e-mail
-// =====================================================
-
-const express    = require("express");
-const router     = express.Router();
+const express = require("express");
+const router = express.Router();
 const connection = require("../db/db_config");
 const nodemailer = require("nodemailer");
+const { wrapEmail, logoAttachment } = require("../services/emailTemplate");
 
-// ── Transporter de e-mail (Gmail SMTP) ──────────────
-// No seu .env defina:  EMAIL_USER=seu@gmail.com  EMAIL_PASS=sua_senha_de_app
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-  family: 4,
-    port: 465,
-    secure: true,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-});
 
-// ── POST /contato ────────────────────────────────────
+async function criarTransporter() {
+    return nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
+}
 router.post("/", async (req, res) => {
     const { nome, email, tipo, assunto, mensagem } = req.body;
 
-    // Validação básica
     if (!nome || !email || !tipo || !assunto || !mensagem) {
         return res.status(400).json({ erro: "Todos os campos são obrigatórios." });
     }
 
-    // 1. Salva no banco
     connection.query(
-        `INSERT INTO contatos (nome, email, tipo, assunto, mensagem)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO contatos (nome, email, tipo, assunto, mensagem) VALUES (?, ?, ?, ?, ?)`,
         [nome.trim(), email.trim(), tipo.trim(), assunto.trim(), mensagem.trim()],
         async (err, result) => {
             if (err) {
@@ -41,68 +30,57 @@ router.post("/", async (req, res) => {
                 return res.status(500).json({ erro: "Erro ao salvar mensagem." });
             }
 
-            // 2. Envia e-mail de notificação para o suporte
             try {
+                const transporter = await criarTransporter();
+
+                // Email pra voce (suporte)
                 await transporter.sendMail({
                     from: `"Rolês Contato" <${process.env.EMAIL_USER}>`,
-                    to:   process.env.EMAIL_USER,   // roles.suporte@gmail.com
+                    to: process.env.EMAIL_USER,
                     replyTo: email,
-                    subject: `[Rolês] ${tipo.toUpperCase()} – ${assunto}`,
-                    html: `
-                        <div style="font-family:sans-serif;max-width:560px;margin:0 auto;border:1px solid #e2e2e2;border-radius:10px;overflow:hidden;">
-                            <div style="background:#0c0c1d;padding:20px 28px;">
-                                <h2 style="color:#fff;margin:0;font-size:18px;">Nova mensagem de contato</h2>
-                            </div>
-                            <div style="padding:24px 28px;">
-                                <table style="width:100%;font-size:14px;border-collapse:collapse;">
-                                    <tr><td style="padding:6px 0;color:#888;width:110px;">Nome</td><td style="padding:6px 0;font-weight:600;">${nome}</td></tr>
-                                    <tr><td style="padding:6px 0;color:#888;">E-mail</td><td style="padding:6px 0;"><a href="mailto:${email}" style="color:#6d28d9;">${email}</a></td></tr>
-                                    <tr><td style="padding:6px 0;color:#888;">Motivo</td><td style="padding:6px 0;">${tipo}</td></tr>
-                                    <tr><td style="padding:6px 0;color:#888;">Assunto</td><td style="padding:6px 0;">${assunto}</td></tr>
-                                </table>
-                                <hr style="border:none;border-top:1px solid #f0f0f0;margin:16px 0;">
-                                <p style="color:#888;font-size:12px;margin:0 0 8px;">Mensagem:</p>
-                                <p style="background:#f8f8f8;padding:14px;border-radius:8px;font-size:14px;line-height:1.6;margin:0;">${mensagem.replace(/\n/g, "<br>")}</p>
-                            </div>
-                            <div style="background:#fafafa;padding:12px 28px;border-top:1px solid #f0f0f0;">
-                                <p style="margin:0;font-size:11px;color:#bbb;">ID da mensagem: #${result.insertId} — Rolês Plataforma</p>
-                            </div>
-                        </div>
-                    `,
+                    subject: `[Rolês] ${tipo.toUpperCase()} - ${assunto}`,
+                    html: wrapEmail(`
+      <tr><td style="padding:40px;">
+        <h2 style="color:#1a1a2e;margin:0 0 16px;font-size:22px;">Nova mensagem de contato</h2>
+        <div style="background:#f5f0ff;border-left:4px solid #6c2bd9;border-radius:8px;padding:20px;margin-bottom:20px;">
+          <p style="margin:0 0 8px;font-size:14px;color:#555;"><strong>Nome:</strong> ${nome}</p>
+          <p style="margin:0 0 8px;font-size:14px;color:#555;"><strong>Email:</strong> ${email}</p>
+          <p style="margin:0 0 8px;font-size:14px;color:#555;"><strong>Motivo:</strong> ${tipo}</p>
+          <p style="margin:0 0 8px;font-size:14px;color:#555;"><strong>Assunto:</strong> ${assunto}</p>
+          <p style="margin:0;font-size:14px;color:#555;"><strong>Protocolo:</strong> #${result.insertId}</p>
+        </div>
+        <p style="color:#555;font-size:14px;margin:0 0 8px;"><strong>Mensagem:</strong></p>
+        <div style="background:#fafafa;border-left:3px solid #ddd;padding:12px 16px;font-size:14px;color:#333;line-height:1.7;">
+          ${mensagem}
+        </div>
+      </td></tr>
+    `),
+                    attachments: [logoAttachment]
                 });
-            } catch (mailErr) {
-                // E-mail falhou mas mensagem já está salva — não bloqueia a resposta
-                console.error("Aviso: e-mail não enviado:", mailErr.message);
-            }
-
-            // 3. Envia e-mail de confirmação para o usuário
-            try {
+                // Confirmacao pro usuario
                 await transporter.sendMail({
                     from: `"Rolês" <${process.env.EMAIL_USER}>`,
-                    to:   email,
-                    subject: `Recebemos sua mensagem – ${assunto}`,
-                    html: `
-                        <div style="font-family:sans-serif;max-width:560px;margin:0 auto;border:1px solid #e2e2e2;border-radius:10px;overflow:hidden;">
-                            <div style="background:#0c0c1d;padding:20px 28px;">
-                                <h2 style="color:#fff;margin:0;font-size:18px;">Rolês</h2>
-                            </div>
-                            <div style="padding:24px 28px;">
-                                <p style="font-size:15px;margin:0 0 12px;">Olá, <strong>${nome}</strong>!</p>
-                                <p style="font-size:14px;color:#555;line-height:1.6;margin:0 0 16px;">
-                                    Recebemos sua mensagem sobre <strong>${assunto}</strong> e retornaremos em até <strong>24 horas em dias úteis</strong>.
-                                </p>
-                                <div style="background:#f8f8f8;padding:14px;border-radius:8px;font-size:13px;color:#888;">
-                                    Protocolo: <strong>#${result.insertId}</strong>
-                                </div>
-                            </div>
-                            <div style="background:#fafafa;padding:12px 28px;border-top:1px solid #f0f0f0;">
-                                <p style="margin:0;font-size:11px;color:#bbb;">Rolês Plataforma — roles.suporte@gmail.com</p>
-                            </div>
-                        </div>
-                    `,
+                    to: email,
+                    subject: `Recebemos sua mensagem — ${assunto}`,
+                    html: wrapEmail(`
+      <tr><td style="padding:40px;text-align:center;">
+        <h2 style="color:#1a1a2e;margin:0 0 12px;font-size:22px;">Mensagem recebida!</h2>
+        <p style="color:#333;font-size:15px;margin:0 0 12px;">Olá, <strong>${nome}</strong>!</p>
+        <p style="color:#555;font-size:14px;margin:0 0 24px;line-height:1.6;">
+          Recebemos sua mensagem sobre <strong>${assunto}</strong> e retornaremos em até 24 horas úteis.
+        </p>
+        <div style="background:#f5f0ff;border:2px dashed #6c2bd9;border-radius:12px;padding:20px;display:inline-block;">
+          <p style="margin:0;font-size:13px;color:#555;">Protocolo</p>
+          <p style="margin:4px 0 0;font-size:28px;font-weight:700;color:#6c2bd9;letter-spacing:4px;">#${result.insertId}</p>
+        </div>
+      </td></tr>
+    `),
+                    attachments: [logoAttachment]
                 });
+
+                console.log("Emails de contato enviados com sucesso");
             } catch (mailErr) {
-                console.error("Aviso: confirmação ao usuário não enviada:", mailErr.message);
+                console.error("Erro ao enviar email de contato:", mailErr.message);
             }
 
             res.status(201).json({

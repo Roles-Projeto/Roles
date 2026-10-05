@@ -1,7 +1,8 @@
 // ========================
 // CONFIG API
 // ========================
-const API_URL = window.API_BASE || "http://localhost:3000";
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_URL = isLocal ? "http://localhost:3000" : window.location.origin;
 
 // ========================
 // DEBUG INICIAL
@@ -20,7 +21,7 @@ const erroNome = document.getElementById("erroNome");
 const erroEmail = document.getElementById("erroEmail");
 const erroSenha = document.getElementById("erroSenha");
 const erroConfirmar = document.getElementById("erroConfirmar");
-
+const erroCpf = document.getElementById("erroCpf"); 
 // ========================
 // ELEMENTOS MODAL
 // ========================
@@ -229,6 +230,57 @@ mascaraTelefone(
 );
 
 // ========================
+// MÁSCARA CPF
+// ========================
+function mascaraCPF(input) {
+
+    if (!input) return;
+
+    input.addEventListener("input", () => {
+
+        let valor =
+            input.value
+                .replace(/\D/g, "")
+                .slice(0, 11);
+
+        valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+        valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+        valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+
+        input.value = valor;
+    });
+}
+
+mascaraCPF(
+    document.getElementById("cpf")
+);
+
+// ========================
+// VALIDAR CPF
+// ========================
+function validarCPF(cpf) {
+
+    cpf = cpf.replace(/\D/g, "");
+
+    if (cpf.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+    let soma = 0;
+    for (let i = 0; i < 9; i++) soma += parseInt(cpf[i]) * (10 - i);
+    let resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf[9])) return false;
+
+    soma = 0;
+    for (let i = 0; i < 10; i++) soma += parseInt(cpf[i]) * (11 - i);
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf[10])) return false;
+
+    return true;
+}
+
+// ========================
 // BOTÃO LOADING
 // ========================
 function setBtnCriarLoading(loading) {
@@ -258,6 +310,7 @@ function limparErros() {
     erroEmail.textContent = "";
     erroSenha.textContent = "";
     erroConfirmar.textContent = "";
+    erroCpf.textContent = ""; 
 
     document.querySelectorAll("input")
         .forEach(input => {
@@ -281,13 +334,13 @@ form.addEventListener("submit", async (e) => {
             .value
             .trim();
 
+    const cpf =
+         document.getElementById("cpf")
+        .value
+        .trim();
+
     const email =
         document.getElementById("email")
-            .value
-            .trim();
-
-    const confirmarEmail =
-        document.getElementById("confirmarEmail")
             .value
             .trim();
 
@@ -337,16 +390,16 @@ form.addEventListener("submit", async (e) => {
         temErro = true;
     }
 
-    if (email !== confirmarEmail) {
+   if (!validarCPF(cpf)) {
 
-        erroEmail.textContent =
-            "Os e-mails não coincidem";
+    erroCpf.textContent =
+        "CPF inválido. Verifique os números digitados.";
 
-        document.getElementById("confirmarEmail")
-            .classList.add("erro-input");
+    document.getElementById("cpf")
+        .classList.add("erro-input");
 
-        temErro = true;
-    }
+    temErro = true;
+}
 
     const senhaRegex =
         /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&]).{8,}$/;
@@ -395,11 +448,12 @@ form.addEventListener("submit", async (e) => {
                 },
 
                 body: JSON.stringify({
-                    nome_completo,
-                    email,
-                    telefone,
-                    senha
-                })
+    nome_completo,
+    email,
+    telefone,
+    cpf,        // ADICIONAR
+    senha
+})
             }
         );
 

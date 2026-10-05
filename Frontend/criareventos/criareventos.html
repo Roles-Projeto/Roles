@@ -23,16 +23,21 @@
       <div class="progress-container">
         <div class="progress-bar" id="progress-bar"></div>
       </div>
-      <p class="step-indicator" id="step-indicator">Etapa 1 de 7</p>
+      
+      <p class="step-indicator" id="step-indicator">Etapa 1 de 3</p>
     </header>
 
     <main class="container">
-      <!-- ETAPA 1 -->
+      <!-- ═══════════════════════════════════════════════
+           ETAPA 1 — O EVENTO
+           (Nome, Assunto, Categoria, Imagem, Descrição)
+           ═══════════════════════════════════════════════ -->
       <section class="card step active">
         <h2 class="section-title">1. Informações básicas</h2>
         <p class="section-subtitle">
           Adicione as principais informações do evento.
         </p>
+
         <div class="input-group">
           <label for="event-name"
             >Nome do evento <span class="required">*</span></label
@@ -47,6 +52,7 @@
             <span id="chars">100</span> caracteres restantes
           </div>
         </div>
+
         <div class="classification-section">
           <p class="label-heading">Classifique seu evento</p>
           <div class="row">
@@ -87,35 +93,63 @@
             </div>
           </div>
         </div>
-      </section>
 
-      <!-- ETAPA 2 -->
-      <section class="card step">
-        <h2 class="section-title">2. Imagem do evento</h2>
-        <div class="upload-container">
-          <label>Imagem de divulgação <span class="required">*</span></label>
-          <div class="upload-content">
-            <div class="upload-box" id="drop-zone">
-              <div class="upload-icon"><i class="fa-regular fa-image"></i></div>
-              <p>Clique ou arraste a imagem aqui</p>
-            </div>
-            <div class="upload-instructions">
-              <p>
-                Formatos aceitos: JPEG, GIF ou PNG de até 2MB.<br />Dimensão
-                recomendada: 1600 x 838 pixels.
+        <div class="section-divider"></div>
+
+         <h2 class="section-title">2. Imagem e descrição do evento.</h2>
+      
+        <p class="section-subtitle">
+          Adicione uma imagem de divulgação e conte mais sobre o seu evento.
+        </p>
+
+        <div class="image-description-wrapper">
+          <!-- Coluna esquerda: Imagem -->
+          <div class="image-description-col">
+            <div class="upload-container">
+              <label>Imagem de divulgação <span class="required">*</span></label>
+              <div class="upload-content-vertical">
+                <div class="upload-box" id="drop-zone">
+                  <div class="upload-icon"><i class="fa-regular fa-image"></i></div>
+                  <p>Clique ou arraste a imagem aqui</p>
+                </div>
+                <div class="upload-instructions">
+                  <p>
+                    Formatos aceitos: JPEG, GIF ou PNG de até 2MB.<br />Dimensão
+                    recomendada: 1600 x 838 pixels.
+                  </p>
+                </div>
+              </div>
+              <p class="warning">
+                Não é permitido enviar imagens com: nudez ou conteúdo sexual ·
+                violência · drogas · conteúdo ilegal · violação de direitos autorais
               </p>
             </div>
           </div>
-          <p class="warning">
-            Não é permitido enviar imagens com: nudez ou conteúdo sexual ·
-            violência · drogas · conteúdo ilegal · violação de direitos autorais
-          </p>
+
+          <!-- Coluna direita: Descrição -->
+          <div class="image-description-col">
+            <div class="input-group">
+              <label for="descricao"
+                >Descrição <span class="required">*</span></label
+              >
+            </div>
+            <div class="editor-container">
+              <textarea
+                id="descricao"
+                class="editor-area"
+                placeholder="Adicione aqui a descrição do seu evento..."
+              ></textarea>
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- ETAPA 3 — DATA E HORÁRIO REDESENHADA -->
+      <!-- ═══════════════════════════════════════════════
+           ETAPA 2 — ONDE E QUANDO
+           (Data/Horário de Início e Término + Localização)
+           ═══════════════════════════════════════════════ -->
       <section class="card step">
-        <h2 class="section-title">3. Data e horário</h2>
+        <h2 class="section-title">2. Onde e Quando</h2>
         <p class="section-subtitle">
           Datas no passado não são permitidas.
           <span class="required">*</span> Todos os campos são obrigatórios.
@@ -185,28 +219,10 @@
           <i class="fa-regular fa-hourglass-half"></i>
           <span id="duracao-texto">Preencha as datas para ver a duração</span>
         </div>
-      </section>
 
-      <!-- ETAPA 4 -->
-      <section class="card step">
-        <h2 class="section-title">4. Descrição do evento</h2>
-        <div class="input-group">
-          <label for="descricao"
-            >Descrição <span class="required">*</span></label
-          >
-        </div>
-        <div class="editor-container">
-          <textarea
-            id="descricao"
-            class="editor-area"
-            placeholder="Adicione aqui a descrição do seu evento..."
-          ></textarea>
-        </div>
-      </section>
+        <div class="section-divider"></div>
 
-      <!-- ETAPA 5 -->
-      <section class="card step">
-        <h2 class="section-title">5. Local do evento</h2>
+        <h3 class="subsection-title">Local do evento</h3>
         <div class="input-group">
           <label
             >Nome ou endereço do local <span class="required">*</span></label
@@ -239,13 +255,81 @@
         </div>
       </section>
 
-      <!-- ETAPA 6 -->
+      <!-- ═══════════════════════════════════════════════
+           ETAPA 3 — INGRESSOS E PUBLICAÇÃO
+           ═══════════════════════════════════════════════ -->
       <section class="card step">
-        <h2 class="section-title">6. Ingressos</h2>
+        <h2 class="section-title">3. Ingressos e Publicação</h2>
         <p class="section-subtitle">
           Adicione ao menos um ingresso para continuar.
           <span class="required">*</span>
         </p>
+
+        <!-- ═══════════════════════════════════════════
+             MAPA DO EVENTO
+             Fica ANTES da criação dos ingressos de propósito:
+             é o mapa escolhido aqui que decide se o campo
+             "Setor no mapa" aparece no formulário de cada
+             ingresso logo abaixo.
+             ═══════════════════════════════════════════ -->
+        <h3 class="subsection-title">Mapa do evento</h3>
+        <p class="section-subtitle">
+          Escolha como os compradores vão visualizar os setores do evento.
+        </p>
+                <div class="radio-group" id="mapa-tipo-group">
+          <label>
+            <input type="radio" name="tipo-mapa" value="nenhum" checked />
+            Sem mapa
+          </label>
+          <label>
+            <input type="radio" name="tipo-mapa" value="ilustrativo" />
+            Mapa ilustrativo
+          </label>
+          <label>
+            <input type="radio" name="tipo-mapa" value="imagem" />
+            Imagem própria do local (PNG)
+          </label>
+        </div>
+
+        <div class="input-group" id="mapa-template-group" style="display: none">
+          <label>Modelo do mapa</label>
+          <select id="mapa-template">
+            <option value="arena">Arena / Estádio (arquibancada, cadeiras, pista, VIP)</option>
+            <option value="pista_camarote">Casa de show (pista + camarote)</option>
+            <option value="teatro">Teatro (plateia + balcão)</option>
+            <option value="simples">Simples (um setor único)</option>
+          </select>
+        </div>
+
+        <div id="mapa-imagem-group" style="display: none">
+  <div class="upload-container">
+    <label>Imagem do mapa <span class="required">*</span></label>
+    <div class="upload-box" id="mapa-imagem-drop">
+      <div class="upload-icon"><i class="fa-regular fa-map"></i></div>
+      <p>Clique ou arraste o PNG do mapa aqui</p>
+    </div>
+    <div class="upload-instructions">
+      <p>Formato aceito: PNG de até 5MB.</p>
+    </div>
+  </div>
+
+  <div class="input-group" style="margin-top: 14px">
+    <label>Setores do mapa <span class="required">*</span></label>
+    <div style="display: flex; gap: 8px">
+      <input type="text" id="mapa-setor-novo" maxlength="30" placeholder="Ex. Pista Premium" />
+      <button type="button" id="mapa-setor-add" class="btn-success">Adicionar</button>
+    </div>
+    <ul id="mapa-setores-lista" style="margin-top: 8px"></ul>
+  </div>
+</div>
+
+        <div class="section-divider"></div>
+
+        <h3 class="subsection-title">Ingressos</h3>
+        <p class="section-subtitle">
+  Crie os ingressos do evento. Se escolheu um mapa acima, cada ingresso
+  pode ser ligado a um setor do mapa.
+</p>
         <div class="ticket-selection">
           <button class="btn-ticket-action" data-tipo="pago">
             Criar ingresso pago
@@ -278,11 +362,10 @@
             </div>
           </div>
         </div>
-      </section>
 
-      <!-- ETAPA 7 -->
-      <section class="card step">
-        <h2 class="section-title">7. Publicação</h2>
+        <div class="section-divider"></div>
+
+        <h3 class="subsection-title">Dados do produtor</h3>
         <div class="input-group">
           <label for="producer-name"
             >Nome do produtor <span class="required">*</span></label

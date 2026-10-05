@@ -1,0 +1,257 @@
+<!--
+  Widget de Chat - Rolês
+  Como usar:
+  1. Cole este bloco antes do fechamento da tag </body> do seu layout
+     (ex: _layouts/default.html do Jekyll).
+  2. Ajuste a URL do endpoint no JS (const ENDPOINT) para apontar
+     para o seu backend (ex: https://seu-backend.com/api/chat).
+-->
+
+<div id="roles-chat-bubble">💬</div>
+
+<div id="roles-chat-window">
+  <div id="roles-chat-header">
+    Assistente Rolês
+    <span id="roles-chat-close">✕</span>
+  </div>
+  <div id="roles-chat-messages"></div>
+  <div id="roles-chat-input-area">
+    <input type="text" id="roles-chat-input" placeholder="Digite sua mensagem..." />
+    <button id="roles-chat-send">Enviar</button>
+  </div>
+</div>
+
+<style>
+  #roles-chat-bubble {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #6C63FF;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 9999;
+  }
+
+  #roles-chat-window {
+    position: fixed;
+    bottom: 90px;
+    right: 24px;
+    width: 320px;
+    max-height: 450px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9999;
+    font-family: system-ui, sans-serif;
+  }
+
+  #roles-chat-window.open {
+    display: flex;
+  }
+
+  #roles-chat-header {
+    background: #6C63FF;
+    color: white;
+    padding: 12px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #roles-chat-close {
+    cursor: pointer;
+  }
+
+  #roles-chat-messages {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    font-size: 14px;
+    background: #f7f7fb;
+  }
+
+  .roles-msg {
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    max-width: 85%;
+    line-height: 1.4;
+  }
+
+  .roles-msg.user {
+    background: #6C63FF;
+    color: white;
+    margin-left: auto;
+  }
+
+  .roles-msg.bot {
+    background: #e9e9f2;
+    color: #222;
+  }
+
+  /* ─── Perguntas pré-programadas ─── */
+  .roles-quick-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .roles-quick-btn {
+    background: white;
+    border: 1px solid #6C63FF;
+    color: #6C63FF;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .roles-quick-btn:hover {
+    background: #6C63FF;
+    color: white;
+  }
+
+  #roles-chat-input-area {
+    display: flex;
+    border-top: 1px solid #eee;
+  }
+
+  #roles-chat-input {
+    flex: 1;
+    border: none;
+    padding: 10px;
+    font-size: 14px;
+    outline: none;
+  }
+
+  #roles-chat-send {
+    border: none;
+    background: #6C63FF;
+    color: white;
+    padding: 0 16px;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  // Ajuste esta URL para o endereço real do seu backend
+  const ENDPOINT = "http://localhost:3000/api/chat";
+
+  const bubble = document.getElementById("roles-chat-bubble");
+  const chatWindow = document.getElementById("roles-chat-window");
+  const closeBtn = document.getElementById("roles-chat-close");
+  const messagesEl = document.getElementById("roles-chat-messages");
+  const input = document.getElementById("roles-chat-input");
+  const sendBtn = document.getElementById("roles-chat-send");
+
+  let history = [];
+  let chatOpened = false;
+
+  // ─── Perguntas pré-programadas ───
+  // Edite este array para mudar as sugestões mostradas na abertura do chat.
+  const PRESET_QUESTIONS = [
+    "Como funciona a compra de ingressos?",
+    "Como faço para cadastrar meu estabelecimento?",
+    "Posso cancelar minha compra?",
+    "Os eventos são apenas em Goiânia?"
+  ];
+
+  bubble.addEventListener("click", () => {
+    chatWindow.classList.toggle("open");
+
+    // Na primeira abertura, manda uma saudação e mostra as sugestões
+    if (!chatOpened && chatWindow.classList.contains("open")) {
+      chatOpened = true;
+      addMessage(
+        "Oi! 👋 Eu sou o assistente do Rolês. Escolha uma pergunta abaixo ou digite a sua dúvida.",
+        "bot"
+      );
+      renderQuickQuestions();
+    }
+  });
+
+  closeBtn.addEventListener("click", () => {
+    chatWindow.classList.remove("open");
+  });
+
+  function addMessage(text, sender) {
+    const div = document.createElement("div");
+    div.className = "roles-msg " + sender;
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  // Renderiza os botões de perguntas pré-programadas dentro da janela de mensagens
+  function renderQuickQuestions() {
+    const wrap = document.createElement("div");
+    wrap.className = "roles-quick-questions";
+
+    PRESET_QUESTIONS.forEach((question) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "roles-quick-btn";
+      btn.textContent = question;
+      btn.addEventListener("click", () => {
+        wrap.remove(); // some com as sugestões depois de escolhida uma
+        sendMessage(question);
+      });
+      wrap.appendChild(btn);
+    });
+
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  // Aceita um texto opcional (usado pelos botões de sugestão);
+  // se não vier nada, usa o que está digitado no input.
+  async function sendMessage(presetText) {
+    const text = (presetText ?? input.value).trim();
+    if (!text) return;
+
+    addMessage(text, "user");
+    history.push({ role: "user", content: text });
+    input.value = "";
+
+    addMessage("Digitando...", "bot");
+    const typingIndicator = messagesEl.lastChild;
+
+    try {
+      const response = await fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history })
+      });
+
+      const data = await response.json();
+      typingIndicator.remove();
+
+      addMessage(data.reply, "bot");
+      history.push({ role: "assistant", content: data.reply });
+    } catch (err) {
+      typingIndicator.remove();
+      addMessage("Erro ao conectar com o assistente. Tente novamente.", "bot");
+      console.error(err);
+    }
+  }
+
+  sendBtn.addEventListener("click", () => sendMessage());
+  input.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
+</script>

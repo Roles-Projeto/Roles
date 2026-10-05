@@ -90,32 +90,16 @@
           <section class="card-informacoes mapa-setores">
             <span class="rotulo-secao">Local</span>
             <h2 class="titulo-secao">Mapa do Setor</h2>
-            <div class="mapa-svg-wrap">
-              <svg viewBox="0 0 560 360" id="svg-mapa-setores" role="img" aria-label="Mapa de setores do evento">
-                <ellipse cx="225" cy="180" rx="195" ry="150" class="mapa-setor" data-setor="arquibancada" />
-                <ellipse cx="225" cy="180" rx="155" ry="120" class="mapa-setor" data-setor="cadeira superior" />
-                <ellipse cx="225" cy="180" rx="115" ry="88" class="mapa-setor" data-setor="cadeira inferior" />
-                <ellipse cx="225" cy="180" rx="75" ry="57" class="mapa-setor" data-setor="pista" />
 
-                <rect x="195" y="165" width="60" height="30" rx="6" class="mapa-palco" />
-                <text x="225" y="184" text-anchor="middle" class="mapa-texto-palco">PALCO</text>
+            <!--
+              O <svg id="svg-mapa-setores"> não fica mais fixo aqui.
+              Ele é injetado dinamicamente pelo detalhesEventos.js
+              (função renderizarMapaEvento), de acordo com o
+              tipo_mapa/mapa_config salvos para este evento
+              (arena, casa de show, teatro, simples ou nenhum mapa).
+            -->
+            <div class="mapa-svg-wrap"></div>
 
-                <text x="225" y="222" text-anchor="middle" class="mapa-texto-setor mapa-texto-clara">PISTA</text>
-                <text x="225" y="49" text-anchor="middle" class="mapa-texto-setor mapa-texto-escura">ARQUIBANCADA</text>
-
-                <path d="M 330,100 L 395,60" class="mapa-linha-guia" />
-                <text x="400" y="57" text-anchor="start" class="mapa-texto-setor mapa-texto-pequeno">CADEIRA</text>
-                <text x="400" y="69" text-anchor="start" class="mapa-texto-setor mapa-texto-pequeno">SUPERIOR</text>
-
-                <path d="M 145,258 L 85,295" class="mapa-linha-guia" />
-                <text x="80" y="298" text-anchor="end" class="mapa-texto-setor mapa-texto-pequeno">CADEIRA</text>
-                <text x="80" y="310" text-anchor="end" class="mapa-texto-setor mapa-texto-pequeno">INFERIOR</text>
-
-                <rect x="450" y="140" width="90" height="90" rx="12" class="mapa-setor mapa-setor-vip" data-setor="vip" />
-                <text x="495" y="180" class="mapa-texto-vip">SOUNDCHECK</text>
-                <text x="495" y="198" class="mapa-texto-vip mapa-texto-vip-destaque">VIP</text>
-              </svg>
-            </div>
             <p class="mapa-legenda" id="mapa-legenda-vazia" style="display: none">
               Alguns setores ainda não têm ingressos cadastrados neste evento.
             </p>

@@ -177,9 +177,12 @@ function mostrarResumo() {
 
     let ingressosHTML = "<ul>";
     listaIngressos.forEach(ing => {
-        ingressosHTML += `<li>${ing.titulo} — ${ing.tipo === "pago" ? "R$ " + ing.valor : "Gratuito"} (${ing.quantidade_total} unid.)</li>`;
+        const setorTexto = ing.setor_mapa ? ` — setor: ${ing.setor_mapa}` : "";
+        ingressosHTML += `<li>${ing.titulo} — ${ing.tipo === "pago" ? "R$ " + ing.valor : "Gratuito"} (${ing.quantidade_total} unid.)${setorTexto}</li>`;
     });
     ingressosHTML += "</ul>";
+
+    const mapaTexto = obterTextoMapaResumo();
 
     resumoEvento.innerHTML = `
         <h3>Resumo do Evento</h3>
@@ -189,6 +192,7 @@ function mostrarResumo() {
         <p><strong>Início:</strong> ${dataInicio} às ${horaInicio}</p>
         <p><strong>Término:</strong> ${dataFim} às ${horaFim}</p>
         <p><strong>Produtor:</strong> ${produtor}</p>
+        <p><strong>Mapa do evento:</strong> ${mapaTexto}</p>
         <p><strong>Ingressos:</strong></p>${ingressosHTML}
         ${imagemEvento ? `<p><strong>Imagem:</strong> ✅ Carregada</p>` : ""}
     `;
@@ -208,6 +212,8 @@ cancelarBtn.addEventListener("click", () => {
 // CONFIRMAR PUBLICAÇÃO
 // ====================================================
 confirmarBtn.addEventListener("click", async () => {
+    const token = localStorage.getItem("token");
+
     const dataInicio = document.getElementById("start-date")?.value;
     const horaInicio = document.getElementById("start-time")?.value;
     const dataFim = document.getElementById("end-date")?.value;
@@ -244,6 +250,8 @@ confirmarBtn.addEventListener("click", async () => {
         return `${date} ${time}:00`;
     };
 
+    const { tipo_mapa, mapa_config } = montarDadosMapa();
+
     const evento = {
         nome: document.getElementById("event-name")?.value?.trim(),
         assunto: document.getElementById("assunto")?.value,
@@ -258,17 +266,33 @@ confirmarBtn.addEventListener("click", async () => {
         cidade: document.getElementById("cidade")?.value?.trim(),
         estado: document.getElementById("estado")?.value?.trim(),
         nome_produtor: document.getElementById("producer-name")?.value?.trim(),
+        tipo_mapa,
+        mapa_config,
         ingressos: listaIngressos,
     };
 
     try {
         const response = await fetch(API_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
             body: JSON.stringify(evento),
         });
         const data = await response.json();
-        if (!response.ok) { confirmarBtn.disabled = false; confirmarBtn.textContent = "Confirmar publicação"; throw new Error(data.erro + " | " + (data.detalhes || "")); }
+
+        if (!response.ok) {
+            confirmarBtn.disabled = false;
+            confirmarBtn.textContent = "Confirmar publicação";
+            if (response.status === 401) {
+                alert("Sua sessão expirou. Faça login novamente.");
+                logout();
+                return;
+            }
+            throw new Error(data.erro + " | " + (data.detalhes || ""));
+        }
+
         localStorage.removeItem("rascunhoEvento");
         modal.style.display = "none";
         window.location.replace("../eventos/eventos.html");
@@ -437,6 +461,123 @@ cepInput.addEventListener("blur", async () => {
 });
 
 // ====================================================
+// MAPA DO EVENTO
+// Cada template define os setores disponíveis (mesma chave
+// usada pelo front de detalhes do evento em SETORES).
+// ====================================================
+const TEMPLATES_MAPA = {
+    arena: {
+        nome: "Arena / Estádio",
+        setores: [
+            { chave: "arquibancada", nome: "Arquibancada" },
+            { chave: "cadeira superior", nome: "Cadeira Superior" },
+            { chave: "cadeira inferior", nome: "Cadeira Inferior" },
+            { chave: "pista", nome: "Pista" },
+            { chave: "vip", nome: "VIP" },
+        ],
+    },
+    pista_camarote: {
+        nome: "Casa de show",
+        setores: [
+            { chave: "pista", nome: "Pista" },
+            { chave: "camarote", nome: "Camarote" },
+        ],
+    },
+    teatro: {
+        nome: "Teatro",
+        setores: [
+            { chave: "plateia", nome: "Plateia" },
+            { chave: "balcao", nome: "Balcão" },
+        ],
+    },
+    simples: {
+        nome: "Simples",
+        setores: [
+            { chave: "geral", nome: "Geral" },
+        ],
+    },
+};
+
+const mapaTipoGroup = document.getElementById("mapa-tipo-group");
+const mapaTemplateGroup = document.getElementById("mapa-template-group");
+const mapaTemplateSelect = document.getElementById("mapa-template");
+
+function tipoMapaSelecionado() {
+    const radio = mapaTipoGroup?.querySelector('input[name="tipo-mapa"]:checked');
+    return radio ? radio.value : "nenhum";
+}
+
+function templateMapaSelecionado() {
+    return mapaTemplateSelect?.value || "arena";
+}
+
+function setoresDoTemplateAtual() {
+    const tpl = TEMPLATES_MAPA[templateMapaSelecionado()];
+    return tpl ? tpl.setores : [];
+}
+
+// Monta o payload de tipo_mapa/mapa_config a partir da seleção atual
+function montarDadosMapa() {
+    const tipo = tipoMapaSelecionado();
+    if (tipo === "ilustrativo") {
+        return { tipo_mapa: "ilustrativo", mapa_config: { template: templateMapaSelecionado() } };
+    }
+    // "imagem" ainda não está disponível (opção desabilitada no HTML);
+    // qualquer outro caso cai em "nenhum"
+    return { tipo_mapa: "nenhum", mapa_config: null };
+}
+
+function obterTextoMapaResumo() {
+    const tipo = tipoMapaSelecionado();
+    if (tipo === "ilustrativo") {
+        const tpl = TEMPLATES_MAPA[templateMapaSelecionado()];
+        return `Ilustrativo — ${tpl ? tpl.nome : templateMapaSelecionado()}`;
+    }
+    return "Sem mapa";
+}
+
+// Atualiza a visibilidade do seletor de template e dos selects de
+// setor já existentes em formulários de ingresso abertos
+function atualizarVisibilidadeMapa() {
+    const tipo = tipoMapaSelecionado();
+    if (mapaTemplateGroup) mapaTemplateGroup.style.display = tipo === "ilustrativo" ? "block" : "none";
+    atualizarCamposSetorNosFormulariosAbertos();
+}
+
+mapaTipoGroup?.addEventListener("change", atualizarVisibilidadeMapa);
+mapaTemplateSelect?.addEventListener("change", atualizarCamposSetorNosFormulariosAbertos);
+
+// Reaplica as opções de setor em qualquer form de ingresso aberto no momento
+function atualizarCamposSetorNosFormulariosAbertos() {
+    document.querySelectorAll(".ticket-item").forEach(ticketItem => {
+        preencherCampoSetor(ticketItem);
+    });
+}
+
+// Mostra/esconde e preenche o select "Setor no mapa" dentro de um form de ingresso
+function preencherCampoSetor(ticketItem) {
+    const label = ticketItem.querySelector(".label-setor-mapa");
+    const select = ticketItem.querySelector(".setor-mapa-ingresso");
+    if (!label || !select) return;
+
+    const tipo = tipoMapaSelecionado();
+    if (tipo !== "ilustrativo") {
+        label.style.display = "none";
+        select.style.display = "none";
+        select.innerHTML = "";
+        return;
+    }
+
+    const valorAtual = select.value;
+    const setores = setoresDoTemplateAtual();
+    select.innerHTML = setores.map(s => `<option value="${s.chave}">${s.nome}</option>`).join("");
+    if (setores.some(s => s.chave === valorAtual)) select.value = valorAtual;
+
+    label.style.display = "block";
+    select.style.display = "block";
+}
+
+// ====================================================
 // INGRESSOS
 // ====================================================
 const ticketConfigCard = document.querySelector(".ticket-config-card");
@@ -474,6 +615,8 @@ function criarFormIngresso(tipo) {
         <label>Quantidade <span style="color:red">*</span></label>
         <input type="number" class="quantidade-ingresso" placeholder="Ex. 100" min="1">
         ${camposValor}
+        <label class="label-setor-mapa" style="display:none;">Setor no mapa</label>
+        <select class="setor-mapa-ingresso" style="display:none;"></select>
         <label><input type="checkbox"> Criar meia-entrada para este ingresso</label>
         <a href="#">Saiba mais sobre as políticas de meia-entrada</a>
         <div class="radio-group" style="margin-top:12px;">
@@ -528,7 +671,10 @@ function criarFormIngresso(tipo) {
             valor = parseFloat(vi.value).toFixed(2);
         }
 
-        const ingresso = { titulo, valor, tipo, quantidade_total: quantidade };
+        const setorSelect = ticketItem.querySelector(".setor-mapa-ingresso");
+        const setorMapa = (tipoMapaSelecionado() === "ilustrativo" && setorSelect?.value) ? setorSelect.value : null;
+
+        const ingresso = { titulo, valor, tipo, quantidade_total: quantidade, setor_mapa: setorMapa };
         if (ingressoEditandoIndex !== null) { listaIngressos[ingressoEditandoIndex] = ingresso; ingressoEditandoIndex = null; }
         else listaIngressos.push(ingresso);
 
@@ -537,6 +683,9 @@ function criarFormIngresso(tipo) {
     });
 
     ticketConfigCard.insertBefore(ticketItem, listaContainer);
+
+    // Aplica a visibilidade/opções do setor logo que o form é criado
+    preencherCampoSetor(ticketItem);
 }
 
 function renderizarIngressos() {
@@ -546,8 +695,9 @@ function renderizarIngressos() {
     listaIngressos.forEach((ing, i) => {
         const item = document.createElement("div");
         item.classList.add("ingresso-resumo");
+        const setorTexto = ing.setor_mapa ? ` — setor: ${ing.setor_mapa}` : "";
         item.innerHTML = `
-            <div><strong>${ing.titulo}</strong> &nbsp;— ${ing.tipo === "pago" ? "R$ " + ing.valor : "Gratuito"} (${ing.quantidade_total} unid.)</div>
+            <div><strong>${ing.titulo}</strong> &nbsp;— ${ing.tipo === "pago" ? "R$ " + ing.valor : "Gratuito"} (${ing.quantidade_total} unid.)${setorTexto}</div>
             <div>
                 <button class="btn-editar" onclick="editarIngresso(${i})">Editar</button>
                 <button class="btn-excluir" onclick="excluirIngresso(${i})">Excluir</button>
@@ -573,6 +723,8 @@ function editarIngresso(index) {
         vi.value = ing.valor;
         vp.value = (parseFloat(ing.valor) * 1.10).toFixed(2);
     }
+    const setorSelect = form.querySelector(".setor-mapa-ingresso");
+    if (setorSelect && ing.setor_mapa) setorSelect.value = ing.setor_mapa;
 }
 
 function excluirIngresso(index) { listaIngressos.splice(index, 1); renderizarIngressos(); }

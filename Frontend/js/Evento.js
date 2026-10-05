@@ -174,16 +174,51 @@ document.addEventListener("DOMContentLoaded", async () => {
       aplicarFiltros();
     });
   }
+// -------------------------------------------------------
+// ESTATÍSTICAS DA BARRA
+// -------------------------------------------------------
+function atualizarEstatisticaEventos(eventos) {
+  const elTotal     = document.getElementById("stat-eventos");
+  const elSemana    = document.getElementById("stat-semana");
+  const elGratuitos = document.getElementById("stat-gratuitos");
+
+  // Total
+  if (elTotal) elTotal.textContent = eventos.length;
+
+  // Próximos 7 dias (mesma regra do filtro "Esta semana")
+  if (elSemana) {
+    const hoje      = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const fimSemana = new Date(hoje);
+    fimSemana.setDate(fimSemana.getDate() + 7);
+
+    const daSemana = eventos.filter(e => {
+      if (!e.data_inicio) return false;
+      const d = new Date(e.data_inicio);
+      return d >= hoje && d <= fimSemana;
+    });
+    elSemana.textContent = daSemana.length;
+  }
+
+  // Gratuitos (mesma regra do card: sem preço mínimo ou zero)
+  if (elGratuitos) {
+    const gratuitos = eventos.filter(
+      e => !e.preco_minimo || parseFloat(e.preco_minimo) === 0
+    );
+    elGratuitos.textContent = gratuitos.length;
+  }
+}
 
   // -------------------------------------------------------
   // CARREGAR EVENTOS
   // -------------------------------------------------------
   async function carregarEventos() {
-    try {
-      const res  = await fetch(API_URL);
-      const data = await res.json();
-      document.querySelectorAll(".evento-card").forEach(c => c.remove());
-      if (data.length === 0) {
+  try {
+    const res  = await fetch(API_URL);
+    const data = await res.json();
+    atualizarEstatisticaEventos(data); 
+    document.querySelectorAll(".evento-card").forEach(c => c.remove());
+    if (data.length === 0) {
         container.insertAdjacentHTML("afterbegin",
           `<p style="grid-column:1/-1;text-align:center;padding:40px;color:#888;">Nenhum evento encontrado.</p>`);
         atualizarContador();

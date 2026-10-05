@@ -1,3 +1,4 @@
+console.log('🚀 PERFIL.JS CARREGADO - INÍCIO DO ARQUIVO');
 'use strict';
 
 /* ═══════════════════════════════════════════
@@ -14,6 +15,26 @@ const gv = id => g(id)?.value.trim() || '';
 /* ═══════════════════════════════════════════
    AUTH GUARD — redireciona se não logado
 ═══════════════════════════════════════════ */
+function getUserId() {
+    // 1. Tenta buscar direto por chaves comuns de ID
+    const directId = localStorage.getItem("usuarioId") || localStorage.getItem("id");
+    if (directId) return directId;
+
+    // 2. Tenta buscar dentro de um objeto 'usuario' salvo em JSON
+    const usuarioStorage = localStorage.getItem("usuario");
+    if (usuarioStorage) {
+        try {
+            const usuarioObj = JSON.parse(usuarioStorage);
+            if (usuarioObj && usuarioObj.id) return usuarioObj.id;
+        } catch (e) {
+            console.error("Erro ao converter objeto usuario do localStorage:", e);
+        }
+    }
+
+    // 3. Se não encontrar nenhum ID válido, retorna null
+    return null;
+}
+
 function requireLogin() {
     const userId = getUserId();
     if (!userId) {
@@ -1572,3 +1593,25 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector(`.nav-item[data-section="${section}"]`)?.click();
     }
 });
+// =========================================================
+// POPUP DE ATIVAÇÃO DE NOTIFICAÇÕES
+// =========================================================
+function pegarUsuarioIdLogado() {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.id;
+  } catch (e) {
+    console.error('Erro ao decodificar token:', e);
+    return null;
+  }
+}
+
+const usuarioIdLogado = pegarUsuarioIdLogado();
+if (usuarioIdLogado) {
+  const quer = confirm('Deseja ativar notificações sobre eventos da sua categoria favorita?');
+  if (quer) {
+    ativarNotificacoes(usuarioIdLogado);
+  }
+}

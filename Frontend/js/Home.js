@@ -716,3 +716,48 @@ if (loginModal && closeLogin) {
         }
     });
 }
+// ===== Botões de seta do scroll horizontal =====
+function atualizarSetas(grid) {
+  const wrap = grid.closest('.scroll-wrap');
+  const prev = wrap.querySelector('.scroll-btn--prev');
+  const next = wrap.querySelector('.scroll-btn--next');
+  const max = grid.scrollWidth - grid.clientWidth;
+
+  prev.classList.toggle('oculto', grid.scrollLeft <= 5);
+  next.classList.toggle('oculto', grid.scrollLeft >= max - 5);
+}
+
+function iniciarBotoesScroll() {
+  document.querySelectorAll('.scroll-btn').forEach((btn) => {
+    const grid = document.getElementById(btn.dataset.target);
+    if (!grid) return;
+
+    const direcao = btn.classList.contains('scroll-btn--next') ? 1 : -1;
+
+    btn.addEventListener('click', () => {
+      const card = grid.firstElementChild;
+      if (!card) return;
+      const gap = parseFloat(getComputedStyle(grid).columnGap) || 0;
+      grid.scrollBy({ left: direcao * (card.offsetWidth + gap), behavior: 'smooth' });
+    });
+  });
+
+  document.querySelectorAll('.scroll-wrap').forEach((wrap) => {
+    const grid = wrap.querySelector('.populares-grid, .eventos-grid');
+    if (!grid) return;
+
+    grid.addEventListener('scroll', () => atualizarSetas(grid));
+    window.addEventListener('resize', () => atualizarSetas(grid));
+
+    // os cards chegam da API depois, então recalcula quando forem inseridos
+    new MutationObserver(() => atualizarSetas(grid)).observe(grid, { childList: true });
+
+    atualizarSetas(grid);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', iniciarBotoesScroll);
+} else {
+  iniciarBotoesScroll();
+}

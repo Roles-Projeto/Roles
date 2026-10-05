@@ -5,6 +5,7 @@ const fs = require('fs');
 const supabase = require('../db/supabaseClient');
 const { analisarImagemPorUrl, analisarTexto } = require('../services/sightengineService');
 const { classificarImagem, classificarTexto } = require('../services/moderacaoService');
+const { gerarAssentosParaIngresso } = require('./assentosController');
 
 // ── Alternância de armazenamento de imagem ──
 // USE_SUPABASE_STORAGE=true  -> memoryStorage + Supabase Storage (usar em produção)
@@ -57,6 +58,31 @@ exports.uploadParaSupabase = async (file) => {
 exports.usarSupabase = USAR_SUPABASE;
 
 const db = require("../db/db_config");
+
+// =====================================================
+// MAPA DO EVENTO — validação simples do que vem do front
+// tipo_mapa: 'nenhum' | 'ilustrativo' | 'imagem'
+// mapa_config:
+//   - ilustrativo -> { template: 'arena' | 'pista_camarote' | 'teatro' | 'simples' }
+//   - imagem      -> { url: string, pontos: [{ setor, x, y, largura, altura }] }
+//   - nenhum      -> null
+// =====================================================
+const TIPOS_MAPA_VALIDOS = ['nenhum', 'ilustrativo', 'imagem'];
+
+function normalizarMapa(tipo_mapa, mapa_config) {
+  const tipo = TIPOS_MAPA_VALIDOS.includes(tipo_mapa) ? tipo_mapa : 'nenhum';
+
+  if (tipo === 'nenhum') return { tipo_mapa: 'nenhum', mapa_config: null };
+
+  // mapa_config pode chegar como objeto (JSON já parseado pelo express.json())
+  // ou, em casos raros de FormData, como string — cobrimos os dois.
+  let config = mapa_config;
+  if (typeof config === 'string') {
+    try { config = JSON.parse(config); } catch { config = null; }
+  }
+
+  return { tipo_mapa: tipo, mapa_config: config || null };
+}
 
 // =====================================================
 // MODERAÇÃO (Sightengine) — roda antes de salvar o evento
@@ -114,10 +140,13 @@ exports.criarEvento = async (req, res) => {
     const {
       nome, assunto, categoria, imagem, data_inicio, data_fim,
       descricao, local_nome, cep, rua, cidade, estado, nome_produtor, ingressos,
+      tipo_mapa, mapa_config,
     } = req.body;
 
     if (!nome || !data_inicio || !data_fim)
       return res.status(400).json({ erro: "Nome, data de início e data de término são obrigatórios." });
+
+    const mapa = normalizarMapa(tipo_mapa, mapa_config);
 
     // ── MODERAÇÃO (Sightengine) — roda antes de salvar o evento ──
     try {
@@ -137,12 +166,14 @@ exports.criarEvento = async (req, res) => {
 
     const sql = `INSERT INTO eventos
         (usuario_id, nome, assunto, categoria, imagem, data_inicio, data_fim,
-         descricao, local_nome, cep, rua, cidade, estado, nome_produtor)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+         descricao, local_nome, cep, rua, cidade, estado, nome_produtor,
+         tipo_mapa, mapa_config)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const valores = [
       usuarioId, nome, assunto || null, categoria || null, imagem || null, data_inicio, data_fim,
-      descricao || null, local_nome || null, cep || null, rua || null, cidade || null, estado || null, nome_produtor || null
+      descricao || null, local_nome || null, cep || null, rua || null, cidade || null, estado || null, nome_produtor || null,
+      mapa.tipo_mapa, mapa.mapa_config ? JSON.stringify(mapa.mapa_config) : null,
     ];
 
     const result = await db.query(sql, valores);
@@ -152,18 +183,46 @@ exports.criarEvento = async (req, res) => {
       return res.status(201).json({ mensagem: "Evento criado com sucesso!", eventoId });
     }
 
-    const placeholders = ingressos.map(() => "(?, ?, ?, ?, ?)").join(", ");
-    const sqlIng = `INSERT INTO ingressos (evento_id, titulo, tipo, valor, quantidade_total) VALUES ${placeholders}`;
-    const vals = ingressos.flatMap(i => [
-      eventoId,
-      i.titulo,
-      i.tipo,
-      i.tipo === "pago" ? (parseFloat(i.valor) || 0) : 0,
-      parseInt(i.quantidade_total) || 1,
-    ]);
-
+    // Ingressos "livres" (padrão, por quantidade) e "numerados" (por assento)
+    // são criados juntos, e para cada numerado a grade de assentos é gerada
+    // na mesma transação — se algo falhar no meio, nada fica salvo pela metade.
     try {
-      await db.query(sqlIng, vals);
+      const placeholders = ingressos
+        .map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .join(", ");
+      const sqlIng = `INSERT INTO ingressos
+          (evento_id, titulo, tipo, valor, quantidade_total, setor_mapa,
+           tipo_selecao, fileiras, assentos_por_fileira)
+        VALUES ${placeholders}`;
+
+      const vals = ingressos.flatMap(i => {
+        const numerado = i.tipo_selecao === "numerado";
+        return [
+          eventoId,
+          i.titulo,
+          i.tipo,
+          i.tipo === "pago" ? (parseFloat(i.valor) || 0) : 0,
+          parseInt(i.quantidade_total) || 1,
+          i.setor_mapa || null,
+          numerado ? "numerado" : "livre",
+          numerado ? (parseInt(i.fileiras, 10) || null) : null,
+          numerado ? (parseInt(i.assentos_por_fileira, 10) || null) : null,
+        ];
+      });
+
+      await db.transacao(async (tx) => {
+        const linhasIngressos = await tx.query(sqlIng, vals);
+
+        for (let idx = 0; idx < ingressos.length; idx++) {
+          const ing = ingressos[idx];
+          if (ing.tipo_selecao === "numerado") {
+            const ingressoId = linhasIngressos[idx]?.id;
+            if (!ingressoId) throw new Error(`Não foi possível obter o id do ingresso "${ing.titulo}" para gerar os assentos.`);
+            await gerarAssentosParaIngresso(tx, ingressoId, ing.fileiras, ing.assentos_por_fileira);
+          }
+        }
+      });
+
       res.status(201).json({ mensagem: "Evento e ingressos criados com sucesso!", eventoId });
     } catch (errIng) {
       res.status(500).json({ erro: "Evento salvo, mas erro ao salvar ingressos.", detalhes: errIng.message });
@@ -231,6 +290,10 @@ function getStatusVenda(tipo, disponiveis, agora = new Date()) {
 // Cada ingresso volta com:
 //   disponivel   = quantidade_total - vendidos/cortesias aprovados
 //   status_venda = disponivel | pausado | em_breve | encerrado | esgotado
+//
+// O evento volta com tipo_mapa e mapa_config (colunas nativas da
+// tabela eventos, já inclusas no "SELECT *" — nada extra a fazer aqui
+// além de garantir que mapa_config não quebre o front se vier null).
 // =====================================================
 exports.buscarEvento = async (req, res) => {
   try {
@@ -263,7 +326,12 @@ exports.buscarEvento = async (req, res) => {
       };
     });
 
-    res.json({ ...evento, ingressos });
+    res.json({
+      ...evento,
+      tipo_mapa: evento.tipo_mapa || 'nenhum',
+      mapa_config: evento.mapa_config || null,
+      ingressos,
+    });
   } catch (err) {
     console.error("Erro ao buscar evento:", err);
     res.status(500).json({ erro: "Erro ao buscar evento.", detalhes: err.message });
@@ -292,17 +360,23 @@ exports.editarEvento = async (req, res) => {
     const {
       nome, assunto, categoria, imagem, data_inicio, data_fim,
       descricao, local_nome, cep, rua, cidade, estado, nome_produtor,
+      tipo_mapa, mapa_config,
     } = req.body;
 
     if (!nome || !data_inicio || !data_fim)
       return res.status(400).json({ erro: "Nome, data de início e data de término são obrigatórios." });
 
+    const mapa = normalizarMapa(tipo_mapa, mapa_config);
+
     const sql = `UPDATE eventos SET nome=?, assunto=?, categoria=?, imagem=?, data_inicio=?, data_fim=?,
-      descricao=?, local_nome=?, cep=?, rua=?, cidade=?, estado=?, nome_produtor=? WHERE id=?`;
+      descricao=?, local_nome=?, cep=?, rua=?, cidade=?, estado=?, nome_produtor=?,
+      tipo_mapa=?, mapa_config=? WHERE id=?`;
 
     const valores = [
       nome, assunto || null, categoria || null, imagem || null, data_inicio, data_fim,
-      descricao || null, local_nome || null, cep || null, rua || null, cidade || null, estado || null, nome_produtor || null, id
+      descricao || null, local_nome || null, cep || null, rua || null, cidade || null, estado || null, nome_produtor || null,
+      mapa.tipo_mapa, mapa.mapa_config ? JSON.stringify(mapa.mapa_config) : null,
+      id
     ];
 
     await db.query(sql, valores);

@@ -264,6 +264,50 @@
           Adicione ao menos um ingresso para continuar.
           <span class="required">*</span>
         </p>
+
+        <!-- ═══════════════════════════════════════════
+             MAPA DO EVENTO
+             Fica ANTES da criação dos ingressos de propósito:
+             é o mapa escolhido aqui que decide se o campo
+             "Setor no mapa" aparece no formulário de cada
+             ingresso logo abaixo.
+             ═══════════════════════════════════════════ -->
+        <h3 class="subsection-title">Mapa do evento</h3>
+        <p class="section-subtitle">
+          Escolha como os compradores vão visualizar os setores do evento.
+        </p>
+        <div class="radio-group" id="mapa-tipo-group">
+          <label>
+            <input type="radio" name="tipo-mapa" value="nenhum" checked />
+            Sem mapa
+          </label>
+          <label>
+            <input type="radio" name="tipo-mapa" value="ilustrativo" />
+            Mapa ilustrativo
+          </label>
+          <label>
+            <input type="radio" name="tipo-mapa" value="imagem" disabled />
+            Imagem própria do local (em breve)
+          </label>
+        </div>
+
+        <div class="input-group" id="mapa-template-group" style="display: none">
+          <label>Modelo do mapa</label>
+          <select id="mapa-template">
+            <option value="arena">Arena / Estádio (arquibancada, cadeiras, pista, VIP)</option>
+            <option value="pista_camarote">Casa de show (pista + camarote)</option>
+            <option value="teatro">Teatro (plateia + balcão)</option>
+            <option value="simples">Simples (um setor único)</option>
+          </select>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <h3 class="subsection-title">Ingressos</h3>
+        <p class="section-subtitle">
+          Crie os ingressos do evento. Se escolheu um mapa ilustrativo acima,
+          cada ingresso pode ser ligado a um setor do mapa.
+        </p>
         <div class="ticket-selection">
           <button class="btn-ticket-action" data-tipo="pago">
             Criar ingresso pago

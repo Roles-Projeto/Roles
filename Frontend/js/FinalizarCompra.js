@@ -40,6 +40,44 @@ function getUserId() {
 }
 
 /* ==================================================
+   AUTENTICAÇÃO E ASSENTOS (ingresso numerado)
+================================================== */
+// Cabeçalhos com o token de login. O backend usa o token para saber quem está
+// comprando (e para conferir que os assentos foram reservados por essa pessoa).
+function headersAutenticados() {
+    const headers = { "Content-Type": "application/json" };
+    const token = localStorage.getItem("token");
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    return headers;
+}
+
+// Devolve o evento salvo pela tela de detalhes quando ele tem assentos marcados;
+// senão null. Ingresso numerado: a quantidade é o número de assentos escolhidos.
+function assentosDoEstado() {
+    try {
+        const ev = JSON.parse(localStorage.getItem("eventoSelecionado") || "{}");
+        if (ev.tipo_selecao === "numerado" && Array.isArray(ev.assento_ids) && ev.assento_ids.length) return ev;
+    } catch (_) { }
+    return null;
+}
+
+// Monta a lista de itens da compra, com os assentos quando o ingresso é numerado
+function montarItens(tipoIngressoId, quantidade) {
+    const item = { tipo_ingresso_id: tipoIngressoId, quantidade };
+    const marcado = assentosDoEstado();
+    if (marcado && String(marcado.tipo_ingresso_id) === String(tipoIngressoId)) {
+        item.assento_ids = marcado.assento_ids;
+    }
+    return [item];
+}
+
+// Token vencido: avisa e manda para o login
+function tratarSessaoExpirada() {
+    showToast("Sua sessão expirou. Entre novamente para concluir a compra.", "warn");
+    setTimeout(() => { window.location.href = "/frontend/login/login.html"; }, 1800);
+}
+
+/* ==================================================
    UTILITÁRIOS DE VALIDAÇÃO
 ================================================== */
 const Validador = {
@@ -441,6 +479,12 @@ function updatePrice(quantity) {
 }
 
 function changeQuantity(change) {
+    // Ingresso numerado: a quantidade segue os assentos escolhidos na tela do evento
+    if (assentosDoEstado()) {
+        showToast("A quantidade segue os assentos escolhidos. Para mudar, volte e escolha de novo.", "info");
+        return;
+    }
+
     const input = document.getElementById("quantidade");
     const newValue = parseInt(input.value) + change;
     if (newValue >= 1 && newValue <= MAX_AVAILABLE_TICKETS) updatePrice(newValue);
@@ -489,14 +533,19 @@ async function handleGratuitoSubmit() {
     try {
         const res = await fetch(`${BASE_URL}/ingressos/comprar`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: headersAutenticados(),
             body: JSON.stringify({
                 usuario_id: usuarioId,
                 evento_id: eventoId,
-                itens: [{ tipo_ingresso_id: tipoIngressoId, quantidade }],
+                itens: montarItens(tipoIngressoId, quantidade),
             }),
         });
         const data = await res.json().catch(() => ({}));
+
+        if (res.status === 401) {
+            tratarSessaoExpirada();
+            return;
+        }
 
         if (!res.ok) {
             showToast(data.erro || "Não foi possível confirmar a presença.", res.status >= 500 ? "error" : "warn");
@@ -600,17 +649,29 @@ async function loadEventData() {
         document.getElementById("event-date").textContent = ev.data || "--/--/----";
         document.getElementById("event-time").textContent = ev.hora || "--:--";
         document.getElementById("event-location").textContent = ev.local || "Local Desconhecido";
-        document.getElementById("ticket-type").textContent = ev.ingressoNome || "Ingresso Padrão";
-                const precoStored = parseFloat(ev.ingressoPreco);
+
+        // Ingresso numerado: mostra os assentos escolhidos junto do nome do ingresso
+        const rotulosAssentos = ev.tipo_selecao === "numerado" && Array.isArray(ev.assento_rotulos) && ev.assento_rotulos.length
+            ? ` - ${ev.assento_rotulos.length > 1 ? "Assentos" : "Assento"} ${ev.assento_rotulos.join(", ")}`
+            : "";
+        const nomeExibicao = (ev.ingressoNome || "Ingresso Padrão") + rotulosAssentos;
+        document.getElementById("ticket-type").textContent = nomeExibicao;
+
+        const precoStored = parseFloat(ev.ingressoPreco);
         PRICE_PER_TICKET = Number.isNaN(precoStored) ? 30.00 : precoStored;
 
         // ← Salva evento_id e tipo no estado global para o finalizarCompra usar
         eventoAtual = { id: ev.evento_id, titulo: ev.nome };
-        tipoAtual = { id: ev.tipo_ingresso_id, nome: ev.ingressoNome };
+        tipoAtual = { id: ev.tipo_ingresso_id, nome: nomeExibicao };
     } else {
         PRICE_PER_TICKET = 30.00;
     }
-    updatePrice(1);
+
+    // Ingresso numerado: a quantidade é o número de assentos escolhidos
+    const marcado = assentosDoEstado();
+    const quantidadeInicial = marcado ? marcado.assento_ids.length : 1;
+    if (marcado) MAX_AVAILABLE_TICKETS = quantidadeInicial;
+    updatePrice(quantidadeInicial);
 }
 
 /* ==================================================
@@ -637,7 +698,7 @@ async function finalizarCompra(forma_pagamento) {
     const eventoId = eventoAtual?.id || params.get("evento_id") || storedEvento?.evento_id;
     const tipoIngressoId = tipoAtual?.id || params.get("tipo_ingresso_id") || storedEvento?.tipo_ingresso_id;
 
-    console.log("🛒 finalizarCompra →", { usuarioId, eventoId, tipoIngressoId, forma_pagamento, quantidade });
+    console.log("finalizarCompra", { usuarioId, eventoId, tipoIngressoId, forma_pagamento, quantidade });
 
         if (!eventoId || !tipoIngressoId) {
         showToast("Dados do evento não encontrados. Volte e selecione o ingresso novamente.", "error");
@@ -649,19 +710,24 @@ async function finalizarCompra(forma_pagamento) {
         usuario_id: usuarioId,
         evento_id: eventoId,
         forma_pagamento,
-        itens: [{ tipo_ingresso_id: tipoIngressoId, quantidade }],
+        itens: montarItens(tipoIngressoId, quantidade),
     };
 
     try {
         const res = await fetch(`${BASE_URL}/ingressos/comprar`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: headersAutenticados(),
             body: JSON.stringify(body),
         });
         const data = await res.json();
 
-                if (!res.ok) {
-            console.error("❌ Erro da API:", data);
+        if (res.status === 401) {
+            tratarSessaoExpirada();
+            return;
+        }
+
+        if (!res.ok) {
+            console.error("Erro da API:", data);
             showToast(data.erro || "Não foi possível processar sua compra. Tente novamente.", "error");
             if (btnAtivo) { btnAtivo.disabled = false; btnAtivo.textContent = "Tentar novamente"; }
             return;
@@ -693,15 +759,12 @@ async function finalizarCompra(forma_pagamento) {
         window.location.href = "confirmacao.html";
 
         } catch (err) {
-        console.error("❌ Erro na requisição:", err);
+        console.error("Erro na requisição:", err);
         showToast("Erro de conexão com o servidor. Tente novamente em instantes.", "error");
         if (btnAtivo) { btnAtivo.disabled = false; btnAtivo.textContent = "Tentar novamente"; }
     }
 }
 
-/* ==================================================
-   INICIALIZAÇÃO
-================================================== */
 /* ==================================================
    INICIALIZAÇÃO
 ================================================== */

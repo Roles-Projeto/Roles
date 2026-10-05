@@ -203,13 +203,14 @@
             const tituloPagamento = document.querySelector('.pagamento-card .section-title');
             if (tituloPagamento) tituloPagamento.textContent = 'Seu ingresso';
 
-            // O clima vira etiqueta no ingresso e os lembretes viram ações rápidas
-            const infoCard = document.querySelector('.info-card');
-            if (infoCard) infoCard.style.display = 'none';
-            const climaCard = el('clima-card');
-            if (climaCard) climaCard.style.display = 'none';
-            montarExperienciaGratuita(dados, pendente);
         }
+
+        // Novo layout vale para todos: o clima vira etiqueta no ingresso e os lembretes viram ações rápidas
+        const infoCard = document.querySelector('.info-card');
+        if (infoCard) infoCard.style.display = 'none';
+        const climaCard = el('clima-card');
+        if (climaCard) climaCard.style.display = 'none';
+        montarExperienciaGratuita(dados, pendente);
 
         el('btn-ver-ingressos').href = '/frontend/perfil/perfil.html?section=ingressos';
 
@@ -218,7 +219,7 @@
         conteudo.style.display = 'block';
         requestAnimationFrame(() => conteudo.classList.add('is-visible'));
 
-        inicializarClima(dados.local, gratuito);
+        inicializarClima(dados.local, true);
         configurarAcoes(pedidoId, pendente, dados);
     }
 
@@ -345,13 +346,40 @@
         });
     }
 
+    // Só mexe no texto quando ele vem TODO em maiúsculas (ex.: "BTS WORLD TOUR ARIRANG")
+    function formatarTitulo(txt) {
+        const s = String(txt || '').trim();
+        if (!s || s !== s.toUpperCase() || s === s.toLowerCase()) return s;
+        const pequenas = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'a', 'o', 'as', 'os', 'no', 'na', 'com', 'para', 'the', 'of', 'and'];
+        return s.toLowerCase().split(/\s+/).map((p, i) => {
+            if (i > 0 && pequenas.includes(p)) return p;
+            // siglas sem vogal (como BTS, DJ, MC) continuam em maiúsculas
+            if (p.length <= 4 && !/[aeiouáéíóúâêôãõà]/i.test(p)) return p.toUpperCase();
+            return p.charAt(0).toUpperCase() + p.slice(1);
+        }).join(' ');
+    }
+
+    function primeiraMaiuscula(txt) {
+        const s = String(txt || '').trim();
+        return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+    }
+
     // Preenche o ingresso roxo (só ingresso gratuito)
     function preencherIngressoGratuito(dados, pendente) {
         const bloco = el('gx-gratuito');
         if (!bloco) return;
         bloco.style.display = 'block';
+        const gratuito = String(dados.forma_pagamento || '').toLowerCase() === 'gratuito';
         const conteudoPagina = el('conteudo-confirmacao');
         if (conteudoPagina) conteudoPagina.classList.add('gx-modo-gratuito');
+
+        // Ingresso, ações e lembrete sobem para a largura toda; os cards descem lado a lado
+        const gradeLayout = document.querySelector('.layout-grid');
+        if (gradeLayout && gradeLayout.parentNode) {
+            gradeLayout.parentNode.insertBefore(bloco, gradeLayout);
+            gradeLayout.classList.add('gx-grid-baixo');
+            if (!gratuito) gradeLayout.classList.add('gx-pago');
+        }
 
         // O ingresso padrão (pagos/pendentes) fica escondido no gratuito
         const ticketPadrao = document.querySelector('.ticket');
@@ -369,8 +397,11 @@
             el('gx-semana').textContent = '';
         }
 
-        el('gx-t-tag').textContent = `Ingresso gratuito · Qtd ${dados.quantidade || 1}`;
-        el('gx-t-nome').textContent = dados.nome || 'Evento';
+        const tipoTag = gratuito ? 'Ingresso gratuito' : primeiraMaiuscula(dados.ingressoNome || 'Ingresso');
+        el('gx-t-tag').textContent = `${tipoTag} · Qtd ${dados.quantidade || 1}`;
+        const campoNome = el('gx-t-nome');
+        campoNome.textContent = formatarTitulo(dados.nome) || 'Evento';
+        campoNome.style.setProperty('text-transform', 'none', 'important');
         el('gx-t-hora').textContent = dados.hora || '—';
         el('gx-t-local').textContent = dados.local || '—';
         el('gx-t-pedido').textContent = `Pedido #${dados.pedido_id}`;
@@ -378,6 +409,10 @@
         const qr = el('gx-t-qr');
         if (pendente) {
             qr.style.display = 'none';
+            const trava = el('gx-t-lock');
+            if (trava) trava.style.display = 'flex';
+            const lembrete = el('gx-lembrete-texto');
+            if (lembrete) lembrete.textContent = 'Assim que o pagamento for confirmado, seu ingresso é liberado aqui e por e-mail.';
             return;
         }
         const conteudoQr = 'ROLES-PEDIDO-' + dados.pedido_id;

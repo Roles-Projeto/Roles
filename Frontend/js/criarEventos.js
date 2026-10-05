@@ -120,16 +120,28 @@ function validarEtapa(index) {
     // Ingressos: ao menos 1 ingresso criado
     // Publicação: nome do produtor, termos
     if (index === 2) {
-        if (listaIngressos.length === 0) {
-            alert("Adicione ao menos um ingresso (pago ou gratuito) antes de continuar.");
+    if (listaIngressos.length === 0) {
+        alert("Adicione ao menos um ingresso (pago ou gratuito) antes de continuar.");
+        return false;
+    }
+
+    if (tipoMapaSelecionado() === "imagem") {
+        if (!mapaImagem) { alert("Envie o PNG do mapa do evento."); return false; }
+        if (!setoresImagem.length) { alert("Cadastre ao menos um setor para o mapa."); return false; }
+        const semArea = setoresImagem.find(s => !s.areas || !s.areas.length);
+if (semArea) { alert(`Marque no mapa a área do setor "${semArea.nome}".`); return false; }
+        const chaves = setoresImagem.map(s => s.chave);
+        if (listaIngressos.some(i => !i.setor_mapa || !chaves.includes(i.setor_mapa))) {
+            alert("Todos os ingressos precisam ter um setor do mapa. Edite os ingressos sem setor ou com setor inválido.");
             return false;
         }
+    }
 
-        const produtor = document.getElementById("producer-name");
-        const termos = document.getElementById("terms");
-        if (!produtor?.value?.trim()) { marcarErro(produtor); alerta("Informe o nome do produtor.", produtor); return false; }
-        if (!termos?.checked) { alert("Você precisa aceitar os Termos de Uso para publicar."); return false; }
-        return true;
+    const produtor = document.getElementById("producer-name");
+    const termos = document.getElementById("terms");
+    if (!produtor?.value?.trim()) { marcarErro(produtor); alerta("Informe o nome do produtor.", produtor); return false; }
+       if (!termos?.checked) { alert("Você precisa aceitar os Termos de Uso para publicar."); return false; }
+    return true;
     }
 
     return true;
@@ -137,7 +149,6 @@ function validarEtapa(index) {
 
 // ====================================================
 // BOTÃO PRÓXIMO
-// ====================================================
 nextBtn.addEventListener("click", () => {
     if (!validarEtapa(currentStep)) return;
     if (currentStep === steps.length - 1) { mostrarResumo(); return; }
@@ -207,7 +218,15 @@ cancelarBtn.addEventListener("click", () => {
     modal.style.display = "none";
     stepNavigation.style.display = "flex";
 });
-
+async function uploadImagem(file) {
+    const formData = new FormData();
+    formData.append("imagem", file);
+    const res = await fetch(`${API_BASE}/eventos/upload-imagem`, { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.erro ? `${data.erro} ${data.detalhes || ""}` : `Erro ${res.status} ao enviar imagem.`);
+    if (!data.url) throw new Error("O upload não retornou uma URL válida.");
+    return data.url;
+}
 // ====================================================
 // CONFIRMAR PUBLICAÇÃO
 // ====================================================
@@ -216,6 +235,7 @@ confirmarBtn.addEventListener("click", async () => {
     const horaInicio = document.getElementById("start-time")?.value;
     const dataFim = document.getElementById("end-date")?.value;
     const horaFim = document.getElementById("end-time")?.value;
+    
 
     confirmarBtn.disabled = true;
     confirmarBtn.textContent = "Publicando...";
@@ -248,7 +268,20 @@ confirmarBtn.addEventListener("click", async () => {
         return `${date} ${time}:00`;
     };
 
-    const { tipo_mapa, mapa_config } = montarDadosMapa();
+    let mapaImagemUrl = null;
+if (tipoMapaSelecionado() === "imagem" && mapaImagem) {
+    try {
+        mapaImagemUrl = await uploadImagem(mapaImagem);
+    } catch (err) {
+        console.error("Erro no upload do mapa:", err);
+        alert("❌ Não foi possível enviar o mapa: " + err.message + "\n\nA publicação foi cancelada. Corrija e tente novamente.");
+        confirmarBtn.disabled = false;
+        confirmarBtn.textContent = "Confirmar publicação";
+        return;
+    }
+}
+
+const { tipo_mapa, mapa_config } = montarDadosMapa(mapaImagemUrl);
 
     const evento = {
         nome: document.getElementById("event-name")?.value?.trim(),
@@ -490,6 +523,191 @@ const mapaTipoGroup = document.getElementById("mapa-tipo-group");
 const mapaTemplateGroup = document.getElementById("mapa-template-group");
 const mapaTemplateSelect = document.getElementById("mapa-template");
 
+const mapaImagemGroup = document.getElementById("mapa-imagem-group");
+const mapaImagemDrop = document.getElementById("mapa-imagem-drop");
+const mapaSetorNovo = document.getElementById("mapa-setor-novo");
+const mapaSetorAdd = document.getElementById("mapa-setor-add");
+const mapaSetoresLista = document.getElementById("mapa-setores-lista");
+
+let mapaImagem = null;          // File do PNG
+const setoresImagem = [];       // [{ chave, nome }]
+
+const slugify = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
+// ---------- upload do PNG do mapa ----------
+const mapaFileInput = document.createElement("input");
+mapaFileInput.type = "file"; mapaFileInput.accept = "image/png"; mapaFileInput.style.display = "none";
+document.body.appendChild(mapaFileInput);
+
+mapaImagemDrop?.addEventListener("click", (e) => {
+    if (e.target.closest("#mapa-editor")) return;
+    mapaFileInput.click();
+});
+mapaFileInput.addEventListener("change", e => processarImagemMapa(e.target.files[0]));
+mapaImagemDrop?.addEventListener("dragover", e => { e.preventDefault(); mapaImagemDrop.style.border = "2px dashed #7c3aed"; });
+mapaImagemDrop?.addEventListener("dragleave", () => { mapaImagemDrop.style.border = ""; });
+mapaImagemDrop?.addEventListener("drop", e => {
+    e.preventDefault(); mapaImagemDrop.style.border = "";
+    processarImagemMapa(e.dataTransfer.files[0]);
+});
+function processarImagemMapa(file) {
+    if (!file) return;
+    if (file.type !== "image/png") { alert("O mapa deve ser um arquivo PNG."); return; }
+    if (file.size > 5 * 1024 * 1024) { alert("Imagem do mapa muito grande. Máximo 5MB."); return; }
+    mapaImagem = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+        mapaImagemDrop.innerHTML = "";
+        mapaImagemDrop.style.cssText += ";height:auto !important;min-height:0 !important;max-height:none !important;overflow:visible !important;width:100% !important;max-width:900px !important;padding:0 !important;display:block !important;";
+        const wrap = document.createElement("div");
+        wrap.id = "mapa-editor";
+        wrap.style.cssText = "position:relative;width:100%;line-height:0;user-select:none;touch-action:none;";
+        const img = document.createElement("img");
+        img.src = e.target.result;
+        img.draggable = false;
+        img.style.cssText = "width:100%;height:auto;display:block;border-radius:8px;";
+        const camada = document.createElement("div");
+        camada.id = "mapa-editor-camada";
+        camada.style.cssText = "position:absolute;inset:0;cursor:crosshair;";
+        wrap.append(img, camada);
+        mapaImagemDrop.appendChild(wrap);
+        ativarDesenhoAreas(camada);
+        renderizarAreasEditor();
+    };
+    reader.readAsDataURL(file);
+}
+// ---------- setores do mapa em imagem ----------
+function renderizarSetoresImagem() {
+    mapaSetoresLista.innerHTML = "";
+    setoresImagem.forEach((s, i) => {
+        const qtd = (s.areas || []).length;
+        const li = document.createElement("li");
+        li.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;";
+        const nome = document.createElement("span");
+        nome.textContent = s.nome + (qtd ? ` ✅ (${qtd} ${qtd === 1 ? "área" : "áreas"})` : " (sem área)");
+        const acoes = document.createElement("span");
+        acoes.style.cssText = "display:flex;gap:6px;";
+
+        const marcar = document.createElement("button");
+        marcar.type = "button"; marcar.className = "btn-editar";
+        marcar.textContent = setorParaDesenhar === s.chave ? "Desenhando... (clique para parar)" : (qtd ? "Adicionar área" : "Marcar no mapa");
+        marcar.addEventListener("click", () => {
+            if (!mapaImagem) { alert("Envie o PNG do mapa primeiro."); return; }
+            setorParaDesenhar = setorParaDesenhar === s.chave ? null : s.chave;
+            renderizarSetoresImagem();
+        });
+        acoes.appendChild(marcar);
+
+        if (qtd) {
+            const limpar = document.createElement("button");
+            limpar.type = "button"; limpar.className = "btn-editar";
+            limpar.textContent = "Limpar áreas";
+            limpar.addEventListener("click", () => { s.areas = []; renderizarSetoresImagem(); });
+            acoes.appendChild(limpar);
+        }
+
+        const btn = document.createElement("button");
+        btn.type = "button"; btn.className = "btn-excluir"; btn.textContent = "Remover";
+        btn.addEventListener("click", () => removerSetorImagem(i));
+        acoes.appendChild(btn);
+
+        li.append(nome, acoes);
+        mapaSetoresLista.appendChild(li);
+    });
+    renderizarAreasEditor();
+    atualizarCamposSetorNosFormulariosAbertos();
+}
+function adicionarSetorImagem() {
+    const nome = mapaSetorNovo.value.trim();
+    if (!nome) { marcarErro(mapaSetorNovo); alerta("Informe o nome do setor.", mapaSetorNovo); return; }
+    const chave = slugify(nome);
+    if (!chave) { alerta("Nome de setor inválido.", mapaSetorNovo); return; }
+    if (setoresImagem.some(s => s.chave === chave)) { alerta("Esse setor já foi adicionado.", mapaSetorNovo); return; }
+    setoresImagem.push({ chave, nome });
+    mapaSetorNovo.value = "";
+    renderizarSetoresImagem();
+}
+
+function removerSetorImagem(i) {
+    const emUso = listaIngressos.some(ing => ing.setor_mapa === setoresImagem[i].chave);
+    if (emUso) { alert("Esse setor está sendo usado por um ingresso. Edite ou exclua o ingresso primeiro."); return; }
+    setoresImagem.splice(i, 1);
+    renderizarSetoresImagem();
+}
+// ---------- áreas clicáveis do mapa em imagem ----------
+let setorParaDesenhar = null; // chave do setor escolhido na lista
+
+function renderizarAreasEditor() {
+    const camada = document.getElementById("mapa-editor-camada");
+    if (!camada) return;
+    camada.innerHTML = "";
+    setoresImagem.forEach(s => {
+        (s.areas || []).forEach(a => {
+            const el = document.createElement("div");
+            el.style.cssText = `position:absolute;left:${a.x}%;top:${a.y}%;width:${a.w}%;height:${a.h}%;` +
+                "border:2px solid #7c3aed;background:rgba(124,58,237,.3);box-sizing:border-box;" +
+                "display:flex;align-items:center;justify-content:center;pointer-events:none;overflow:hidden;";
+            const t = document.createElement("span");
+            t.textContent = s.nome;
+            t.style.cssText = "font:700 10px sans-serif;color:#fff;background:#6c2bd9;padding:1px 4px;border-radius:4px;line-height:1.2;white-space:nowrap;";
+            el.appendChild(t);
+            camada.appendChild(el);
+        });
+    });
+}
+function ativarDesenhoAreas(camada) {
+    let inicio = null, previa = null;
+    const pos = (ev) => {
+        const r = camada.getBoundingClientRect();
+        return {
+            x: Math.min(100, Math.max(0, (ev.clientX - r.left) / r.width * 100)),
+            y: Math.min(100, Math.max(0, (ev.clientY - r.top) / r.height * 100))
+        };
+    };
+
+    camada.addEventListener("pointerdown", ev => {
+        if (!setorParaDesenhar) { alert("Primeiro clique em \"Marcar no mapa\" ao lado do setor que você quer desenhar."); return; }
+        camada.setPointerCapture(ev.pointerId);
+        inicio = pos(ev);
+        previa = document.createElement("div");
+        previa.style.cssText = "position:absolute;border:2px dashed #7c3aed;background:rgba(124,58,237,.2);pointer-events:none;";
+        camada.appendChild(previa);
+    });
+
+    camada.addEventListener("pointermove", ev => {
+        if (!inicio || !previa) return;
+        const p = pos(ev);
+        previa.style.left = Math.min(inicio.x, p.x) + "%";
+        previa.style.top = Math.min(inicio.y, p.y) + "%";
+        previa.style.width = Math.abs(p.x - inicio.x) + "%";
+        previa.style.height = Math.abs(p.y - inicio.y) + "%";
+    });
+
+    camada.addEventListener("pointerup", ev => {
+        if (!inicio) return;
+        const p = pos(ev);
+        const area = {
+            x: +Math.min(inicio.x, p.x).toFixed(2),
+            y: +Math.min(inicio.y, p.y).toFixed(2),
+            w: +Math.abs(p.x - inicio.x).toFixed(2),
+            h: +Math.abs(p.y - inicio.y).toFixed(2)
+        };
+        inicio = null;
+        previa?.remove(); previa = null;
+        if (area.w < 1 || area.h < 1) return; // clique sem arrastar
+                const setor = setoresImagem.find(s => s.chave === setorParaDesenhar);
+        if (setor) {
+            if (!Array.isArray(setor.areas)) setor.areas = [];
+            setor.areas.push(area);
+        }
+        // O setor continua selecionado: dá para desenhar a próxima área em seguida
+        renderizarSetoresImagem();
+    });
+}
+mapaSetorAdd?.addEventListener("click", adicionarSetorImagem);
+mapaSetorNovo?.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); adicionarSetorImagem(); } });
+
 function tipoMapaSelecionado() {
     const radio = mapaTipoGroup?.querySelector('input[name="tipo-mapa"]:checked');
     return radio ? radio.value : "nenhum";
@@ -499,19 +717,22 @@ function templateMapaSelecionado() {
     return mapaTemplateSelect?.value || "arena";
 }
 
-function setoresDoTemplateAtual() {
-    const tpl = TEMPLATES_MAPA[templateMapaSelecionado()];
-    return tpl ? tpl.setores : [];
+function setoresDoMapaAtual() {
+    const tipo = tipoMapaSelecionado();
+    if (tipo === "ilustrativo") return TEMPLATES_MAPA[templateMapaSelecionado()]?.setores || [];
+    if (tipo === "imagem") return setoresImagem;
+    return [];
 }
 
-// Monta o payload de tipo_mapa/mapa_config a partir da seleção atual
-function montarDadosMapa() {
+// recebe a URL já enviada (null se ainda não subiu)
+function montarDadosMapa(imagemUrl = null) {
     const tipo = tipoMapaSelecionado();
     if (tipo === "ilustrativo") {
         return { tipo_mapa: "ilustrativo", mapa_config: { template: templateMapaSelecionado() } };
     }
-    // "imagem" ainda não está disponível (opção desabilitada no HTML);
-    // qualquer outro caso cai em "nenhum"
+    if (tipo === "imagem") {
+        return { tipo_mapa: "imagem", mapa_config: { imagem_url: imagemUrl, setores: setoresImagem } };
+    }
     return { tipo_mapa: "nenhum", mapa_config: null };
 }
 
@@ -521,6 +742,9 @@ function obterTextoMapaResumo() {
         const tpl = TEMPLATES_MAPA[templateMapaSelecionado()];
         return `Ilustrativo — ${tpl ? tpl.nome : templateMapaSelecionado()}`;
     }
+    if (tipo === "imagem") {
+        return `Imagem própria (${setoresImagem.length} setor${setoresImagem.length === 1 ? "" : "es"})`;
+    }
     return "Sem mapa";
 }
 
@@ -529,6 +753,7 @@ function obterTextoMapaResumo() {
 function atualizarVisibilidadeMapa() {
     const tipo = tipoMapaSelecionado();
     if (mapaTemplateGroup) mapaTemplateGroup.style.display = tipo === "ilustrativo" ? "block" : "none";
+    if (mapaImagemGroup) mapaImagemGroup.style.display = tipo === "imagem" ? "block" : "none";
     atualizarCamposSetorNosFormulariosAbertos();
 }
 
@@ -548,8 +773,8 @@ function preencherCampoSetor(ticketItem) {
     const select = ticketItem.querySelector(".setor-mapa-ingresso");
     if (!label || !select) return;
 
-    const tipo = tipoMapaSelecionado();
-    if (tipo !== "ilustrativo") {
+    const setores = setoresDoMapaAtual();
+    if (tipoMapaSelecionado() === "nenhum" || !setores.length) {
         label.style.display = "none";
         select.style.display = "none";
         select.innerHTML = "";
@@ -557,7 +782,6 @@ function preencherCampoSetor(ticketItem) {
     }
 
     const valorAtual = select.value;
-    const setores = setoresDoTemplateAtual();
     select.innerHTML = setores.map(s => `<option value="${s.chave}">${s.nome}</option>`).join("");
     if (setores.some(s => s.chave === valorAtual)) select.value = valorAtual;
 
@@ -824,7 +1048,7 @@ function criarFormIngresso(tipo) {
         }
 
         const setorSelect = ticketItem.querySelector(".setor-mapa-ingresso");
-        const setorMapa = (tipoMapaSelecionado() === "ilustrativo" && setorSelect?.value) ? setorSelect.value : null;
+        const setorMapa = (tipoMapaSelecionado() !== "nenhum" && setorSelect?.value) ? setorSelect.value : null;
 
                 const qtdMinima = minCompraEl.value ? parseInt(minCompraEl.value, 10) : null;
         const qtdMaxima = maxCompraEl.value ? parseInt(maxCompraEl.value, 10) : null;

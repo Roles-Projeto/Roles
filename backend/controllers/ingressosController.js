@@ -2,6 +2,11 @@
 
 const db     = require("../db/db_config");
 const crypto = require("crypto");
+const { venderAssentosReservados, gerarAssentosParaIngresso } = require("./assentosController");
+
+// Valor gravado em ingressos.tipo quando o ingresso não tem custo.
+// O criarEventos.js grava "pago" para pagos; confirme aqui o texto que ele usa para os gratuitos.
+const TIPO_GRATUITO = "gratuito";
 
 // ====================================================
 // LISTAR EVENTOS DISPONÍVEIS
@@ -134,19 +139,26 @@ async function detalheEvento(req, res) {
         res.status(500).json({ erro: "Erro interno.", detalhe: err.message });
     }
 }
-// ====================================================
-// COMPRAR INGRESSO
+// ====================================================================
+// SUBSTITUA a função comprarIngresso inteira do ingressosController.js
+// por esta, e adicione esta linha junto dos outros "require" no topo:
 //
-// REGRA DE CORTESIA: se quem está comprando (usuario_id) for o mesmo
-// usuário dono do evento (eventos.usuario_id), a compra é tratada
-// como cortesia — valor zerado, sem checagem de forma de pagamento,
-// status "cortesia". Como os KPIs do dashboard só somam receita
-// quando status é "aprovado", uma cortesia nunca entra no total de
-// vendas nem no ticket médio — mas ainda aparece na lista de vendas
-// e gera o ingresso normalmente (com QR code).
-// ====================================================
+//   const { venderAssentosReservados } = require("./assentosController");
+//
+// O que mudou em relação à versão anterior:
+//  1. quantidade validada (inteiro >= 1) — antes aceitava negativo/quebrado
+//  2. ingresso numerado exige assento_ids (mesma quantidade) e vende os assentos
+//     RESERVADOS por quem compra, na mesma transação do pedido
+//  3. usuario_id vem do token quando existe (req.usuario); o do body só é
+//     usado enquanto a rota ainda não tem o middleware verificarToken
+//  4. erros com status (400/409) lançados dentro da transação viram resposta HTTP
+// ====================================================================
 async function comprarIngresso(req, res) {
-    const { usuario_id, evento_id, itens, forma_pagamento } = req.body;
+    const { evento_id, itens, forma_pagamento } = req.body;
+
+    // Preferência: usuário do token. Fallback temporário: body (inseguro — remover
+    // depois que a rota POST /ingressos/comprar tiver verificarToken).
+    const usuario_id = req.usuario?.id ?? req.body.usuario_id;
 
     if (!usuario_id || !evento_id || !itens?.length) {
         return res.status(400).json({ erro: "Dados incompletos." });
@@ -159,12 +171,17 @@ async function comprarIngresso(req, res) {
 
         const ehCortesia = String(evento.usuario_id) === String(usuario_id);
 
-       
-
         let valor_total = 0;
         const detalhes  = [];
 
-                for (const item of itens) {
+        for (const item of itens) {
+            // Quantidade precisa ser um inteiro >= 1
+            const qtd = Number(item.quantidade);
+            if (!Number.isInteger(qtd) || qtd < 1) {
+                return res.status(400).json({ erro: "Quantidade inválida." });
+            }
+            item.quantidade = qtd;
+
             const rows = await db.query(
                 "SELECT * FROM ingressos WHERE id = ? AND evento_id = ?",
                 [item.tipo_ingresso_id, evento_id]
@@ -181,13 +198,26 @@ async function comprarIngresso(req, res) {
             }
 
             // Janela de lote (se configurada) — venda só é permitida dentro do período.
-                        // Janela de lote (se configurada) — venda só é permitida dentro do período.
             const agora = new Date();
             if (tipo.data_inicio_venda && agora < new Date(tipo.data_inicio_venda)) {
                 return res.status(400).json({ erro: `A venda de "${tipo.titulo}" ainda não começou.` });
             }
             if (tipo.data_fim_venda && agora > new Date(tipo.data_fim_venda)) {
                 return res.status(400).json({ erro: `A venda de "${tipo.titulo}" já foi encerrada.` });
+            }
+
+            // Ingresso numerado: precisa dos assentos, um para cada unidade comprada
+            let assentoIds = [];
+            if (tipo.tipo_selecao === "numerado") {
+                assentoIds = Array.isArray(item.assento_ids)
+                    ? [...new Set(item.assento_ids.map(Number))]
+                    : [];
+                if (!assentoIds.length || assentoIds.some(n => !Number.isInteger(n) || n < 1)) {
+                    return res.status(400).json({ erro: `Escolha os assentos de "${tipo.titulo}" antes de comprar.` });
+                }
+                if (assentoIds.length !== qtd) {
+                    return res.status(400).json({ erro: "A quantidade de ingressos não confere com os assentos escolhidos." });
+                }
             }
 
             // Trava de capacidade — nunca deixa vender/gerar cortesia além do
@@ -206,18 +236,22 @@ async function comprarIngresso(req, res) {
                     erro: `Ingressos insuficientes para "${tipo.titulo}": restam apenas ${Math.max(0, disponiveis)}.`
                 });
             }
-                        // Limite de quantidade máxima por compra (configurado pelo
-            // organizador na criação deste ingresso). Diferente do limite
-            // por CPF, esse olha só para o pedido atual — não impede a
-            // pessoa de fazer novas compras depois, só limita quantos
-            // ingressos ela pode levar de uma vez.
-                        // Quantidade mínima por compra (configurada pelo organizador).
+
+            // Quantidade mínima por compra (configurada pelo organizador).
             if (tipo.quantidade_min_por_compra && item.quantidade < tipo.quantidade_min_por_compra) {
                 return res.status(400).json({
                     erro: `Mínimo de ${tipo.quantidade_min_por_compra} unidade(s) de "${tipo.titulo}" por compra.`
                 });
             }
-                       // Limite de ingressos por CPF (total, somando todas as compras).
+
+            // Quantidade máxima por compra (olha só o pedido atual; não impede novas compras depois).
+            if (tipo.quantidade_max_por_compra && item.quantidade > tipo.quantidade_max_por_compra) {
+                return res.status(400).json({
+                    erro: `Máximo de ${tipo.quantidade_max_por_compra} unidade(s) de "${tipo.titulo}" por compra.`
+                });
+            }
+
+            // Limite de ingressos por CPF (total, somando todas as compras).
             // Ingressos antigos só têm limite_um_por_cpf = true, que equivale a 1.
             const limiteCpf = Number(tipo.limite_por_cpf) || (tipo.limite_um_por_cpf ? 1 : 0);
             if (limiteCpf > 0) {
@@ -253,10 +287,10 @@ async function comprarIngresso(req, res) {
                 }
             }
             valor_total += ehCortesia ? 0 : parseFloat(tipo.valor) * item.quantidade;
-            detalhes.push({ tipo, quantidade: item.quantidade });
+            detalhes.push({ tipo, quantidade: item.quantidade, assentoIds });
         }
 
-                // Ingresso gratuito (valor 0): não exige forma de pagamento,
+        // Ingresso gratuito (valor 0): não exige forma de pagamento,
         // igual à cortesia. Só compra paga de verdade precisa validar isso.
         const ehGratuito = valor_total === 0;
 
@@ -269,15 +303,10 @@ async function comprarIngresso(req, res) {
 
         const status_pagamento = ehCortesia ? "cortesia" : (ehGratuito ? "aprovado" : simularPagamento(forma_pagamento));
         const formaFinal = ehCortesia ? "cortesia" : (ehGratuito ? "gratuito" : forma_pagamento);
-               // Pedido + todas as linhas de venda entram na MESMA transação.
-        // Se qualquer INSERT de venda falhar, o pedido inteiro é revertido —
-        // nunca mais fica um pedido "órfão" sem a venda correspondente
-        // (foi exatamente esse tipo de inconsistência que já corrigimos
-        // manualmente uma vez pro evento BTS World Tour).
-        //
-        // Cada linha de `vendas` agora também grava o pedido_id — com a FK
-        // (ON DELETE CASCADE) criada na migration, excluir um pedido passa
-        // a arrastar as vendas correspondentes junto, sem deixar lixo órfão.
+
+        // Pedido + todas as linhas de venda + assentos vendidos entram na MESMA
+        // transação. Se qualquer passo falhar (inclusive uma reserva expirada),
+        // o pedido inteiro é revertido — nunca fica pedido "órfão" sem venda.
         const pedido_id = await db.transacao(async (tx) => {
             const pedidoResult = await tx.query(
                 "INSERT INTO pedidos (usuario_id, evento_id, valor_total, forma_pagamento, status) VALUES (?, ?, ?, ?, ?)",
@@ -290,6 +319,15 @@ async function comprarIngresso(req, res) {
                     "INSERT INTO vendas (pedido_id, ingresso_id, usuario_id, quantidade, valor_total, status) VALUES (?, ?, ?, ?, ?, ?)",
                     [novoPedidoId, d.tipo.id, usuario_id, d.quantidade, ehCortesia ? 0 : parseFloat(d.tipo.valor) * d.quantidade, status_pagamento]
                 );
+
+                if (d.assentoIds.length) {
+                    await venderAssentosReservados(tx, {
+                        ingressoId: d.tipo.id,
+                        assentoIds: d.assentoIds,
+                        usuarioId: usuario_id,
+                        pedidoId: novoPedidoId,
+                    });
+                }
             }
 
             return novoPedidoId;
@@ -328,10 +366,10 @@ async function comprarIngresso(req, res) {
                         totalPago:       valor_total * 1.10,
                         forma_pagamento: formaFinal,
                         ingressos:       ingressosGerados,
-                    }).catch(e => console.error("❌ Erro ao enviar e-mail:", e.message));
+                    }).catch(e => console.error("Erro ao enviar e-mail:", e.message));
                 }
             } catch (e) {
-                console.error("❌ Erro ao buscar dados para e-mail:", e.message);
+                console.error("Erro ao buscar dados para e-mail:", e.message);
             }
         }
 
@@ -347,6 +385,8 @@ async function comprarIngresso(req, res) {
         });
 
     } catch (err) {
+        // Erros de regra lançados dentro da transação (assento vendido, reserva expirada...)
+        if (err.status) return res.status(err.status).json({ erro: err.message });
         console.error("Erro ao comprar ingresso:", err);
         res.status(500).json({ erro: "Erro interno ao processar compra.", detalhe: err.message });
     }
@@ -527,7 +567,72 @@ async function reenviarEmailIngresso(req, res) {
 }
 
 // ====================================================
-// TIPOS DE INGRESSO — LISTAR (com vendidos/cortesia por tipo)
+// TIPOS DE INGRESSO — AUXILIARES (dashboard do produtor)
+// ====================================================
+function erroHttp(status, mensagem) {
+    const e = new Error(mensagem);
+    e.status = status;
+    return e;
+}
+
+// Inteiro >= 1.
+// undefined = campo não enviado (mantém o valor atual); null/"" = limpar; senão valida.
+function intOuNull(valor, nome) {
+    if (valor === undefined) return undefined;
+    if (valor === null || valor === "") return null;
+    const n = Number(valor);
+    if (!Number.isInteger(n) || n < 1) {
+        throw erroHttp(400, `${nome} precisa ser um número inteiro de 1 ou mais.`);
+    }
+    return n;
+}
+
+// Garante que o evento existe e é do usuário logado.
+async function buscarEventoDoUsuario(eventoId, usuarioId) {
+    const rows = await db.query(
+        "SELECT id, usuario_id, tipo_mapa, mapa_config FROM eventos WHERE id = ?",
+        [eventoId]
+    );
+    const evento = rows[0];
+    if (!evento) throw erroHttp(404, "Evento não encontrado.");
+    if (String(evento.usuario_id) !== String(usuarioId)) {
+        throw erroHttp(403, "Você não tem permissão para alterar os ingressos deste evento.");
+    }
+    return evento;
+}
+
+// Valida o setor escolhido contra o mapa do evento.
+//  - nenhum      -> sempre null
+//  - imagem      -> precisa ser uma das chaves em mapa_config.setores
+//  - ilustrativo -> exige um setor, mas as chaves dos templates ficam no front
+function resolverSetorMapa(evento, setorEnviado) {
+    const tipoMapa = evento.tipo_mapa || "nenhum";
+    if (tipoMapa === "nenhum") return null;
+
+    const setor = typeof setorEnviado === "string" ? setorEnviado.trim() : "";
+    if (!setor) throw erroHttp(400, "Escolha o setor do mapa para este ingresso.");
+
+    if (tipoMapa === "imagem") {
+        let cfg = evento.mapa_config;
+        if (typeof cfg === "string") {
+            try { cfg = JSON.parse(cfg); } catch { cfg = null; }
+        }
+        const chaves = (cfg?.setores || []).map(s => s.chave);
+        if (!chaves.includes(setor)) {
+            throw erroHttp(400, `O setor "${setor}" não existe no mapa deste evento.`);
+        }
+    }
+    return setor;
+}
+
+function validarJanelaVenda(inicio, fim) {
+    if (inicio && fim && new Date(inicio) >= new Date(fim)) {
+        throw erroHttp(400, "O início das vendas precisa ser antes do fim.");
+    }
+}
+
+// ====================================================
+// TIPOS DE INGRESSO — LISTAR (com vendidos/cortesia/receita por tipo)
 // GET /ingressos/tipos/:evento_id
 // Usado pelo modal "Gerenciar ingressos" do dashboard.
 // ====================================================
@@ -538,19 +643,30 @@ async function listarTiposIngresso(req, res) {
     }
 
     try {
-               const tipos = await db.query(`
+        const linhas = await db.query(`
             SELECT
                 i.id, i.evento_id, i.titulo, i.tipo, i.valor, i.quantidade_total,
                 i.ativo, i.data_inicio_venda, i.data_fim_venda,
+                i.setor_mapa, i.tipo_selecao, i.fileiras, i.assentos_por_fileira,
+                i.limite_por_cpf, i.limite_um_por_cpf, i.quantidade_min_por_compra,
                 COALESCE(SUM(CASE WHEN v.status = 'aprovado' THEN v.quantidade ELSE 0 END), 0) AS vendidos,
-                COALESCE(SUM(CASE WHEN v.status = 'cortesia' THEN v.quantidade ELSE 0 END), 0) AS cortesia
+                COALESCE(SUM(CASE WHEN v.status = 'cortesia' THEN v.quantidade ELSE 0 END), 0) AS cortesia,
+                COALESCE(SUM(CASE WHEN v.status = 'aprovado' THEN v.valor_total ELSE 0 END), 0) AS receita
             FROM ingressos i
             LEFT JOIN vendas v ON v.ingresso_id = i.id
             WHERE i.evento_id = ?
             GROUP BY i.id, i.evento_id, i.titulo, i.tipo, i.valor, i.quantidade_total,
-                     i.ativo, i.data_inicio_venda, i.data_fim_venda
+                     i.ativo, i.data_inicio_venda, i.data_fim_venda,
+                     i.setor_mapa, i.tipo_selecao, i.fileiras, i.assentos_por_fileira,
+                     i.limite_por_cpf, i.limite_um_por_cpf, i.quantidade_min_por_compra
             ORDER BY i.id ASC
         `, [evento_id]);
+
+        // Ingressos antigos só têm limite_um_por_cpf = true, que equivale a limite 1.
+        const tipos = linhas.map(({ limite_um_por_cpf, ...t }) => ({
+            ...t,
+            limite_por_cpf: t.limite_por_cpf ?? (limite_um_por_cpf ? 1 : null),
+        }));
 
         res.json(tipos);
     } catch (err) {
@@ -561,65 +677,173 @@ async function listarTiposIngresso(req, res) {
 
 // ====================================================
 // TIPOS DE INGRESSO — CRIAR
-// POST /ingressos/tipos
-// body: { evento_id, titulo, tipo, valor, quantidade_total }
+// POST /ingressos/tipos  (exige login; evento precisa ser do usuário)
+// body: { evento_id, titulo, valor, quantidade_total, ativo,
+//         data_inicio_venda, data_fim_venda, setor_mapa,
+//         limite_por_cpf, quantidade_min_por_compra,
+//         tipo_selecao ("livre"|"numerado"), fileiras, assentos_por_fileira }
+//
+// Ingresso numerado: quantidade_total = fileiras x assentos_por_fileira e a
+// grade de assentos é gerada na mesma transação do INSERT.
+// O campo "tipo" é definido aqui (pago/gratuito) a partir do valor.
 // ====================================================
 async function criarTipoIngresso(req, res) {
-    const { evento_id, titulo, tipo, valor, quantidade_total, ativo, data_inicio_venda, data_fim_venda } = req.body;
+    const usuarioId = req.usuario?.id;
+    if (!usuarioId) return res.status(401).json({ erro: "Usuário não autenticado." });
 
-    if (!evento_id || !titulo || valor == null || quantidade_total == null) {
+    const {
+        evento_id, titulo, valor, quantidade_total, ativo,
+        data_inicio_venda, data_fim_venda, setor_mapa,
+        limite_por_cpf, quantidade_min_por_compra,
+        tipo_selecao, fileiras, assentos_por_fileira,
+    } = req.body;
+
+    const tituloLimpo = typeof titulo === "string" ? titulo.trim() : "";
+    if (!evento_id || !tituloLimpo || valor == null) {
         return res.status(400).json({ erro: "Dados incompletos para criar o tipo de ingresso." });
     }
 
     try {
-        const eventoRows = await db.query("SELECT id FROM eventos WHERE id = ?", [evento_id]);
-        if (!eventoRows[0]) return res.status(404).json({ erro: "Evento não encontrado." });
+        const evento = await buscarEventoDoUsuario(evento_id, usuarioId);
 
-        const ativoFinal = ativo === false ? false : true;
+        const valorNum = parseFloat(valor);
+        if (!Number.isFinite(valorNum) || valorNum < 0) throw erroHttp(400, "Valor inválido.");
+
+        const numerado = tipo_selecao === "numerado";
+        let qtdFileiras = null;
+        let qtdAssentos = null;
+        let total;
+
+        if (numerado) {
+            qtdFileiras = intOuNull(fileiras, "Fileiras");
+            qtdAssentos = intOuNull(assentos_por_fileira, "Assentos por fileira");
+            if (!qtdFileiras || !qtdAssentos) {
+                throw erroHttp(400, "Informe as fileiras e os assentos por fileira.");
+            }
+            total = qtdFileiras * qtdAssentos;
+        } else {
+            total = parseInt(quantidade_total, 10);
+            if (!Number.isInteger(total) || total < 1) {
+                throw erroHttp(400, "A quantidade total precisa ser 1 ou mais.");
+            }
+        }
+
+        const limiteCpf = intOuNull(limite_por_cpf, "Limite por CPF") ?? null;
+        const qtdMin = intOuNull(quantidade_min_por_compra, "Quantidade mínima") ?? null;
+        if (limiteCpf && qtdMin && qtdMin > limiteCpf) {
+            throw erroHttp(400, "A quantidade mínima não pode ser maior que o limite por CPF.");
+        }
+
         const inicioFinal = data_inicio_venda || null;
         const fimFinal = data_fim_venda || null;
+        validarJanelaVenda(inicioFinal, fimFinal);
 
-        const result = await db.query(
-            "INSERT INTO ingressos (evento_id, titulo, tipo, valor, quantidade_total, ativo, data_inicio_venda, data_fim_venda) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            [evento_id, titulo, tipo || null, parseFloat(valor), parseInt(quantidade_total), ativoFinal, inicioFinal, fimFinal]
-        );
-        const novoId = result.insertId ?? result[0]?.id;
+        const setorFinal = resolverSetorMapa(evento, setor_mapa);
+        const ativoFinal = ativo === false ? false : true;
+        const tipoFinal = valorNum > 0 ? "pago" : TIPO_GRATUITO;
+
+        const novoId = await db.transacao(async (tx) => {
+            const r = await tx.query(
+                `INSERT INTO ingressos
+                    (evento_id, titulo, tipo, valor, quantidade_total, ativo,
+                     data_inicio_venda, data_fim_venda, setor_mapa,
+                     tipo_selecao, fileiras, assentos_por_fileira,
+                     limite_por_cpf, quantidade_min_por_compra)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    evento_id, tituloLimpo, tipoFinal, valorNum, total, ativoFinal,
+                    inicioFinal, fimFinal, setorFinal,
+                    numerado ? "numerado" : "livre", qtdFileiras, qtdAssentos,
+                    limiteCpf, qtdMin,
+                ]
+            );
+            const id = r.insertId ?? r[0]?.id;
+            if (!id) throw new Error("Não foi possível obter o id do novo ingresso.");
+
+            if (numerado) {
+                await gerarAssentosParaIngresso(tx, id, qtdFileiras, qtdAssentos);
+            }
+            return id;
+        });
 
         res.status(201).json({
             id: novoId,
             evento_id,
-            titulo,
-            tipo: tipo || null,
-            valor: parseFloat(valor),
-            quantidade_total: parseInt(quantidade_total),
+            titulo: tituloLimpo,
+            tipo: tipoFinal,
+            valor: valorNum,
+            quantidade_total: total,
             ativo: ativoFinal,
             data_inicio_venda: inicioFinal,
             data_fim_venda: fimFinal,
+            setor_mapa: setorFinal,
+            tipo_selecao: numerado ? "numerado" : "livre",
+            fileiras: qtdFileiras,
+            assentos_por_fileira: qtdAssentos,
+            limite_por_cpf: limiteCpf,
+            quantidade_min_por_compra: qtdMin,
             vendidos: 0,
             cortesia: 0,
+            receita: 0,
         });
     } catch (err) {
+        if (err.status) return res.status(err.status).json({ erro: err.message });
         console.error("Erro ao criar tipo de ingresso:", err);
         res.status(500).json({ erro: "Erro ao criar tipo de ingresso.", detalhe: err.message });
     }
 }
+
 // ====================================================
 // TIPOS DE INGRESSO — EDITAR
-// PUT /ingressos/tipos/:id
-// body: { titulo, tipo, valor, quantidade_total }
+// PUT /ingressos/tipos/:id  (exige login; evento precisa ser do usuário)
+// body (todos opcionais; o que não vier é mantido como está):
+//   { titulo, valor, quantidade_total, ativo, data_inicio_venda, data_fim_venda,
+//     setor_mapa, limite_por_cpf, quantidade_min_por_compra }
 //
-// Não deixa reduzir quantidade_total abaixo do que já foi vendido
-// ou dado como cortesia — evitaria "sumir" com histórico de vendas.
+// Regras:
+//  - quantidade_total não pode ficar abaixo do que já foi vendido/cortesia
+//  - ingresso numerado: a quantidade vem da grade de assentos, então não muda aqui
+//  - tipo_selecao, fileiras e assentos_por_fileira não são alterados aqui
+//  - o campo "tipo" é recalculado a partir do valor (pago/gratuito); o texto
+//    enviado pelo cliente é ignorado
+//  - limite_por_cpf null remove o limite (inclusive o limite_um_por_cpf antigo)
 // ====================================================
 async function atualizarTipoIngresso(req, res) {
+    const usuarioId = req.usuario?.id;
+    if (!usuarioId) return res.status(401).json({ erro: "Usuário não autenticado." });
+
     const { id } = req.params;
-    const { titulo, tipo, valor, quantidade_total, ativo, data_inicio_venda, data_fim_venda } = req.body;
+    const {
+        titulo, valor, quantidade_total, ativo,
+        data_inicio_venda, data_fim_venda, setor_mapa,
+        limite_por_cpf, quantidade_min_por_compra,
+    } = req.body;
 
     try {
         const rows = await db.query("SELECT * FROM ingressos WHERE id = ?", [id]);
         const atual = rows[0];
         if (!atual) return res.status(404).json({ erro: "Tipo de ingresso não encontrado." });
 
+        const evento = await buscarEventoDoUsuario(atual.evento_id, usuarioId);
+
+        // título
+        let tituloFinal = atual.titulo;
+        if (titulo !== undefined) {
+            tituloFinal = typeof titulo === "string" ? titulo.trim() : "";
+            if (!tituloFinal) throw erroHttp(400, "Dê um nome para o tipo de ingresso.");
+        }
+
+        // valor + tipo (pago/gratuito)
+        let valorFinal = Number(atual.valor);
+        if (valor !== undefined && valor !== null && valor !== "") {
+            valorFinal = parseFloat(valor);
+            if (!Number.isFinite(valorFinal) || valorFinal < 0) throw erroHttp(400, "Valor inválido.");
+        }
+        let tipoFinal = atual.tipo;
+        if (valorFinal > 0) tipoFinal = "pago";
+        else if (atual.tipo === "pago") tipoFinal = TIPO_GRATUITO;
+
+        // quantidade total
         const ocupadosRows = await db.query(`
             SELECT COALESCE(SUM(quantidade), 0) AS total
             FROM vendas
@@ -627,48 +851,79 @@ async function atualizarTipoIngresso(req, res) {
         `, [id]);
         const jaOcupados = Number(ocupadosRows[0]?.total) || 0;
 
-        const novoTotal = quantidade_total != null ? parseInt(quantidade_total) : atual.quantidade_total;
+        const novoTotal = quantidade_total != null && quantidade_total !== ""
+            ? parseInt(quantidade_total, 10)
+            : Number(atual.quantidade_total);
+        if (!Number.isInteger(novoTotal) || novoTotal < 0) throw erroHttp(400, "Quantidade total inválida.");
+
+        if (atual.tipo_selecao === "numerado" && novoTotal !== Number(atual.quantidade_total)) {
+            throw erroHttp(400, "Neste ingresso numerado a quantidade é definida pela grade de assentos e não pode ser alterada aqui.");
+        }
         if (novoTotal < jaOcupados) {
-            return res.status(400).json({
-                erro: `Quantidade total não pode ser menor que o já ocupado (${jaOcupados} ingressos entre vendidos e cortesia).`
-            });
+            throw erroHttp(400, `Quantidade total não pode ser menor que o já ocupado (${jaOcupados} ingressos entre vendidos e cortesia).`);
         }
 
+        // período de vendas e venda ativa
         const ativoFinal = ativo != null ? !!ativo : atual.ativo;
         const inicioFinal = data_inicio_venda !== undefined ? (data_inicio_venda || null) : atual.data_inicio_venda;
         const fimFinal = data_fim_venda !== undefined ? (data_fim_venda || null) : atual.data_fim_venda;
+        validarJanelaVenda(inicioFinal, fimFinal);
+
+        // setor do mapa
+        const setorFinal = setor_mapa === undefined
+            ? atual.setor_mapa
+            : resolverSetorMapa(evento, setor_mapa);
+
+        // regras por pessoa
+        const limiteNovo = intOuNull(limite_por_cpf, "Limite por CPF");
+        const minNovo = intOuNull(quantidade_min_por_compra, "Quantidade mínima");
+        const limiteFinal = limiteNovo === undefined ? atual.limite_por_cpf : limiteNovo;
+        const minFinal = minNovo === undefined ? atual.quantidade_min_por_compra : minNovo;
+        if (limiteFinal && minFinal && Number(minFinal) > Number(limiteFinal)) {
+            throw erroHttp(400, "A quantidade mínima não pode ser maior que o limite por CPF.");
+        }
+        // Se o produtor mexeu no limite, o flag antigo "1 por CPF" deixa de valer.
+        const umPorCpfFinal = limiteNovo === undefined ? atual.limite_um_por_cpf : false;
 
         await db.query(
-            "UPDATE ingressos SET titulo = ?, tipo = ?, valor = ?, quantidade_total = ?, ativo = ?, data_inicio_venda = ?, data_fim_venda = ? WHERE id = ?",
+            `UPDATE ingressos SET
+                titulo = ?, tipo = ?, valor = ?, quantidade_total = ?, ativo = ?,
+                data_inicio_venda = ?, data_fim_venda = ?, setor_mapa = ?,
+                limite_por_cpf = ?, limite_um_por_cpf = ?, quantidade_min_por_compra = ?
+             WHERE id = ?`,
             [
-                titulo ?? atual.titulo,
-                tipo ?? atual.tipo,
-                valor != null ? parseFloat(valor) : atual.valor,
-                novoTotal,
-                ativoFinal,
-                inicioFinal,
-                fimFinal,
-                id
+                tituloFinal, tipoFinal, valorFinal, novoTotal, ativoFinal,
+                inicioFinal, fimFinal, setorFinal,
+                limiteFinal ?? null, umPorCpfFinal ?? null, minFinal ?? null,
+                id,
             ]
         );
 
         res.json({ mensagem: "Tipo de ingresso atualizado com sucesso." });
     } catch (err) {
+        if (err.status) return res.status(err.status).json({ erro: err.message });
         console.error("Erro ao atualizar tipo de ingresso:", err);
         res.status(500).json({ erro: "Erro ao atualizar tipo de ingresso.", detalhe: err.message });
     }
 }
 // ====================================================
 // TIPOS DE INGRESSO — EXCLUIR
-// DELETE /ingressos/tipos/:id
+// DELETE /ingressos/tipos/:id  (exige login; evento precisa ser do usuário)
 //
 // Bloqueia exclusão se já existir venda aprovada ou cortesia
 // vinculada a esse tipo, pra não perder o histórico.
 // ====================================================
 async function excluirTipoIngresso(req, res) {
+    const usuarioId = req.usuario?.id;
+    if (!usuarioId) return res.status(401).json({ erro: "Usuário não autenticado." });
+
     const { id } = req.params;
 
     try {
+        const rows = await db.query("SELECT evento_id FROM ingressos WHERE id = ?", [id]);
+        if (!rows[0]) return res.status(404).json({ erro: "Tipo de ingresso não encontrado." });
+        await buscarEventoDoUsuario(rows[0].evento_id, usuarioId);
+
         const ocupadosRows = await db.query(`
             SELECT COALESCE(SUM(quantidade), 0) AS total
             FROM vendas
@@ -685,6 +940,7 @@ async function excluirTipoIngresso(req, res) {
         await db.query("DELETE FROM ingressos WHERE id = ?", [id]);
         res.json({ mensagem: "Tipo de ingresso excluído com sucesso." });
     } catch (err) {
+        if (err.status) return res.status(err.status).json({ erro: err.message });
         console.error("Erro ao excluir tipo de ingresso:", err);
         res.status(500).json({ erro: "Erro ao excluir tipo de ingresso.", detalhe: err.message });
     }

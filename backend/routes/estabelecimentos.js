@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db/db_config");
-const verificarToken = require("../middleware/auth");
+const { verificarToken } = require("../middleware/auth");
 
 // ── Upload de imagens (Supabase Storage) ──
 const { usarSupabase, criarStorage, uploadParaSupabase } = require("../utils/supabaseUpload");

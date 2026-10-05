@@ -47,5 +47,7 @@ function autenticacaoOpcional(req, res, next) {
   next();
 }
 
-module.exports = verificarToken;
-module.exports.autenticacaoOpcional = autenticacaoOpcional;
+module.exports = {
+    verificarToken,
+    autenticacaoOpcional
+};

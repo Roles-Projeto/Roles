@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const assentosController = require("../controllers/assentosController");
-const verificarToken = require("../middleware/auth");
+const { verificarToken } = require("../middleware/auth");
 const { autenticacaoOpcional } = require("../middleware/auth");
 
 // Lista os assentos de um ingresso (setor numerado) com status calculado.

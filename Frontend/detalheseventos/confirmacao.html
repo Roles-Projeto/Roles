@@ -33,9 +33,9 @@
       .gx-grid-baixo .acoes-card { display: flex; flex-direction: column; justify-content: center; }
       @media (max-width: 760px) { .gx-grid-baixo { grid-template-columns: minmax(0, 1fr) !important; } }
 
-      .gx-ticket { position: relative; display: flex; background: #2a0b5e; border-radius: 20px; overflow: hidden; margin-bottom: 18px; }
+      .gx-ticket { position: relative; display: flex; min-height: 240px; background: #2a0b5e; border-radius: 20px; overflow: hidden; margin-bottom: 18px; }
       .gx-deco { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-      .gx-t-main { position: relative; flex: 1; min-width: 0; padding: 24px; display: flex; gap: 22px; align-items: center; }
+      .gx-t-main { position: relative; flex: 1; min-width: 0; padding: 24px; display: flex; gap: 22px; align-items: center; justify-content: center; }
       .gx-data { flex: 0 0 82px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 0; background: #fff; border-radius: 14px; text-align: center; }
       .gx-data .gx-mes { font-size: 13px; font-weight: 600; color: #6c1dce; }
       .gx-data .gx-dia { font-size: 36px; line-height: 1; font-weight: 700; color: #2a0b5e; }
@@ -53,8 +53,24 @@
       .gx-t-seam::before, .gx-t-seam::after { content: ""; position: absolute; left: -13px; width: 24px; height: 24px; border-radius: 50%; background: #f4f3f8; }
       .gx-t-seam::before { top: -12px; }
       .gx-t-seam::after { bottom: -12px; }
-      .gx-t-stub { position: relative; flex: 0 0 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 18px 16px; background: #fff; }
+      .gx-t-stub { position: relative; flex: 0 0 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 28px 16px; background: #fff; }
       .gx-t-qr { width: 120px; height: 120px; display: block; }
+      .gx-t-lock { flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 120px; height: 120px; border-radius: 12px; background: #f4f1fc; color: #6c1dce; font-size: 12px; text-align: center; padding: 8px; }
+      .gx-t-lock i { font-size: 30px; }
+
+      /* Ingressos pagos/pendentes: cartão de pagamento em duas colunas, sem vazio */
+      .gx-grid-baixo.gx-pago { grid-template-columns: minmax(0, 1fr) !important; }
+      .gx-pago .pagamento-card { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 36px; row-gap: 12px; align-content: start; }
+      .gx-pago .pagamento-card > * { margin: 0 !important; }
+      .gx-pago .pagamento-card .section-title { grid-column: 1 / -1; }
+      .gx-pago .pagamento-card .price-summary { grid-column: 1; grid-row: 2; }
+      .gx-pago .pagamento-card .pagamento-label { grid-column: 1; grid-row: 3; align-self: start; }
+      .gx-pago .pagamento-card .email-notice { grid-column: 2; grid-row: 2; align-self: start; }
+      .gx-pago .pagamento-card .actions-buttons { grid-column: 2; grid-row: 3; align-self: start; }
+      .gx-pago .acoes-card { flex-direction: row !important; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 28px; }
+      .gx-pago .acoes-card .btn-primary { width: auto !important; min-width: 260px; margin: 0 !important; }
+      @media (max-width: 760px) { .gx-pago .pagamento-card { display: block !important; } .gx-pago .pagamento-card > * { margin-bottom: 12px !important; } }
+
       .gx-t-pedido { font-size: 12.5px; color: #5d5873; }
       .gx-btn-entrada { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; white-space: nowrap; padding: 10px 12px; font: inherit; font-size: 13px; font-weight: 600; color: #fff; background: #6c1dce; border: none; border-radius: 10px; cursor: pointer; transition: background 0.15s ease; }
       .gx-btn-entrada:hover, .gx-btn-entrada:focus-visible { background: #5a16b0; outline: none; }
@@ -234,6 +250,7 @@
 
                     <div class="gx-t-stub">
                       <img class="gx-t-qr" id="gx-t-qr" alt="QR Code do ingresso" src="" />
+                      <div class="gx-t-lock" id="gx-t-lock" style="display: none"><i class="fas fa-lock"></i><span>Liberado após o pagamento</span></div>
                       <span class="gx-t-pedido" id="gx-t-pedido">Pedido #—</span>
                       <button type="button" class="gx-btn-entrada" id="btn-mostrar-qr" style="display: none">
                         <i class="fas fa-expand"></i> Mostrar na entrada
@@ -263,7 +280,7 @@
 
                     <div class="gx-lembrete">
                       <i class="far fa-lightbulb"></i>
-                      <span>Chegue 15 min antes e leve RG ou CNH. O PDF do ingresso também foi enviado por e-mail.</span>
+                      <span id="gx-lembrete-texto">Chegue 15 min antes e leve RG ou CNH. O PDF do ingresso também foi enviado por e-mail.</span>
                     </div>
                   </div>
                 </div>

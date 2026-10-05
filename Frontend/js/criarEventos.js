@@ -120,16 +120,28 @@ function validarEtapa(index) {
     // Ingressos: ao menos 1 ingresso criado
     // Publicação: nome do produtor, termos
     if (index === 2) {
-        if (listaIngressos.length === 0) {
-            alert("Adicione ao menos um ingresso (pago ou gratuito) antes de continuar.");
+    if (listaIngressos.length === 0) {
+        alert("Adicione ao menos um ingresso (pago ou gratuito) antes de continuar.");
+        return false;
+    }
+
+    if (tipoMapaSelecionado() === "imagem") {
+        if (!mapaImagem) { alert("Envie o PNG do mapa do evento."); return false; }
+        if (!setoresImagem.length) { alert("Cadastre ao menos um setor para o mapa."); return false; }
+        const semArea = setoresImagem.find(s => !s.areas || !s.areas.length);
+if (semArea) { alert(`Marque no mapa a área do setor "${semArea.nome}".`); return false; }
+        const chaves = setoresImagem.map(s => s.chave);
+        if (listaIngressos.some(i => !i.setor_mapa || !chaves.includes(i.setor_mapa))) {
+            alert("Todos os ingressos precisam ter um setor do mapa. Edite os ingressos sem setor ou com setor inválido.");
             return false;
         }
+    }
 
-        const produtor = document.getElementById("producer-name");
-        const termos = document.getElementById("terms");
-        if (!produtor?.value?.trim()) { marcarErro(produtor); alerta("Informe o nome do produtor.", produtor); return false; }
-        if (!termos?.checked) { alert("Você precisa aceitar os Termos de Uso para publicar."); return false; }
-        return true;
+    const produtor = document.getElementById("producer-name");
+    const termos = document.getElementById("terms");
+    if (!produtor?.value?.trim()) { marcarErro(produtor); alerta("Informe o nome do produtor.", produtor); return false; }
+       if (!termos?.checked) { alert("Você precisa aceitar os Termos de Uso para publicar."); return false; }
+    return true;
     }
 
     return true;
@@ -137,7 +149,6 @@ function validarEtapa(index) {
 
 // ====================================================
 // BOTÃO PRÓXIMO
-// ====================================================
 nextBtn.addEventListener("click", () => {
     if (!validarEtapa(currentStep)) return;
     if (currentStep === steps.length - 1) { mostrarResumo(); return; }
@@ -207,17 +218,24 @@ cancelarBtn.addEventListener("click", () => {
     modal.style.display = "none";
     stepNavigation.style.display = "flex";
 });
-
+async function uploadImagem(file) {
+    const formData = new FormData();
+    formData.append("imagem", file);
+    const res = await fetch(`${API_BASE}/eventos/upload-imagem`, { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.erro ? `${data.erro} ${data.detalhes || ""}` : `Erro ${res.status} ao enviar imagem.`);
+    if (!data.url) throw new Error("O upload não retornou uma URL válida.");
+    return data.url;
+}
 // ====================================================
 // CONFIRMAR PUBLICAÇÃO
 // ====================================================
 confirmarBtn.addEventListener("click", async () => {
-    const token = localStorage.getItem("token");
-
     const dataInicio = document.getElementById("start-date")?.value;
     const horaInicio = document.getElementById("start-time")?.value;
     const dataFim = document.getElementById("end-date")?.value;
     const horaFim = document.getElementById("end-time")?.value;
+    
 
     confirmarBtn.disabled = true;
     confirmarBtn.textContent = "Publicando...";
@@ -250,7 +268,20 @@ confirmarBtn.addEventListener("click", async () => {
         return `${date} ${time}:00`;
     };
 
-    const { tipo_mapa, mapa_config } = montarDadosMapa();
+    let mapaImagemUrl = null;
+if (tipoMapaSelecionado() === "imagem" && mapaImagem) {
+    try {
+        mapaImagemUrl = await uploadImagem(mapaImagem);
+    } catch (err) {
+        console.error("Erro no upload do mapa:", err);
+        alert("❌ Não foi possível enviar o mapa: " + err.message + "\n\nA publicação foi cancelada. Corrija e tente novamente.");
+        confirmarBtn.disabled = false;
+        confirmarBtn.textContent = "Confirmar publicação";
+        return;
+    }
+}
+
+const { tipo_mapa, mapa_config } = montarDadosMapa(mapaImagemUrl);
 
     const evento = {
         nome: document.getElementById("event-name")?.value?.trim(),
@@ -271,7 +302,8 @@ confirmarBtn.addEventListener("click", async () => {
         ingressos: listaIngressos,
     };
 
-    try {
+        try {
+        const token = localStorage.getItem("token");
         const response = await fetch(API_URL, {
             method: "POST",
             headers: {
@@ -281,18 +313,7 @@ confirmarBtn.addEventListener("click", async () => {
             body: JSON.stringify(evento),
         });
         const data = await response.json();
-
-        if (!response.ok) {
-            confirmarBtn.disabled = false;
-            confirmarBtn.textContent = "Confirmar publicação";
-            if (response.status === 401) {
-                alert("Sua sessão expirou. Faça login novamente.");
-                logout();
-                return;
-            }
-            throw new Error(data.erro + " | " + (data.detalhes || ""));
-        }
-
+        if (!response.ok) { confirmarBtn.disabled = false; confirmarBtn.textContent = "Confirmar publicação"; throw new Error(data.erro + " | " + (data.detalhes || "")); }
         localStorage.removeItem("rascunhoEvento");
         modal.style.display = "none";
         window.location.replace("../eventos/eventos.html");
@@ -502,6 +523,191 @@ const mapaTipoGroup = document.getElementById("mapa-tipo-group");
 const mapaTemplateGroup = document.getElementById("mapa-template-group");
 const mapaTemplateSelect = document.getElementById("mapa-template");
 
+const mapaImagemGroup = document.getElementById("mapa-imagem-group");
+const mapaImagemDrop = document.getElementById("mapa-imagem-drop");
+const mapaSetorNovo = document.getElementById("mapa-setor-novo");
+const mapaSetorAdd = document.getElementById("mapa-setor-add");
+const mapaSetoresLista = document.getElementById("mapa-setores-lista");
+
+let mapaImagem = null;          // File do PNG
+const setoresImagem = [];       // [{ chave, nome }]
+
+const slugify = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
+// ---------- upload do PNG do mapa ----------
+const mapaFileInput = document.createElement("input");
+mapaFileInput.type = "file"; mapaFileInput.accept = "image/png"; mapaFileInput.style.display = "none";
+document.body.appendChild(mapaFileInput);
+
+mapaImagemDrop?.addEventListener("click", (e) => {
+    if (e.target.closest("#mapa-editor")) return;
+    mapaFileInput.click();
+});
+mapaFileInput.addEventListener("change", e => processarImagemMapa(e.target.files[0]));
+mapaImagemDrop?.addEventListener("dragover", e => { e.preventDefault(); mapaImagemDrop.style.border = "2px dashed #7c3aed"; });
+mapaImagemDrop?.addEventListener("dragleave", () => { mapaImagemDrop.style.border = ""; });
+mapaImagemDrop?.addEventListener("drop", e => {
+    e.preventDefault(); mapaImagemDrop.style.border = "";
+    processarImagemMapa(e.dataTransfer.files[0]);
+});
+function processarImagemMapa(file) {
+    if (!file) return;
+    if (file.type !== "image/png") { alert("O mapa deve ser um arquivo PNG."); return; }
+    if (file.size > 5 * 1024 * 1024) { alert("Imagem do mapa muito grande. Máximo 5MB."); return; }
+    mapaImagem = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+        mapaImagemDrop.innerHTML = "";
+        mapaImagemDrop.style.cssText += ";height:auto !important;min-height:0 !important;max-height:none !important;overflow:visible !important;width:100% !important;max-width:900px !important;padding:0 !important;display:block !important;";
+        const wrap = document.createElement("div");
+        wrap.id = "mapa-editor";
+        wrap.style.cssText = "position:relative;width:100%;line-height:0;user-select:none;touch-action:none;";
+        const img = document.createElement("img");
+        img.src = e.target.result;
+        img.draggable = false;
+        img.style.cssText = "width:100%;height:auto;display:block;border-radius:8px;";
+        const camada = document.createElement("div");
+        camada.id = "mapa-editor-camada";
+        camada.style.cssText = "position:absolute;inset:0;cursor:crosshair;";
+        wrap.append(img, camada);
+        mapaImagemDrop.appendChild(wrap);
+        ativarDesenhoAreas(camada);
+        renderizarAreasEditor();
+    };
+    reader.readAsDataURL(file);
+}
+// ---------- setores do mapa em imagem ----------
+function renderizarSetoresImagem() {
+    mapaSetoresLista.innerHTML = "";
+    setoresImagem.forEach((s, i) => {
+        const qtd = (s.areas || []).length;
+        const li = document.createElement("li");
+        li.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;";
+        const nome = document.createElement("span");
+        nome.textContent = s.nome + (qtd ? ` ✅ (${qtd} ${qtd === 1 ? "área" : "áreas"})` : " (sem área)");
+        const acoes = document.createElement("span");
+        acoes.style.cssText = "display:flex;gap:6px;";
+
+        const marcar = document.createElement("button");
+        marcar.type = "button"; marcar.className = "btn-editar";
+        marcar.textContent = setorParaDesenhar === s.chave ? "Desenhando... (clique para parar)" : (qtd ? "Adicionar área" : "Marcar no mapa");
+        marcar.addEventListener("click", () => {
+            if (!mapaImagem) { alert("Envie o PNG do mapa primeiro."); return; }
+            setorParaDesenhar = setorParaDesenhar === s.chave ? null : s.chave;
+            renderizarSetoresImagem();
+        });
+        acoes.appendChild(marcar);
+
+        if (qtd) {
+            const limpar = document.createElement("button");
+            limpar.type = "button"; limpar.className = "btn-editar";
+            limpar.textContent = "Limpar áreas";
+            limpar.addEventListener("click", () => { s.areas = []; renderizarSetoresImagem(); });
+            acoes.appendChild(limpar);
+        }
+
+        const btn = document.createElement("button");
+        btn.type = "button"; btn.className = "btn-excluir"; btn.textContent = "Remover";
+        btn.addEventListener("click", () => removerSetorImagem(i));
+        acoes.appendChild(btn);
+
+        li.append(nome, acoes);
+        mapaSetoresLista.appendChild(li);
+    });
+    renderizarAreasEditor();
+    atualizarCamposSetorNosFormulariosAbertos();
+}
+function adicionarSetorImagem() {
+    const nome = mapaSetorNovo.value.trim();
+    if (!nome) { marcarErro(mapaSetorNovo); alerta("Informe o nome do setor.", mapaSetorNovo); return; }
+    const chave = slugify(nome);
+    if (!chave) { alerta("Nome de setor inválido.", mapaSetorNovo); return; }
+    if (setoresImagem.some(s => s.chave === chave)) { alerta("Esse setor já foi adicionado.", mapaSetorNovo); return; }
+    setoresImagem.push({ chave, nome });
+    mapaSetorNovo.value = "";
+    renderizarSetoresImagem();
+}
+
+function removerSetorImagem(i) {
+    const emUso = listaIngressos.some(ing => ing.setor_mapa === setoresImagem[i].chave);
+    if (emUso) { alert("Esse setor está sendo usado por um ingresso. Edite ou exclua o ingresso primeiro."); return; }
+    setoresImagem.splice(i, 1);
+    renderizarSetoresImagem();
+}
+// ---------- áreas clicáveis do mapa em imagem ----------
+let setorParaDesenhar = null; // chave do setor escolhido na lista
+
+function renderizarAreasEditor() {
+    const camada = document.getElementById("mapa-editor-camada");
+    if (!camada) return;
+    camada.innerHTML = "";
+    setoresImagem.forEach(s => {
+        (s.areas || []).forEach(a => {
+            const el = document.createElement("div");
+            el.style.cssText = `position:absolute;left:${a.x}%;top:${a.y}%;width:${a.w}%;height:${a.h}%;` +
+                "border:2px solid #7c3aed;background:rgba(124,58,237,.3);box-sizing:border-box;" +
+                "display:flex;align-items:center;justify-content:center;pointer-events:none;overflow:hidden;";
+            const t = document.createElement("span");
+            t.textContent = s.nome;
+            t.style.cssText = "font:700 10px sans-serif;color:#fff;background:#6c2bd9;padding:1px 4px;border-radius:4px;line-height:1.2;white-space:nowrap;";
+            el.appendChild(t);
+            camada.appendChild(el);
+        });
+    });
+}
+function ativarDesenhoAreas(camada) {
+    let inicio = null, previa = null;
+    const pos = (ev) => {
+        const r = camada.getBoundingClientRect();
+        return {
+            x: Math.min(100, Math.max(0, (ev.clientX - r.left) / r.width * 100)),
+            y: Math.min(100, Math.max(0, (ev.clientY - r.top) / r.height * 100))
+        };
+    };
+
+    camada.addEventListener("pointerdown", ev => {
+        if (!setorParaDesenhar) { alert("Primeiro clique em \"Marcar no mapa\" ao lado do setor que você quer desenhar."); return; }
+        camada.setPointerCapture(ev.pointerId);
+        inicio = pos(ev);
+        previa = document.createElement("div");
+        previa.style.cssText = "position:absolute;border:2px dashed #7c3aed;background:rgba(124,58,237,.2);pointer-events:none;";
+        camada.appendChild(previa);
+    });
+
+    camada.addEventListener("pointermove", ev => {
+        if (!inicio || !previa) return;
+        const p = pos(ev);
+        previa.style.left = Math.min(inicio.x, p.x) + "%";
+        previa.style.top = Math.min(inicio.y, p.y) + "%";
+        previa.style.width = Math.abs(p.x - inicio.x) + "%";
+        previa.style.height = Math.abs(p.y - inicio.y) + "%";
+    });
+
+    camada.addEventListener("pointerup", ev => {
+        if (!inicio) return;
+        const p = pos(ev);
+        const area = {
+            x: +Math.min(inicio.x, p.x).toFixed(2),
+            y: +Math.min(inicio.y, p.y).toFixed(2),
+            w: +Math.abs(p.x - inicio.x).toFixed(2),
+            h: +Math.abs(p.y - inicio.y).toFixed(2)
+        };
+        inicio = null;
+        previa?.remove(); previa = null;
+        if (area.w < 1 || area.h < 1) return; // clique sem arrastar
+                const setor = setoresImagem.find(s => s.chave === setorParaDesenhar);
+        if (setor) {
+            if (!Array.isArray(setor.areas)) setor.areas = [];
+            setor.areas.push(area);
+        }
+        // O setor continua selecionado: dá para desenhar a próxima área em seguida
+        renderizarSetoresImagem();
+    });
+}
+mapaSetorAdd?.addEventListener("click", adicionarSetorImagem);
+mapaSetorNovo?.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); adicionarSetorImagem(); } });
+
 function tipoMapaSelecionado() {
     const radio = mapaTipoGroup?.querySelector('input[name="tipo-mapa"]:checked');
     return radio ? radio.value : "nenhum";
@@ -511,19 +717,22 @@ function templateMapaSelecionado() {
     return mapaTemplateSelect?.value || "arena";
 }
 
-function setoresDoTemplateAtual() {
-    const tpl = TEMPLATES_MAPA[templateMapaSelecionado()];
-    return tpl ? tpl.setores : [];
+function setoresDoMapaAtual() {
+    const tipo = tipoMapaSelecionado();
+    if (tipo === "ilustrativo") return TEMPLATES_MAPA[templateMapaSelecionado()]?.setores || [];
+    if (tipo === "imagem") return setoresImagem;
+    return [];
 }
 
-// Monta o payload de tipo_mapa/mapa_config a partir da seleção atual
-function montarDadosMapa() {
+// recebe a URL já enviada (null se ainda não subiu)
+function montarDadosMapa(imagemUrl = null) {
     const tipo = tipoMapaSelecionado();
     if (tipo === "ilustrativo") {
         return { tipo_mapa: "ilustrativo", mapa_config: { template: templateMapaSelecionado() } };
     }
-    // "imagem" ainda não está disponível (opção desabilitada no HTML);
-    // qualquer outro caso cai em "nenhum"
+    if (tipo === "imagem") {
+        return { tipo_mapa: "imagem", mapa_config: { imagem_url: imagemUrl, setores: setoresImagem } };
+    }
     return { tipo_mapa: "nenhum", mapa_config: null };
 }
 
@@ -533,6 +742,9 @@ function obterTextoMapaResumo() {
         const tpl = TEMPLATES_MAPA[templateMapaSelecionado()];
         return `Ilustrativo — ${tpl ? tpl.nome : templateMapaSelecionado()}`;
     }
+    if (tipo === "imagem") {
+        return `Imagem própria (${setoresImagem.length} setor${setoresImagem.length === 1 ? "" : "es"})`;
+    }
     return "Sem mapa";
 }
 
@@ -541,6 +753,7 @@ function obterTextoMapaResumo() {
 function atualizarVisibilidadeMapa() {
     const tipo = tipoMapaSelecionado();
     if (mapaTemplateGroup) mapaTemplateGroup.style.display = tipo === "ilustrativo" ? "block" : "none";
+    if (mapaImagemGroup) mapaImagemGroup.style.display = tipo === "imagem" ? "block" : "none";
     atualizarCamposSetorNosFormulariosAbertos();
 }
 
@@ -560,8 +773,8 @@ function preencherCampoSetor(ticketItem) {
     const select = ticketItem.querySelector(".setor-mapa-ingresso");
     if (!label || !select) return;
 
-    const tipo = tipoMapaSelecionado();
-    if (tipo !== "ilustrativo") {
+    const setores = setoresDoMapaAtual();
+    if (tipoMapaSelecionado() === "nenhum" || !setores.length) {
         label.style.display = "none";
         select.style.display = "none";
         select.innerHTML = "";
@@ -569,7 +782,6 @@ function preencherCampoSetor(ticketItem) {
     }
 
     const valorAtual = select.value;
-    const setores = setoresDoTemplateAtual();
     select.innerHTML = setores.map(s => `<option value="${s.chave}">${s.nome}</option>`).join("");
     if (setores.some(s => s.chave === valorAtual)) select.value = valorAtual;
 
@@ -594,56 +806,220 @@ document.querySelectorAll(".btn-ticket-action").forEach(btn => {
     });
 });
 
+function injetarEstiloFormIngresso() {
+    if (document.getElementById("tkFormStyle")) return;
+    const s = document.createElement("style");
+    s.id = "tkFormStyle";
+    s.textContent = `
+        .ticket-item .tk-secao { margin-top: 24px; padding-top: 20px; border-top: 1px solid #e9e7f0; }
+        .ticket-item .tk-secao-titulo { margin: 0 0 2px; font-size: 15px; font-weight: 800; color: #14121f; text-transform: none; letter-spacing: normal; }
+        .ticket-item .tk-secao-sub { margin: 0 0 6px; font-size: 12.5px; font-weight: 400; color: #7a7590; text-transform: none; letter-spacing: normal; }
+        .ticket-item .tk-campo { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+        .ticket-item .tk-linha { display: flex; gap: 16px; flex-wrap: wrap; }
+        .ticket-item .tk-linha > .tk-campo { flex: 1; min-width: 200px; }
+        .ticket-item .tk-dica { margin: 0; font-size: 12px; font-weight: 400; color: #7a7590; text-transform: none; letter-spacing: normal; }
+        .ticket-item .tk-aviso { margin: 0; font-size: 12.5px; font-weight: 600; color: #dc2626; text-transform: none; letter-spacing: normal; }
+        .ticket-item .tk-opcoes { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+        .ticket-item .tk-opcao,
+        .ticket-item .tk-cartao {
+            display: flex; align-items: center; gap: 10px; box-sizing: border-box;
+            padding: 12px 14px; border: 1.5px solid #e1ddf0; border-radius: 10px; background: #fff;
+            cursor: pointer; text-transform: none; letter-spacing: normal;
+            font-size: 14px; font-weight: 600; color: #14121f;
+        }
+        .ticket-item .tk-cartao { align-items: flex-start; width: 100%; margin-top: 14px; background: #f7f5fd; border-color: #ddd6fe; }
+        .ticket-item .tk-opcao input[type="radio"],
+        .ticket-item .tk-cartao input[type="checkbox"] {
+            width: 20px; height: 20px; min-width: 20px; margin: 0; padding: 0; flex: none;
+            accent-color: #6c2bd9; cursor: pointer; box-shadow: none;
+        }
+        .ticket-item .tk-cartao input[type="checkbox"] { margin-top: 2px; }
+        .ticket-item .tk-cartao-texto { display: flex; flex-direction: column; gap: 2px; }
+        .ticket-item .tk-cartao-titulo { font-size: 14px; font-weight: 700; color: #14121f; }
+        .ticket-item .tk-opcao:has(input:checked),
+        .ticket-item .tk-cartao:has(input:checked) { border-color: #6c2bd9; background: #f3eefe; }
+        .ticket-item .tk-link { font-size: 12.5px; font-weight: 600; }
+        @media (max-width: 600px) { .ticket-item .tk-linha { flex-direction: column; gap: 0; } }
+    `;
+    document.head.appendChild(s);
+}
+
 function criarFormIngresso(tipo) {
+    injetarEstiloFormIngresso();
+
     const ticketItem = document.createElement("div");
     ticketItem.classList.add("ticket-item");
     ticketItem.dataset.tipo = tipo;
 
-    const camposValor = tipo === "pago" ? `
-        <label>Valor a receber (R$) <span style="color:red">*</span></label>
-        <input type="number" step="0.01" placeholder="0,00" class="valor-ingresso">
-        <label>Valor do participante (R$)</label>
-        <input type="number" step="0.01" value="0.00" class="valor-participante" readonly>
-    ` : "";
+    const pago = tipo === "pago";
 
     ticketItem.innerHTML = `
         <button class="remove-ticket" type="button"><img src="/frontend/imagens/fechar.png" alt="Excluir" style="width:20px;height:20px;"></button>
-        <h4>${tipo === "pago" ? "Criar ingresso pago" : "Criar ingresso gratuito"}</h4>
-        <p>${tipo === "pago" ? "A taxa de serviço é repassada ao comprador." : "Este ingresso é gratuito. Nenhum valor será cobrado."}</p>
-        <label>Título do ingresso <span style="color:red">*</span></label>
-        <input type="text" class="titulo-ingresso" maxlength="45" placeholder="Ingresso único, Meia-Entrada, VIP, etc.">
-        <label>Quantidade <span style="color:red">*</span></label>
-        <input type="number" class="quantidade-ingresso" placeholder="Ex. 100" min="1">
-        ${camposValor}
-        <label class="label-setor-mapa" style="display:none;">Setor no mapa</label>
-        <select class="setor-mapa-ingresso" style="display:none;"></select>
-        <label><input type="checkbox"> Criar meia-entrada para este ingresso</label>
-        <a href="#">Saiba mais sobre as políticas de meia-entrada</a>
-        <div class="radio-group" style="margin-top:12px;">
-            <label><input type="radio" name="venda-form" value="por-data" checked> Por data</label>
-            <label><input type="radio" name="venda-form" value="por-lote" class="radio-lote"> Por lote <span class="help-lote" title="Permite vender em etapas.">?</span></label>
+        <h4>${pago ? "Criar ingresso pago" : "Criar ingresso gratuito"}</h4>
+        <p>${pago ? "A taxa de serviço é repassada ao comprador." : "Este ingresso é gratuito. Nenhum valor será cobrado."}</p>
+
+        <div class="tk-secao" style="border-top:none;padding-top:0;margin-top:12px;">
+            <h5 class="tk-secao-titulo">Informações do ingresso</h5>
+            <p class="tk-secao-sub">O que o comprador vai ver na página do evento.</p>
+
+            <div class="tk-campo">
+                <label>Título do ingresso <span style="color:red">*</span></label>
+                <input type="text" class="titulo-ingresso" maxlength="45" placeholder="Ingresso único, Meia-Entrada, VIP, etc.">
+            </div>
+
+                        <div class="tk-linha">
+                <div class="tk-campo">
+                    <label>Quantidade <span style="color:red">*</span></label>
+                    <input type="number" class="quantidade-ingresso" placeholder="Ex. 100" min="1">
+                </div>
+                ${pago ? `
+                <div class="tk-campo">
+                    <label>Valor a receber (R$) <span style="color:red">*</span></label>
+                    <input type="number" step="0.01" placeholder="0,00" class="valor-ingresso">
+                </div>` : ""}
+            </div>
+
+            <div class="tk-campo">
+                <label>Tipo de venda</label>
+                <div class="tk-opcoes">
+                    <label class="tk-opcao"><input type="radio" name="tipo-selecao" value="livre" class="tipo-selecao-radio" checked> Livre (por quantidade)</label>
+                    <label class="tk-opcao"><input type="radio" name="tipo-selecao" value="numerado" class="tipo-selecao-radio"> Numerado (assento marcado)</label>
+                </div>
+                <p class="tk-dica">No tipo numerado, o comprador escolhe um assento específico (fileira e número) ao comprar. A quantidade é calculada automaticamente.</p>
+            </div>
+
+            <div class="tk-linha tk-campos-numerado" style="display:none;">
+                <div class="tk-campo">
+                    <label>Fileiras <span style="color:red">*</span></label>
+                    <input type="number" class="fileiras-ingresso" placeholder="Ex. 10" min="1">
+                </div>
+                <div class="tk-campo">
+                    <label>Assentos por fileira <span style="color:red">*</span></label>
+                    <input type="number" class="assentos-por-fileira-ingresso" placeholder="Ex. 20" min="1">
+                </div>
+            </div>
+
+            ${pago ? `
+            <div class="tk-campo">
+                <label>Valor do participante (R$)</label>
+                <input type="number" step="0.01" value="0.00" class="valor-participante" readonly>
+                <p class="tk-dica">Valor a receber + taxa de serviço de 10%.</p>
+            </div>` : ""}
+
+            <div class="tk-campo">
+                <label class="label-setor-mapa" style="display:none;">Setor no mapa</label>
+                <select class="setor-mapa-ingresso" style="display:none;"></select>
+            </div>
         </div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;">
-            <div style="flex:1;min-width:220px;"><label style="display:block;margin-bottom:6px;">Início das Vendas</label><input type="datetime-local" class="data-inicio-venda" style="padding:10px;width:100%;border-radius:8px;border:1px solid #ccc;font-size:14px;box-sizing:border-box;"></div>
-            <div style="flex:1;min-width:220px;"><label style="display:block;margin-bottom:6px;">Término das Vendas</label><input type="datetime-local" class="data-fim-venda" style="padding:10px;width:100%;border-radius:8px;border:1px solid #ccc;font-size:14px;box-sizing:border-box;"></div>
+
+        <div class="tk-secao">
+            <h5 class="tk-secao-titulo">Período de vendas</h5>
+            <p class="tk-secao-sub">Quando este ingresso fica disponível para compra.</p>
+
+            <div class="tk-opcoes">
+                <label class="tk-opcao"><input type="radio" name="venda-form" value="por-data" checked> Por data</label>
+                <label class="tk-opcao"><input type="radio" name="venda-form" value="por-lote" class="radio-lote"> Por lote <span class="help-lote" title="Permite vender em etapas.">?</span></label>
+            </div>
+
+            <div class="tk-linha">
+                <div class="tk-campo">
+                    <label>Início das vendas</label>
+                    <input type="datetime-local" class="data-inicio-venda">
+                </div>
+                <div class="tk-campo">
+                    <label>Término das vendas</label>
+                    <input type="datetime-local" class="data-fim-venda">
+                </div>
+            </div>
         </div>
-        <label>Quem pode comprar</label>
-        <select class="quem-compra"><option>Para todo o público</option><option>Restrito a convidados</option><option>Adicionar manualmente</option></select>
-        <label>Quantidade por compra (opcional)</label>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <input type="number" class="min-compra" placeholder="Mínima" min="1" style="flex:1;min-width:120px;">
-            <input type="number" class="max-compra" placeholder="Máxima" min="1" style="flex:1;min-width:120px;">
+
+        <div class="tk-secao">
+            <h5 class="tk-secao-titulo">Regras de compra</h5>
+            <p class="tk-secao-sub">Quem pode comprar e quantos ingressos cada pessoa pode levar.</p>
+
+            <div class="tk-campo">
+                <label>Quem pode comprar</label>
+                <select class="quem-compra"><option>Para todo o público</option><option>Restrito a convidados</option><option>Adicionar manualmente</option></select>
+            </div>
+
+                        <div class="tk-campo">
+                <label>Quantidade por pessoa (CPF) (opcional)</label>
+                <div class="tk-linha">
+                    <div class="tk-campo" style="margin-top:0;"><input type="number" class="min-compra" placeholder="Mínima" min="1"></div>
+                    <div class="tk-campo" style="margin-top:0;"><input type="number" class="max-compra" placeholder="Máxima" min="1"></div>
+                </div>
+                <p class="tk-dica">Máxima: limite total por CPF, somando todas as compras (a pessoa pode comprar de uma vez ou em várias). Mínima: menor quantidade que a pessoa pode levar em cada compra.</p>
+                <p class="tk-aviso tk-aviso-cpf" style="display:none;">A mínima não pode ser maior que a máxima.</p>
+            </div>
         </div>
-        <label>Descrição do ingresso (opcional)</label>
-        <textarea class="descricao-ingresso" maxlength="100" placeholder="Informações adicionais."></textarea>
-        <div class="ticket-actions"><button class="btnSalvarIngresso btn-primary" type="button">Salvar ingresso</button></div>
+
+        <div class="tk-secao">
+            <h5 class="tk-secao-titulo">Extras (opcional)</h5>
+
+            <label class="tk-cartao">
+                <input type="checkbox">
+                <span class="tk-cartao-texto">
+                    <span class="tk-cartao-titulo">Criar meia-entrada para este ingresso</span>
+                    <a href="#" class="tk-link">Saiba mais sobre as políticas de meia-entrada</a>
+                </span>
+            </label>
+
+            <div class="tk-campo">
+                <label>Descrição do ingresso</label>
+                <textarea class="descricao-ingresso" maxlength="100" placeholder="Informações adicionais."></textarea>
+            </div>
+        </div>
+
+        <div class="ticket-actions" style="margin-top:24px;"><button class="btnSalvarIngresso btn-primary" type="button">Salvar ingresso</button></div>
     `;
 
-    if (tipo === "pago") {
+    if (pago) {
         const vi = ticketItem.querySelector(".valor-ingresso");
         const vp = ticketItem.querySelector(".valor-participante");
         vi.addEventListener("input", () => { const v = parseFloat(vi.value); vp.value = !isNaN(v) ? (v * 1.10).toFixed(2) : "0.00"; });
     }
+
+      // Aviso na hora se a mínima for maior que a máxima
+    const minCompraEl = ticketItem.querySelector(".min-compra");
+    const maxCompraEl = ticketItem.querySelector(".max-compra");
+    const avisoCpf = ticketItem.querySelector(".tk-aviso-cpf");
+    const conferirLimites = () => {
+        const min = parseInt(minCompraEl.value, 10);
+        const max = parseInt(maxCompraEl.value, 10);
+        avisoCpf.style.display = (min && max && min > max) ? "block" : "none";
+    };
+        minCompraEl.addEventListener("input", conferirLimites);
+    maxCompraEl.addEventListener("input", conferirLimites);
+
+    // Alterna entre "Livre" e "Numerado": mostra/esconde campos de
+    // fileiras/assentos e calcula a quantidade total automaticamente
+    const camposNumerado = ticketItem.querySelector(".tk-campos-numerado");
+    const fileirasEl = ticketItem.querySelector(".fileiras-ingresso");
+    const assentosPorFileiraEl = ticketItem.querySelector(".assentos-por-fileira-ingresso");
+    const quantidadeEl = ticketItem.querySelector(".quantidade-ingresso");
+
+    const atualizarQuantidadeNumerada = () => {
+        const f = parseInt(fileirasEl.value, 10) || 0;
+        const a = parseInt(assentosPorFileiraEl.value, 10) || 0;
+        quantidadeEl.value = f && a ? f * a : "";
+    };
+
+    ticketItem.querySelectorAll(".tipo-selecao-radio").forEach(radio => {
+        radio.addEventListener("change", () => {
+            const numerado = ticketItem.querySelector('input[name="tipo-selecao"]:checked').value === "numerado";
+            camposNumerado.style.display = numerado ? "flex" : "none";
+            quantidadeEl.readOnly = numerado;
+            quantidadeEl.placeholder = numerado ? "Calculado automaticamente" : "Ex. 100";
+            if (numerado) {
+                atualizarQuantidadeNumerada();
+            } else {
+                quantidadeEl.value = "";
+            }
+        });
+    });
+
+    fileirasEl.addEventListener("input", atualizarQuantidadeNumerada);
+    assentosPorFileiraEl.addEventListener("input", atualizarQuantidadeNumerada);
 
     ticketItem.querySelector(".radio-lote").addEventListener("change", () => {
         if (listaIngressos.length < 1) { alert("Para 'Por lote', crie mais de um ingresso."); ticketItem.querySelector('input[value="por-data"]').checked = true; }
@@ -672,9 +1048,43 @@ function criarFormIngresso(tipo) {
         }
 
         const setorSelect = ticketItem.querySelector(".setor-mapa-ingresso");
-        const setorMapa = (tipoMapaSelecionado() === "ilustrativo" && setorSelect?.value) ? setorSelect.value : null;
+        const setorMapa = (tipoMapaSelecionado() !== "nenhum" && setorSelect?.value) ? setorSelect.value : null;
 
-        const ingresso = { titulo, valor, tipo, quantidade_total: quantidade, setor_mapa: setorMapa };
+                const qtdMinima = minCompraEl.value ? parseInt(minCompraEl.value, 10) : null;
+        const qtdMaxima = maxCompraEl.value ? parseInt(maxCompraEl.value, 10) : null;
+
+        if (minCompraEl.value && (!qtdMinima || qtdMinima < 1)) {
+            marcarErro(minCompraEl); alerta("A quantidade mínima precisa ser 1 ou mais.", minCompraEl); return;
+        }
+        if (maxCompraEl.value && (!qtdMaxima || qtdMaxima < 1)) {
+            marcarErro(maxCompraEl); alerta("A quantidade máxima precisa ser 1 ou mais.", maxCompraEl); return;
+        }
+                if (qtdMinima && qtdMaxima && qtdMinima > qtdMaxima) {
+            marcarErro(minCompraEl); alerta("A quantidade mínima não pode ser maior que a máxima.", minCompraEl); return;
+        }
+
+        const tipoSelecao = ticketItem.querySelector('input[name="tipo-selecao"]:checked').value;
+        const numerado = tipoSelecao === "numerado";
+
+        if (numerado) {
+            if (!fileirasEl.value || parseInt(fileirasEl.value, 10) < 1) {
+                marcarErro(fileirasEl); alerta("Informe o número de fileiras.", fileirasEl); return;
+            }
+            if (!assentosPorFileiraEl.value || parseInt(assentosPorFileiraEl.value, 10) < 1) {
+                marcarErro(assentosPorFileiraEl); alerta("Informe os assentos por fileira.", assentosPorFileiraEl); return;
+            }
+        }
+
+        const ingresso = {
+            titulo, valor, tipo,
+            quantidade_total: quantidade,
+            setor_mapa: setorMapa,
+            limite_por_cpf: qtdMaxima,
+            quantidade_min_por_compra: qtdMinima,
+            tipo_selecao: numerado ? "numerado" : "livre",
+            fileiras: numerado ? parseInt(fileirasEl.value, 10) : null,
+            assentos_por_fileira: numerado ? parseInt(assentosPorFileiraEl.value, 10) : null,
+        };
         if (ingressoEditandoIndex !== null) { listaIngressos[ingressoEditandoIndex] = ingresso; ingressoEditandoIndex = null; }
         else listaIngressos.push(ingresso);
 
@@ -723,8 +1133,13 @@ function editarIngresso(index) {
         vi.value = ing.valor;
         vp.value = (parseFloat(ing.valor) * 1.10).toFixed(2);
     }
-    const setorSelect = form.querySelector(".setor-mapa-ingresso");
+        const setorSelect = form.querySelector(".setor-mapa-ingresso");
     if (setorSelect && ing.setor_mapa) setorSelect.value = ing.setor_mapa;
-}
 
+            const minCompra = form.querySelector(".min-compra");
+    if (minCompra && ing.quantidade_min_por_compra) minCompra.value = ing.quantidade_min_por_compra;
+
+    const maxCompra = form.querySelector(".max-compra");
+    if (maxCompra && ing.limite_por_cpf) maxCompra.value = ing.limite_por_cpf;
+}
 function excluirIngresso(index) { listaIngressos.splice(index, 1); renderizarIngressos(); }

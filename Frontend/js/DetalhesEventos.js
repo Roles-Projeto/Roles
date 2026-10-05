@@ -105,6 +105,10 @@ const TEMPLATES_MAPA = {
 // que vier do evento carregado.
 let SETORES = TEMPLATES_MAPA.arena.setores;
 
+// Template de mapa do evento carregado ('arena', 'teatro', ... ou null quando não há mapa).
+// Usado pelo modal de assentos para escolher o formato da grade.
+let TEMPLATE_MAPA_ATUAL = null;
+
 /* ═══════════════════════════════════════════
    STATUS DE VENDA DOS INGRESSOS
 ═══════════════════════════════════════════ */
@@ -256,7 +260,7 @@ function desabilitarBotaoCompra(texto) {
     });
 }
 
-function atualizarBotaoDeCompra(precoNumerico) {
+function atualizarBotaoDeCompra(precoNumerico, numerado = false) {
     const botoes = document.querySelectorAll('.botao-comprar, .botao-comprar-topo');
     if (!botoes.length) return;
 
@@ -264,7 +268,12 @@ function atualizarBotaoDeCompra(precoNumerico) {
         // Reabilita o botão (pode ter sido desabilitado por um status)
         botaoComprar.disabled = false;
 
-        if (precoNumerico === 0) {
+        if (numerado) {
+            // Ingresso numerado: o botão leva à escolha do assento
+            botaoComprar.textContent = 'Escolher assento';
+            botaoComprar.classList.remove('botao-confirmar');
+            botaoComprar.classList.add('botao-comprar-padrao');
+        } else if (precoNumerico === 0) {
             botaoComprar.textContent = 'Confirmar Presença';
             botaoComprar.classList.add('botao-confirmar');
             botaoComprar.classList.remove('botao-comprar-padrao');
@@ -274,6 +283,9 @@ function atualizarBotaoDeCompra(precoNumerico) {
             botaoComprar.classList.add('botao-comprar-padrao');
         }
     });
+
+    const botaoMobile = document.querySelector('.barra-compra-botao');
+    if (botaoMobile) botaoMobile.textContent = numerado ? 'Escolher assento' : 'Comprar ingresso';
 }
 
 function atualizarBarraMobile(texto) {
@@ -291,6 +303,7 @@ function atualizarResumo() {
 
     const preco = Number(e.ingressoPreco) || 0;
     const qtd = e.quantidade || 1;
+    const numerado = e.tipo_selecao === 'numerado';
 
     // Sem ingresso selecionado, ou ingresso gratuito: sem detalhamento
     if (!e.ingressoNome || preco === 0) {
@@ -305,7 +318,10 @@ function atualizarResumo() {
     const subtotal = preco * qtd;
     const taxa = Math.round(subtotal * TAXA_SERVICO * 100) / 100;
 
-    document.getElementById('resumo-linha-ingresso').textContent = `${qtd}x ${e.ingressoNome}`;
+    const sufixoAssento = numerado && e.assento_rotulos?.length
+        ? ` (${e.assento_rotulos.length > 1 ? 'assentos' : 'assento'} ${e.assento_rotulos.join(', ')})`
+        : '';
+    document.getElementById('resumo-linha-ingresso').textContent = `${qtd}x ${e.ingressoNome}${sufixoAssento}`;
     document.getElementById('resumo-subtotal').textContent = formatarMoeda(subtotal);
     document.getElementById('resumo-taxa').textContent = formatarMoeda(taxa);
     total.textContent = formatarMoeda(subtotal + taxa);
@@ -313,8 +329,11 @@ function atualizarResumo() {
 
     if (bloco) bloco.style.display = '';
 
-    if (seletor) seletor.style.display = QUANTIDADE_HABILITADA ? '' : 'none';
-    if (QUANTIDADE_HABILITADA) {
+    // Ingresso numerado é sempre 1 assento por compra: sem seletor de quantidade
+    if (seletor) seletor.style.display = (QUANTIDADE_HABILITADA && !numerado) ? '' : 'none';
+    if (numerado) {
+        if (aviso) aviso.textContent = '';
+    } else if (QUANTIDADE_HABILITADA) {
         const max = e.maxQuantidade || 1;
         document.getElementById('qtd-valor').textContent = qtd;
         document.getElementById('qtd-menos').disabled = qtd <= 1;
@@ -357,18 +376,33 @@ function selecionarIngresso(opcao) {
     const preco = Number(opcao.dataset.preco) || 0;
     const disponiveis = Number(opcao.dataset.disponiveis) || 0;
     const id = opcao.dataset.id && opcao.dataset.id !== 'undefined' ? opcao.dataset.id : null;
+    const setorChave = opcao.dataset.setorChave || '';
+    const limiteCompra = Number(opcao.dataset.limiteCompra) || 0;
+    const minCompra = Number(opcao.dataset.minCompra) || 1;
+    // Pista é público em pé: nunca tem assento marcado
+    const numerado = opcao.dataset.tipoSelecao === 'numerado' && setorChave !== 'pista';
 
     e.ingressoNome = nome;
     e.ingressoPreco = preco;
     e.tipo_ingresso_id = id;
-    e.maxQuantidade = Math.max(1, Math.min(disponiveis, MAX_POR_COMPRA));
+    // Numerado: pode escolher vários assentos, até o limite por compra do ingresso
+    e.maxQuantidade = numerado
+        ? Math.max(1, Math.min(disponiveis, limiteCompra || MAX_POR_COMPRA))
+        : Math.max(1, Math.min(disponiveis, MAX_POR_COMPRA));
+    e.minQuantidade = numerado ? Math.min(minCompra, e.maxQuantidade) : 1;
     e.quantidade = 1;
+
+    // Trocar de ingresso descarta o assento escolhido antes
+    e.tipo_selecao = numerado ? 'numerado' : 'livre';
+    e.setor_chave = setorChave;
+    e.assento_ids = [];
+    e.assento_rotulos = [];
     salvarEstadoCompra();
 
     const resumo = document.querySelector('.ingresso-resumo');
     if (resumo) resumo.textContent = nome;
 
-    atualizarBotaoDeCompra(preco);
+    atualizarBotaoDeCompra(preco, numerado);
     atualizarResumo();
 }
 
@@ -469,6 +503,50 @@ function destacarGrupoIngressos(ingressosDoSetor) {
 
 function inicializarMapaSetores(ingressos) {
     const svg = document.getElementById('svg-mapa-setores');
+    const zonas = document.querySelectorAll('.mapa-zona-imagem');
+
+    // Mapa em imagem (PNG): zonas clicáveis
+    if (!svg && zonas.length) {
+                const acender = (chave, on) => {
+            zonas.forEach(z => {
+                if (z.dataset.setor !== chave || z.style.cursor === 'not-allowed') return;
+                if (z.classList.contains('zona-selecionada')) return;
+                z.style.background = on ? 'rgba(124,58,237,.25)' : '';
+                z.style.borderColor = on ? '#7c3aed' : 'transparent';
+            });
+        };
+
+        zonas.forEach(zona => {
+            const chave = zona.dataset.setor;
+            const encontrados = encontrarIngressosPorSetor(ingressos, chave);
+            const algumDisponivel = encontrados.some(i => getStatusVendaIngresso(i) === 'disponivel');
+
+            if (!algumDisponivel) {
+                zona.style.cursor = 'not-allowed';
+                zona.style.background = 'rgba(0,0,0,.35)';
+                return;
+            }
+
+            zona.addEventListener('mouseenter', () => acender(chave, true));
+            zona.addEventListener('mouseleave', () => acender(chave, false));
+
+            zona.addEventListener('click', () => {
+                destacarGrupoIngressos(encontrados);
+                zonas.forEach(z => {
+                    z.classList.remove('zona-selecionada');
+                    if (z.style.cursor !== 'not-allowed') { z.style.background = ''; z.style.borderColor = 'transparent'; }
+                });
+                zonas.forEach(z => {
+                    if (z.dataset.setor !== chave) return;
+                    z.classList.add('zona-selecionada');
+                    z.style.background = 'rgba(124,58,237,.35)';
+                    z.style.borderColor = '#7c3aed';
+                });
+            });
+        });
+        return;
+    }
+
     if (!svg) return;
 
     const setores = svg.querySelectorAll('.mapa-setor');
@@ -515,27 +593,72 @@ function renderizarMapaEvento(evento) {
     const wrap = document.querySelector('.mapa-svg-wrap');
     const tipo = evento.tipo_mapa;
 
-    // Evento antigo (criado antes da feature existir): tipo_mapa nunca foi
-    // definido (null/undefined) -> mantém o comportamento de sempre existir
-    // um mapa, usando o template arena como padrão.
+    // O banco pode devolver o mapa_config como texto JSON
+    let config = evento.mapa_config;
+    if (typeof config === 'string') {
+        try { config = JSON.parse(config); } catch { config = null; }
+    }
+
+    // Evento antigo (tipo_mapa nunca definido): mantém o mapa arena
     if (tipo == null) {
+        TEMPLATE_MAPA_ATUAL = 'arena';
         SETORES = TEMPLATES_MAPA.arena.setores;
         if (wrap) wrap.innerHTML = TEMPLATES_MAPA.arena.svg;
         if (secaoMapa) secaoMapa.style.display = '';
         return;
     }
 
-    // "nenhum" (escolhido de propósito) ou "imagem" (ainda não implementada)
-    // -> esconde a seção do mapa inteira
+    // Mapa em imagem (PNG enviado pelo produtor)
+    if (tipo === 'imagem' && config?.imagem_url && Array.isArray(config.setores) && config.setores.length) {
+        const url = config.imagem_url.startsWith('http')
+            ? config.imagem_url
+            : `${API_BASE}${config.imagem_url}`;
+
+        TEMPLATE_MAPA_ATUAL = null; // assentos usam a grade reta
+        SETORES = config.setores.map(s => ({ chave: s.chave, nome: s.nome, dot: '' }));
+
+                if (wrap) {
+            wrap.innerHTML = '';
+            const caixa = document.createElement('div');
+            caixa.id = 'mapa-imagem-caixa';
+            caixa.style.cssText = 'position:relative;width:100%;line-height:0;';
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = 'Mapa do local do evento';
+            img.style.cssText = 'width:100%;height:auto;display:block;border-radius:12px;';
+            caixa.appendChild(img);
+
+                        config.setores.forEach(s => {
+                // aceita o formato novo (areas) e o antigo (area)
+                const lista = Array.isArray(s.areas) ? s.areas : (s.area ? [s.area] : []);
+                lista.forEach(a => {
+                    const zona = document.createElement('div');
+                    zona.className = 'mapa-zona-imagem';
+                    zona.dataset.setor = s.chave;
+                    zona.title = s.nome;
+                    zona.style.cssText = `position:absolute;left:${a.x}%;top:${a.y}%;width:${a.w}%;height:${a.h}%;` +
+                        'cursor:pointer;box-sizing:border-box;border:2px solid transparent;border-radius:6px;transition:background .15s,border-color .15s;';
+                    caixa.appendChild(zona);
+                });
+            });
+            wrap.appendChild(caixa);
+        }
+        if (secaoMapa) secaoMapa.style.display = '';
+        return;
+    }
+
+    // "nenhum" (ou imagem sem dados válidos): esconde a seção do mapa
     if (tipo !== 'ilustrativo') {
         if (secaoMapa) secaoMapa.style.display = 'none';
+        TEMPLATE_MAPA_ATUAL = null;
         SETORES = [];
         return;
     }
 
-    const chaveTemplate = evento.mapa_config?.template;
+    const chaveTemplate = config?.template;
     const template = TEMPLATES_MAPA[chaveTemplate] || TEMPLATES_MAPA.arena;
 
+    TEMPLATE_MAPA_ATUAL = TEMPLATES_MAPA[chaveTemplate] ? chaveTemplate : 'arena';
     SETORES = template.setores;
     if (wrap) wrap.innerHTML = template.svg;
     if (secaoMapa) secaoMapa.style.display = '';
@@ -618,6 +741,11 @@ function montarHtmlIngresso(ingresso, index, indiceSelecionado, extra, chave) {
     const escassez = status === 'disponivel' && disponiveis <= LIMITE_ESCASSEZ;
     const indisponivel = info.desabilitado;
     const nomeCurto = nomeCurtoIngresso(ingresso.titulo, chave);
+    const tipoSelecao = ingresso.tipo_selecao === 'numerado' ? 'numerado' : 'livre';
+    // Limite de assentos por compra: o menor entre "máxima por compra" e "limite por CPF" (0 = sem limite)
+    const limites = [ingresso.quantidade_max_por_compra, ingresso.limite_por_cpf].map(Number).filter(n => n > 0);
+    const limiteCompra = limites.length ? Math.min(...limites) : 0;
+    const minCompra = Number(ingresso.quantidade_min_por_compra) > 0 ? Number(ingresso.quantidade_min_por_compra) : 1;
 
     // Texto de quantidade / aviso de status
     let textoQuantidade = `${disponiveis} disponíveis`;
@@ -632,9 +760,13 @@ function montarHtmlIngresso(ingresso, index, indiceSelecionado, extra, chave) {
         }
     }
 
-    const descricao = ingresso.tipo === 'gratuito'
-        ? '<p class="descricao-ingresso">Entrada gratuita</p>'
-        : '';
+    let descricao = '';
+    if (tipoSelecao === 'numerado') {
+        const ateN = limiteCompra > 1 ? ` (até ${limiteCompra} por compra)` : '';
+        descricao = `<p class="descricao-ingresso">Assento marcado: você escolhe o seu lugar${ateN}</p>`;
+    } else if (ingresso.tipo === 'gratuito') {
+        descricao = '<p class="descricao-ingresso">Entrada gratuita</p>';
+    }
 
     const classes = [
         'opcao-ingresso',
@@ -644,7 +776,7 @@ function montarHtmlIngresso(ingresso, index, indiceSelecionado, extra, chave) {
     ].filter(Boolean).join(' ');
 
     return `
-        <div class="${classes}" role="radio" aria-checked="${isSelecionado}" aria-disabled="${indisponivel}" tabindex="${indisponivel ? -1 : 0}" data-idx="${index}" data-tipo="${escaparAtributo(ingresso.titulo)}" data-nome="${escaparAtributo(ingresso.titulo)}" data-id="${ingresso.id}" data-status="${status}" data-preco="${preco}" data-disponiveis="${disponiveis}" data-escassez="${escassez}">
+        <div class="${classes}" role="radio" aria-checked="${isSelecionado}" aria-disabled="${indisponivel}" tabindex="${indisponivel ? -1 : 0}" data-idx="${index}" data-tipo="${escaparAtributo(ingresso.titulo)}" data-nome="${escaparAtributo(ingresso.titulo)}" data-id="${ingresso.id}" data-status="${status}" data-preco="${preco}" data-disponiveis="${disponiveis}" data-escassez="${escassez}" data-tipo-selecao="${tipoSelecao}" data-setor-chave="${chave}" data-limite-compra="${limiteCompra}" data-min-compra="${minCompra}">
             <span class="radio-ingresso" aria-hidden="true"></span>
             <div class="detalhes-opcao">
                 <div class="linha-ingresso">
@@ -865,6 +997,10 @@ async function carregarDetalhesEvento() {
             tipo_ingresso_id: null,
             quantidade: 1,
             maxQuantidade: 1,
+            tipo_selecao: 'livre',
+            minQuantidade: 1,
+            assento_ids: [],
+            assento_rotulos: [],
             categoria: evento.categoria || null // ← usado pelo sistema de recomendação (recomendacaoService.js)
         };
 
@@ -941,7 +1077,748 @@ async function carregarDetalhesEvento() {
     }
 }
 
-function realizarAcaoComprar() {
+function injetarEstiloAviso() {
+    if (document.getElementById('rolesAvisoStyle')) return;
+    const s = document.createElement('style');
+    s.id = 'rolesAvisoStyle';
+    s.textContent = `
+        @keyframes rolesAvisoIn  { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes rolesAvisoOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-12px); } }
+        .roles-aviso {
+            position: fixed; top: 24px; right: 24px; z-index: 99999;
+            width: 380px; max-width: calc(100vw - 32px);
+            background: #1C1834; color: #F1EDFA;
+            padding: 16px 18px; border-radius: 12px;
+            border: 1px solid #322850;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, .45);
+            font-family: 'Inter', sans-serif;
+            display: flex; align-items: flex-start; gap: 12px;
+            animation: rolesAvisoIn .25s ease;
+        }
+        .roles-aviso-icone {
+            width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 800; color: #160f28;
+        }
+        .roles-aviso-corpo { flex: 1; min-width: 0; }
+        .roles-aviso-titulo { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+        .roles-aviso-texto { font-size: 13px; font-weight: 500; line-height: 1.5; color: #D6CFEA; }
+        .roles-aviso-fechar {
+            background: none; border: none; color: #9689B8; cursor: pointer;
+            font-size: 18px; line-height: 1; padding: 0; flex-shrink: 0;
+        }
+        .roles-aviso-fechar:hover { color: #F1EDFA; }
+        @media (max-width: 480px) { .roles-aviso { top: 16px; right: 16px; left: 16px; width: auto; } }
+    `;
+    document.head.appendChild(s);
+}
+
+function mostrarAviso(mensagem, tipo = 'info', titulo = '') {
+    injetarEstiloAviso();
+    document.querySelectorAll('.roles-aviso').forEach(a => a.remove());
+
+    const cores  = { success: '#35D399', error: '#FF5C7A', warn: '#FFB627', info: '#6AA9FF' };
+    const icones = { success: '✓', error: '✕', warn: '!', info: 'i' };
+
+    const aviso = document.createElement('div');
+    aviso.className = 'roles-aviso';
+    aviso.setAttribute('role', 'alert');
+
+    const icone = document.createElement('span');
+    icone.className = 'roles-aviso-icone';
+    icone.style.background = cores[tipo] || cores.info;
+    icone.textContent = icones[tipo] || icones.info;
+
+    const corpo = document.createElement('div');
+    corpo.className = 'roles-aviso-corpo';
+    if (titulo) {
+        const t = document.createElement('div');
+        t.className = 'roles-aviso-titulo';
+        t.textContent = titulo;
+        corpo.appendChild(t);
+    }
+    const texto = document.createElement('div');
+    texto.className = 'roles-aviso-texto';
+    texto.textContent = mensagem;
+    corpo.appendChild(texto);
+
+    const fechar = document.createElement('button');
+    fechar.type = 'button';
+    fechar.className = 'roles-aviso-fechar';
+    fechar.setAttribute('aria-label', 'Fechar aviso');
+    fechar.innerHTML = '&times;';
+    fechar.addEventListener('click', () => aviso.remove());
+
+    aviso.append(icone, corpo, fechar);
+    document.body.appendChild(aviso);
+
+    setTimeout(() => {
+        aviso.style.animation = 'rolesAvisoOut .25s ease forwards';
+        setTimeout(() => aviso.remove(), 260);
+    }, 6000);
+}
+
+function obterUsuarioId() {
+    for (const chave of ['userId', 'id', 'user_id', 'usuarioId', 'usuario_id']) {
+        const v = localStorage.getItem(chave);
+        if (v && v !== 'undefined' && v !== 'null') return v;
+    }
+    return null;
+}
+
+/* ═══════════════════════════════════════════
+   SELEÇÃO DE ASSENTO (INGRESSO NUMERADO)
+   Fluxo: botão "Escolher assento" -> modal com a grade
+   (GET /assentos/:ingressoId) -> clique no assento -> "Confirmar assento"
+   (POST /assentos/:id/reservar) -> segue para o checkout com os assento_ids.
+═══════════════════════════════════════════ */
+let _assentosEscolhidos = [];        // [{ id, rotulo }] na ordem em que foram marcados
+let _assentosReservados = new Set(); // ids já reservados nesta abertura do modal
+
+function assentoEstaEscolhido(id) {
+    return _assentosEscolhidos.some(s => String(s.id) === String(id));
+}
+
+// Marca ou desmarca um assento, respeitando o máximo por compra.
+// Com máximo 1, clicar em outro assento troca o escolhido.
+// Retorna true se a seleção mudou.
+function alternarAssento(assento, rotulo) {
+    const max = window._eventoAtual?.maxQuantidade || 1;
+    const idx = _assentosEscolhidos.findIndex(s => String(s.id) === String(assento.id));
+
+    if (idx >= 0) {
+        _assentosEscolhidos.splice(idx, 1);
+    } else if (max === 1) {
+        _assentosEscolhidos = [{ id: assento.id, rotulo }];
+    } else if (_assentosEscolhidos.length >= max) {
+        mostrarAviso(`Você pode escolher no máximo ${max} assentos nesta compra. Desmarque um para trocar.`, 'warn', 'Limite de assentos');
+        return false;
+    } else {
+        _assentosEscolhidos.push({ id: assento.id, rotulo });
+    }
+
+    atualizarRodapeAssentos();
+    return true;
+}
+
+// Reflete a seleção atual nos botões que já estão na tela
+function sincronizarAssentosNaTela() {
+    document.querySelectorAll('#modal-assentos-grade .assento[data-id]').forEach(el => {
+        const marcado = assentoEstaEscolhido(el.dataset.id);
+        el.classList.toggle('assento-selecionado', marcado);
+        el.setAttribute('aria-pressed', marcado ? 'true' : 'false');
+    });
+}
+let _modalAssentosTecla = null;
+
+// Fileira pode vir como número (1, 2, 3) ou letra (A, B, C); número vira letra
+function rotuloFileira(fileira) {
+    const n = Number(fileira);
+    if (Number.isInteger(n) && n >= 1 && n <= 26 && String(fileira).trim() === String(n)) {
+        return String.fromCharCode(64 + n);
+    }
+    return String(fileira ?? '');
+}
+
+function assentoDisponivel(assento) {
+    // Assento que EU acabei de reservar continua selecionável (o servidor já o marca como reservado)
+    if (_assentosReservados.has(String(assento.id))) return true;
+    const s = normalizar(assento.status);
+    return s === 'disponivel' || s === 'livre';
+}
+
+function garantirModalAssentos() {
+    let overlay = document.getElementById('modal-assentos');
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'modal-assentos';
+    overlay.className = 'modal-assentos';
+    overlay.innerHTML = `
+        <div class="modal-assentos-caixa" role="dialog" aria-modal="true" aria-labelledby="modal-assentos-titulo">
+            <div class="modal-assentos-topo">
+                <div>
+                    <span class="rotulo-secao">Assentos</span>
+                    <h3 class="modal-assentos-titulo" id="modal-assentos-titulo">Escolha seu assento</h3>
+                </div>
+                <button type="button" class="modal-assentos-fechar" aria-label="Fechar">&times;</button>
+            </div>
+
+            <div class="modal-assentos-contexto" id="modal-assentos-contexto"></div>
+            <div class="modal-assentos-palco">PALCO</div>
+            <div class="modal-assentos-grade" id="modal-assentos-grade"></div>
+
+            <div class="modal-assentos-legenda">
+                <span class="legenda-assento"><span class="amostra-assento"></span>Disponível</span>
+                <span class="legenda-assento"><span class="amostra-assento amostra-selecionado"></span>Selecionado</span>
+                <span class="legenda-assento"><span class="amostra-assento amostra-ocupado"></span>Indisponível</span>
+            </div>
+
+            <div class="modal-assentos-rodape">
+                <span class="modal-assentos-escolhido" id="modal-assentos-escolhido">Nenhum assento selecionado</span>
+                <button type="button" class="modal-assentos-confirmar" id="modal-assentos-confirmar" disabled>Confirmar assento</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', (ev) => {
+        if (ev.target === overlay) fecharModalAssentos();
+    });
+    overlay.querySelector('.modal-assentos-fechar').addEventListener('click', fecharModalAssentos);
+    overlay.querySelector('#modal-assentos-confirmar').addEventListener('click', confirmarAssento);
+
+    return overlay;
+}
+
+function atualizarRodapeAssentos() {
+    const texto = document.getElementById('modal-assentos-escolhido');
+    const btn = document.getElementById('modal-assentos-confirmar');
+    if (!texto || !btn) return;
+
+    const e = window._eventoAtual;
+    const max = e?.maxQuantidade || 1;
+    const min = Math.min(e?.minQuantidade || 1, max);
+    const n = _assentosEscolhidos.length;
+    const rotulos = _assentosEscolhidos.map(a => a.rotulo).join(', ');
+
+    if (n === 0) {
+        texto.textContent = max > 1 ? `Escolha até ${max} assentos` : 'Nenhum assento selecionado';
+    } else if (max === 1) {
+        texto.textContent = `Assento ${rotulos}`;
+    } else if (n < min) {
+        texto.textContent = `${n} de ${max} (mínimo ${min}): ${rotulos}`;
+    } else {
+        texto.textContent = `${n} de ${max}: ${rotulos}`;
+    }
+
+    btn.disabled = n === 0 || n < min;
+    btn.textContent = n > 1 ? 'Confirmar assentos' : 'Confirmar assento';
+}
+
+/* ───────────────────────────────────────────
+   ESTÁDIO POR BLOCOS (estilo Ticketmaster)
+   1) mapa do estádio com o setor do ingresso dividido em blocos
+   2) clicar num bloco abre as fileiras e os assentos dele
+   A pista nunca tem assento marcado.
+─────────────────────────────────────────── */
+const SETORES_COM_ASSENTO_ESTADIO = ['arquibancada', 'cadeira superior', 'cadeira inferior', 'vip'];
+
+// Limites de cada setor no mapa (de dentro para fora): rx/ry interno e externo
+const FAIXAS_ESTADIO = {
+    'pista':            { rxi: 0,   ryi: 0,   rxo: 135, ryo: 103 },
+    'cadeira inferior': { rxi: 139, ryi: 107, rxo: 207, ryo: 158 },
+    'cadeira superior': { rxi: 211, ryi: 162, rxo: 279, ryo: 216 },
+    'arquibancada':     { rxi: 283, ryi: 220, rxo: 351, ryo: 270 }
+};
+const NOME_FAIXA_ESTADIO = {
+    'pista': 'PISTA',
+    'cadeira inferior': 'CADEIRA INFERIOR',
+    'cadeira superior': 'CADEIRA SUPERIOR',
+    'arquibancada': 'ARQUIBANCADA',
+    'vip': 'VIP'
+};
+const PREFIXO_BLOCO = { 'arquibancada': 'ARQ', 'cadeira superior': 'CS', 'cadeira inferior': 'CI', 'vip': 'VIP' };
+const VIP_RETANGULO = { x: 640, y: 495, w: 100, h: 60 };
+
+let _assentosEstadio = [];
+
+function svgEl(nome, attrs = {}, texto) {
+    const n = document.createElementNS('http://www.w3.org/2000/svg', nome);
+    Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v));
+    if (texto != null) n.textContent = texto;
+    return n;
+}
+
+// Cabeçalho do modal no modo estádio: setor do ingresso e instrução
+function montarContextoEstadio() {
+    const contexto = document.getElementById('modal-assentos-contexto');
+    if (!contexto) return;
+    contexto.innerHTML = '';
+
+    const chave = window._eventoAtual?.setor_chave || '';
+    const config = SETORES.find(s => s.chave === chave);
+    if (!config) return;
+
+    const texto = document.createElement('div');
+    texto.className = 'assentos-contexto-texto';
+    texto.innerHTML = `
+        <span class="assentos-contexto-setor"><span class="dot-setor ${config.dot}"></span>${config.nome}</span>
+        <span class="assentos-contexto-dica">Escolha um bloco no mapa e depois o seu lugar. A pista não tem assento marcado.</span>`;
+    contexto.appendChild(texto);
+}
+
+// Divide os assentos do ingresso em blocos: cada fileira é repartida entre os blocos,
+// então todo bloco tem as mesmas fileiras (A, B, C...) com um pedaço de cada.
+function dividirEmBlocos(assentos) {
+    const chaveSetor = window._eventoAtual?.setor_chave || '';
+
+    const porFileira = new Map();
+    assentos.forEach(a => {
+        const chave = String(a.fileira);
+        if (!porFileira.has(chave)) porFileira.set(chave, []);
+        porFileira.get(chave).push(a);
+    });
+
+    const chaves = [...porFileira.keys()].sort((a, b) => {
+        const na = Number(a), nb = Number(b);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return a.localeCompare(b, 'pt-BR');
+    });
+
+    const maxPorFileira = Math.max(...chaves.map(c => porFileira.get(c).length));
+    let K = maxPorFileira < 8 ? 1 : Math.min(12, Math.max(2, 2 * Math.round(maxPorFileira / 12)));
+    if (chaveSetor === 'vip') K = 1; // VIP é um bloco só
+
+    const prefixo = PREFIXO_BLOCO[chaveSetor] || 'B';
+    const blocos = Array.from({ length: K }, (_, j) => ({
+        indice: j, nome: `${prefixo}${j + 1}`, linhas: [], total: 0, disponiveis: 0
+    }));
+
+    chaves.forEach(chave => {
+        const lugares = porFileira.get(chave).sort((a, b) => Number(a.numero) - Number(b.numero));
+        const n = lugares.length;
+        let k = 0;
+        blocos.forEach((b, j) => {
+            const qtd = Math.floor(n / K) + (j < n % K ? 1 : 0);
+            const parte = lugares.slice(k, k + qtd);
+            k += qtd;
+            if (!parte.length) return;
+            b.linhas.push({ letra: rotuloFileira(chave), lugares: parte });
+            b.total += parte.length;
+            b.disponiveis += parte.filter(assentoDisponivel).length;
+        });
+    });
+
+    return blocos;
+}
+
+// Fatia de anel elíptico entre os ângulos a0 e a1 (sentido horário)
+function caminhoBlocoElipse(cx, cy, f, a0, a1) {
+    const p = (rx, ry, a) => [cx + rx * Math.cos(a), cy + ry * Math.sin(a)];
+    const n = (v) => v.toFixed(1);
+    const [xo0, yo0] = p(f.rxo, f.ryo, a0);
+    const [xo1, yo1] = p(f.rxo, f.ryo, a1);
+    const [xi1, yi1] = p(f.rxi, f.ryi, a1);
+    const [xi0, yi0] = p(f.rxi, f.ryi, a0);
+    const grande = (a1 - a0) > Math.PI ? 1 : 0;
+    return `M ${n(xo0)} ${n(yo0)} A ${f.rxo} ${f.ryo} 0 ${grande} 1 ${n(xo1)} ${n(yo1)} ` +
+           `L ${n(xi1)} ${n(yi1)} A ${f.rxi} ${f.ryi} 0 ${grande} 0 ${n(xi0)} ${n(yi0)} Z`;
+}
+
+// Anel completo (usado nos setores que não são do ingresso, só como contexto)
+function caminhoAnelElipse(cx, cy, f) {
+    const el = (rx, ry) => `M ${cx - rx} ${cy} a ${rx} ${ry} 0 1 0 ${2 * rx} 0 a ${rx} ${ry} 0 1 0 ${-2 * rx} 0 Z`;
+    return el(f.rxo, f.ryo) + ' ' + el(f.rxi, f.ryi);
+}
+
+function blocoTemAssentoEscolhido(bloco) {
+    return bloco.linhas.some(l => l.lugares.some(a => assentoEstaEscolhido(a.id)));
+}
+
+// Tela 1: mapa do estádio com os blocos do setor
+function renderizarMapaEstadio(grade, assentos) {
+    _assentosEstadio = assentos;
+    grade.innerHTML = '';
+
+    const CX = 380, CY = 290;
+    const chaveSetor = window._eventoAtual?.setor_chave || '';
+    const blocos = dividirEmBlocos(assentos);
+
+    const svg = svgEl('svg', {
+        viewBox: '0 0 760 580',
+        class: 'estadio-svg',
+        role: 'group',
+        'aria-label': 'Mapa do estádio por blocos'
+    });
+
+    // Setores que não são deste ingresso: só contexto, sem clique
+    Object.entries(FAIXAS_ESTADIO).forEach(([chave, f]) => {
+        if (chave === chaveSetor) return;
+        if (chave === 'pista') {
+            svg.appendChild(svgEl('ellipse', { cx: CX, cy: CY, rx: f.rxo, ry: f.ryo, class: 'estadio-faixa' }));
+            svg.appendChild(svgEl('text', { x: CX, y: CY + 62, class: 'estadio-faixa-texto' }, NOME_FAIXA_ESTADIO[chave]));
+        } else {
+            svg.appendChild(svgEl('path', { d: caminhoAnelElipse(CX, CY, f), 'fill-rule': 'evenodd', class: 'estadio-faixa' }));
+            svg.appendChild(svgEl('text', {
+                x: CX, y: CY - (f.ryi + f.ryo) / 2 + 3, class: 'estadio-faixa-texto'
+            }, NOME_FAIXA_ESTADIO[chave]));
+        }
+    });
+
+    // Palco no centro
+    svg.appendChild(svgEl('rect', { x: CX - 60, y: CY - 22, width: 120, height: 44, rx: 6, class: 'estadio-palco' }));
+    svg.appendChild(svgEl('text', { x: CX, y: CY + 4, class: 'estadio-palco-texto' }, 'PALCO'));
+
+    const v = VIP_RETANGULO;
+    if (chaveSetor !== 'vip') {
+        svg.appendChild(svgEl('rect', { x: v.x, y: v.y, width: v.w, height: v.h, rx: 10, class: 'estadio-faixa' }));
+        svg.appendChild(svgEl('text', { x: v.x + v.w / 2, y: v.y + v.h / 2 + 3, class: 'estadio-faixa-texto' }, 'VIP'));
+    }
+
+    const adicionarBloco = (bloco, d, tx, ty) => {
+        const esgotado = bloco.disponiveis === 0;
+        const g = svgEl('g', {
+            class: 'estadio-bloco' + (esgotado ? ' bloco-esgotado' : '') + (blocoTemAssentoEscolhido(bloco) ? ' bloco-com-selecao' : ''),
+            role: 'button',
+            tabindex: esgotado ? '-1' : '0',
+            'aria-disabled': esgotado ? 'true' : 'false',
+            'aria-label': `Bloco ${bloco.nome}, ${bloco.disponiveis} lugares disponíveis`
+        });
+        g.appendChild(svgEl('title', {}, `Bloco ${bloco.nome}: ${bloco.disponiveis} de ${bloco.total} lugares disponíveis`));
+        g.appendChild(svgEl('path', { d }));
+        g.appendChild(svgEl('text', { x: tx.toFixed(1), y: ty.toFixed(1) }, bloco.nome));
+
+        if (!esgotado) {
+            const abrir = () => renderizarBlocoEstadio(grade, bloco);
+            g.addEventListener('click', abrir);
+            g.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    abrir();
+                }
+            });
+        }
+        svg.appendChild(g);
+    };
+
+    if (chaveSetor === 'vip') {
+        adicionarBloco(blocos[0], `M ${v.x} ${v.y} h ${v.w} v ${v.h} h ${-v.w} Z`, v.x + v.w / 2, v.y + v.h / 2);
+    } else {
+        const f = FAIXAS_ESTADIO[chaveSetor];
+        const K = blocos.length;
+        const passo = 2 * Math.PI / K;
+        const folga = K > 1 ? 0.05 : 0.12; // corredor entre blocos
+        const rxm = (f.rxi + f.rxo) / 2, rym = (f.ryi + f.ryo) / 2;
+
+        blocos.forEach((bloco, j) => {
+            const centro = -Math.PI / 2 + j * passo; // bloco 1 centrado no topo
+            const d = caminhoBlocoElipse(CX, CY, f, centro - passo / 2 + folga / 2, centro + passo / 2 - folga / 2);
+            adicionarBloco(bloco, d, CX + rxm * Math.cos(centro), CY + rym * Math.sin(centro));
+        });
+    }
+
+    grade.appendChild(svg);
+}
+
+// Tela 2: fileiras e assentos do bloco escolhido
+function renderizarBlocoEstadio(grade, bloco) {
+    grade.innerHTML = '';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'bloco-detalhe';
+
+    const topo = document.createElement('div');
+    topo.className = 'bloco-detalhe-topo';
+
+    const voltar = document.createElement('button');
+    voltar.type = 'button';
+    voltar.className = 'bloco-voltar';
+    voltar.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Voltar ao mapa';
+    voltar.addEventListener('click', () => renderizarMapaEstadio(grade, _assentosEstadio));
+
+    const titulo = document.createElement('div');
+    titulo.className = 'bloco-detalhe-textos';
+    titulo.innerHTML = `
+        <div class="bloco-detalhe-titulo">Bloco ${bloco.nome}</div>
+        <div class="bloco-detalhe-info">${bloco.disponiveis} lugares disponíveis. A fileira A é a mais próxima do palco.</div>`;
+
+    topo.append(voltar, titulo);
+
+    const gradeBloco = document.createElement('div');
+    gradeBloco.className = 'bloco-grade';
+
+    bloco.linhas.forEach(linha => {
+        const row = document.createElement('div');
+        row.className = 'assentos-fileira';
+
+        const nome = document.createElement('span');
+        nome.className = 'assentos-fileira-nome';
+        nome.textContent = linha.letra;
+        row.appendChild(nome);
+
+        linha.lugares.forEach(a => {
+            const rotulo = `${linha.letra}${a.numero}`;
+            const livre = assentoDisponivel(a);
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'assento' + (livre ? '' : ' assento-ocupado');
+            btn.textContent = a.numero;
+            btn.disabled = !livre;
+            btn.dataset.id = a.id;
+            btn.setAttribute('aria-label', `Assento ${rotulo}${livre ? '' : ', indisponível'}`);
+            btn.setAttribute('aria-pressed', 'false');
+
+            if (assentoEstaEscolhido(a.id)) {
+                btn.classList.add('assento-selecionado');
+                btn.setAttribute('aria-pressed', 'true');
+            }
+
+            if (livre) {
+                btn.addEventListener('click', () => {
+                    if (alternarAssento(a, rotulo)) sincronizarAssentosNaTela();
+                });
+            }
+
+            row.appendChild(btn);
+        });
+
+        gradeBloco.appendChild(row);
+    });
+
+    wrap.append(topo, gradeBloco);
+    grade.appendChild(wrap);
+}
+
+function renderizarGradeAssentos(assentos) {
+    const grade = document.getElementById('modal-assentos-grade');
+    if (!grade) return;
+    grade.innerHTML = '';
+
+    if (!assentos.length) {
+        grade.innerHTML = '<p class="modal-assentos-msg">Nenhum assento cadastrado para este ingresso.</p>';
+        return;
+    }
+
+    // Template arena (estádio): assentos em anéis em volta do palco.
+    // Demais templates (teatro, casa de show, simples): grade reta por fileira.
+    const modoEstadio = TEMPLATE_MAPA_ATUAL === 'arena' &&
+        SETORES_COM_ASSENTO_ESTADIO.includes(window._eventoAtual?.setor_chave);
+    const caixa = grade.closest('.modal-assentos-caixa');
+    if (caixa) caixa.classList.toggle('modo-estadio', modoEstadio);
+    if (modoEstadio) {
+        montarContextoEstadio();
+        renderizarMapaEstadio(grade, assentos);
+        return;
+    }
+    document.getElementById('modal-assentos-contexto')?.replaceChildren();
+
+    // Agrupa por fileira
+    const porFileira = new Map();
+    assentos.forEach(a => {
+        const chave = String(a.fileira);
+        if (!porFileira.has(chave)) porFileira.set(chave, []);
+        porFileira.get(chave).push(a);
+    });
+
+    const fileiras = [...porFileira.keys()].sort((a, b) => {
+        const na = Number(a), nb = Number(b);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return a.localeCompare(b, 'pt-BR');
+    });
+
+    fileiras.forEach(chaveFileira => {
+        const linha = document.createElement('div');
+        linha.className = 'assentos-fileira';
+
+        const nomeFileira = document.createElement('span');
+        nomeFileira.className = 'assentos-fileira-nome';
+        nomeFileira.textContent = rotuloFileira(chaveFileira);
+        linha.appendChild(nomeFileira);
+
+        const lugares = porFileira.get(chaveFileira)
+            .sort((a, b) => Number(a.numero) - Number(b.numero));
+
+        lugares.forEach(a => {
+            const rotulo = `${rotuloFileira(a.fileira)}${a.numero}`;
+            const livre = assentoDisponivel(a);
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'assento' + (livre ? '' : ' assento-ocupado');
+            btn.textContent = a.numero;
+            btn.disabled = !livre;
+            btn.dataset.id = a.id;
+            btn.setAttribute('aria-label', `Assento ${rotulo}${livre ? '' : ', indisponível'}`);
+            btn.setAttribute('aria-pressed', 'false');
+
+            if (assentoEstaEscolhido(a.id)) {
+                btn.classList.add('assento-selecionado');
+                btn.setAttribute('aria-pressed', 'true');
+            }
+
+            if (livre) {
+                btn.addEventListener('click', () => {
+                    if (alternarAssento(a, rotulo)) sincronizarAssentosNaTela();
+                });
+            }
+
+            linha.appendChild(btn);
+        });
+
+        grade.appendChild(linha);
+    });
+}
+
+async function carregarAssentos(ingressoId) {
+    const grade = document.getElementById('modal-assentos-grade');
+    if (!grade) return;
+    grade.innerHTML = '<p class="modal-assentos-msg">Carregando assentos...</p>';
+
+    try {
+        const res = await fetch(`${API_BASE}/assentos/${encodeURIComponent(ingressoId)}`);
+        if (!res.ok) throw new Error(`Erro ${res.status}`);
+        const dados = await res.json();
+        const lista = Array.isArray(dados) ? dados : (dados.assentos || []);
+        renderizarGradeAssentos(lista);
+    } catch (err) {
+        console.error('Erro ao carregar assentos:', err);
+        grade.innerHTML = '<p class="modal-assentos-msg modal-assentos-erro">Não foi possível carregar os assentos. Tente novamente.</p>';
+    }
+}
+
+function abrirModalAssentos() {
+    const e = window._eventoAtual;
+    if (!e || !e.tipo_ingresso_id) return;
+
+    const overlay = garantirModalAssentos();
+    _assentosEscolhidos = [];
+    _assentosReservados = new Set();
+    atualizarRodapeAssentos();
+
+    overlay.classList.add('aberto');
+    document.body.style.overflow = 'hidden';
+
+    _modalAssentosTecla = (ev) => { if (ev.key === 'Escape') fecharModalAssentos(); };
+    document.addEventListener('keydown', _modalAssentosTecla);
+
+    carregarAssentos(e.tipo_ingresso_id);
+}
+
+function fecharModalAssentos() {
+    const overlay = document.getElementById('modal-assentos');
+    if (overlay) overlay.classList.remove('aberto');
+    document.body.style.overflow = '';
+    if (_modalAssentosTecla) {
+        document.removeEventListener('keydown', _modalAssentosTecla);
+        _modalAssentosTecla = null;
+    }
+}
+
+async function confirmarAssento() {
+    const e = window._eventoAtual;
+    if (!_assentosEscolhidos.length || !e) return;
+
+    const min = Math.min(e.minQuantidade || 1, e.maxQuantidade || 1);
+    if (_assentosEscolhidos.length < min) {
+        mostrarAviso(`Escolha pelo menos ${min} assentos para este ingresso.`, 'warn', 'Quantidade mínima');
+        return;
+    }
+
+    const usuarioId = obterUsuarioId();
+    if (!usuarioId) {
+        mostrarAviso('Entre na sua conta para reservar os assentos.', 'warn', 'Login necessário');
+        setTimeout(() => { window.location.href = '/frontend/login/login.html'; }, 1800);
+        return;
+    }
+
+    const btn = document.getElementById('modal-assentos-confirmar');
+    btn.disabled = true;
+    btn.textContent = 'Reservando...';
+
+    try {
+        const headers = { 'Content-Type': 'application/json' };
+        const token = localStorage.getItem('token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        // Reserva um por um; os que já foram reservados antes de uma falha não são reservados de novo
+        for (const assento of [..._assentosEscolhidos]) {
+            if (_assentosReservados.has(String(assento.id))) continue;
+
+            const res = await fetch(`${API_BASE}/assentos/${encodeURIComponent(assento.id)}/reservar`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ usuario_id: usuarioId })
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (res.status === 401) {
+                mostrarAviso('Sua sessão expirou. Entre novamente para reservar os assentos.', 'warn', 'Sessão expirada');
+                atualizarRodapeAssentos();
+                setTimeout(() => { window.location.href = '/frontend/login/login.html'; }, 1800);
+                return;
+            }
+
+            if (!res.ok) {
+                const titulo = res.status === 409 ? `Assento ${assento.rotulo} indisponível` : 'Não foi possível reservar';
+                mostrarAviso(data.erro || 'Escolha outro assento e tente novamente.', res.status >= 500 ? 'error' : 'warn', titulo);
+                // Tira só o que falhou; os já reservados continuam marcados
+                _assentosEscolhidos = _assentosEscolhidos.filter(s => String(s.id) !== String(assento.id));
+                atualizarRodapeAssentos();
+                carregarAssentos(e.tipo_ingresso_id);
+                return;
+            }
+
+            _assentosReservados.add(String(assento.id));
+        }
+
+        e.assento_ids = _assentosEscolhidos.map(s => s.id);
+        e.assento_rotulos = _assentosEscolhidos.map(s => s.rotulo);
+        e.quantidade = e.assento_ids.length;
+        salvarEstadoCompra();
+
+        const resumo = document.querySelector('.ingresso-resumo');
+        if (resumo) resumo.textContent = `${e.ingressoNome} - ${e.assento_rotulos.join(', ')}`;
+        atualizarResumo();
+
+        fecharModalAssentos();
+        realizarAcaoComprar(); // agora com assento_ids, segue para o checkout
+    } catch (err) {
+        console.error('Erro ao reservar assentos:', err);
+        mostrarAviso('Não conseguimos falar com o servidor. Tente novamente em instantes.', 'error', 'Erro de conexão');
+        atualizarRodapeAssentos();
+    }
+}
+
+// Confirmar presença = compra de ingresso gratuito: registra a venda no
+// backend (onde valem as travas de CPF e de quantidade) antes de redirecionar.
+async function confirmarPresencaGratuita(dados) {
+    const usuarioId = obterUsuarioId();
+    if (!usuarioId) {
+        mostrarAviso('Entre na sua conta para confirmar presença neste evento.', 'warn', 'Login necessário');
+        setTimeout(() => { window.location.href = '/frontend/login/login.html'; }, 1800);
+        return;
+    }
+    if (!dados.evento_id || !dados.tipo_ingresso_id) {
+        mostrarAviso('Selecione o ingresso novamente e tente de novo.', 'warn', 'Ingresso não identificado');
+        return;
+    }
+
+    const botoes = document.querySelectorAll('.botao-comprar, .botao-comprar-topo');
+    const restaurar = () => botoes.forEach(b => {
+        b.disabled = false;
+        b.textContent = 'Confirmar Presença';
+    });
+    botoes.forEach(b => { b.disabled = true; b.textContent = 'Confirmando...'; });
+
+    try {
+        const res = await fetch(`${API_BASE}/ingressos/comprar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                usuario_id: usuarioId,
+                evento_id: dados.evento_id,
+                itens: [{ tipo_ingresso_id: dados.tipo_ingresso_id, quantidade: dados.quantidade || 1 }]
+            })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            const titulo = res.status === 409 ? 'Limite por CPF atingido' : 'Não foi possível confirmar';
+            const tipo = res.status >= 500 ? 'error' : 'warn';
+            mostrarAviso(data.erro || 'Tente novamente em instantes.', tipo, titulo);
+            restaurar();
+            return;
+        }
+
+        window.location.href = '/frontend/detalheseventos/presencaconfirmada.html';
+    } catch (err) {
+        console.error('Erro ao confirmar presença:', err);
+        mostrarAviso('Não conseguimos falar com o servidor. Tente novamente em instantes.', 'error', 'Erro de conexão');
+        restaurar();
+    }
+}
+async function realizarAcaoComprar() {
     const botaoComprar = document.querySelector('.botao-comprar');
     if (botaoComprar && botaoComprar.disabled) return;
 
@@ -961,6 +1838,12 @@ function realizarAcaoComprar() {
         return;
     }
 
+    // Ingresso numerado: sem assento reservado, abre a escolha de assento primeiro
+    if (window._eventoAtual?.tipo_selecao === 'numerado' && !(window._eventoAtual?.assento_ids?.length)) {
+        abrirModalAssentos();
+        return;
+    }
+
     const nomeIngresso = opcaoPai.dataset.nome || opcaoPai.querySelector('.nome-ingresso').textContent;
     const precoNumerico = Number(opcaoPai.dataset.preco) || 0;
 
@@ -974,12 +1857,7 @@ function realizarAcaoComprar() {
     };
 
     localStorage.setItem('eventoSelecionado', JSON.stringify(dadosParaCheckout));
-
-    if (botaoComprar.classList.contains('botao-confirmar')) {
-        window.location.href = '/frontend/detalheseventos/presencaconfirmada.html';
-    } else {
-        window.location.href = '/frontend/detalheseventos/finalizarcompra.html';
-    }
+       window.location.href = '/frontend/detalheseventos/finalizarcompra.html';
 }
 
 function inicializarAcaoBotaoComprar() {

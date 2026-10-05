@@ -599,319 +599,7 @@ function showSection(sectionId, btn) {
   }
 }
 
-// ─────────────────────────────────────────────
-// MODAL DE INGRESSOS — POR TIPO
-//
-// Substitui o antigo modal (1 total/vendido/disponível por evento
-// inteiro) por uma lista dos tipos de ingresso cadastrados
-// (GET /ingressos/tipos/:evento_id), cada um editável e excluível
-// individualmente, mais um formulário pra criar tipos novos.
-// ─────────────────────────────────────────────
-let _ticketModalEventoId = null;
-let _tiposIngressoAtuais = [];
-
-async function openTicketModal(eventoId) {
-  const evento = _eventosReais.find(e => String(e.id) === String(eventoId));
-  if (!evento) return;
-
-  _ticketModalEventoId = evento.id;
-
-  const subtitulo = document.getElementById('ticketModalSubtitle');
-  if (subtitulo) subtitulo.textContent = `${evento.nome || 'Evento'} · ${evento.local_nome || evento.cidade || 'Local não informado'}`;
-
-  const dataEl = document.getElementById('ticketModalData');
-  if (dataEl) dataEl.textContent = formatarDataCurta(evento.data_inicio);
-
-  const horaEl = document.getElementById('ticketModalHorario');
-  if (horaEl) horaEl.textContent = formatarHora(evento.data_inicio);
-
-  esconderFormNovoTipo();
-
-  const m = document.getElementById('ticketModal');
-  if (m) m.style.display = 'flex';
-
-  await carregarTiposIngressoModal(evento.id);
-}
-
-function closeTicketModal() {
-  const m = document.getElementById('ticketModal');
-  if (m) m.style.display = 'none';
-  _ticketModalEventoId = null;
-  _tiposIngressoAtuais = [];
-  esconderFormNovoTipo();
-}
-
-async function carregarTiposIngressoModal(eventoId) {
-  const lista = document.getElementById('tiposIngressoList');
-  if (!lista) return;
-  lista.innerHTML = `<p class="loading-placeholder" style="font-size:13px; color:var(--text-3); text-align:center; padding:20px 0;">Carregando tipos de ingresso...</p>`;
-
-  const token = localStorage.getItem('token');
-  const headers = { 'Authorization': 'Bearer ' + token };
-
-  try {
-    const res = await fetch(`${window.API_BASE}/ingressos/tipos/${eventoId}`, { headers });
-    const tipos = res.ok ? await res.json() : [];
-    _tiposIngressoAtuais = Array.isArray(tipos) ? tipos : [];
-    renderizarTiposIngressoModal(_tiposIngressoAtuais);
-  } catch (e) {
-    console.warn('Erro ao carregar tipos de ingresso:', e);
-    lista.innerHTML = `<p style="font-size:13px; color:var(--coral); text-align:center; padding:20px 0;">Não foi possível carregar os tipos de ingresso.</p>`;
-  }
-}
-
-function renderizarTiposIngressoModal(tipos) {
-  const lista = document.getElementById('tiposIngressoList');
-  if (!lista) return;
-  lista.innerHTML = '';
-
-  if (!tipos || tipos.length === 0) {
-    lista.innerHTML = `<p style="font-size:13px; color:var(--text-3); text-align:center; padding:20px 0;">Nenhum tipo de ingresso cadastrado ainda. Clique em "Adicionar tipo" para criar o primeiro.</p>`;
-    return;
-  }
-
-  tipos.forEach(tipo => lista.appendChild(_linhaTipoIngresso(tipo)));
-}
-
-function _linhaTipoIngresso(tipo) {
-  const vendidos = Number(tipo.vendidos) || 0;
-  const cortesia = Number(tipo.cortesia) || 0;
-  const total = Number(tipo.quantidade_total) || 0;
-  const valor = Number(tipo.valor) || 0;
-  const ocupados = vendidos + cortesia;
-  const disponiveis = Math.max(0, total - ocupados);
-  const podeExcluir = ocupados === 0;
-  const esgotado = total > 0 && disponiveis === 0;
-  const receita = vendidos * valor;
-  const ativo = tipo.ativo !== false;
-
-  const inicioVenda = tipo.data_inicio_venda ? _paraDatetimeLocal(tipo.data_inicio_venda) : '';
-  const fimVenda = tipo.data_fim_venda ? _paraDatetimeLocal(tipo.data_fim_venda) : '';
-
-  const row = document.createElement('div');
-  row.className = 'tipo-row';
-  row.dataset.id = tipo.id;
-
-  row.innerHTML = `
-    <div class="tipo-row-fields">
-      <div class="tf">
-        <label>Nome</label>
-        <input type="text" class="tipo-titulo" value="${tipo.titulo || ''}">
-      </div>
-      <div class="tf">
-        <label>Categoria</label>
-        <input type="text" class="tipo-categoria" value="${tipo.tipo || ''}" placeholder="ex: Pista, VIP...">
-      </div>
-      <div class="tf">
-        <label>Valor (R$)</label>
-        <input type="number" step="0.01" min="0" class="tipo-valor" value="${valor}">
-      </div>
-      <div class="tf">
-        <label>Quantidade total</label>
-        <input type="number" min="${ocupados}" class="tipo-total" value="${total}">
-      </div>
-    </div>
-    <div class="tipo-row-fields tipo-row-fields--lote">
-      <div class="tf tf--switch">
-        <label>Venda ativa</label>
-        <label class="tipo-switch">
-          <input type="checkbox" class="tipo-ativo" ${ativo ? 'checked' : ''}>
-          <span class="tipo-switch-track"></span>
-        </label>
-      </div>
-      <div class="tf">
-        <label>Início do lote (opcional)</label>
-        <input type="datetime-local" class="tipo-inicio-venda" value="${inicioVenda}">
-      </div>
-      <div class="tf">
-        <label>Fim do lote (opcional)</label>
-        <input type="datetime-local" class="tipo-fim-venda" value="${fimVenda}">
-      </div>
-    </div>
-    <div class="tipo-badges">
-      ${esgotado ? `<span class="tipo-badge-esgotado">Esgotado</span>` : ''}
-      ${!ativo ? `<span class="tipo-badge-pausado">Pausado</span>` : ''}
-    </div>
-    <div class="tipo-row-stats">
-      <div class="tipo-stat"><span>${vendidos}</span><small>vendidos</small></div>
-      <div class="tipo-stat"><span>${cortesia}</span><small>cortesia</small></div>
-      <div class="tipo-stat"><span>${disponiveis}</span><small>disponíveis</small></div>
-      <div class="tipo-stat"><span>${formatarMoeda(receita)}</span><small>receita</small></div>
-    </div>
-    <div class="tipo-row-actions">
-      <button class="btn-tipo-save" onclick="salvarTipoIngressoExistente(${tipo.id})">Salvar</button>
-      <button class="btn-tipo-delete" onclick="excluirTipoIngressoExistente(${tipo.id})" ${podeExcluir ? '' : 'disabled title="Não é possível excluir: já há vendas/cortesias neste tipo"'}>Excluir</button>
-    </div>
-  `;
-  return row;
-}
-async function salvarTipoIngressoExistente(id) {
-  const row = document.querySelector(`.tipo-row[data-id="${id}"]`);
-  if (!row) return;
-
-  const titulo = row.querySelector('.tipo-titulo').value.trim();
-  const tipoCategoria = row.querySelector('.tipo-categoria').value.trim();
-  const valor = parseFloat(row.querySelector('.tipo-valor').value) || 0;
-  const quantidade_total = parseInt(row.querySelector('.tipo-total').value) || 0;
-  const ativo = row.querySelector('.tipo-ativo').checked;
-  const data_inicio_venda = row.querySelector('.tipo-inicio-venda').value || null;
-  const data_fim_venda = row.querySelector('.tipo-fim-venda').value || null;
-
-  if (!titulo) {
-    showToast('Dê um nome para o tipo de ingresso.', 'error');
-    return;
-  }
-
-  if (data_inicio_venda && data_fim_venda && new Date(data_inicio_venda) >= new Date(data_fim_venda)) {
-    showToast('O início do lote precisa ser antes do fim.', 'error');
-    return;
-  }
-
-  const token = localStorage.getItem('token');
-  const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
-
-  try {
-    const res = await fetch(`${window.API_BASE}/ingressos/tipos/${id}`, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify({ titulo, tipo: tipoCategoria || null, valor, quantidade_total, ativo, data_inicio_venda, data_fim_venda })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.erro || 'Erro ao salvar tipo de ingresso.');
-
-    showToast('Tipo de ingresso atualizado!', 'success');
-    await carregarTiposIngressoModal(_ticketModalEventoId);
-    carregarDashboard();
-  } catch (e) {
-    console.error('[salvarTipoIngressoExistente] erro:', e);
-    showToast('Não foi possível salvar: ' + e.message, 'error');
-  }
-}
-
-async function excluirTipoIngressoExistente(id) {
-  if (!confirm('Excluir este tipo de ingresso? Essa ação não pode ser desfeita.')) return;
-
-  const token = localStorage.getItem('token');
-  const headers = { 'Authorization': 'Bearer ' + token };
-
-  try {
-    const res = await fetch(`${window.API_BASE}/ingressos/tipos/${id}`, { method: 'DELETE', headers });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.erro || 'Erro ao excluir tipo de ingresso.');
-
-    showToast('Tipo de ingresso excluído.', 'success');
-    await carregarTiposIngressoModal(_ticketModalEventoId);
-    carregarDashboard();
-  } catch (e) {
-    console.error('[excluirTipoIngressoExistente] erro:', e);
-    showToast('Não foi possível excluir: ' + e.message, 'error');
-  }
-}
-
-function mostrarFormNovoTipo() {
-  const form = document.getElementById('novoTipoForm');
-  if (!form) return;
-  form.innerHTML = `
-    <div class="tipo-row-fields">
-      <div class="tf">
-        <label>Nome</label>
-        <input type="text" id="novoTipoTitulo" placeholder="ex: Pista, VIP, Camarote...">
-      </div>
-      <div class="tf">
-        <label>Categoria</label>
-        <input type="text" id="novoTipoCategoria" placeholder="opcional">
-      </div>
-      <div class="tf">
-        <label>Valor (R$)</label>
-        <input type="number" step="0.01" min="0" id="novoTipoValor" value="0">
-      </div>
-      <div class="tf">
-        <label>Quantidade total</label>
-        <input type="number" min="0" id="novoTipoTotal" value="0">
-      </div>
-    </div>
-    <div class="tipo-row-fields tipo-row-fields--lote">
-      <div class="tf tf--switch">
-        <label>Venda ativa</label>
-        <label class="tipo-switch">
-          <input type="checkbox" id="novoTipoAtivo" checked>
-          <span class="tipo-switch-track"></span>
-        </label>
-      </div>
-      <div class="tf">
-        <label>Início do lote (opcional)</label>
-        <input type="datetime-local" id="novoTipoInicioVenda">
-      </div>
-      <div class="tf">
-        <label>Fim do lote (opcional)</label>
-        <input type="datetime-local" id="novoTipoFimVenda">
-      </div>
-    </div>
-    <div class="tipo-row-actions">
-      <button class="btn-tipo-save" onclick="criarNovoTipoIngresso()">Criar tipo</button>
-      <button class="btn-tipo-delete" onclick="esconderFormNovoTipo()">Cancelar</button>
-    </div>
-  `;
-  form.style.display = 'flex';
-  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function esconderFormNovoTipo() {
-  const form = document.getElementById('novoTipoForm');
-  if (!form) return;
-  form.style.display = 'none';
-  form.innerHTML = '';
-}
-
-async function criarNovoTipoIngresso() {
-  const titulo = document.getElementById('novoTipoTitulo')?.value.trim();
-  const tipoCategoria = document.getElementById('novoTipoCategoria')?.value.trim();
-  const valor = parseFloat(document.getElementById('novoTipoValor')?.value) || 0;
-  const quantidade_total = parseInt(document.getElementById('novoTipoTotal')?.value) || 0;
-  const ativo = document.getElementById('novoTipoAtivo')?.checked ?? true;
-  const data_inicio_venda = document.getElementById('novoTipoInicioVenda')?.value || null;
-  const data_fim_venda = document.getElementById('novoTipoFimVenda')?.value || null;
-
-  if (!titulo) {
-    showToast('Dê um nome para o novo tipo de ingresso.', 'error');
-    return;
-  }
-  if (data_inicio_venda && data_fim_venda && new Date(data_inicio_venda) >= new Date(data_fim_venda)) {
-    showToast('O início do lote precisa ser antes do fim.', 'error');
-    return;
-  }
-  if (!_ticketModalEventoId) return;
-
-  const token = localStorage.getItem('token');
-  const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
-
-  try {
-    const res = await fetch(`${window.API_BASE}/ingressos/tipos`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        evento_id: _ticketModalEventoId,
-        titulo,
-        tipo: tipoCategoria || null,
-        valor,
-        quantidade_total,
-        ativo,
-        data_inicio_venda,
-        data_fim_venda
-      })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.erro || 'Erro ao criar tipo de ingresso.');
-
-    showToast('Tipo de ingresso criado!', 'success');
-    esconderFormNovoTipo();
-    await carregarTiposIngressoModal(_ticketModalEventoId);
-    carregarDashboard();
-  } catch (e) {
-    console.error('[criarNovoTipoIngresso] erro:', e);
-    showToast('Não foi possível criar: ' + e.message, 'error');
-  }
-}
+showToast('Tipo de ingresso criado!', 'success');
 
 // ─────────────────────────────────────────────
 // RENDERIZAÇÃO DE VENDAS REAIS
@@ -2046,7 +1734,8 @@ function _porTipoParaRelatorio(tiposIngresso) {
     const total = Number(t.quantidade_total) || 0;
     const valor = Number(t.valor) || 0;
     const disponiveis = Math.max(0, total - vendidos - cortesia);
-    const receita = vendidos * valor;
+      const receitaReal = Number(t.receita);
+   const receita = Number.isFinite(receitaReal) ? receitaReal : vendidos * valor;
     return {
       titulo: t.titulo || 'Sem nome',
       vendidos, cortesia, disponiveis, total, receita
@@ -2918,4 +2607,303 @@ function renderizarEstabelecimentos(lista) {
   lista.forEach(estab => {
     secao.appendChild(criarCardEstabelecimento(estab));
   });
+}
+
+// ─────────────────────────────────────────────
+// MODAL "GERENCIAR INGRESSOS" (tipos de ingresso)
+// Rotas: GET /ingressos/tipos/:evento_id
+//        POST /ingressos/tipos · PUT/DELETE /ingressos/tipos/:id
+// ─────────────────────────────────────────────
+let _ticketEventoId = null;
+let _tiposModal = [];
+
+const _SETORES_ILUSTRATIVO = {
+  arena: ['arquibancada', 'cadeira superior', 'cadeira inferior', 'pista', 'vip'],
+  pista_camarote: ['pista', 'camarote'],
+  teatro: ['plateia', 'balcao'],
+  simples: ['geral']
+};
+
+const _esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+// "2026-10-31T20:00" -> "2026-10-31 20:00:00" (mesmo formato do criareventos.js)
+const _dtParaApi = v => v ? v.replace('T', ' ') + (v.length === 16 ? ':00' : '') : null;
+
+function _authJson() {
+  return {
+    'Authorization': 'Bearer ' + localStorage.getItem('token'),
+    'Content-Type': 'application/json'
+  };
+}
+
+function _setoresDoEvento(evento) {
+  if (!evento || !evento.tipo_mapa || evento.tipo_mapa === 'nenhum') return [];
+  let cfg = evento.mapa_config;
+  if (typeof cfg === 'string') { try { cfg = JSON.parse(cfg); } catch { cfg = null; } }
+  if (evento.tipo_mapa === 'imagem') {
+    return (cfg?.setores || []).map(s => ({ chave: s.chave, nome: s.nome }));
+  }
+  return (_SETORES_ILUSTRATIVO[cfg?.template] || []).map(c => ({ chave: c, nome: c }));
+}
+
+function _campoSetorHTML(evento, atual) {
+  const setores = _setoresDoEvento(evento);
+  if (!setores.length) return '';
+  return `
+    <div class="tf">
+      <label>Setor no mapa</label>
+      <select class="f-setor">
+        ${setores.map(s => `<option value="${_esc(s.chave)}" ${s.chave === atual ? 'selected' : ''}>${_esc(s.nome)}</option>`).join('')}
+      </select>
+    </div>`;
+}
+
+function openTicketModal(eventoId) {
+  const evento = _eventosReais.find(e => String(e.id) === String(eventoId));
+  if (!evento) return;
+  _ticketEventoId = evento.id;
+
+  document.getElementById('ticketModalSubtitle').textContent = evento.nome || '—';
+  document.getElementById('ticketModalData').textContent = formatarDataCurta(evento.data_inicio);
+  document.getElementById('ticketModalHorario').textContent = formatarHora(evento.data_inicio);
+
+  const form = document.getElementById('novoTipoForm');
+  if (form) { form.style.display = 'none'; form.innerHTML = ''; }
+
+  document.getElementById('ticketModal').style.display = 'flex';
+  carregarTiposIngresso();
+}
+
+function closeTicketModal() {
+  const ov = document.getElementById('ticketModal');
+  if (ov) ov.style.display = 'none';
+  _ticketEventoId = null;
+}
+
+async function carregarTiposIngresso() {
+  const lista = document.getElementById('tiposIngressoList');
+  if (!lista || !_ticketEventoId) return;
+  lista.innerHTML = `<p style="font-size:13px;color:var(--text-3);text-align:center;padding:20px 0;">Carregando tipos de ingresso...</p>`;
+  try {
+    const res = await fetch(`${window.API_BASE}/ingressos/tipos/${_ticketEventoId}`, {
+      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+    });
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    _tiposModal = await res.json();
+    renderizarTiposIngresso();
+  } catch (e) {
+    console.error('[carregarTiposIngresso]', e);
+    lista.innerHTML = `<p style="font-size:13px;color:var(--coral);text-align:center;padding:20px 0;">Não foi possível carregar os ingressos.</p>`;
+  }
+}
+
+function renderizarTiposIngresso() {
+  const lista = document.getElementById('tiposIngressoList');
+  if (!lista) return;
+  if (!_tiposModal.length) {
+    lista.innerHTML = `<p style="font-size:13px;color:var(--text-3);text-align:center;padding:20px 0;">Nenhum tipo de ingresso. Clique em "Adicionar tipo".</p>`;
+    return;
+  }
+  const evento = _eventosReais.find(e => String(e.id) === String(_ticketEventoId));
+  lista.innerHTML = '';
+  _tiposModal.forEach(t => {
+    const vendidos = Number(t.vendidos) || 0;
+    const cortesia = Number(t.cortesia) || 0;
+    const total = Number(t.quantidade_total) || 0;
+    const disp = Math.max(0, total - vendidos - cortesia);
+    const numerado = t.tipo_selecao === 'numerado';
+    const ativo = t.ativo === true || t.ativo === 1;
+    const podeExcluir = vendidos + cortesia === 0;
+
+    const row = document.createElement('div');
+    row.className = 'tipo-row';
+    row.dataset.id = t.id;
+    row.innerHTML = `
+      <div class="tipo-badges">
+        ${disp === 0 && total > 0 ? '<span class="tipo-badge-esgotado">Esgotado</span>' : ''}
+        ${!ativo ? '<span class="tipo-badge-pausado">Pausado</span>' : ''}
+        ${numerado ? '<span class="tipo-badge-numerado">Numerado</span>' : ''}
+      </div>
+      <div class="tipo-row-fields">
+        <div class="tf"><label>Título</label><input class="f-titulo" type="text" maxlength="45" value="${_esc(t.titulo)}"></div>
+        <div class="tf"><label>Valor (R$)</label><input class="f-valor" type="number" step="0.01" min="0" value="${Number(t.valor) || 0}"></div>
+        <div class="tf"><label>Quantidade</label><input class="f-qtd" type="number" min="1" value="${total}" ${numerado ? 'readonly' : ''}></div>
+        <div class="tf tf--switch"><label>Venda ativa</label>
+          <label class="tipo-switch"><input class="f-ativo" type="checkbox" ${ativo ? 'checked' : ''}><span class="tipo-switch-track"></span></label>
+        </div>
+      </div>
+      <div class="tipo-row-fields tipo-row-fields--lote">
+        <div class="tf"><label>Início das vendas</label><input class="f-ini" type="datetime-local" value="${t.data_inicio_venda ? _paraDatetimeLocal(t.data_inicio_venda) : ''}"></div>
+        <div class="tf"><label>Fim das vendas</label><input class="f-fim" type="datetime-local" value="${t.data_fim_venda ? _paraDatetimeLocal(t.data_fim_venda) : ''}"></div>
+        ${_campoSetorHTML(evento, t.setor_mapa)}
+      </div>
+      <div class="tipo-row-fields tipo-row-fields--2">
+        <div class="tf"><label>Mín. por compra</label><input class="f-min" type="number" min="1" value="${t.quantidade_min_por_compra ?? ''}"></div>
+        <div class="tf"><label>Máx. por CPF</label><input class="f-max" type="number" min="1" value="${t.limite_por_cpf ?? ''}"></div>
+      </div>
+      <div class="tipo-row-stats">
+        <div class="tipo-stat"><span>${vendidos}</span><small>vendidos</small></div>
+        <div class="tipo-stat"><span>${cortesia}</span><small>cortesia</small></div>
+        <div class="tipo-stat"><span>${disp}</span><small>disponíveis</small></div>
+        <div class="tipo-stat"><span>${formatarMoeda(t.receita)}</span><small>receita</small></div>
+      </div>
+      <div class="tipo-row-actions">
+        <button class="btn-tipo-delete" ${podeExcluir ? '' : 'disabled title="Já existem vendas neste tipo"'} onclick="excluirTipoIngressoModal(${t.id})">Excluir</button>
+        <button class="btn-tipo-save" onclick="salvarTipoIngresso(${t.id})">Salvar</button>
+      </div>`;
+    lista.appendChild(row);
+  });
+}
+
+function _numOuNull(v) { return v === '' || v == null ? null : Number(v); }
+
+async function salvarTipoIngresso(id) {
+  const row = document.querySelector(`#tiposIngressoList .tipo-row[data-id="${id}"]`);
+  if (!row) return;
+  const q = s => row.querySelector(s);
+
+  const body = {
+    titulo: q('.f-titulo').value.trim(),
+    valor: q('.f-valor').value,
+    quantidade_total: q('.f-qtd').value,
+    ativo: q('.f-ativo').checked,
+    data_inicio_venda: _dtParaApi(q('.f-ini').value),
+    data_fim_venda: _dtParaApi(q('.f-fim').value),
+    limite_por_cpf: _numOuNull(q('.f-max').value),
+    quantidade_min_por_compra: _numOuNull(q('.f-min').value)
+  };
+  const setor = q('.f-setor');
+  if (setor) body.setor_mapa = setor.value;
+
+  try {
+    const res = await fetch(`${window.API_BASE}/ingressos/tipos/${id}`, {
+      method: 'PUT', headers: _authJson(), body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.erro || 'Erro ao salvar.');
+    showToast('Tipo de ingresso atualizado!', 'success');
+    await carregarTiposIngresso();
+    carregarDashboard();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function excluirTipoIngressoModal(id) {
+  if (!confirm('Excluir este tipo de ingresso?')) return;
+  try {
+    const res = await fetch(`${window.API_BASE}/ingressos/tipos/${id}`, {
+      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.erro || 'Erro ao excluir.');
+    showToast('Tipo de ingresso excluído.', 'success');
+    await carregarTiposIngresso();
+    carregarDashboard();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+// ── Novo tipo ──
+function mostrarFormNovoTipo() {
+  const form = document.getElementById('novoTipoForm');
+  if (!form) return;
+  const evento = _eventosReais.find(e => String(e.id) === String(_ticketEventoId));
+
+  form.innerHTML = `
+    <div class="tipo-row-fields">
+      <div class="tf"><label>Título</label><input class="n-titulo" type="text" maxlength="45" placeholder="Ex.: Pista, VIP"></div>
+      <div class="tf"><label>Valor (R$)</label><input class="n-valor" type="number" step="0.01" min="0" value="0"></div>
+      <div class="tf"><label>Quantidade</label><input class="n-qtd" type="number" min="1"></div>
+      <div class="tf tf--switch"><label>Venda ativa</label>
+        <label class="tipo-switch"><input class="n-ativo" type="checkbox" checked><span class="tipo-switch-track"></span></label>
+      </div>
+    </div>
+    <div class="tf">
+      <label>Tipo de venda</label>
+      <div class="tipo-radios">
+        <label class="tipo-radio"><input type="radio" name="n-sel" value="livre" checked> Livre</label>
+        <label class="tipo-radio"><input type="radio" name="n-sel" value="numerado"> Numerado</label>
+      </div>
+    </div>
+    <div class="tipo-row-fields tipo-row-fields--2 n-numerado" style="display:none">
+      <div class="tf"><label>Fileiras</label><input class="n-fileiras" type="number" min="1"></div>
+      <div class="tf"><label>Assentos por fileira</label><input class="n-assentos" type="number" min="1"></div>
+    </div>
+    <div class="tipo-row-fields tipo-row-fields--lote">
+      <div class="tf"><label>Início das vendas</label><input class="n-ini" type="datetime-local"></div>
+      <div class="tf"><label>Fim das vendas</label><input class="n-fim" type="datetime-local"></div>
+      ${_campoSetorHTML(evento, null).replace('f-setor', 'n-setor')}
+    </div>
+    <div class="tipo-row-fields tipo-row-fields--2">
+      <div class="tf"><label>Mín. por compra</label><input class="n-min" type="number" min="1"></div>
+      <div class="tf"><label>Máx. por CPF</label><input class="n-max" type="number" min="1"></div>
+    </div>
+    <div class="tipo-row-actions">
+      <button class="btn-tipo-delete" onclick="cancelarNovoTipo()">Cancelar</button>
+      <button class="btn-tipo-save" onclick="criarNovoTipo()">Criar ingresso</button>
+    </div>`;
+
+  const qtd = form.querySelector('.n-qtd');
+  const fil = form.querySelector('.n-fileiras');
+  const ass = form.querySelector('.n-assentos');
+  const bloco = form.querySelector('.n-numerado');
+  const recalc = () => { qtd.value = (Number(fil.value) && Number(ass.value)) ? fil.value * ass.value : ''; };
+  form.querySelectorAll('input[name="n-sel"]').forEach(r => r.addEventListener('change', () => {
+    const num = form.querySelector('input[name="n-sel"]:checked').value === 'numerado';
+    bloco.style.display = num ? 'grid' : 'none';
+    qtd.readOnly = num;
+    if (num) recalc();
+  }));
+  fil.addEventListener('input', recalc);
+  ass.addEventListener('input', recalc);
+
+  form.style.display = 'flex';
+}
+
+function cancelarNovoTipo() {
+  const form = document.getElementById('novoTipoForm');
+  if (form) { form.style.display = 'none'; form.innerHTML = ''; }
+}
+
+async function criarNovoTipo() {
+  const form = document.getElementById('novoTipoForm');
+  if (!form || !_ticketEventoId) return;
+  const q = s => form.querySelector(s);
+  const numerado = form.querySelector('input[name="n-sel"]:checked').value === 'numerado';
+
+  const body = {
+    evento_id: _ticketEventoId,
+    titulo: q('.n-titulo').value.trim(),
+    valor: q('.n-valor').value,
+    quantidade_total: q('.n-qtd').value,
+    ativo: q('.n-ativo').checked,
+    data_inicio_venda: _dtParaApi(q('.n-ini').value),
+    data_fim_venda: _dtParaApi(q('.n-fim').value),
+    limite_por_cpf: _numOuNull(q('.n-max').value),
+    quantidade_min_por_compra: _numOuNull(q('.n-min').value),
+    tipo_selecao: numerado ? 'numerado' : 'livre',
+    fileiras: numerado ? _numOuNull(q('.n-fileiras').value) : null,
+    assentos_por_fileira: numerado ? _numOuNull(q('.n-assentos').value) : null
+  };
+  const setor = q('.n-setor');
+  if (setor) body.setor_mapa = setor.value;
+
+  if (!body.titulo) { showToast('Dê um nome ao ingresso.', 'warn'); return; }
+
+  try {
+    const res = await fetch(`${window.API_BASE}/ingressos/tipos`, {
+      method: 'POST', headers: _authJson(), body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.erro || 'Erro ao criar.');
+    showToast('Tipo de ingresso criado!', 'success');
+    cancelarNovoTipo();
+    await carregarTiposIngresso();
+    carregarDashboard();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
 }

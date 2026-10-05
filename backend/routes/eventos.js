@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const eventosController = require("../controllers/eventosController");
-const verificarToken = require("../middleware/auth");
+const { verificarToken } = require("../middleware/auth");
 
 router.post("/upload-imagem", eventosController.upload.single("imagem"), async (req, res) => {
     if (!req.file) return res.status(400).json({ erro: "Nenhuma imagem enviada" });

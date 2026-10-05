@@ -159,12 +159,7 @@ async function comprarIngresso(req, res) {
 
         const ehCortesia = String(evento.usuario_id) === String(usuario_id);
 
-        if (!ehCortesia) {
-            const formasValidas = ["credito", "debito", "boleto", "pix"];
-            if (!formasValidas.includes(forma_pagamento)) {
-                return res.status(400).json({ erro: "Forma de pagamento inválida." });
-            }
-        }
+       
 
         let valor_total = 0;
         const detalhes  = [];
@@ -211,14 +206,69 @@ async function comprarIngresso(req, res) {
                     erro: `Ingressos insuficientes para "${tipo.titulo}": restam apenas ${Math.max(0, disponiveis)}.`
                 });
             }
+                        // Limite de quantidade máxima por compra (configurado pelo
+            // organizador na criação deste ingresso). Diferente do limite
+            // por CPF, esse olha só para o pedido atual — não impede a
+            // pessoa de fazer novas compras depois, só limita quantos
+            // ingressos ela pode levar de uma vez.
+                        // Quantidade mínima por compra (configurada pelo organizador).
+            if (tipo.quantidade_min_por_compra && item.quantidade < tipo.quantidade_min_por_compra) {
+                return res.status(400).json({
+                    erro: `Mínimo de ${tipo.quantidade_min_por_compra} unidade(s) de "${tipo.titulo}" por compra.`
+                });
+            }
+                       // Limite de ingressos por CPF (total, somando todas as compras).
+            // Ingressos antigos só têm limite_um_por_cpf = true, que equivale a 1.
+            const limiteCpf = Number(tipo.limite_por_cpf) || (tipo.limite_um_por_cpf ? 1 : 0);
+            if (limiteCpf > 0) {
+                const compradorRows = await db.query(
+                    "SELECT cpf FROM usuarios WHERE id = ?",
+                    [usuario_id]
+                );
+                const cpfComprador = compradorRows[0]?.cpf;
 
+                if (!cpfComprador || !String(cpfComprador).replace(/\D/g, "")) {
+                    return res.status(400).json({
+                        erro: "Para retirar este ingresso, cadastre seu CPF no seu perfil."
+                    });
+                }
+
+                const jaRetiradosRows = await db.query(`
+                    SELECT COALESCE(SUM(v.quantidade), 0) AS total
+                    FROM vendas v
+                    JOIN usuarios u ON u.id = v.usuario_id
+                    WHERE v.ingresso_id = ?
+                      AND u.cpf = ?
+                      AND v.status IN ('aprovado', 'cortesia')
+                `, [tipo.id, cpfComprador]);
+                const jaRetirados = Number(jaRetiradosRows[0]?.total) || 0;
+
+                if (jaRetirados + Number(item.quantidade) > limiteCpf) {
+                    const restam = Math.max(0, limiteCpf - jaRetirados);
+                    return res.status(409).json({
+                        erro: restam === 0
+                            ? `Este CPF já retirou o limite de ${limiteCpf} ingresso(s) de "${tipo.titulo}".`
+                            : `Cada CPF pode retirar até ${limiteCpf} ingresso(s) de "${tipo.titulo}". Você ainda pode retirar ${restam}.`
+                    });
+                }
+            }
             valor_total += ehCortesia ? 0 : parseFloat(tipo.valor) * item.quantidade;
             detalhes.push({ tipo, quantidade: item.quantidade });
         }
 
-        const status_pagamento = ehCortesia ? "cortesia" : simularPagamento(forma_pagamento);
-        const formaFinal = ehCortesia ? "cortesia" : forma_pagamento;
+                // Ingresso gratuito (valor 0): não exige forma de pagamento,
+        // igual à cortesia. Só compra paga de verdade precisa validar isso.
+        const ehGratuito = valor_total === 0;
 
+        if (!ehCortesia && !ehGratuito) {
+            const formasValidas = ["credito", "debito", "boleto", "pix"];
+            if (!formasValidas.includes(forma_pagamento)) {
+                return res.status(400).json({ erro: "Forma de pagamento inválida." });
+            }
+        }
+
+        const status_pagamento = ehCortesia ? "cortesia" : (ehGratuito ? "aprovado" : simularPagamento(forma_pagamento));
+        const formaFinal = ehCortesia ? "cortesia" : (ehGratuito ? "gratuito" : forma_pagamento);
                // Pedido + todas as linhas de venda entram na MESMA transação.
         // Se qualquer INSERT de venda falhar, o pedido inteiro é revertido —
         // nunca mais fica um pedido "órfão" sem a venda correspondente

@@ -123,6 +123,7 @@
     function preencherTela(dados) {
         const pedidoId = dados.pedido_id;
         const pendente = String(dados.status || '').toLowerCase() === 'pendente';
+        const gratuito = String(dados.forma_pagamento || '').toLowerCase() === 'gratuito';
 
         document.title = `Compra Confirmada — ${dados.nome || 'Rolês'}`;
 
@@ -186,7 +187,28 @@
         } else {
             qrImg.onerror = () => { qrImg.style.display = 'none'; qrFallback.style.display = 'flex'; };
             qrImg.onload = () => { qrFallback.style.display = 'none'; };
-            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent('ROLES-PEDIDO-' + pedidoId)}`;
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent('ROLES-PEDIDO-' + pedidoId)}`;
+        }
+
+        // Ingresso gratuito: sem preço, taxa nem forma de pagamento
+        if (gratuito) {
+            document.title = `Presença confirmada — ${dados.nome || 'Rolês'}`;
+            el('hero-titulo').textContent = 'Você está confirmado!';
+            el('hero-subtitulo').textContent = 'Sua presença está garantida. Bom rolê!';
+
+            const cardPagamento = document.querySelector('.pagamento-card .price-summary');
+            if (cardPagamento) cardPagamento.style.display = 'none';
+            const labelPagamento = document.querySelector('.pagamento-card .pagamento-label');
+            if (labelPagamento) labelPagamento.style.display = 'none';
+            const tituloPagamento = document.querySelector('.pagamento-card .section-title');
+            if (tituloPagamento) tituloPagamento.textContent = 'Seu ingresso';
+
+            // O clima vira etiqueta no ingresso e os lembretes viram ações rápidas
+            const infoCard = document.querySelector('.info-card');
+            if (infoCard) infoCard.style.display = 'none';
+            const climaCard = el('clima-card');
+            if (climaCard) climaCard.style.display = 'none';
+            montarExperienciaGratuita(dados, pendente);
         }
 
         el('btn-ver-ingressos').href = '/frontend/perfil/perfil.html?section=ingressos';
@@ -196,8 +218,220 @@
         conteudo.style.display = 'block';
         requestAnimationFrame(() => conteudo.classList.add('is-visible'));
 
-        inicializarClima(dados.local);
+        inicializarClima(dados.local, gratuito);
         configurarAcoes(pedidoId, pendente, dados);
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // EXPERIÊNCIA DO INGRESSO GRATUITO
+    // ════════════════════════════════════════════════════════════════
+    function lerDataEvento(texto) {
+        const s = String(texto || '');
+
+        let m = /(\d{2})\/(\d{2})\/(\d{4})/.exec(s);
+        if (m) return { d: Number(m[1]), mo: Number(m[2]), y: Number(m[3]) };
+
+        // Formato "qua., 28 de out." (sem ano): usa a proxima ocorrencia da data
+        const meses = { jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12 };
+        m = /(\d{1,2})\s+de\s+([a-zç]{3})/i.exec(s);
+        if (!m) return null;
+        const mo = meses[m[2].toLowerCase()];
+        if (!mo) return null;
+
+        const hoje = new Date();
+        const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+        let y = hoje.getFullYear();
+        if (new Date(y, mo - 1, Number(m[1])) < inicioHoje) y += 1;
+        return { d: Number(m[1]), mo, y };
+    }
+
+    function montarLinkCalendario(dados) {
+        const data = lerDataEvento(dados.data);
+        const h = /(\d{1,2}):(\d{2})/.exec(String(dados.hora || ''));
+        if (!data || !h) return null;
+
+        const p = n => String(n).padStart(2, '0');
+        const ini = `${data.y}${p(data.mo)}${p(data.d)}T${p(h[1])}${h[2]}00`;
+        const fimDate = new Date(data.y, data.mo - 1, data.d, Number(h[1]) + 3, Number(h[2]));
+        const fim = `${fimDate.getFullYear()}${p(fimDate.getMonth() + 1)}${p(fimDate.getDate())}T${p(fimDate.getHours())}${p(fimDate.getMinutes())}00`;
+
+        const params = new URLSearchParams({
+            action: 'TEMPLATE',
+            text: dados.nome || 'Evento',
+            dates: `${ini}/${fim}`,
+            details: 'Ingresso pelo Roles',
+            location: dados.local || ''
+        });
+        return `https://calendar.google.com/calendar/render?${params.toString()}`;
+    }
+
+    function textoContagem(dados) {
+        const data = lerDataEvento(dados.data);
+        if (!data) return null;
+
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const alvo = new Date(data.y, data.mo - 1, data.d);
+        const dias = Math.round((alvo - hoje) / 86400000);
+
+        if (dias < 0) return null;
+        if (dias === 0) return 'É hoje';
+        if (dias === 1) return 'É amanhã';
+        return `Faltam ${dias} dias`;
+    }
+
+    function lerIdEvento() {
+        try {
+            const salvo = JSON.parse(localStorage.getItem('eventoSelecionado') || '{}');
+            return salvo.evento_id || null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function montarLinkWhatsapp(dados) {
+        const partes = [`Vou no ${dados.nome || 'evento'}`];
+        if (dados.data && dados.data !== '—') partes.push(`dia ${dados.data}`);
+        if (dados.hora && dados.hora !== '—') partes.push(`às ${dados.hora}`);
+        if (dados.local && dados.local !== '—') partes.push(`em ${dados.local}`);
+
+        let texto = partes.join(', ') + '. Bora?';
+        const idEvento = lerIdEvento();
+        if (idEvento) {
+            texto += ` ${location.origin}/frontend/detalheseventos/detalheevento.html?id=${idEvento}`;
+        }
+        return `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    }
+
+    function configurarModalQr(dados) {
+        const btn = el('btn-mostrar-qr');
+        const modal = el('gx-modal-qr');
+        const img = el('gx-qr-grande');
+        const fechar = el('gx-qr-fechar');
+        if (!btn || !modal || !img || !fechar) return;
+
+        const conteudoQr = 'ROLES-PEDIDO-' + dados.pedido_id;
+        let qrPronto = false;
+
+        el('gx-qr-evento').textContent = dados.nome || 'Evento';
+        el('gx-qr-info').textContent = `${dados.ingressoNome || 'Ingresso'} · Pedido #${dados.pedido_id}`;
+        btn.style.display = '';
+
+        function abrir() {
+            if (!qrPronto) {
+                qrPronto = true;
+                gerarQrCodeDataUrl(conteudoQr, 360)
+                    .then(url => { img.src = url; })
+                    .catch(() => {
+                        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(conteudoQr)}`;
+                    });
+            }
+            modal.classList.add('aberto');
+            document.body.style.overflow = 'hidden';
+            fechar.focus();
+        }
+
+        function fecharModal() {
+            modal.classList.remove('aberto');
+            document.body.style.overflow = '';
+            btn.focus();
+        }
+
+        btn.addEventListener('click', abrir);
+        fechar.addEventListener('click', fecharModal);
+        modal.addEventListener('click', e => { if (e.target === modal) fecharModal(); });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && modal.classList.contains('aberto')) fecharModal();
+        });
+    }
+
+    // Preenche o ingresso roxo (só ingresso gratuito)
+    function preencherIngressoGratuito(dados, pendente) {
+        const bloco = el('gx-gratuito');
+        if (!bloco) return;
+        bloco.style.display = 'block';
+        const conteudoPagina = el('conteudo-confirmacao');
+        if (conteudoPagina) conteudoPagina.classList.add('gx-modo-gratuito');
+
+        // O ingresso padrão (pagos/pendentes) fica escondido no gratuito
+        const ticketPadrao = document.querySelector('.ticket');
+        if (ticketPadrao) ticketPadrao.style.display = 'none';
+
+        const data = lerDataEvento(dados.data);
+        if (data) {
+            const d = new Date(data.y, data.mo - 1, data.d);
+            el('gx-dia').textContent = data.d;
+            el('gx-mes').textContent = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+            el('gx-semana').textContent = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+        } else {
+            el('gx-dia').textContent = '—';
+            el('gx-mes').textContent = '';
+            el('gx-semana').textContent = '';
+        }
+
+        el('gx-t-tag').textContent = `Ingresso gratuito · Qtd ${dados.quantidade || 1}`;
+        el('gx-t-nome').textContent = dados.nome || 'Evento';
+        el('gx-t-hora').textContent = dados.hora || '—';
+        el('gx-t-local').textContent = dados.local || '—';
+        el('gx-t-pedido').textContent = `Pedido #${dados.pedido_id}`;
+
+        const qr = el('gx-t-qr');
+        if (pendente) {
+            qr.style.display = 'none';
+            return;
+        }
+        const conteudoQr = 'ROLES-PEDIDO-' + dados.pedido_id;
+        gerarQrCodeDataUrl(conteudoQr, 264)
+            .then(url => { qr.src = url; })
+            .catch(() => {
+                qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=264x264&data=${encodeURIComponent(conteudoQr)}`;
+            });
+    }
+
+    function montarExperienciaGratuita(dados, pendente) {
+        preencherIngressoGratuito(dados, pendente);
+
+        // Etiqueta de contagem regressiva (a de clima aparece quando a previsão chega)
+        const chips = el('gx-chips');
+        const contagem = textoContagem(dados);
+        if (chips) {
+            chips.style.display = 'flex';
+            if (contagem) {
+                el('gx-chip-contagem-texto').textContent = contagem;
+            } else {
+                el('gx-chip-contagem').style.display = 'none';
+            }
+        }
+
+        const bloco = el('lembretes-gratuito');
+        if (bloco) bloco.style.display = 'block';
+
+        const cal = el('lembrete-calendario');
+        if (cal) {
+            const url = montarLinkCalendario(dados);
+            if (url) cal.href = url; else cal.style.display = 'none';
+        }
+
+        const zap = el('lembrete-whatsapp');
+        if (zap) zap.href = montarLinkWhatsapp(dados);
+
+        const maps = el('lembrete-maps');
+        if (maps) {
+            if (dados.local) {
+                maps.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dados.local)}`;
+            } else {
+                maps.style.display = 'none';
+            }
+        }
+
+        const dress = el('lembrete-dress');
+        if (dress) {
+            const termo = dados.nome ? `look para ${dados.nome}` : 'look casual chique evento';
+            dress.href = `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(termo)}`;
+        }
+
+        // QR só abre em tela cheia quando o ingresso já está liberado
+        if (!pendente) configurarModalQr(dados);
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -241,30 +475,61 @@
     }
 
     // ════════════════════════════════════════════════════════════════
-    // CLIMA (wttr.in — sem chave de API)
+    // CLIMA (Open-Meteo, sem chave de API)
     // ════════════════════════════════════════════════════════════════
-    function inicializarClima(local) {
+    function interpretarClima(codigo) {
+        if (codigo === 0) return 'céu limpo';
+        if (codigo <= 2) return 'parcialmente nublado';
+        if (codigo === 3) return 'nublado';
+        if (codigo <= 49) return 'névoa';
+        if (codigo <= 59) return 'garoa';
+        if (codigo <= 69) return 'chuva';
+        if (codigo <= 79) return 'neve';
+        if (codigo <= 84) return 'pancadas de chuva';
+        if (codigo <= 94) return 'tempestade';
+        return 'condição severa';
+    }
+
+    function inicializarClima(local, gratuito) {
         const texto = el('clima-texto');
         const card = el('clima-card');
-        if (!texto || !card) return;
+        const chip = el('gx-chip-clima');
+        const chipTexto = el('gx-chip-clima-texto');
 
         if (!local) {
-            card.style.display = 'none';
+            if (card) card.style.display = 'none';
             return;
         }
 
         const urlPrevisao = `https://www.google.com/search?q=${encodeURIComponent('previsão do tempo ' + local)}`;
+        if (card) card.addEventListener('click', () => window.open(urlPrevisao, '_blank'));
 
-        fetch(`https://wttr.in/${encodeURIComponent(local)}?format=3`)
-            .then(r => r.text())
-            .then(txt => {
-                const limpo = txt.trim();
-                const pareceHtml = !limpo || limpo.startsWith('<') || limpo.length > 200;
-                texto.textContent = pareceHtml ? 'Toque para ver a previsão do tempo.' : limpo;
+        const aviso = 'Toque para ver a previsão do tempo.';
+        const cidade = String(local).split(',').pop().trim() || String(local).trim();
+
+        fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cidade)}&count=1&language=pt&format=json`)
+            .then(r => r.json())
+            .then(geo => {
+                if (!geo.results || !geo.results.length) throw new Error('cidade nao encontrada');
+                const { latitude, longitude, name } = geo.results[0];
+                return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&timezone=auto`)
+                    .then(r => r.json())
+                    .then(clima => ({ clima, name }));
             })
-            .catch(() => { texto.textContent = 'Toque para ver a previsão do tempo.'; });
+            .then(({ clima, name }) => {
+                if (!clima.current_weather) throw new Error('sem clima');
+                const temp = Math.round(clima.current_weather.temperature);
+                const descricao = interpretarClima(clima.current_weather.weathercode);
 
-        card.addEventListener('click', () => window.open(urlPrevisao, '_blank'));
+                if (texto) texto.textContent = `${temp}°C, ${descricao} em ${name}`;
+                if (gratuito && chip && chipTexto) {
+                    // É o tempo de agora (não a previsão do dia do evento)
+                    chipTexto.textContent = `Agora: ${temp}°C`;
+                    chip.title = descricao;
+                    chip.style.display = 'inline-flex';
+                }
+            })
+            .catch(() => { if (texto) texto.textContent = aviso; });
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -364,189 +629,193 @@
 
     // ── Gera o PDF: cabeçalho com logo + cartão estilo cartão de embarque + QR real ──
     async function gerarPdfIngresso(pedidoId, dados) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-    const ROXO = [108, 29, 206];
-    const ROXO_CLARO = [244, 241, 252];
-    const TEXTO = [40, 40, 40];
-    const CINZA = [140, 140, 140];
-    const BORDA = [225, 225, 230];
+        const ROXO = [108, 29, 206];
+        const ROXO_CLARO = [244, 241, 252];
+        const TEXTO = [40, 40, 40];
+        const CINZA = [140, 140, 140];
+        const BORDA = [225, 225, 230];
 
-    const nomeEvento = dados.nome || 'Evento';
-    const dataStr = dados.data || '—';
-    const horaStr = dados.hora || '—';
-    const local = dados.local || '—';
-    const tipo = dados.ingressoNome || 'Ingresso';
-    const qtd = dados.quantidade || 1;
-    const formas = { credito: 'Cartão de Crédito', cartao: 'Cartão de Crédito', pix: 'PIX', boleto: 'Boleto Bancário' };
-    const pagamento = formas[String(dados.forma_pagamento).toLowerCase()] || dados.forma_pagamento || '—';
-    const pedido = `#${pedidoId}`;
-    const beneficios = Array.isArray(dados.beneficios) ? dados.beneficios.filter(Boolean) : [];
+        const nomeEvento = dados.nome || 'Evento';
+        const dataStr = dados.data || '—';
+        const horaStr = dados.hora || '—';
+        const local = dados.local || '—';
+        const tipo = dados.ingressoNome || 'Ingresso';
+        const qtd = dados.quantidade || 1;
+        const formas = { credito: 'Cartão de Crédito', cartao: 'Cartão de Crédito', pix: 'PIX', boleto: 'Boleto Bancário' };
+        const pagamento = formas[String(dados.forma_pagamento).toLowerCase()] || dados.forma_pagamento || '—';
+        const pedido = `#${pedidoId}`;
+        const beneficios = Array.isArray(dados.beneficios) ? dados.beneficios.filter(Boolean) : [];
 
-    let logoDataUrl = null;
-    try { logoDataUrl = await carregarImagemComoDataUrl(LOGO_PATH); } catch (_) {}
+        let logoDataUrl = null;
+        try { logoDataUrl = await carregarImagemComoDataUrl(LOGO_PATH); } catch (_) {}
 
-    let qrDataUrl = null;
-    try { qrDataUrl = await gerarQrCodeDataUrl('ROLES-PEDIDO-' + pedidoId); } catch (_) {}
+        let qrDataUrl = null;
+        try { qrDataUrl = await gerarQrCodeDataUrl('ROLES-PEDIDO-' + pedidoId); } catch (_) {}
 
-    const cardX = 15, cardW = 180, raio = 4;
-    const stubW = 58;
-    const mainW = cardW - stubW;
-    const seamX = cardX + mainW;
+        const cardX = 15, cardW = 180, raio = 4;
+        const stubW = 58;
+        const mainW = cardW - stubW;
+        const seamX = cardX + mainW;
 
-    // ── MEDE O CONTEÚDO PRIMEIRO, PRA DEFINIR A ALTURA DO CARTÃO SEM SOBRA ──
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
-    const nomeLinhas = doc.splitTextToSize(nomeEvento, mainW - 20);
+        // ── MEDE O CONTEÚDO PRIMEIRO, PRA DEFINIR A ALTURA DO CARTÃO SEM SOBRA ──
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+        const nomeLinhas = doc.splitTextToSize(nomeEvento, mainW - 20);
 
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
-    const dataLinhas  = doc.splitTextToSize(dataStr, mainW - 20);
-    const horaLinhas  = doc.splitTextToSize(horaStr, mainW - 20);
-    const localLinhas = doc.splitTextToSize(local, mainW - 20);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
+        const dataLinhas  = doc.splitTextToSize(dataStr, mainW - 20);
+        const horaLinhas  = doc.splitTextToSize(horaStr, mainW - 20);
+        const localLinhas = doc.splitTextToSize(local, mainW - 20);
 
-    let alturaMain = 16 + (nomeLinhas.length * 6 + 6);
-    [dataLinhas, horaLinhas, localLinhas].forEach(linhas => {
-        alturaMain += 5 + linhas.length * 5 + 4;
-    });
-    if (beneficios.length > 0) {
-        alturaMain += 2 + 5 + beneficios.slice(0, 4).length * 5;
-    }
-    alturaMain += 14; // respiro inferior
+        let alturaMain = 16 + (nomeLinhas.length * 6 + 6);
+        [dataLinhas, horaLinhas, localLinhas].forEach(linhas => {
+            alturaMain += 5 + linhas.length * 5 + 4;
+        });
+        if (beneficios.length > 0) {
+            alturaMain += 2 + 5 + beneficios.slice(0, 4).length * 5;
+        }
+        alturaMain += 14; // respiro inferior
 
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    const tipoLinhas = doc.splitTextToSize(tipo, stubW - 12);
-    const alturaStub = 14 + 6 + (tipoLinhas.length * 5 + 4) + 42 + 5 + 14;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+        const tipoLinhas = doc.splitTextToSize(tipo, stubW - 12);
+        const alturaStub = 14 + 6 + (tipoLinhas.length * 5 + 4) + 42 + 5 + 14;
 
-    const cardY = 42;
-    const cardH = Math.max(alturaMain, alturaStub, 70);
+        const cardY = 42;
+        const cardH = Math.max(alturaMain, alturaStub, 70);
 
-    // ── CARTÃO (TICKET) ──
-    doc.setFillColor(232, 230, 238);
-    doc.roundedRect(cardX + 1.2, cardY + 1.5, cardW, cardH, raio, raio, 'F');
+        // ── CARTÃO (TICKET) ──
+        doc.setFillColor(232, 230, 238);
+        doc.roundedRect(cardX + 1.2, cardY + 1.5, cardW, cardH, raio, raio, 'F');
 
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(...BORDA);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(cardX, cardY, cardW, cardH, raio, raio, 'FD');
-
-    doc.setFillColor(...ROXO_CLARO);
-    doc.rect(seamX, cardY, stubW, cardH, 'F');
-
-    // furinhos do canhoto
-    doc.setFillColor(255, 255, 255);
-    doc.circle(seamX, cardY, 3.2, 'F');
-    doc.circle(seamX, cardY + cardH, 3.2, 'F');
-
-    // linha pontilhada
-    doc.setDrawColor(200, 195, 215);
-    doc.setLineWidth(0.4);
-    if (doc.setLineDashPattern) doc.setLineDashPattern([1.4, 1.4], 0);
-    doc.line(seamX, cardY + 5, seamX, cardY + cardH - 5);
-    if (doc.setLineDashPattern) doc.setLineDashPattern([], 0);
-
-    // ── CABEÇALHO ──
-    if (logoDataUrl) {
-        doc.addImage(logoDataUrl, 'PNG', 15, 14, 14, 14);
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...TEXTO);
-        doc.text('Rolês', 33, 21);
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...CINZA);
-        doc.text('Comprovante de ingresso', 33, 26);
-    } else {
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...ROXO);
-        doc.text('Rolês', 15, 21);
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...CINZA);
-        doc.text('Comprovante de ingresso', 15, 26);
-    }
-
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...CINZA);
-    doc.text(`Pedido ${pedido}`, 195, 18, { align: 'right' });
-    doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, 195, 23, { align: 'right' });
-
-    doc.setDrawColor(...BORDA);
-    doc.line(15, 33, 195, 33);
-
-    // ── PAINEL PRINCIPAL (esquerda) ──
-    const px = cardX + 10;
-    let py = cardY + 16;
-
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(...TEXTO);
-    doc.text(nomeLinhas, px, py);
-    py += nomeLinhas.length * 6 + 6;
-
-    doc.setDrawColor(...BORDA);
-    doc.line(px, py - 3, cardX + mainW - 10, py - 3);
-
-    [['Data', dataLinhas], ['Horário', horaLinhas], ['Local', localLinhas]].forEach(([label, valorLinhas]) => {
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...ROXO);
-        doc.text(label.toUpperCase(), px, py);
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(...TEXTO);
-        doc.text(valorLinhas, px, py + 5);
-        py += 5 + valorLinhas.length * 5 + 4;
-    });
-
-    if (beneficios.length > 0) {
-        py += 2;
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...ROXO);
-        doc.text('BENEFÍCIOS', px, py);
-        py += 5;
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...TEXTO);
-        beneficios.slice(0, 4).forEach(b => { doc.text(`✓ ${b}`, px, py); py += 5; });
-    }
-
-    // ── CANHOTO (direita) ──
-    const stubCenterX = seamX + stubW / 2;
-    let sy = cardY + 14;
-
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...ROXO);
-    doc.text('INGRESSO', stubCenterX, sy, { align: 'center' });
-    sy += 6;
-
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...TEXTO);
-    doc.text(tipoLinhas, stubCenterX, sy, { align: 'center' });
-    sy += tipoLinhas.length * 5 + 4;
-
-    if (qrDataUrl) {
-        const qrSize = 36;
-        doc.addImage(qrDataUrl, 'PNG', stubCenterX - qrSize / 2, sy, qrSize, qrSize);
-        sy += qrSize + 6;
-    } else {
+        doc.setFillColor(255, 255, 255);
         doc.setDrawColor(...BORDA);
-        doc.rect(stubCenterX - 18, sy, 36, 36);
-        doc.setFontSize(8); doc.setTextColor(...CINZA);
-        doc.text('QR indisponível', stubCenterX, sy + 20, { align: 'center' });
-        sy += 42;
+        doc.setLineWidth(0.3);
+        doc.roundedRect(cardX, cardY, cardW, cardH, raio, raio, 'FD');
+
+        doc.setFillColor(...ROXO_CLARO);
+        doc.rect(seamX, cardY, stubW, cardH, 'F');
+
+        // furinhos do canhoto
+        doc.setFillColor(255, 255, 255);
+        doc.circle(seamX, cardY, 3.2, 'F');
+        doc.circle(seamX, cardY + cardH, 3.2, 'F');
+
+        // linha pontilhada
+        doc.setDrawColor(200, 195, 215);
+        doc.setLineWidth(0.4);
+        if (doc.setLineDashPattern) doc.setLineDashPattern([1.4, 1.4], 0);
+        doc.line(seamX, cardY + 5, seamX, cardY + cardH - 5);
+        if (doc.setLineDashPattern) doc.setLineDashPattern([], 0);
+
+        // ── CABEÇALHO ──
+        if (logoDataUrl) {
+            doc.addImage(logoDataUrl, 'PNG', 15, 14, 14, 14);
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...TEXTO);
+            doc.text('Rolês', 33, 21);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...CINZA);
+            doc.text('Comprovante de ingresso', 33, 26);
+        } else {
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...ROXO);
+            doc.text('Rolês', 15, 21);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...CINZA);
+            doc.text('Comprovante de ingresso', 15, 26);
+        }
+
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...CINZA);
+        doc.text(`Pedido ${pedido}`, 195, 18, { align: 'right' });
+        doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, 195, 23, { align: 'right' });
+
+        doc.setDrawColor(...BORDA);
+        doc.line(15, 33, 195, 33);
+
+        // ── PAINEL PRINCIPAL (esquerda) ──
+        const px = cardX + 10;
+        let py = cardY + 16;
+
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(...TEXTO);
+        doc.text(nomeLinhas, px, py);
+        py += nomeLinhas.length * 6 + 6;
+
+        doc.setDrawColor(...BORDA);
+        doc.line(px, py - 3, cardX + mainW - 10, py - 3);
+
+        [['Data', dataLinhas], ['Horário', horaLinhas], ['Local', localLinhas]].forEach(([label, valorLinhas]) => {
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...ROXO);
+            doc.text(label.toUpperCase(), px, py);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(...TEXTO);
+            doc.text(valorLinhas, px, py + 5);
+            py += 5 + valorLinhas.length * 5 + 4;
+        });
+
+        if (beneficios.length > 0) {
+            py += 2;
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...ROXO);
+            doc.text('BENEFÍCIOS', px, py);
+            py += 5;
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...TEXTO);
+            beneficios.slice(0, 4).forEach(b => { doc.text(`✓ ${b}`, px, py); py += 5; });
+        }
+
+        // ── CANHOTO (direita) ──
+        const stubCenterX = seamX + stubW / 2;
+        let sy = cardY + 14;
+
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...ROXO);
+        doc.text('INGRESSO', stubCenterX, sy, { align: 'center' });
+        sy += 6;
+
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...TEXTO);
+        doc.text(tipoLinhas, stubCenterX, sy, { align: 'center' });
+        sy += tipoLinhas.length * 5 + 4;
+
+        if (qrDataUrl) {
+            const qrSize = 36;
+            doc.addImage(qrDataUrl, 'PNG', stubCenterX - qrSize / 2, sy, qrSize, qrSize);
+            sy += qrSize + 6;
+        } else {
+            doc.setDrawColor(...BORDA);
+            doc.rect(stubCenterX - 18, sy, 36, 36);
+            doc.setFontSize(8); doc.setTextColor(...CINZA);
+            doc.text('QR indisponível', stubCenterX, sy + 20, { align: 'center' });
+            sy += 42;
+        }
+
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...TEXTO);
+        doc.text(pedido, stubCenterX, sy, { align: 'center' });
+        sy += 5;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA);
+        doc.text(`Qtd: ${qtd}`, stubCenterX, sy, { align: 'center' });
+
+        // ── RESUMO DO PAGAMENTO ──
+        const ry = cardY + cardH + 14;
+        doc.setDrawColor(...BORDA);
+        doc.line(15, ry - 6, 195, ry - 6);
+
+        const ehGratuito = String(dados.forma_pagamento).toLowerCase() === 'gratuito';
+        const resumo = ehGratuito
+            ? [['Valor', 'Gratuito'], ['Tipo', 'Presença confirmada'], ['Status', 'Confirmado']]
+            : [['Valor pago', fmtBRL(dados.totalPago)], ['Forma de pagamento', pagamento], ['Status', 'Confirmado']];
+        const colW = 180 / resumo.length;
+        resumo.forEach(([label, valor], i) => {
+            const x = 15 + i * colW;
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA);
+            doc.text(label, x, ry);
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...TEXTO);
+            doc.text(String(valor), x, ry + 6);
+        });
+
+        // ── RODAPÉ ──
+        doc.setDrawColor(...BORDA);
+        doc.line(15, 270, 195, 270);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...CINZA);
+        doc.text('Este ingresso é pessoal e intransferível. Apresente um documento com foto na entrada do evento.', 105, 277, { align: 'center' });
+        doc.text(`Rolês © ${new Date().getFullYear()} — Gerado em ${new Date().toLocaleString('pt-BR')}`, 105, 283, { align: 'center' });
+
+        doc.save(`ingresso-${pedidoId}.pdf`);
     }
 
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...TEXTO);
-    doc.text(pedido, stubCenterX, sy, { align: 'center' });
-    sy += 5;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA);
-    doc.text(`Qtd: ${qtd}`, stubCenterX, sy, { align: 'center' });
-
-    // ── RESUMO DO PAGAMENTO ──
-    const ry = cardY + cardH + 14;
-    doc.setDrawColor(...BORDA);
-    doc.line(15, ry - 6, 195, ry - 6);
-
-    const resumo = [['Valor pago', fmtBRL(dados.totalPago)], ['Forma de pagamento', pagamento], ['Status', 'Confirmado']];
-    const colW = 180 / resumo.length;
-    resumo.forEach(([label, valor], i) => {
-        const x = 15 + i * colW;
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA);
-        doc.text(label, x, ry);
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...TEXTO);
-        doc.text(String(valor), x, ry + 6);
-    });
-
-    // ── RODAPÉ ──
-    doc.setDrawColor(...BORDA);
-    doc.line(15, 270, 195, 270);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...CINZA);
-    doc.text('Este ingresso é pessoal e intransferível. Apresente um documento com foto na entrada do evento.', 105, 277, { align: 'center' });
-    doc.text(`Rolês © ${new Date().getFullYear()} — Gerado em ${new Date().toLocaleString('pt-BR')}`, 105, 283, { align: 'center' });
-
-    doc.save(`ingresso-${pedidoId}.pdf`);
-}
     // Trava o botão de reenviar e-mail por 30s pra evitar clique repetido / spam.
     function iniciarCooldownEmail(btn) {
         const textoOriginal = btn.innerHTML;

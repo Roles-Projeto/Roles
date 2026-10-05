@@ -941,7 +941,144 @@ async function carregarDetalhesEvento() {
     }
 }
 
-function realizarAcaoComprar() {
+function injetarEstiloAviso() {
+    if (document.getElementById('rolesAvisoStyle')) return;
+    const s = document.createElement('style');
+    s.id = 'rolesAvisoStyle';
+    s.textContent = `
+        @keyframes rolesAvisoIn  { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes rolesAvisoOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-12px); } }
+        .roles-aviso {
+            position: fixed; top: 24px; right: 24px; z-index: 99999;
+            width: 380px; max-width: calc(100vw - 32px);
+            background: #1C1834; color: #F1EDFA;
+            padding: 16px 18px; border-radius: 12px;
+            border: 1px solid #322850;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, .45);
+            font-family: 'Inter', sans-serif;
+            display: flex; align-items: flex-start; gap: 12px;
+            animation: rolesAvisoIn .25s ease;
+        }
+        .roles-aviso-icone {
+            width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 800; color: #160f28;
+        }
+        .roles-aviso-corpo { flex: 1; min-width: 0; }
+        .roles-aviso-titulo { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+        .roles-aviso-texto { font-size: 13px; font-weight: 500; line-height: 1.5; color: #D6CFEA; }
+        .roles-aviso-fechar {
+            background: none; border: none; color: #9689B8; cursor: pointer;
+            font-size: 18px; line-height: 1; padding: 0; flex-shrink: 0;
+        }
+        .roles-aviso-fechar:hover { color: #F1EDFA; }
+        @media (max-width: 480px) { .roles-aviso { top: 16px; right: 16px; left: 16px; width: auto; } }
+    `;
+    document.head.appendChild(s);
+}
+
+function mostrarAviso(mensagem, tipo = 'info', titulo = '') {
+    injetarEstiloAviso();
+    document.querySelectorAll('.roles-aviso').forEach(a => a.remove());
+
+    const cores  = { success: '#35D399', error: '#FF5C7A', warn: '#FFB627', info: '#6AA9FF' };
+    const icones = { success: '✓', error: '✕', warn: '!', info: 'i' };
+
+    const aviso = document.createElement('div');
+    aviso.className = 'roles-aviso';
+    aviso.setAttribute('role', 'alert');
+
+    const icone = document.createElement('span');
+    icone.className = 'roles-aviso-icone';
+    icone.style.background = cores[tipo] || cores.info;
+    icone.textContent = icones[tipo] || icones.info;
+
+    const corpo = document.createElement('div');
+    corpo.className = 'roles-aviso-corpo';
+    if (titulo) {
+        const t = document.createElement('div');
+        t.className = 'roles-aviso-titulo';
+        t.textContent = titulo;
+        corpo.appendChild(t);
+    }
+    const texto = document.createElement('div');
+    texto.className = 'roles-aviso-texto';
+    texto.textContent = mensagem;
+    corpo.appendChild(texto);
+
+    const fechar = document.createElement('button');
+    fechar.type = 'button';
+    fechar.className = 'roles-aviso-fechar';
+    fechar.setAttribute('aria-label', 'Fechar aviso');
+    fechar.innerHTML = '&times;';
+    fechar.addEventListener('click', () => aviso.remove());
+
+    aviso.append(icone, corpo, fechar);
+    document.body.appendChild(aviso);
+
+    setTimeout(() => {
+        aviso.style.animation = 'rolesAvisoOut .25s ease forwards';
+        setTimeout(() => aviso.remove(), 260);
+    }, 6000);
+}
+
+function obterUsuarioId() {
+    for (const chave of ['userId', 'id', 'user_id', 'usuarioId', 'usuario_id']) {
+        const v = localStorage.getItem(chave);
+        if (v && v !== 'undefined' && v !== 'null') return v;
+    }
+    return null;
+}
+
+// Confirmar presença = compra de ingresso gratuito: registra a venda no
+// backend (onde valem as travas de CPF e de quantidade) antes de redirecionar.
+async function confirmarPresencaGratuita(dados) {
+    const usuarioId = obterUsuarioId();
+    if (!usuarioId) {
+        mostrarAviso('Entre na sua conta para confirmar presença neste evento.', 'warn', 'Login necessário');
+        setTimeout(() => { window.location.href = '/frontend/login/login.html'; }, 1800);
+        return;
+    }
+    if (!dados.evento_id || !dados.tipo_ingresso_id) {
+        mostrarAviso('Selecione o ingresso novamente e tente de novo.', 'warn', 'Ingresso não identificado');
+        return;
+    }
+
+    const botoes = document.querySelectorAll('.botao-comprar, .botao-comprar-topo');
+    const restaurar = () => botoes.forEach(b => {
+        b.disabled = false;
+        b.textContent = 'Confirmar Presença';
+    });
+    botoes.forEach(b => { b.disabled = true; b.textContent = 'Confirmando...'; });
+
+    try {
+        const res = await fetch(`${API_BASE}/ingressos/comprar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                usuario_id: usuarioId,
+                evento_id: dados.evento_id,
+                itens: [{ tipo_ingresso_id: dados.tipo_ingresso_id, quantidade: dados.quantidade || 1 }]
+            })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            const titulo = res.status === 409 ? 'Limite por CPF atingido' : 'Não foi possível confirmar';
+            const tipo = res.status >= 500 ? 'error' : 'warn';
+            mostrarAviso(data.erro || 'Tente novamente em instantes.', tipo, titulo);
+            restaurar();
+            return;
+        }
+
+        window.location.href = '/frontend/detalheseventos/presencaconfirmada.html';
+    } catch (err) {
+        console.error('Erro ao confirmar presença:', err);
+        mostrarAviso('Não conseguimos falar com o servidor. Tente novamente em instantes.', 'error', 'Erro de conexão');
+        restaurar();
+    }
+}
+async function realizarAcaoComprar() {
     const botaoComprar = document.querySelector('.botao-comprar');
     if (botaoComprar && botaoComprar.disabled) return;
 
@@ -974,12 +1111,7 @@ function realizarAcaoComprar() {
     };
 
     localStorage.setItem('eventoSelecionado', JSON.stringify(dadosParaCheckout));
-
-    if (botaoComprar.classList.contains('botao-confirmar')) {
-        window.location.href = '/frontend/detalheseventos/presencaconfirmada.html';
-    } else {
-        window.location.href = '/frontend/detalheseventos/finalizarcompra.html';
-    }
+       window.location.href = '/frontend/detalheseventos/finalizarcompra.html';
 }
 
 function inicializarAcaoBotaoComprar() {

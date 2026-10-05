@@ -68,7 +68,7 @@
         </div>
 
         <!-- PAGAMENTO -->
-        <div class="form-group">
+                   <div class="form-group" id="bloco-pagamento">
             <h3 class="form-subtitle">Pagamento</h3>
 
             <div class="payment-tabs">
@@ -379,6 +379,16 @@
             </div>
 
         </div><!-- /form-group pagamento -->
+                <!-- CONFIRMAÇÃO GRATUITA -->
+        <div class="form-group" id="bloco-gratuito" style="display:none;">
+            <h3 class="form-subtitle">Confirmação</h3>
+            <p class="payment-description">
+                Este ingresso é gratuito. Ele será enviado para o e-mail informado acima.
+            </p>
+            <button type="button" class="btn-pagar" id="btn-confirmar-presenca" onclick="handleGratuitoSubmit()">
+                Confirmar Presença
+            </button>
+        </div>
     </div><!-- /form-section -->
 
     <!-- ── COLUNA DIREITA: RESUMO ── -->

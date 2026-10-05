@@ -187,28 +187,31 @@ exports.criarEvento = async (req, res) => {
     // são criados juntos, e para cada numerado a grade de assentos é gerada
     // na mesma transação — se algo falhar no meio, nada fica salvo pela metade.
     try {
-      const placeholders = ingressos
-        .map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?)")
-        .join(", ");
-      const sqlIng = `INSERT INTO ingressos
-          (evento_id, titulo, tipo, valor, quantidade_total, setor_mapa,
-           tipo_selecao, fileiras, assentos_por_fileira)
-        VALUES ${placeholders}`;
+            const placeholders = ingressos
+  .map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+  .join(", ");
+          const sqlIng = `INSERT INTO ingressos
+    (evento_id, titulo, tipo, valor, quantidade_total, setor_mapa,
+     tipo_selecao, fileiras, assentos_por_fileira, limite_por_cpf, quantidade_max_por_compra, quantidade_min_por_compra)
+  VALUES ${placeholders}`;
 
-      const vals = ingressos.flatMap(i => {
-        const numerado = i.tipo_selecao === "numerado";
-        return [
-          eventoId,
-          i.titulo,
-          i.tipo,
-          i.tipo === "pago" ? (parseFloat(i.valor) || 0) : 0,
-          parseInt(i.quantidade_total) || 1,
-          i.setor_mapa || null,
-          numerado ? "numerado" : "livre",
-          numerado ? (parseInt(i.fileiras, 10) || null) : null,
-          numerado ? (parseInt(i.assentos_por_fileira, 10) || null) : null,
-        ];
-      });
+           const vals = ingressos.flatMap(i => {
+  const numerado = i.tipo_selecao === "numerado";
+  return [
+    eventoId,
+    i.titulo,
+    i.tipo,
+    i.tipo === "pago" ? (parseFloat(i.valor) || 0) : 0,
+    parseInt(i.quantidade_total) || 1,
+    i.setor_mapa || null,
+    numerado ? "numerado" : "livre",
+    numerado ? (parseInt(i.fileiras, 10) || null) : null,
+    numerado ? (parseInt(i.assentos_por_fileira, 10) || null) : null,
+        i.limite_por_cpf ? parseInt(i.limite_por_cpf, 10) : (i.limite_um_por_cpf ? 1 : null), 
+        i.quantidade_max_por_compra ? parseInt(i.quantidade_max_por_compra, 10) : null,
+    i.quantidade_min_por_compra ? parseInt(i.quantidade_min_por_compra, 10) : null,
+  ];
+});
 
       await db.transacao(async (tx) => {
         const linhasIngressos = await tx.query(sqlIng, vals);

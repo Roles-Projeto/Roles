@@ -436,6 +436,7 @@ function updatePrice(quantity) {
     document.getElementById("subtotal-label").textContent = `Subtotal (${quantity}x)`;
 
     const btnPagar = document.getElementById("btn-pagar-cartao");
+        aplicarModoGratuito();
     if (btnPagar) btnPagar.textContent = `Pagar ${formatBRL(total)}`;
 }
 
@@ -445,6 +446,89 @@ function changeQuantity(change) {
     if (newValue >= 1 && newValue <= MAX_AVAILABLE_TICKETS) updatePrice(newValue);
 }
 
+
+/* ==================================================
+   MODO GRATUITO
+================================================== */
+function aplicarModoGratuito() {
+    const gratuito = PRICE_PER_TICKET === 0;
+    const blocoPagamento = document.getElementById("bloco-pagamento");
+    const blocoGratuito = document.getElementById("bloco-gratuito");
+    if (blocoPagamento) blocoPagamento.style.display = gratuito ? "none" : "";
+    if (blocoGratuito) blocoGratuito.style.display = gratuito ? "" : "none";
+}
+
+async function handleGratuitoSubmit() {
+    if (!validarDadosPessoais()) {
+        const firstError = document.querySelector(".input-wrapper input.invalid");
+        if (firstError) firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+    }
+
+    const usuarioId = getUserId();
+    if (!usuarioId) {
+        showToast("Você precisa estar logado para confirmar presença.", "warn");
+        setTimeout(() => { window.location.href = "/frontend/login/login.html"; }, 1800);
+        return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const storedEvento = JSON.parse(localStorage.getItem("eventoSelecionado") || "{}");
+    const eventoId = eventoAtual?.id || params.get("evento_id") || storedEvento?.evento_id;
+    const tipoIngressoId = tipoAtual?.id || params.get("tipo_ingresso_id") || storedEvento?.tipo_ingresso_id;
+    const quantidade = parseInt(document.getElementById("quantidade").value) || 1;
+
+    if (!eventoId || !tipoIngressoId) {
+        showToast("Dados do evento não encontrados. Volte e selecione o ingresso novamente.", "error");
+        return;
+    }
+
+    const btn = document.getElementById("btn-confirmar-presenca");
+    if (btn) { btn.disabled = true; btn.textContent = "Confirmando..."; }
+
+    try {
+        const res = await fetch(`${BASE_URL}/ingressos/comprar`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                usuario_id: usuarioId,
+                evento_id: eventoId,
+                itens: [{ tipo_ingresso_id: tipoIngressoId, quantidade }],
+            }),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            showToast(data.erro || "Não foi possível confirmar a presença.", res.status >= 500 ? "error" : "warn");
+            if (btn) { btn.disabled = false; btn.textContent = "Confirmar Presença"; }
+            return;
+        }
+
+        sessionStorage.setItem("compraConfirmada", JSON.stringify({
+            pedido_id: data.pedido_id,
+            status: data.status,
+            mensagem: data.mensagem,
+            ingressos: data.ingressos,
+            nome: eventoAtual?.titulo || eventoAtual?.nome || document.getElementById("event-name").textContent,
+            data: document.getElementById("event-date").textContent,
+            hora: document.getElementById("event-time").textContent,
+            local: document.getElementById("event-location").textContent,
+            ingressoNome: tipoAtual?.nome || document.getElementById("ticket-type").textContent,
+            ingressoPreco: 0,
+            quantidade,
+            subtotal: 0,
+            taxaServico: 0,
+            totalPago: 0,
+            forma_pagamento: "gratuito",
+        }));
+
+        window.location.href = "/frontend/detalheseventos/confirmacao.html";
+    } catch (err) {
+        console.error("Erro ao confirmar presença:", err);
+        showToast("Erro de conexão com o servidor. Tente novamente em instantes.", "error");
+        if (btn) { btn.disabled = false; btn.textContent = "Confirmar Presença"; }
+    }
+}
 /* ==================================================
    CARREGA DADOS DO EVENTO
 ================================================== */
@@ -517,7 +601,8 @@ async function loadEventData() {
         document.getElementById("event-time").textContent = ev.hora || "--:--";
         document.getElementById("event-location").textContent = ev.local || "Local Desconhecido";
         document.getElementById("ticket-type").textContent = ev.ingressoNome || "Ingresso Padrão";
-        PRICE_PER_TICKET = parseFloat(ev.ingressoPreco) || 30.00;
+                const precoStored = parseFloat(ev.ingressoPreco);
+        PRICE_PER_TICKET = Number.isNaN(precoStored) ? 30.00 : precoStored;
 
         // ← Salva evento_id e tipo no estado global para o finalizarCompra usar
         eventoAtual = { id: ev.evento_id, titulo: ev.nome };

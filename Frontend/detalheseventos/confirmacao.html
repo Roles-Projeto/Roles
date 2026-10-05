@@ -15,6 +15,82 @@
     />
     <link rel="stylesheet" href="/frontend/css/footer.css" />
     <link rel="stylesheet" href="/frontend/css/confirmacao.css" />
+
+    <!-- Ingresso gratuito (prefixo gx-) -->
+    <style>
+      /* Cabeçalho compacto (só no ingresso gratuito) */
+      .gx-modo-gratuito .confirmacao-header { background: transparent !important; box-shadow: none !important; border: 0 !important; padding: 0 2px !important; min-height: 0 !important; margin-bottom: 4px; }
+      .gx-modo-gratuito .confirmacao-header .checkmark { width: 38px !important; height: 38px !important; min-width: 38px; font-size: 16px !important; box-shadow: none !important; }
+      .gx-modo-gratuito .confirmacao-header .checkmark i { font-size: 16px !important; }
+      .gx-modo-gratuito .confirmacao-header h1 { font-size: 18px !important; line-height: 1.25; margin: 0 !important; }
+      .gx-modo-gratuito .confirmacao-header .subtitle { font-size: 13.5px !important; margin: 2px 0 0 !important; }
+
+      #gx-gratuito { margin-bottom: 20px; }
+      .gx-grid-baixo { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 16px !important; align-items: stretch; }
+      .gx-grid-baixo .col-main { display: none !important; }
+      .gx-grid-baixo .col-side { display: contents !important; }
+      .gx-grid-baixo .col-side > .card { margin: 0 !important; }
+      .gx-grid-baixo .acoes-card { display: flex; flex-direction: column; justify-content: center; }
+      @media (max-width: 760px) { .gx-grid-baixo { grid-template-columns: minmax(0, 1fr) !important; } }
+
+      .gx-ticket { position: relative; display: flex; background: #2a0b5e; border-radius: 20px; overflow: hidden; margin-bottom: 18px; }
+      .gx-deco { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+      .gx-t-main { position: relative; flex: 1; min-width: 0; padding: 24px; display: flex; gap: 22px; align-items: center; }
+      .gx-data { flex: 0 0 82px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 0; background: #fff; border-radius: 14px; text-align: center; }
+      .gx-data .gx-mes { font-size: 13px; font-weight: 600; color: #6c1dce; }
+      .gx-data .gx-dia { font-size: 36px; line-height: 1; font-weight: 700; color: #2a0b5e; }
+      .gx-data .gx-semana { font-size: 13px; color: #5d5873; }
+      .gx-t-info { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+      .gx-t-tag { font-size: 12.5px; color: #d9cdf3; }
+      .gx-ticket .gx-t-nome { margin: 0; padding: 0; font-family: 'Inter', sans-serif; font-size: 24px; line-height: 1.2; font-weight: 700; color: #fff; text-transform: none !important; letter-spacing: normal; }
+      .gx-t-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin: 0; font-size: 14px; color: #e7defa; }
+      .gx-t-meta i { margin-right: 5px; }
+      .gx-t-meta .gx-sep { opacity: 0.5; }
+      .gx-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+      .gx-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; line-height: 1; padding: 7px 12px; border-radius: 999px; background: #fff; color: #2a0b5e; }
+      .gx-chip-neutro { background: #4a1d94; color: #e7defa; font-weight: 500; }
+      .gx-t-seam { position: relative; flex: 0 0 0; width: 0; border-left: 2px dashed #6c1dce; }
+      .gx-t-seam::before, .gx-t-seam::after { content: ""; position: absolute; left: -13px; width: 24px; height: 24px; border-radius: 50%; background: #f4f3f8; }
+      .gx-t-seam::before { top: -12px; }
+      .gx-t-seam::after { bottom: -12px; }
+      .gx-t-stub { position: relative; flex: 0 0 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 18px 16px; background: #fff; }
+      .gx-t-qr { width: 120px; height: 120px; display: block; }
+      .gx-t-pedido { font-size: 12.5px; color: #5d5873; }
+      .gx-btn-entrada { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; white-space: nowrap; padding: 10px 12px; font: inherit; font-size: 13px; font-weight: 600; color: #fff; background: #6c1dce; border: none; border-radius: 10px; cursor: pointer; transition: background 0.15s ease; }
+      .gx-btn-entrada:hover, .gx-btn-entrada:focus-visible { background: #5a16b0; outline: none; }
+
+      .gx-acoes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+      .gx-acao { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; text-decoration: none; color: #1a1530; }
+      .gx-acao-ic { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #e9e0fb; color: #6c1dce; font-size: 21px; transition: transform 0.15s ease; }
+      .gx-acao-zap .gx-acao-ic { background: #d3f0dc; color: #1a7f3c; }
+      .gx-acao:hover .gx-acao-ic, .gx-acao:focus-visible .gx-acao-ic { transform: translateY(-2px); }
+      .gx-acao strong { font-size: 14px; font-weight: 600; }
+      .gx-acao small { font-size: 12px; color: #7a7490; }
+      .gx-lembrete { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 13px 16px; background: #fff4d6; color: #5c3d00; border-radius: 14px; font-size: 14px; line-height: 1.5; }
+      .gx-lembrete i { font-size: 18px; color: #8a5a00; }
+
+      .gx-overlay { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(20, 16, 40, 0.86); }
+      .gx-overlay.aberto { display: flex; }
+      .gx-modal { position: relative; width: 100%; max-width: 380px; padding: 28px 24px 24px; text-align: center; background: #ffffff; border-radius: 20px; }
+      .gx-modal h3 { margin: 0 0 4px; font-size: 17px; font-weight: 700; color: #1a1530; }
+      .gx-modal p { margin: 0 0 18px; font-size: 13px; color: #7a7490; }
+      .gx-qr-grande { display: block; width: min(76vw, 300px); height: auto; margin: 0 auto 16px; image-rendering: pixelated; }
+      .gx-modal-dica { margin: 0; font-size: 12px; color: #7a7490; }
+      .gx-fechar { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border: none; border-radius: 50%; background: #f3f2f6; color: #5d5873; font-size: 15px; cursor: pointer; }
+      .gx-fechar:hover, .gx-fechar:focus-visible { background: #e7e4ef; outline: none; }
+
+      @media (max-width: 640px) {
+        .gx-ticket { flex-direction: column; }
+        .gx-t-main { padding: 20px; gap: 16px; }
+        .gx-ticket .gx-t-nome { font-size: 22px; }
+        .gx-t-seam { width: auto; flex: 0 0 0; height: 0; border-left: none; border-top: 2px dashed #6c1dce; }
+        .gx-t-seam::before, .gx-t-seam::after { top: -13px; bottom: auto; }
+        .gx-t-seam::before { left: -12px; }
+        .gx-t-seam::after { left: auto; right: -12px; }
+        .gx-t-stub { flex: none; }
+        .gx-acoes { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 16px; }
+      }
+    </style>
   </head>
   <body>
     <header><div id="header-container"></div></header>
@@ -118,7 +194,81 @@
             <div class="layout-grid">
               <!-- COLUNA PRINCIPAL -->
               <div class="col-main">
-                <!-- TICKET (evento + tipo/QR) -->
+                <!-- INGRESSO GRATUITO (ingresso roxo + ações + lembrete) -->
+                <div id="gx-gratuito" style="display: none">
+                  <div class="gx-ticket">
+                    <svg class="gx-deco" aria-hidden="true">
+                      <circle cx="12%" cy="-10%" r="110" fill="#6c1dce" opacity="0.55" />
+                      <circle cx="55%" cy="115%" r="90" fill="#6c1dce" opacity="0.35" />
+                      <circle cx="72%" cy="20%" r="26" fill="#8b4dff" opacity="0.35" />
+                    </svg>
+
+                    <div class="gx-t-main">
+                      <div class="gx-data">
+                        <span class="gx-mes" id="gx-mes">—</span>
+                        <strong class="gx-dia" id="gx-dia">—</strong>
+                        <span class="gx-semana" id="gx-semana">—</span>
+                      </div>
+                      <div class="gx-t-info">
+                        <span class="gx-t-tag" id="gx-t-tag">Ingresso gratuito</span>
+                        <div class="gx-t-nome" id="gx-t-nome" role="heading" aria-level="2">—</div>
+                        <p class="gx-t-meta">
+                          <span><i class="far fa-clock"></i><span id="gx-t-hora">—</span></span>
+                          <span class="gx-sep">|</span>
+                          <span><i class="fas fa-map-marker-alt"></i><span id="gx-t-local">—</span></span>
+                        </p>
+                        <div class="gx-chips" id="gx-chips" style="display: none">
+                          <span class="gx-chip" id="gx-chip-contagem">
+                            <i class="fas fa-hourglass-half"></i>
+                            <span id="gx-chip-contagem-texto"></span>
+                          </span>
+                          <span class="gx-chip gx-chip-neutro" id="gx-chip-clima" style="display: none">
+                            <i class="fas fa-cloud-sun"></i>
+                            <span id="gx-chip-clima-texto"></span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="gx-t-seam"></div>
+
+                    <div class="gx-t-stub">
+                      <img class="gx-t-qr" id="gx-t-qr" alt="QR Code do ingresso" src="" />
+                      <span class="gx-t-pedido" id="gx-t-pedido">Pedido #—</span>
+                      <button type="button" class="gx-btn-entrada" id="btn-mostrar-qr" style="display: none">
+                        <i class="fas fa-expand"></i> Mostrar na entrada
+                      </button>
+                    </div>
+                  </div>
+
+                  <div id="lembretes-gratuito" style="display: none">
+                    <div class="gx-acoes">
+                      <a class="gx-acao" id="lembrete-calendario" href="#" target="_blank" rel="noopener">
+                        <span class="gx-acao-ic"><i class="fas fa-calendar-plus"></i></span>
+                        <strong>Calendário</strong><small>Criar lembrete</small>
+                      </a>
+                      <a class="gx-acao gx-acao-zap" id="lembrete-whatsapp" href="#" target="_blank" rel="noopener">
+                        <span class="gx-acao-ic"><i class="fab fa-whatsapp"></i></span>
+                        <strong>Chamar a galera</strong><small>Convidar no Zap</small>
+                      </a>
+                      <a class="gx-acao" id="lembrete-maps" href="#" target="_blank" rel="noopener">
+                        <span class="gx-acao-ic"><i class="fas fa-route"></i></span>
+                        <strong>Como chegar</strong><small>Abrir no mapa</small>
+                      </a>
+                      <a class="gx-acao" id="lembrete-dress" href="#" target="_blank" rel="noopener">
+                        <span class="gx-acao-ic"><i class="fas fa-tshirt"></i></span>
+                        <strong>O que vestir</strong><small>Ver inspirações</small>
+                      </a>
+                    </div>
+
+                    <div class="gx-lembrete">
+                      <i class="far fa-lightbulb"></i>
+                      <span>Chegue 15 min antes e leve RG ou CNH. O PDF do ingresso também foi enviado por e-mail.</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- TICKET (evento + tipo/QR) — pagos e pendentes -->
                 <div class="ticket">
                   <div class="ticket-main">
                     <div class="event-details-card">
@@ -215,7 +365,7 @@
               </div>
               <!-- /COLUNA PRINCIPAL -->
 
-              <!-- COLUNA LATERAL -->
+              <!-- COLUNA LATERAL (inalterada) -->
               <aside class="col-side">
                 <!-- PAGAMENTO -->
                 <div class="card pagamento-card">
@@ -292,6 +442,19 @@
         <!-- /CONTEÚDO -->
       </div>
     </main>
+
+    <!-- QR em tela cheia (mostrar na entrada) -->
+    <div class="gx-overlay" id="gx-modal-qr" role="dialog" aria-modal="true" aria-labelledby="gx-qr-evento">
+      <div class="gx-modal">
+        <button type="button" class="gx-fechar" id="gx-qr-fechar" aria-label="Fechar">
+          <i class="fas fa-times"></i>
+        </button>
+        <h3 id="gx-qr-evento">Evento</h3>
+        <p id="gx-qr-info">Ingresso</p>
+        <img class="gx-qr-grande" id="gx-qr-grande" alt="QR Code do ingresso" src="" />
+        <p class="gx-modal-dica">Aumente o brilho da tela e aproxime do leitor.</p>
+      </div>
+    </div>
 
     <!-- Toast -->
     <div id="toast">Mensagem de confirmação</div>

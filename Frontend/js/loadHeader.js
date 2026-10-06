@@ -320,7 +320,8 @@ function initHeader() {
     }
 
     // ---- Desenha a lista no card ----
-    function renderizarCidades(cidades) {
+    // titulo (opcional): aparece acima das cidades, depois de "Todas as cidades"
+    function renderizarCidades(cidades, titulo) {
         if (!cityList) return;
         cityList.innerHTML = '';
 
@@ -333,7 +334,21 @@ function initHeader() {
             return;
         }
 
-        cidades.forEach((c) => {
+        // "Todas as cidades" sempre primeiro, depois o título e as demais
+        const ordenadas = [...cidades.filter(c => c.todas), ...cidades.filter(c => !c.todas)];
+        let tituloInserido = false;
+
+        ordenadas.forEach((c) => {
+            if (titulo && !c.todas && !tituloInserido) {
+                tituloInserido = true;
+                const t = document.createElement('li');
+                t.className = 'city-titulo';
+                t.style.cssText = 'padding:12px 12px 6px;font-size:11px;font-weight:600;color:#888;' +
+                    'text-transform:uppercase;letter-spacing:0.04em;cursor:default;pointer-events:none;';
+                t.textContent = titulo;
+                cityList.appendChild(t);
+            }
+
             const li = document.createElement('li');
             li.dataset.city = c.nome;
             li.dataset.uf = c.uf || '';
@@ -358,14 +373,69 @@ function initHeader() {
         });
     }
 
-    const abrirCard = () => {
+    // Atualiza a lista conforme o que foi digitado (vazio = principais cidades)
+    function atualizarLista(termo) {
+        const buscando = normalizarCidade(termo).length > 0;
+        renderizarCidades(filtrarCidades(termo), buscando ? 'Resultados' : 'Principais cidades');
+    }
+
+    // ---- Posição do card: painel embaixo do botão (desktop) ou modal central (celular) ----
+    let modoDropdown = false;
+
+    function posicionarCard(botaoRef) {
+        if (!cityCard) return;
+        const cabecalho = cityCard.querySelector('.card-header');
+        modoDropdown = !!botaoRef && window.innerWidth > 768;
+
+        if (modoDropdown) {
+            const rect = botaoRef.getBoundingClientRect();
+            const largura = 340;
+            const left = Math.max(8, Math.min(rect.right - largura, window.innerWidth - largura - 8));
+
+            Object.assign(cityCard.style, {
+                top: `${rect.bottom + 8}px`,
+                left: `${left}px`,
+                transform: 'none',
+                width: `${largura}px`,
+                padding: '12px',
+                borderRadius: '12px',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
+                border: '1px solid #ececec'
+            });
+            if (overlay) overlay.style.background = 'transparent'; // sem escurecer a tela
+            if (cabecalho) cabecalho.style.display = 'none';
+            if (cityList) cityList.style.maxHeight = '320px';
+        } else {
+            // Volta ao visual de modal central definido no header.css
+            ['top', 'left', 'transform', 'width', 'padding', 'borderRadius', 'boxShadow', 'border']
+                .forEach(prop => { cityCard.style[prop] = ''; });
+            if (overlay) overlay.style.background = '';
+            if (cabecalho) cabecalho.style.display = '';
+            if (cityList) cityList.style.maxHeight = '';
+        }
+    }
+
+    const abrirCard = (botaoRef) => {
+        posicionarCard(botaoRef);
         if (cityCard) cityCard.style.display = 'block';
         if (overlay) overlay.style.display = 'block';
         if (citySearch) citySearch.value = '';
-        renderizarCidades(filtrarCidades(''));
+        atualizarLista('');
         if (cityList) cityList.scrollTop = 0;
     };
     const fecharCard = () => { if (cityCard) cityCard.style.display = 'none'; if (overlay) overlay.style.display = 'none'; };
+
+    // No modo painel: Esc, rolar a página ou redimensionar a janela fecham
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && cityCard && cityCard.style.display === 'block') fecharCard();
+    });
+    window.addEventListener('scroll', () => {
+        if (modoDropdown && cityCard && cityCard.style.display === 'block') fecharCard();
+    }, { passive: true });
+    window.addEventListener('resize', () => {
+        // No celular o teclado muda o tamanho da janela, então só fecha no modo painel
+        if (modoDropdown && cityCard && cityCard.style.display === 'block') fecharCard();
+    });
 
     function selecionarCidade(nome, uf) {
         if (cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${nome}`;
@@ -380,8 +450,8 @@ function initHeader() {
         fecharCard();
     }
 
-    cityBtn?.addEventListener('click', abrirCard);
-    cityBtnMobile?.addEventListener('click', abrirCard);
+    cityBtn?.addEventListener('click', (e) => abrirCard(e.currentTarget));
+    cityBtnMobile?.addEventListener('click', (e) => abrirCard(e.currentTarget));
     closeCard?.addEventListener('click', fecharCard);
     overlay?.addEventListener('click', fecharCard);
 
@@ -399,7 +469,7 @@ function initHeader() {
 
     // Já deixa Goiás + DF prontos em segundo plano
     carregarRegiao();
-    renderizarCidades(filtrarCidades(''));
+    atualizarLista('');
 
     // Busca de cidade (com pequeno atraso pra não pesar)
     let atrasoCidade;
@@ -407,12 +477,12 @@ function initHeader() {
         clearTimeout(atrasoCidade);
         atrasoCidade = setTimeout(async () => {
             const termo = citySearch.value;
-            renderizarCidades(filtrarCidades(termo));
+            atualizarLista(termo);
 
             // Com 3+ letras, carrega o Brasil inteiro (só uma vez) e atualiza a lista
             if (normalizarCidade(termo).length >= 3 && !carregouBrasil) {
                 await carregarBrasil();
-                if (citySearch.value === termo) renderizarCidades(filtrarCidades(termo));
+                if (citySearch.value === termo) atualizarLista(termo);
             }
         }, 150);
     });

@@ -203,6 +203,9 @@ function initHeader() {
         { nome: 'Brasília', uf: 'DF' }
     ];
 
+    // ---- Opção para tirar o filtro e ver os eventos de todas as cidades ----
+    const TODAS = { nome: 'Todas as cidades', uf: '', todas: true };
+
     // ---- As 27 capitais do Brasil ----
     const CAPITAIS = [
         ['Rio Branco', 'AC'], ['Maceió', 'AL'], ['Macapá', 'AP'], ['Manaus', 'AM'],
@@ -285,11 +288,11 @@ function initHeader() {
     // ---- Filtro da busca ----
     function filtrarCidades(termo) {
         const t = normalizarCidade(termo);
-        if (!t) return DESTAQUES;
+        if (!t) return [TODAS, ...DESTAQUES];
 
         const vistos = new Set();
         const resultado = [];
-        const fontes = [DESTAQUES, CAPITAIS, cidadesRegiao, cidadesBrasil];
+        const fontes = [[TODAS], DESTAQUES, CAPITAIS, cidadesRegiao, cidadesBrasil];
 
         for (const fonte of fontes) {
             for (const c of fonte) {
@@ -336,7 +339,7 @@ function initHeader() {
             li.dataset.uf = c.uf || '';
 
             const icone = document.createElement('i');
-            icone.className = 'fas fa-map-marker-alt';
+            icone.className = c.todas ? 'fas fa-earth-americas' : 'fas fa-map-marker-alt';
             li.appendChild(icone);
 
             const texto = document.createElement('span');
@@ -359,7 +362,7 @@ function initHeader() {
         if (cityCard) cityCard.style.display = 'block';
         if (overlay) overlay.style.display = 'block';
         if (citySearch) citySearch.value = '';
-        renderizarCidades(DESTAQUES);
+        renderizarCidades(filtrarCidades(''));
         if (cityList) cityList.scrollTop = 0;
     };
     const fecharCard = () => { if (cityCard) cityCard.style.display = 'none'; if (overlay) overlay.style.display = 'none'; };
@@ -389,13 +392,14 @@ function initHeader() {
         selecionarCidade(item.dataset.city, item.dataset.uf);
     });
 
-    const savedCity = localStorage.getItem('cidade');
-    if (savedCity && cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${savedCity}`;
-    if (savedCity && cityBtnMobile) cityBtnMobile.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${savedCity}`;
+    // Sem cidade salva = sem filtro, então o botão mostra "Todas as cidades"
+    const savedCity = localStorage.getItem('cidade') || TODAS.nome;
+    if (cityBtn) cityBtn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${savedCity}`;
+    if (cityBtnMobile) cityBtnMobile.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${savedCity}`;
 
     // Já deixa Goiás + DF prontos em segundo plano
     carregarRegiao();
-    renderizarCidades(DESTAQUES);
+    renderizarCidades(filtrarCidades(''));
 
     // Busca de cidade (com pequeno atraso pra não pesar)
     let atrasoCidade;

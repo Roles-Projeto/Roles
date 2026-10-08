@@ -1,74 +1,117 @@
-document.addEventListener("DOMContentLoaded", function () {
+/* ============================================================
+   Quem somos | números da plataforma
 
-    const anoAtual = new Date().getFullYear();
+   Como funciona:
+   - Cada card (.qs-stat) já vem com um texto de apresentação no HTML.
+   - Este script busca os números reais na API (GET /api/estatisticas).
+   - Se o número for maior ou igual ao mínimo (data-min, padrão 10),
+     o card troca o texto pelo número, com animação de contagem.
+   - Se a API falhar ou o número ainda for pequeno, o texto de
+     apresentação continua na tela (nunca aparece "0+").
 
-    const footerHTML = `
-    <footer class="roles-footer-main">
-        <div class="roles-footer-wrapper">
+   Formato esperado da resposta da API:
+   { "estabelecimentos": 12, "usuarios": 80, "avaliacoes": 150, "eventos": 30 }
+   ============================================================ */
+(function () {
+    'use strict';
 
-            <div class="roles-footer-column">
-                <div class="roles-footer-logo">Rolês</div>
-                <p class="roles-footer-description">
-                    Seu guia definitivo para encontrar os melhores lugares para sair e se divertir na cidade!
-                </p>
-                <div class="roles-footer-social">
-                    <a href="#" aria-label="Instagram">
-                        <i class="fab fa-instagram"></i>
-                    </a>
-                    <a href="#" aria-label="Facebook">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="#" aria-label="TikTok">
-                        <i class="fab fa-tiktok"></i>
-                    </a>
-                </div>
-            </div>
+    const MIN_PADRAO = 10;
+    const TIMEOUT_MS = 6000;
+    const DURACAO_MS = 1400;
 
-            <div class="roles-footer-column">
-                <h4 class="roles-footer-title">Explore</h4>
-                <ul>
-                    <li><a href="/frontend/locais/locais.html">Todos os Locais</a></li>
-                    <li><a href="/frontend/eventos/eventos.html">Todos os Eventos</a></li>
-                    <li><a href="#">Baixar App</a></li>
-                </ul>
-            </div>
+    const reduzMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-            <div class="roles-footer-column">
-                <h4 class="roles-footer-title">Empresa</h4>
-                <ul>
-                    <li><a href="/frontend/quemSomos/quemsomos.html">Quem somos</a></li>
-                    <li><a href="/frontend/Contato/contato.html">Contato</a></li>
-                    <li><a href="/frontend/Cadastro/cadastro.html">Cadastrar Local</a></li>
-                    <li><a href="/frontend/empresario/empresario.html">Para empresas</a></li>
-                    <li><a href="/frontend/termoDeUso/termoDeUso.html">Termo de Uso</a></li>
-                </ul>
-            </div>
+    // Descobre o endereço do backend.
+    // 1) usa o que o config.js definir (se existir)
+    // 2) se a página estiver no Live Server (portas 5500-5509), usa o backend em localhost:3000
+    // 3) senão, usa caminho relativo (front e back no mesmo servidor)
+    function descobrirApiBase() {
+        const cfg =
+            window.API_URL ||
+            window.API_BASE_URL ||
+            window.API_BASE ||
+            (window.CONFIG && (window.CONFIG.API_URL || window.CONFIG.API_BASE_URL));
 
-            <div class="roles-footer-column roles-footer-contact">
-                <h4 class="roles-footer-title">Contato</h4>
-                <p class="roles-footer-contact-line">Goiânia, GO</p>
-                <p class="roles-footer-contact-line">
-                    <a href="mailto:roles.suporte@gmail.com">roles.suporte@gmail.com</a>
-                </p>
-                <p class="roles-footer-contact-line">(62) 0000-1234</p>
-            </div>
-
-        </div>
-
-        <div class="roles-footer-bottom">
-            <p class="roles-footer-copy">&copy; ${anoAtual} Rolês. Todos os direitos reservados.</p>
-            <nav class="roles-footer-legal" aria-label="Links legais">
-                <a href="/frontend/termodeuso/termodeuso.html">Privacidade</a>
-                <a href="/frontend/termodeuso/termodeuso.html">Termos</a>
-            </nav>
-        </div>
-    </footer>
-    `;
-
-    const existingFooter = document.querySelector('footer');
-    if (existingFooter) {
-        existingFooter.outerHTML = footerHTML;
-    } else {
-        document.body.insertAdjacentHTML('beforeend', footerHTML);
+        if (cfg) return String(cfg).replace(/\/$/, '');
+        if (/^55\d\d$/.test(window.location.port)) return 'http://localhost:3000';
+        return '';
     }
-});
+
+    async function buscarEstatisticas() {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+        try {
+            const resp = await fetch(descobrirApiBase() + '/api/estatisticas', {
+                signal: controller.signal,
+                headers: { Accept: 'application/json' },
+            });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+            const json = await resp.json();
+            return json.estatisticas || json.data || json;
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    function formatar(n) {
+        return n.toLocaleString('pt-BR') + '+';
+    }
+
+    function animarContagem(el, alvo) {
+        if (reduzMovimento) {
+            el.textContent = formatar(alvo);
+            return;
+        }
+
+        const inicio = performance.now();
+        function passo(agora) {
+            const t = Math.min((agora - inicio) / DURACAO_MS, 1);
+            const suave = 1 - Math.pow(1 - t, 3); // easeOutCubic
+            el.textContent = formatar(Math.round(alvo * suave));
+            if (t < 1) requestAnimationFrame(passo);
+        }
+        requestAnimationFrame(passo);
+    }
+
+    function aplicar(card, valor) {
+        const numEl = card.querySelector('.qs-stat-num');
+        const labelEl = card.querySelector('.qs-stat-label');
+        const min = Number(card.dataset.min) || MIN_PADRAO;
+
+        // número ainda pequeno ou inválido: mantém o texto de apresentação
+        if (!Number.isFinite(valor) || valor < min) return;
+
+        labelEl.textContent = card.dataset.label;
+        numEl.textContent = formatar(0);
+
+        // só anima quando o card aparece na tela
+        if ('IntersectionObserver' in window) {
+            const obs = new IntersectionObserver((entradas) => {
+                if (entradas[0].isIntersecting) {
+                    obs.disconnect();
+                    animarContagem(numEl, valor);
+                }
+            }, { threshold: 0.4 });
+            obs.observe(card);
+        } else {
+            animarContagem(numEl, valor);
+        }
+    }
+
+    async function iniciar() {
+        const cards = document.querySelectorAll('.qs-stat[data-stat]');
+        if (!cards.length) return;
+
+        try {
+            const dados = await buscarEstatisticas();
+            cards.forEach((card) => aplicar(card, Number(dados[card.dataset.stat])));
+        } catch (erro) {
+            // sem API: os textos de apresentação continuam visíveis
+            console.warn('[Quem somos] Não foi possível carregar os números:', erro.message);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', iniciar);
+})();

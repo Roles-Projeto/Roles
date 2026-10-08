@@ -4,17 +4,451 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quem Somos | Rolês</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="stylesheet" href="/frontend/css/footer.css" />
-    <link rel="stylesheet" href="/frontend/css/quemsomos.css" />
+    <style>
+/* ============================================================
+   Quem somos | Rolês
+   Fontes: Bricolage Grotesque (títulos) + Inter (texto)
+   As fontes são carregadas no <head> do HTML.
+   ============================================================ */
+
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --ink:         #1a0533;
+    --violet:      #4f46e5;
+    --violet-mid:  #7c3aed;
+    --violet-pale: #f5f3ff;
+    --violet-dim:  rgba(79,70,229,0.12);
+    --sun:         #ffc800;
+    --muted:       #7d6a9c;
+    --body-text:   #4a3f6b;
+    --bg:          #fafafa;
+    --white:       #ffffff;
+    --border:      rgba(0,0,0,0.07);
+    --font:        'Bricolage Grotesque', sans-serif;
+    --shadow:      0 2px 12px rgba(26,5,51,0.06);
+    --shadow-lift: 0 10px 28px rgba(26,5,51,0.16);
+    --r-md:        10px;
+    --r-lg:        14px;
+    --r-xl:        20px;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+a:focus-visible,
+button:focus-visible {
+    outline: 3px solid var(--sun);
+    outline-offset: 3px;
+}
+
+/* ---------- Tipografia base ---------- */
+.qs-h1,
+.qs-h2,
+.qs-hist h3,
+.qs-panel h3,
+.qs-val h3,
+.qs-closing h2 {
+    font-family: var(--font);
+}
+
+.qs-h2 {
+    font-size: clamp(26px, 3.2vw, 38px);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.12;
+    color: var(--ink);
+    margin-bottom: 20px;
+}
+.qs-h2--center { text-align: center; margin-bottom: 36px; }
+
+/* ---------- Botões ---------- */
+.qs-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+    border-radius: 99px;
+    padding: 14px 26px;
+    border: 2px solid transparent;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.qs-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+
+.qs-btn--sun    { background: var(--sun); color: var(--ink); }
+.qs-btn--violet { background: var(--violet); color: #fff; }
+.qs-btn--ghost  { background: transparent; color: #fff; border-color: rgba(255,255,255,0.35); }
+.qs-btn--ghost:hover { background: rgba(255,255,255,0.08); box-shadow: none; }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.qs-hero {
+    background: var(--ink);
+    padding: 104px 40px 96px;
+    position: relative;
+    overflow: hidden;
+}
+
+.qs-hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+    background-size: 44px 44px;
+    pointer-events: none;
+}
+
+.qs-hero-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1080px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 48px;
+    align-items: center;
+}
+
+.qs-hero-kicker {
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--sun);
+    margin-bottom: 16px;
+}
+
+.qs-h1 {
+    font-size: clamp(40px, 5.4vw, 68px);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.045em;
+    line-height: 1.02;
+    margin-bottom: 20px;
+}
+
+.qs-sub {
+    font-size: 17px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.7;
+    max-width: 520px;
+    margin-bottom: 32px;
+}
+
+.qs-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.qs-hero-actions--center { justify-content: center; margin-top: 28px; }
+
+/* cartões decorativos do hero */
+.qs-hero-stack { position: relative; height: 340px; }
+
+.qs-pill {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 22px 16px 16px;
+    border-radius: var(--r-xl);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+    min-width: 270px;
+}
+.qs-pill strong { display: block; font-family: var(--font); font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
+.qs-pill small  { display: block; font-size: 12.5px; margin-top: 2px; opacity: 0.7; }
+
+.qs-pill-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.qs-pill--a { top: 0;     left: 0;     background: #fff;          color: var(--ink); transform: rotate(-4deg); }
+.qs-pill--a .qs-pill-icon { background: var(--violet-pale); color: var(--violet); }
+
+.qs-pill--b { top: 112px; right: 0;    background: var(--sun);    color: var(--ink); transform: rotate(3deg); }
+.qs-pill--b .qs-pill-icon { background: rgba(26,5,51,0.1); color: var(--ink); }
+
+.qs-pill--c { top: 224px; left: 28px;  background: var(--violet); color: #fff;        transform: rotate(-2deg); }
+.qs-pill--c .qs-pill-icon { background: rgba(255,255,255,0.18); color: #fff; }
+
+/* botão voltar (sobre o fundo escuro) */
+.qs-back-btn {
+    position: absolute;
+    top: 28px;
+    left: 28px;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid rgba(79,70,229,0.15);
+    border-radius: 99px;
+    padding: 10px 18px 10px 14px;
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.qs-back-btn:hover { transform: translateX(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+.qs-back-btn i { font-size: 12px; color: var(--violet); }
+
+/* ============================================================
+   SEÇÕES (estrutura comum)
+   ============================================================ */
+.qs-sec { padding: 80px 40px; }
+.qs-sec--white { background: var(--white); }
+.qs-sec--bg    { background: var(--bg); }
+.qs-sec-inner  { max-width: 1000px; margin: 0 auto; }
+
+/* ============================================================
+   HISTÓRIA + LINHA DO TEMPO
+   ============================================================ */
+.qs-hist {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: start;
+}
+
+.qs-hist-text p {
+    font-size: 16px;
+    color: var(--body-text);
+    line-height: 1.8;
+    margin-bottom: 16px;
+    max-width: 480px;
+}
+.qs-hist-text p:last-child { margin-bottom: 0; }
+
+.qs-timeline {
+    list-style: none;
+    position: relative;
+    padding-left: 28px;
+    border-left: 2px solid var(--violet-dim);
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.qs-tl-item { position: relative; }
+.qs-tl-item::before {
+    content: '';
+    position: absolute;
+    left: -37px;
+    top: 4px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 3px solid var(--violet);
+}
+.qs-tl-item:last-child::before { background: var(--sun); border-color: var(--ink); }
+
+.qs-tl-when {
+    display: block;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--violet);
+    margin-bottom: 4px;
+}
+.qs-tl-item h3 { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 4px; }
+.qs-tl-item p  { font-size: 14px; color: var(--muted); line-height: 1.65; }
+
+/* ============================================================
+   NÚMEROS
+   ============================================================ */
+.qs-stats {
+    background: var(--violet-pale);
+    padding: 72px 40px;
+    border-top: 1px solid rgba(79,70,229,0.08);
+    border-bottom: 1px solid rgba(79,70,229,0.08);
+}
+.qs-stats-inner { max-width: 1000px; margin: 0 auto; }
+.qs-stats-head  { text-align: center; margin-bottom: 36px; }
+.qs-stats-head .qs-h2 { margin-bottom: 8px; }
+.qs-stats-head p { font-size: 14px; color: var(--muted); }
+
+.qs-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+.qs-stat {
+    background: var(--white);
+    border: 1px solid rgba(79,70,229,0.12);
+    border-radius: var(--r-lg);
+    padding: 28px 16px;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+.qs-stat svg { color: var(--violet); margin: 0 auto 12px; display: block; }
+.qs-stat-num {
+    font-family: var(--font);
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+}
+.qs-stat-label { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.45; }
+
+/* ============================================================
+   PARA QUEM SAI / PARA ESTABELECIMENTOS
+   ============================================================ */
+.qs-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+.qs-panel {
+    border-radius: var(--r-xl);
+    padding: 40px 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.qs-panel--light { background: var(--violet-pale); border: 1px solid rgba(79,70,229,0.15); }
+.qs-panel--dark  { background: var(--ink); }
+
+.qs-panel h3 { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+.qs-panel--light h3 { color: var(--ink); }
+.qs-panel--dark h3  { color: #fff; }
+
+.qs-panel > p { font-size: 15px; line-height: 1.6; margin-bottom: 22px; }
+.qs-panel--light > p { color: var(--body-text); }
+.qs-panel--dark > p  { color: rgba(255,255,255,0.65); }
+
+.qs-checks { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; flex: 1; }
+.qs-checks li { position: relative; padding-left: 28px; font-size: 14.5px; line-height: 1.55; }
+.qs-panel--light .qs-checks li { color: var(--body-text); }
+.qs-panel--dark  .qs-checks li { color: rgba(255,255,255,0.8); }
+
+.qs-checks li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 10px;
+}
+.qs-panel--light .qs-checks li::before {
+    background-color: var(--violet);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
+.qs-panel--dark .qs-checks li::before {
+    background-color: var(--sun);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231a0533' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   VALORES
+   ============================================================ */
+.qs-val-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 48px; }
+
+.qs-val {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 26px 0;
+    border-top: 1px solid var(--border);
+}
+.qs-val-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--r-md);
+    background: var(--violet-pale);
+    border: 1px solid rgba(79,70,229,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--violet);
+    font-size: 17px;
+}
+.qs-val h3 { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 4px; }
+.qs-val p  { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+/* ============================================================
+   FRASE FINAL + CTA
+   ============================================================ */
+.qs-closing { background: var(--violet); padding: 80px 40px; text-align: center; }
+.qs-closing-inner { max-width: 640px; margin: 0 auto; }
+.qs-closing h2 {
+    font-size: clamp(28px, 4vw, 46px);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    margin-bottom: 12px;
+}
+.qs-closing p { font-size: 16px; color: rgba(255,255,255,0.8); line-height: 1.7; }
+
+/* ============================================================
+   RESPONSIVO
+   ============================================================ */
+@media (max-width: 900px) {
+    .qs-hero { padding: 96px 24px 56px; }
+    .qs-hero-inner { grid-template-columns: 1fr; gap: 40px; }
+    .qs-hero-stack { height: auto; display: flex; flex-direction: column; gap: 12px; }
+    .qs-pill { position: static; transform: none !important; min-width: 0; }
+    .qs-back-btn { top: 20px; left: 20px; }
+
+    .qs-sec, .qs-stats, .qs-closing { padding-left: 24px; padding-right: 24px; }
+    .qs-hist { grid-template-columns: 1fr; gap: 40px; }
+    .qs-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .qs-split { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+    .qs-sec { padding-top: 56px; padding-bottom: 56px; }
+    .qs-stats, .qs-closing { padding-top: 56px; padding-bottom: 56px; }
+    .qs-back-btn { top: 16px; left: 16px; padding: 9px 16px 9px 12px; font-size: 12.5px; }
+    .qs-val-grid { grid-template-columns: 1fr; }
+    .qs-panel { padding: 30px 24px; }
+    .qs-sub { font-size: 15.5px; }
+}
+
+@media (max-width: 420px) {
+    .qs-hero { padding: 88px 16px 44px; }
+    .qs-stats-grid { grid-template-columns: 1fr; }
+    .qs-hero-actions .qs-btn { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; }
+}
+
+    </style>
   </head>
   <body>
     <header>
@@ -24,8 +458,8 @@
     <main>
       <!-- HERO -->
       <section class="qs-hero">
-        <div class="qs-hero-grid"></div>
-        <div class="qs-hero-glow"></div>
+        <div class="qs-hero-grid" aria-hidden="true"></div>
+
         <button
           type="button"
           class="qs-back-btn"
@@ -34,306 +468,261 @@
           <i class="fa-solid fa-arrow-left"></i>
           Voltar
         </button>
+
         <div class="qs-hero-inner">
-          <div class="qs-tag">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path
-                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-              />
-            </svg>
-            Quem somos
+          <div class="qs-hero-copy">
+            <p class="qs-hero-kicker">Quem somos</p>
+            <h1 class="qs-h1">Descubra onde o rolê está acontecendo.</h1>
+            <p class="qs-sub">
+              O Rolês reúne bares, restaurantes e eventos de Goiânia e região,
+              com avaliações de quem já foi. Menos tempo procurando, mais tempo
+              saindo.
+            </p>
+            <div class="qs-hero-actions">
+              <a class="qs-btn qs-btn--sun" href="/frontend/eventos/eventos.html">
+                Explorar eventos
+              </a>
+              <a
+                class="qs-btn qs-btn--ghost"
+                href="/frontend/Cadastro/cadastro.html"
+              >
+                Cadastrar meu local
+              </a>
+            </div>
           </div>
-          <h1 class="qs-h1">Sobre o <em>Rolês</em></h1>
-          <p class="qs-sub">
-            Somos a plataforma que conecta pessoas aos melhores lugares para
-            sair e se divertir. Cada saída, uma experiência inesquecível.
-          </p>
+
+          <div class="qs-hero-stack" aria-hidden="true">
+            <div class="qs-pill qs-pill--a">
+              <span class="qs-pill-icon"><i class="fa-solid fa-martini-glass-citrus"></i></span>
+              <div>
+                <strong>Bares</strong>
+                <small>Avaliados por quem foi</small>
+              </div>
+            </div>
+            <div class="qs-pill qs-pill--b">
+              <span class="qs-pill-icon"><i class="fa-solid fa-utensils"></i></span>
+              <div>
+                <strong>Restaurantes</strong>
+                <small>Opiniões sem enrolação</small>
+              </div>
+            </div>
+            <div class="qs-pill qs-pill--c">
+              <span class="qs-pill-icon"><i class="fa-solid fa-ticket"></i></span>
+              <div>
+                <strong>Eventos</strong>
+                <small>Confirme presença em poucos toques</small>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- NOSSA HISTÓRIA -->
-      <section class="qs-sec qs-sec--white">
-        <div class="qs-sec-inner">
-          <p class="qs-sec-label">Nossa história</p>
-          <div class="qs-hist-grid">
-            <div class="qs-hist-left">
-              <p>
-                O Rolês nasceu de uma necessidade real: encontrar informações
-                confiáveis sobre onde sair para se divertir. Em 2025, um grupo
-                de estudantes decidiu transformar essa dificuldade em uma
-                solução.
-              </p>
-              <p>
-                A ideia surgiu da nossa própria experiência como usuários.
-                Encontrávamos dificuldade para descobrir novos lugares, comparar
-                opções e acessar informações confiáveis em um único lugar.
-                Informações desencontradas, avaliações inconsistentes e a falta
-                de transparência mostraram que existia um problema real a ser
-                resolvido.
-              </p>
-              <p>
-                Hoje, o Rolês conecta pessoas aos melhores lugares e
-                experiências da região, reunindo informações confiáveis para que
-                cada escolha seja feita com mais segurança e praticidade,
-                tornando a descoberta de novos destinos mais simples,
-                transparente e acessível para todos.
-              </p>
-            </div>
-            <div class="qs-hist-right">
-              <div class="qs-hi">
-                <span class="qs-hi-num">01</span>
-                <div>
-                  <p class="qs-hi-title">Nascemos em Goiânia</p>
-                  <p class="qs-hi-text">
-                    Projeto criado por estudantes para resolver um problema
-                    local e real.
-                  </p>
-                </div>
-              </div>
-              <div class="qs-hi">
-                <span class="qs-hi-num">02</span>
-                <div>
-                  <p class="qs-hi-title">Fundado em 2025</p>
-                  <p class="qs-hi-text">
-                    Uma ideia que virou produto real, construído com dedicação.
-                  </p>
-                </div>
-              </div>
-              <div class="qs-hi">
-                <span class="qs-hi-num">03</span>
-                <div>
-                  <p class="qs-hi-title">Feito com propósito</p>
-                  <p class="qs-hi-text">
-                    Cada decisão pensada para melhorar a vida social das
-                    pessoas.
-                  </p>
-                </div>
-              </div>
-              <div class="qs-hi">
-                <span class="qs-hi-num">04</span>
-                <div>
-                  <p class="qs-hi-title">Crescendo todo dia</p>
-                  <p class="qs-hi-text">
-                    Mais locais, mais eventos, mais pessoas descobrindo a
-                    cidade.
-                  </p>
-                </div>
-              </div>
-            </div>
+      <!-- HISTÓRIA + LINHA DO TEMPO -->
+      <section class="qs-sec qs-sec--white" id="historia">
+        <div class="qs-sec-inner qs-hist">
+          <div class="qs-hist-text">
+            <h2 class="qs-h2">Nasceu de uma dificuldade real</h2>
+            <p>
+              Encontrar um lugar bom para sair dava trabalho: informação
+              espalhada, avaliações que não inspiravam confiança e nenhum
+              lugar que reunisse tudo. Em 2025, um grupo de estudantes de
+              Goiânia decidiu resolver isso.
+            </p>
+            <p>
+              Hoje o Rolês conecta pessoas aos melhores lugares e experiências
+              da região, com informações confiáveis para cada escolha ser feita
+              com mais segurança e praticidade.
+            </p>
           </div>
+
+          <ol class="qs-timeline">
+            <li class="qs-tl-item">
+              <span class="qs-tl-when">2025</span>
+              <h3>A ideia nasce em Goiânia</h3>
+              <p>
+                Estudantes transformam a própria dificuldade de achar bons
+                lugares em um projeto.
+              </p>
+            </li>
+            <li class="qs-tl-item">
+              <span class="qs-tl-when">Construção</span>
+              <h3>Do problema ao produto</h3>
+              <p>
+                Bares, restaurantes, eventos e avaliações reunidos em uma
+                plataforma só.
+              </p>
+            </li>
+            <li class="qs-tl-item">
+              <span class="qs-tl-when">Hoje</span>
+              <h3>O Rolês está no ar</h3>
+              <p>
+                Busca, filtros, avaliações reais e confirmação de presença nos
+                eventos.
+              </p>
+            </li>
+            <li class="qs-tl-item">
+              <span class="qs-tl-when">A seguir</span>
+              <h3>Cada vez mais a sua cara</h3>
+              <p>
+                Recomendações pelo seu gosto, avisos de eventos por perto e mais
+                cidades de Goiás.
+              </p>
+            </li>
+          </ol>
         </div>
       </section>
 
       <!-- NÚMEROS -->
-      <section class="qs-stats">
+      <!--
+        Cada card começa com um texto de apresentação (data-fallback-*).
+        O qemsomos.js troca pelo número real só quando ele chega
+        ao mínimo definido em data-min.
+      -->
+      <section class="qs-stats" id="numeros">
         <div class="qs-stats-inner">
           <div class="qs-stats-head">
-            <h2>Números que nos orgulham</h2>
+            <h2 class="qs-h2">O Rolês hoje</h2>
             <p>Crescendo com a confiança da nossa comunidade</p>
           </div>
+
           <div class="qs-stats-grid">
-            <div class="qs-stat">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
+            <div
+              class="qs-stat"
+              data-stat="estabelecimentos"
+              data-min="10"
+              data-label="Estabelecimentos cadastrados"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
-              <div class="qs-stat-num" id="stat-estabelecimentos">0+</div>
-              <div class="qs-stat-label">Estabelecimentos cadastrados</div>
+              <div class="qs-stat-num" id="stat-estabelecimentos">Goiânia</div>
+              <div class="qs-stat-label">Cidade onde tudo começou</div>
             </div>
-            <div class="qs-stat">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
+
+            <div
+              class="qs-stat"
+              data-stat="usuarios"
+              data-min="10"
+              data-label="Usuários ativos"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
-              <div class="qs-stat-num" id="stat-usuarios">0+</div>
-              <div class="qs-stat-label">Usuários ativos</div>
+              <div class="qs-stat-num" id="stat-usuarios">2025</div>
+              <div class="qs-stat-label">Ano em que o Rolês nasceu</div>
             </div>
-            <div class="qs-stat">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <polygon
-                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                />
+
+            <div
+              class="qs-stat"
+              data-stat="avaliacoes"
+              data-min="10"
+              data-label="Avaliações registradas"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
-              <div class="qs-stat-num" id="stat-avaliacoes">0+</div>
-              <div class="qs-stat-label">Avaliações registradas</div>
+              <div class="qs-stat-num" id="stat-avaliacoes">100%</div>
+              <div class="qs-stat-label">Avaliações feitas por quem foi ao local</div>
             </div>
-            <div class="qs-stat">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
+
+            <div
+              class="qs-stat"
+              data-stat="eventos"
+              data-min="10"
+              data-label="Eventos marcados"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>
-              <div class="qs-stat-num" id="stat-eventos">0+</div>
-              <div class="qs-stat-label">Eventos marcados</div>
+              <div class="qs-stat-num" id="stat-eventos">Em breve</div>
+              <div class="qs-stat-label">Mais cidades de Goiás a caminho</div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- NOSSOS VALORES -->
-      <section class="qs-sec qs-sec--bg">
+      <!-- PARA QUEM SAI / PARA ESTABELECIMENTOS -->
+      <section class="qs-sec qs-sec--bg" id="publicos">
         <div class="qs-sec-inner">
-          <p class="qs-sec-label">Nossos valores</p>
+          <h2 class="qs-h2 qs-h2--center">Um Rolês, dois lados</h2>
+
+          <div class="qs-split">
+            <article class="qs-panel qs-panel--light">
+              <h3>Para quem sai</h3>
+              <p>Encontre o lugar certo sem perder tempo com decepção.</p>
+              <ul class="qs-checks">
+                <li>Busque e filtre bares, restaurantes e eventos</li>
+                <li>Leia avaliações de quem já esteve lá</li>
+                <li>Confirme presença nos eventos em poucos toques</li>
+              </ul>
+              <a class="qs-btn qs-btn--violet" href="/frontend/eventos/eventos.html">
+                Explorar eventos
+              </a>
+            </article>
+
+            <article class="qs-panel qs-panel--dark">
+              <h3>Para estabelecimentos</h3>
+              <p>Apareça para quem está procurando onde ir hoje.</p>
+              <ul class="qs-checks">
+                <li>Cadastre seu local e mostre o que ele tem de melhor</li>
+                <li>Receba avaliações reais dos clientes</li>
+                <li>Divulgue seus eventos para a cidade</li>
+              </ul>
+              <a class="qs-btn qs-btn--sun" href="/frontend/Cadastro/cadastro.html">
+                Cadastrar meu local
+              </a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- VALORES -->
+      <section class="qs-sec qs-sec--white" id="valores">
+        <div class="qs-sec-inner">
+          <h2 class="qs-h2">No que a gente acredita</h2>
+
           <div class="qs-val-grid">
             <div class="qs-val">
-              <div class="qs-val-icon">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-                  />
-                </svg>
-              </div>
+              <span class="qs-val-icon"><i class="fa-regular fa-heart"></i></span>
               <div>
-                <p class="qs-val-title">Paixão pela vida social</p>
-                <p class="qs-val-text">
-                  Acreditamos que sair e se divertir é essencial para o
-                  bem-estar, saúde mental e conexão genuína entre pessoas.
+                <h3>Paixão pela vida social</h3>
+                <p>
+                  Sair e se divertir faz bem para o bem-estar, a saúde mental e
+                  a conexão entre as pessoas.
                 </p>
               </div>
             </div>
             <div class="qs-val">
-              <div class="qs-val-icon">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-              </div>
+              <span class="qs-val-icon"><i class="fa-solid fa-user-group"></i></span>
               <div>
-                <p class="qs-val-title">Comunidade unida</p>
-                <p class="qs-val-text">
-                  Conectamos quem busca experiências autênticas com
-                  estabelecimentos locais que merecem ser descobertos.
+                <h3>Comunidade unida</h3>
+                <p>
+                  Ligamos quem busca experiências autênticas a estabelecimentos
+                  locais que merecem ser descobertos.
                 </p>
               </div>
             </div>
             <div class="qs-val">
-              <div class="qs-val-icon">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-              </div>
+              <span class="qs-val-icon"><i class="fa-solid fa-shield-halved"></i></span>
               <div>
-                <p class="qs-val-title">Confiança e segurança</p>
-                <p class="qs-val-text">
+                <h3>Confiança e segurança</h3>
+                <p>
                   Informações verificadas, avaliações reais e um ambiente seguro
-                  para todos que usam a plataforma.
+                  para quem usa a plataforma.
                 </p>
               </div>
             </div>
             <div class="qs-val">
-              <div class="qs-val-icon">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <polygon
-                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                  />
-                </svg>
-              </div>
+              <span class="qs-val-icon"><i class="fa-regular fa-star"></i></span>
               <div>
-                <p class="qs-val-title">Qualidade garantida</p>
-                <p class="qs-val-text">
-                  Só recomendamos o que é genuinamente bom — avaliações honestas
-                  para as melhores decisões.
+                <h3>Qualidade garantida</h3>
+                <p>
+                  Só recomendamos o que é bom de verdade, com avaliações
+                  honestas para você decidir melhor.
                 </p>
               </div>
             </div>
@@ -341,142 +730,22 @@
         </div>
       </section>
 
-      <!-- O PROJETO -->
-      <section class="qs-sec qs-sec--bg" style="padding-top: 0">
-        <div class="qs-sec-inner">
-          <p class="qs-sec-label">O projeto</p>
-          <div class="qs-proj-cols">
-            <div class="qs-proj-card">
-              <span class="qs-proj-tag">O que é</span>
-              <p class="qs-proj-title">Uma plataforma para quem curte sair</p>
-              <p class="qs-proj-text">
-                Bares, restaurantes e eventos em um só lugar, com avaliações
-                reais de quem já esteve lá. Chega de perder tempo em lugares que
-                decepcionam.
-              </p>
-            </div>
-            <div class="qs-proj-card qs-proj-card--highlight">
-              <span class="qs-proj-tag">Como funciona</span>
-              <p class="qs-proj-title">Simples, rápido e confiável</p>
-              <p class="qs-proj-text">
-                Busque, filtre, leia avaliações honestas e confirme presença em
-                eventos — tudo em poucos toques.
-              </p>
-            </div>
-            <div class="qs-proj-card">
-              <span class="qs-proj-tag">Para quem é</span>
-              <p class="qs-proj-title">
-                Para quem quer aproveitar o tempo livre
-              </p>
-              <p class="qs-proj-text">
-                Descubra novos bares, eventos culturais ou simplesmente onde o
-                rolê está acontecendo agora.
-              </p>
-            </div>
-          </div>
-
-          <!-- EQUIPE -->
-          <div class="qs-equipe">
-            <div class="qs-equipe-txt">
-              <h3>Feito por quem vive o rolê</h3>
-              <p>
-                Somos um time de estudantes apaixonados por tecnologia e pela
-                vida social. Cada integrante trouxe uma habilidade única — do
-                design à infraestrutura, da ideia ao produto final.
-              </p>
-            </div>
-            <div class="qs-equipe-tags">
-              <div class="qs-eq-tag">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <polyline points="16 18 22 12 16 6" />
-                  <polyline points="8 6 2 12 8 18" />
-                </svg>
-                <span>Desenvolvimento</span>
-              </div>
-              <div class="qs-eq-tag">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <circle cx="13.5" cy="6.5" r="2.5" />
-                  <path d="M17 22H3v-1a6 6 0 0 1 6-6h2" />
-                  <path d="M16 16l2 2 4-4" />
-                </svg>
-                <span>Design</span>
-              </div>
-              <div class="qs-eq-tag">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <polyline points="9 11 12 14 22 4" />
-                  <path
-                    d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
-                  />
-                </svg>
-                <span>Qualidade</span>
-              </div>
-              <div class="qs-eq-tag">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <ellipse cx="12" cy="5" rx="9" ry="3" />
-                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-                </svg>
-                <span>Dados</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- FRASE FINAL -->
+      <!-- FRASE FINAL + CTA -->
       <section class="qs-closing">
-        <div class="qs-closing-glow"></div>
         <div class="qs-closing-inner">
-          <div class="qs-closing-bar"></div>
-          <h2>Por uma vida com mais <em>Rolês</em></h2>
+          <h2>Por uma vida com mais Rolês</h2>
           <p>
             Mais facilidade, mais diversão, mais alegria, mais cultura, mais
             lazer.
           </p>
+          <div class="qs-hero-actions qs-hero-actions--center">
+            <a class="qs-btn qs-btn--sun" href="/frontend/eventos/eventos.html">
+              Ver eventos
+            </a>
+            <a class="qs-btn qs-btn--ghost" href="/frontend/locais/locais.html">
+              Ver locais
+            </a>
+          </div>
         </div>
       </section>
     </main>

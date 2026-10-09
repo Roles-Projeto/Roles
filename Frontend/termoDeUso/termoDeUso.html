@@ -1,876 +1,364 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Informações Legais — Rolês</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/frontend/css/footer.css">
-    <link rel="stylesheet" href="/frontend/css/header.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Termos de Uso | Rolês</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/frontend/css/footer.css">
+  <link rel="stylesheet" href="/frontend/css/header.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <style>
+/* Termo de Uso | Rolês */
+:root{--ink:#1a0533;--brand:#6c1dce;--pale:#f6f0ff;--sun:#ffc800;--body:#4a3f6b;--muted:#7d6a9c;--line:#e6e1f2;--font:'Bricolage Grotesque',system-ui,sans-serif;--gut:max(24px,calc(50% - 520px))}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+#header-container{position:sticky;top:0;z-index:1000}
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#fafafa;color:var(--ink);-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ul{margin:0}
+a:focus-visible,button:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
 
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f5f7;
-            color: #333;
-        }
+/* topo */
+.terms-banner{position:relative;background:var(--ink);color:#fff;padding:64px var(--gut) 0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:44px 44px}
+.terms-banner h1{font-family:var(--font);font-size:clamp(34px,5vw,56px);font-weight:800;letter-spacing:-.045em;line-height:1.02;margin-bottom:12px}
+.terms-banner>p{font-size:16px;color:rgba(255,255,255,.7);max-width:560px;line-height:1.65;margin-bottom:36px}
+.back-button-wrapper{position:absolute;top:28px;left:var(--gut)}
+.back-btn{display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--ink);border:0;border-radius:99px;padding:9px 18px 9px 12px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:transform .2s}
+.back-btn:hover{transform:translateX(-2px)}
+.tabs-bar{display:flex;gap:4px;overflow-x:auto}
+.tab-btn{position:relative;background:none;border:0;color:rgba(255,255,255,.55);font-family:var(--font);font-size:15px;font-weight:700;padding:14px 20px;cursor:pointer;white-space:nowrap;transition:color .2s}
+.tab-btn::after{content:'';position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--sun);border-radius:4px 4px 0 0;transform:scaleX(0);transition:transform .25s}
+.tab-btn:hover,.tab-btn.active{color:#fff}
+.tab-btn.active::after{transform:scaleX(1)}
 
-        /* ── Banner ── */
-        .terms-banner {
-            background: linear-gradient(135deg, #16213e 0%, #1a1a2e 60%, #2d2b55 100%);
-            color: #fff;
-            text-align: center;
-            padding: 80px 40px 0;
-            width: 100%;
-            box-sizing: border-box;
-            position: relative;
-            overflow: hidden;
-        }
-        .terms-banner::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(120,100,255,0.12) 0%, transparent 70%);
-            pointer-events: none;
-        }
-        .terms-banner h1 {
-            font-size: 26px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            position: relative;
-        }
-        .terms-banner > p {
-            font-size: 14px;
-            color: rgba(255,255,255,0.65);
-            margin-bottom: 32px;
-            position: relative;
-        }
+/* layout: índice + conteúdo */
+.terms-page-wrapper{max-width:1120px;margin:0 auto;padding:48px 40px 96px}
+.terms-page-wrapper.legal-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:56px;align-items:start}
+.content-container{max-width:760px}
+.legal-toc{position:sticky;top:96px}
+.legal-toc strong{display:block;font-family:var(--font);font-size:15px;margin-bottom:12px}
+.legal-toc a{display:block;font-size:13.5px;line-height:1.4;color:var(--muted);text-decoration:none;padding:7px 0 7px 14px;border-left:2px solid var(--line);transition:color .15s,border-color .15s}
+.legal-toc a:hover{color:var(--ink)}
+.legal-toc a.on{color:var(--ink);font-weight:600;border-left-color:var(--brand)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
 
-        /* ── Botão Voltar ── */
-        .back-button-wrapper {
-            position: absolute;
-            top: 24px;
-            left: 40px;
-        }
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.08);
-            color: #fff;
-            border: 1.5px solid rgba(255,255,255,0.25);
-            border-radius: 100px;
-            padding: 8px 18px;
-            font-family: 'Inter', sans-serif;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            backdrop-filter: blur(4px);
-        }
-        .back-btn:hover {
-            background: rgba(255,255,255,0.15);
-            border-color: rgba(255,255,255,0.45);
-        }
-        @media (max-width: 768px) {
-            .back-button-wrapper { left: 20px; top: 16px; }
-        }
+/* seções */
+.terms-section{padding:36px 0 12px;border-top:1px solid var(--line);scroll-margin-top:96px}
+.terms-section h2{font-family:var(--font);font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1.15;margin-bottom:16px}
+.terms-section p{font-size:15.5px;line-height:1.75;color:var(--body);margin-bottom:14px}
+.terms-section strong{color:var(--ink)}
+.terms-section a{color:var(--brand)}
+.subsection-title{font-family:var(--font);font-size:17px;font-weight:700;margin:26px 0 8px}
 
-        /* ── Abas dentro do banner ── */
-        .tabs-bar {
-            display: flex;
-            justify-content: center;
-            gap: 4px;
-            position: relative;
-            padding: 0 40px;
-        }
-        .tab-btn {
-            background: transparent;
-            border: none;
-            color: rgba(255,255,255,0.5);
-            font-family: 'Inter', sans-serif;
-            font-size: 13px;
-            font-weight: 600;
-            padding: 14px 22px;
-            cursor: pointer;
-            position: relative;
-            transition: color 0.2s;
-            white-space: nowrap;
-        }
-        .tab-btn::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: #7c6fff;
-            border-radius: 3px 3px 0 0;
-            transform: scaleX(0);
-            transition: transform 0.25s;
-        }
-        .tab-btn:hover { color: rgba(255,255,255,0.85); }
-        .tab-btn.active { color: #fff; }
-        .tab-btn.active::after { transform: scaleX(1); }
+/* listas */
+.simple-list{list-style:none;padding:0;margin:8px 0 16px}
+.simple-list li{position:relative;padding-left:20px;margin-bottom:4px;font-size:15px;line-height:1.75;color:var(--body)}
+.simple-list li::before{content:'•';position:absolute;left:2px;font-size:18px;line-height:1.3;font-weight:700;color:var(--brand)}
+.red-bullets li::before{color:#dc3545}
+.check-list li::before{content:'✓';left:0;font-size:15px;color:#28a745}
 
-        /* ── Wrapper geral ── */
-        .terms-page-wrapper {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding-bottom: 80px;
-        }
-        .content-container { padding: 0 40px; }
+/* alertas e caixas */
+.important-alert{padding:18px 20px;margin:0 0 28px;background:var(--pale);border-left:4px solid var(--brand);border-radius:12px}
+.alert-title{font-family:var(--font);font-size:15px;font-weight:800;color:var(--brand);margin-bottom:4px}
+.important-alert p{font-size:14.5px;line-height:1.65;margin:0;color:var(--body)}
+.highlight-box{padding:18px 20px;margin:6px 0 14px;background:var(--pale);border-left:4px solid var(--brand);border-radius:12px}
+.highlight-box p:last-child{margin-bottom:0}
+.fee-box{background:#fff8ec;border-left-color:#f59e0b}
+.prohibitions-box{background:#fff5f5;border-left-color:#dc3545}
+.cancel-box{background:#f0f7ff;border-left-color:#0d6efd}
 
-        /* ── Painéis de conteúdo ── */
-        .tab-panel { display: none; padding-top: 36px; }
-        .tab-panel.active { display: block; }
+/* serviços e meia-entrada */
+.services-container,.benefit-grid,.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.service-box{padding:20px;border-radius:14px}
+.discovery-box{background:#f0f7ff}
+.sales-box{background:#f0fff5}
+.service-title{font-family:var(--font);font-size:16px;font-weight:800;margin-bottom:8px}
+.service-box .simple-list{margin:0}
+.benefit-item{display:flex;gap:14px;align-items:flex-start;padding:16px;background:#fff;border:1px solid var(--line);border-radius:14px}
+.benefit-icon{width:44px;height:44px;border-radius:12px;background:var(--ink);color:var(--sun);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--font);font-size:14px;font-weight:800}
+.benefit-label{font-family:var(--font);font-size:15px;font-weight:700;margin-bottom:2px}
+.benefit-desc{font-size:13px;color:var(--muted);line-height:1.5}
+.privacy-highlight{padding:20px;margin-top:14px;background:#faf4ff;border-left:4px solid #9c21b0;border-radius:12px}
+.privacy-highlight p{margin:0;font-size:15px;line-height:1.65;color:var(--body)}
 
-        /* ── Alerta ── */
-        .important-alert {
-            display: flex;
-            align-items: flex-start;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            border: 1px solid #cfe2ff;
-            background-color: #eaf3ff;
-            border-radius: 10px;
-            gap: 14px;
-        }
-        .alert-icon { color: #0d6efd; flex-shrink: 0; padding-top: 2px; }
-        .alert-text .alert-title {
-            font-weight: 700;
-            font-size: 12px;
-            color: #0d6efd;
-            margin: 0 0 4px;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-        .alert-text p { font-size: 14px; line-height: 1.6; margin: 0; color: #444; }
-        .policy-alert { background-color: #fff8ec; border-color: #fde8bb; }
-        .policy-alert .alert-icon,
-        .policy-alert .alert-title { color: #d97706; }
+/* contato */
+.contact-card{margin-top:48px;padding:40px;background:var(--ink);border:0;border-radius:20px}
+.contact-card h2{color:#fff}
+.contact-card p{color:rgba(255,255,255,.72)}
+.contact-box{padding:16px 18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px}
+.contact-card .contact-title{font-family:var(--font);font-size:15px;font-weight:700;color:var(--sun);margin-bottom:4px}
+.contact-card .contact-box p{font-size:14px;margin:0}
+.contact-card a{color:#fff;font-weight:600}
+.footer-info{margin-top:22px;text-align:center}
+.contact-card .footer-info p{font-size:13px;color:rgba(255,255,255,.55);margin:3px 0}
 
-        /* ── Cards ── */
-        .terms-section {
-            margin-bottom: 14px;
-            padding: 28px 30px 22px;
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
-            border: 1px solid #e8e8ee;
-            transition: box-shadow 0.2s;
-        }
-        .terms-section:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.05);
-        }
-        .terms-section h2 {
-            font-size: 15px;
-            font-weight: 700;
-            color: #1a1a2e;
-            margin-bottom: 14px;
-            padding-left: 30px;
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-        .contact-card h2 { padding-left: 0; }
-        .section-icon {
-            color: #0d6efd;
-            position: absolute;
-            left: 0;
-            top: 2px;
-        }
-        .reimbursement-section .section-icon { color: #dc3545; }
-        .buyer-responsibilities-section .section-icon { color: #f59e0b; }
-        .disclaimer-card .section-icon { color: #9c21b0; }
-        .changes-card .section-icon { color: #28a745; }
-        .terms-section p {
-            font-size: 14px;
-            line-height: 1.7;
-            margin-bottom: 14px;
-            color: #555;
-        }
-
-        /* ── Subseções ── */
-        .subsection-title {
-            font-size: 11px;
-            font-weight: 700;
-            margin-top: 22px;
-            margin-bottom: 10px;
-            color: #1a1a2e;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-        .subsection-divider {
-            border: 0;
-            height: 1px;
-            background-color: #f0f0f5;
-            margin: 18px 0;
-        }
-        .small-title-text { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #333; }
-        .sub-section-description { font-size: 14px; margin-top: 14px; margin-bottom: 8px; color: #555; }
-
-        /* ── Listas ── */
-        .simple-list { list-style: none; padding-left: 0; margin: 8px 0 14px; }
-        .simple-list li {
-            font-size: 14px;
-            line-height: 1.8;
-            position: relative;
-            padding-left: 18px;
-            margin-bottom: 3px;
-            color: #555;
-        }
-        .bullet-list li::before { content: '•'; position: absolute; left: 0; font-size: 16px; line-height: 1.1; font-weight: bold; }
-        .default-bullets li::before { color: #bbb; }
-        .red-bullets li::before { color: #dc3545; }
-        .green-bullets li::before { content: '•'; color: #28a745; font-weight: bold; }
-        .blue-bullets li::before { content: '•'; color: #0d6efd; font-weight: bold; }
-        .purple-bullets li::before { color: #9c21b0; }
-
-        .purchase-confirmation-list { list-style: none; padding-left: 0; margin-top: 6px; }
-        .purchase-confirmation-list li {
-            font-size: 14px; line-height: 1.8;
-            position: relative; padding-left: 20px;
-            margin-bottom: 4px; color: #555;
-        }
-        .purchase-confirmation-list li::before {
-            content: '✓'; position: absolute; left: 0;
-            color: #28a745; font-weight: 700; font-size: 13px; line-height: 1.5;
-        }
-
-        /* ── Caixas de destaque ── */
-        .highlight-box {
-            padding: 16px 20px;
-            border-radius: 8px;
-            background-color: #f8f9ff;
-            border: 1px solid #e4e8ff;
-            margin-top: 4px;
-        }
-        .highlight-box .highlight-text { font-size: 14px; line-height: 1.6; margin-bottom: 6px; color: #444; }
-        .small-text { font-size: 12px; color: #888; margin: 0; }
-        .red-text { color: #dc3545 !important; }
-        .disclaimer-text-color { color: #9c21b0 !important; }
-        .service-fee-box { background-color: #fff8ec; border-color: #fde8bb; }
-        .prohibitions-box { background-color: #fff5f5; border-color: #ffd5d5; }
-        .disclaimer-box { background-color: #faf4ff; border-color: #e8d0ff; }
-        .security-box { background-color: #f0faf0; border-color: #c8efc8; }
-        .organizer-cancellation-box { background-color: #f0f7ff; border-color: #cce1ff; }
-
-        /* ── Serviços ── */
-        .services-container { display: flex; gap: 16px; margin-top: 12px; }
-        .service-box { flex: 1; padding: 18px 20px; border-radius: 10px; }
-        .discovery-box { background-color: #f0f7ff; border: 1px solid #cce1ff; }
-        .sales-box { background-color: #f0fff5; border: 1px solid #c8f0d8; }
-        .service-title { font-weight: 700; font-size: 12px; margin: 0 0 10px; color: #1a1a2e; text-transform: uppercase; letter-spacing: 0.05em; }
-        .service-box ul { list-style: none; padding-left: 0; margin: 0; }
-        .service-box li { font-size: 13px; line-height: 1.9; position: relative; padding-left: 14px; color: #555; }
-        .service-box li::before { content: '•'; position: absolute; left: 0; color: #bbb; font-size: 14px; line-height: 1.2; }
-
-        /* ── Contato ── */
-        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
-        .contact-box { padding: 16px; background-color: #f8f9ff; border-radius: 10px; border: 1px solid #e4e8ff; }
-        .contact-title { font-size: 11px; font-weight: 700; color: #0d6efd; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.07em; }
-        .contact-email { font-size: 13px; margin: 0; color: #555; }
-        .contact-email a { color: #0d6efd; text-decoration: none; font-weight: 500; }
-        .contact-email a:hover { text-decoration: underline; }
-        .footer-info p { font-size: 12px; color: #bbb; margin: 3px 0; text-align: center; line-height: 1.6; }
-
-        /* ── Meia-entrada cards ── */
-        .meia-card {
-            background: linear-gradient(135deg, #f0f7ff 0%, #f8f9ff 100%);
-            border: 1px solid #cce1ff;
-        }
-        .benefit-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 12px;
-        }
-        .benefit-item {
-            background: #fff;
-            border: 1px solid #e4e8ff;
-            border-radius: 10px;
-            padding: 14px 16px;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-        }
-        .benefit-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            background: #eaf3ff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 16px;
-            font-weight: 700;
-            color: #0d6efd;
-        }
-        .benefit-label { font-size: 13px; font-weight: 600; color: #1a1a2e; margin: 0 0 2px; }
-        .benefit-desc { font-size: 12px; color: #888; margin: 0; line-height: 1.4; }
-
-        /* ── Privacidade ── */
-        .privacy-highlight {
-            background: linear-gradient(135deg, #faf4ff 0%, #f8f9ff 100%);
-            border: 1px solid #e8d0ff;
-            border-radius: 10px;
-            padding: 18px 20px;
-            margin-top: 12px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .privacy-highlight-icon { font-size: 22px; flex-shrink: 0; font-weight: 700; color: #9c21b0; }
-        .privacy-highlight p { margin: 0; font-size: 14px; color: #444; line-height: 1.6; }
-        .privacy-highlight strong { color: #9c21b0; }
-
-        /* ── Responsivo ── */
-        @media (max-width: 768px) {
-            .terms-banner { padding: 70px 20px 0; }
-            .tabs-bar { gap: 0; overflow-x: auto; padding: 0 16px; justify-content: flex-start; }
-            .tab-btn { padding: 12px 16px; font-size: 12px; }
-            .content-container { padding: 0 16px; }
-            .terms-section { padding: 20px; }
-            .services-container { flex-direction: column; }
-            .contact-grid { grid-template-columns: 1fr; }
-            .benefit-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+@media(max-width:900px){
+ .terms-page-wrapper{padding:32px 20px 72px}
+ .terms-page-wrapper.legal-layout{display:block}
+ .legal-toc{display:none}
+ .terms-banner{padding-top:48px}
+ .back-button-wrapper{top:20px}
+ .tab-btn{padding:12px 14px;font-size:14px}
+}
+@media(max-width:640px){
+ .services-container,.benefit-grid,.contact-grid{grid-template-columns:1fr}
+ .contact-card{padding:28px 22px}
+ .terms-section h2{font-size:22px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
+</style>
 </head>
 <body>
+  <div id="header-container"></div>
 
-    <main>
-        <div id="header-container"></div>
-        <div class="terms-banner">
-            <div class="back-button-wrapper">
-                <button class="back-btn" onclick="history.back()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                    Voltar
-                </button>
-            </div>
 
-            <h1>Central de Informações Legais</h1>
-            <p>Transparência sobre como a plataforma funciona e seus direitos como usuário</p>
+  <section class="terms-banner">
+    <h1>Termos e privacidade</h1>
+    <p>As regras de uso do Rolês e como cuidamos dos seus dados, em linguagem direta.</p>
+    <div class="tabs-bar" aria-label="Documentos">
+      <button class="tab-btn active" type="button" onclick="switchTab('termos', this)">Termos de Uso</button>
+      <button class="tab-btn" type="button" onclick="switchTab('privacidade', this)">Privacidade</button>
+    </div>
+  </section>
 
-            <div class="tabs-bar">
-                <button class="tab-btn active" onclick="switchTab('termos', this)">Termos de Uso</button>
-                <button class="tab-btn" onclick="switchTab('privacidade', this)">Política de Privacidade</button>
-                <button class="tab-btn" onclick="switchTab('meia', this)">Meia-Entrada</button>
-            </div>
+  <div class="terms-page-wrapper">
+    <div class="content-container">
+
+      <!-- ABA 1: TERMOS DE USO -->
+      <div class="tab-panel active" id="termos">
+        <div class="important-alert">
+          <div class="alert-text">
+            <p class="alert-title">Leia antes de usar</p>
+            <p>Ao criar uma conta ou usar o Rolês, você concorda com estes termos. Última atualização: outubro de 2026.</p>
+          </div>
         </div>
 
-        <div class="terms-page-wrapper">
-            <div class="content-container">
-
-                <!-- ══ ABA 1 — TERMOS DE USO ══ -->
-                <div id="tab-termos" class="tab-panel active">
-
-                    <div class="important-alert">
-                        <div class="alert-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        </div>
-                        <div class="alert-text">
-                            <p class="alert-title">Importante</p>
-                            <p>Ao usar o Rolês — seja para descobrir locais, cadastrar estabelecimentos, criar eventos ou comprar ingressos — você concorda com estes termos.</p>
-                        </div>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>1. Aceitação dos Termos</h2>
-                        <p>Ao acessar e usar o Rolês, você concorda com estes Termos de Uso e nossa Política de Privacidade. Se não concordar, não utilize nossos serviços.</p>
-                        <p>Estes termos se aplicam a todos os usuários sem distinção: visitantes, usuários cadastrados e compradores de ingressos.</p>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>2. Sobre o Rolês</h2>
-                        <p>O Rolês é uma plataforma digital de entretenimento em Goiânia. Com um único cadastro, qualquer usuário pode:</p>
-                        <div class="services-container">
-                            <div class="service-box discovery-box">
-                                <p class="service-title">Descoberta de Locais</p>
-                                <ul>
-                                    <li>Busca e filtros por categoria</li>
-                                    <li>Fotos e descrições dos locais</li>
-                                    <li>Informações de contato</li>
-                                    <li>Avaliações e comentários</li>
-                                </ul>
-                            </div>
-                            <div class="service-box sales-box">
-                                <p class="service-title">Eventos e Ingressos</p>
-                                <ul>
-                                    <li>Cadastrar estabelecimentos</li>
-                                    <li>Criar e gerenciar eventos</li>
-                                    <li>Comprar ingressos online</li>
-                                    <li>Ingressos digitais com QR Code</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>3. Cadastro e Conta</h2>
-                        <p>Para acessar os recursos completos da plataforma, você precisa criar uma conta. É necessário ter pelo menos <strong>18 anos</strong> — ou autorização de um responsável legal.</p>
-                        <p>Ao se cadastrar, você se compromete a:</p>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Fornecer informações verdadeiras e atualizadas</li>
-                            <li>Manter suas credenciais de acesso em segurança</li>
-                            <li>Não compartilhar sua senha com terceiros</li>
-                            <li>Ser responsável por todas as ações realizadas com sua conta</li>
-                        </ul>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>4. Criação de Eventos e Estabelecimentos</h2>
-                        <h3 class="subsection-title">4.1 Eventos</h3>
-                        <p>Qualquer usuário cadastrado pode criar eventos <strong>sem nenhum custo</strong>. Ao criar um evento, você se compromete a:</p>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Manter as informações do evento sempre atualizadas</li>
-                            <li>Honrar todos os ingressos vendidos pela plataforma</li>
-                            <li>Cumprir com as especificações de cada tipo de ingresso anunciado</li>
-                            <li>Notificar compradores com antecedência em caso de mudanças ou cancelamento</li>
-                            <li>Ter infraestrutura adequada para validação de QR Codes na entrada</li>
-                            <li>Respeitar todas as leis e regulamentações aplicáveis ao evento</li>
-                        </ul>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">4.2 Estabelecimentos</h3>
-                        <p>O cadastro de estabelecimentos é exclusivo para pessoas jurídicas. É obrigatório informar um <strong>CNPJ válido</strong>, verificado no momento do cadastro.</p>
-                        <div class="highlight-box service-fee-box">
-                            <p class="highlight-text">Cadastros com CNPJ inválido, inexistente ou de terceiros serão recusados ou removidos, podendo resultar em banimento da conta.</p>
-                        </div>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>5. Compra de Ingressos</h2>
-                        <h3 class="subsection-title">5.1 Como Funciona</h3>
-                        <p>O Rolês é gratuito para todos os usuários. A única cobrança é uma taxa de serviço aplicada ao comprador no momento da compra.</p>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">5.2 Taxa de Serviço</h3>
-                        <div class="highlight-box service-fee-box">
-                            <p class="highlight-text">Uma taxa de serviço de <strong>10%</strong> é adicionada ao valor do ingresso no checkout. Cobre o processamento do pagamento, emissão do ingresso digital e suporte.</p>
-                            <p class="small-text">Exibida de forma clara antes de finalizar a compra.</p>
-                        </div>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">5.3 Confirmação de Compra</h3>
-                        <p>Após o pagamento, você receberá:</p>
-                        <ul class="purchase-confirmation-list">
-                            <li>E-mail de confirmação com o ingresso em anexo</li>
-                            <li>Número de pedido único</li>
-                            <li>QR Code para entrada no evento</li>
-                            <li>Acesso ao ingresso a qualquer momento no seu perfil</li>
-                        </ul>
-                    </div>
-
-                    <div class="terms-section payment-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>6. Pagamentos</h2>
-                        <h3 class="subsection-title">6.1 Métodos Aceitos</h3>
-                        <p>Aceitamos <strong>cartão de crédito</strong> e <strong>PIX</strong>. O processamento é feito por gateways certificados.</p>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">6.2 Segurança</h3>
-                        <div class="highlight-box security-box">
-                            <ul class="simple-list bullet-list green-bullets">
-                                <li>Transações protegidas com criptografia SSL</li>
-                                <li>Não armazenamos dados completos de cartões</li>
-                                <li>Processadores certificados PCI-DSS</li>
-                                <li>Sistema de detecção de fraude em todas as transações</li>
-                            </ul>
-                        </div>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">6.3 Comprovantes</h3>
-                        <p>Você receberá um comprovante por e-mail e poderá acessá-lo a qualquer momento no seu perfil.</p>
-                    </div>
-
-                    <div class="terms-section reimbursement-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>7. Política de Reembolso e Cancelamento</h2>
-                        <div class="important-alert policy-alert">
-                            <div class="alert-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                            <div class="alert-text"><p class="alert-title">Importante</p><p>A política de reembolso pode variar por evento. Verifique sempre antes de comprar.</p></div>
-                        </div>
-                        <h3 class="subsection-title">7.1 Cancelamento pelo Comprador</h3>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Mais de 7 dias antes do evento: reembolso de 100% (incluindo taxa)</li>
-                            <li>Entre 3 e 7 dias antes: 50% do valor do ingresso (taxa não reembolsável)</li>
-                            <li>Menos de 3 dias antes: sem reembolso</li>
-                        </ul>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">7.2 Cancelamento pelo Organizador</h3>
-                        <p class="sub-section-description">Se o evento for <strong>cancelado</strong>:</p>
-                        <div class="highlight-box organizer-cancellation-box">
-                            <ul class="simple-list bullet-list blue-bullets">
-                                <li>Reembolso automático de 100% (incluindo a taxa) em até 10 dias úteis</li>
-                                <li>Notificação imediata por e-mail</li>
-                            </ul>
-                        </div>
-                        <p class="sub-section-description" style="margin-top:16px">Se houver <strong>mudança de data ou local</strong>:</p>
-                        <div class="highlight-box organizer-cancellation-box">
-                            <ul class="simple-list bullet-list blue-bullets">
-                                <li>Você será notificado com antecedência</li>
-                                <li>Opção de aceitar a mudança ou solicitar reembolso integral</li>
-                                <li>Prazo de 7 dias para decidir</li>
-                            </ul>
-                        </div>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">7.3 Como Solicitar Reembolso</h3>
-                        <p>Acesse <strong>"Meus Ingressos"</strong> no seu perfil ou entre em contato pelo e-mail <a href="mailto:roles.suporte@gmail.com" style="color:#0d6efd">roles.suporte@gmail.com</a>, informando o número do pedido.</p>
-                    </div>
-
-                    <div class="terms-section buyer-responsibilities-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>8. Responsabilidades do Usuário</h2>
-                        <p>Ao usar o Rolês, você concorda em:</p>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Fornecer informações verdadeiras e atualizadas</li>
-                            <li>Apresentar documento de identificação com foto na entrada de eventos</li>
-                            <li>Verificar os detalhes do evento (data, hora, local) antes de comparecer</li>
-                            <li>Não revender ingressos fora da plataforma oficial</li>
-                            <li>Respeitar as regras e regulamentos do evento e do local</li>
-                            <li>Não usar ingressos para fins fraudulentos</li>
-                            <li>Manter seus dados de acesso seguros</li>
-                        </ul>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>9. Uso dos Ingressos</h2>
-                        <h3 class="subsection-title">9.1 Ingressos Digitais</h3>
-                        <p>Todos os ingressos são digitais com QR Code único. Você pode apresentar pelo celular ou imprimir em casa.</p>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">9.2 Validade</h3>
-                        <p>Cada ingresso é válido somente para a data, horário e local especificados. Não podem ser transferidos para outros eventos.</p>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">9.3 Proibições</h3>
-                        <div class="highlight-box prohibitions-box">
-                            <p class="small-title-text red-text">É estritamente proibido:</p>
-                            <ul class="simple-list bullet-list red-bullets">
-                                <li>Duplicar ou falsificar ingressos</li>
-                                <li>Revender ingressos acima do valor de face</li>
-                                <li>Compartilhar QR Codes publicamente</li>
-                                <li>Usar ingressos fraudulentos</li>
-                            </ul>
-                            <p class="small-text red-text">Violações resultam em cancelamento sem reembolso e banimento da plataforma.</p>
-                        </div>
-                    </div>
-
-                    <div class="terms-section disclaimer-card">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>10. Isenção de Responsabilidade</h2>
-                        <div class="highlight-box disclaimer-box">
-                            <p class="small-title-text disclaimer-text-color">O Rolês não se responsabiliza por:</p>
-                            <ul class="simple-list bullet-list purple-bullets">
-                                <li>Qualidade, conteúdo ou experiência nos eventos</li>
-                                <li>Atrasos, mudanças de programação ou de artistas</li>
-                                <li>Problemas de acesso por lotação ou segurança</li>
-                                <li>Custos de deslocamento, hospedagem ou outros gastos</li>
-                                <li>Perda ou roubo de ingressos físicos impressos</li>
-                                <li>Comportamento de outros participantes</li>
-                                <li>Condições climáticas em eventos ao ar livre</li>
-                            </ul>
-                        </div>
-                        <p style="margin-top:16px">Nossa responsabilidade limita-se ao processamento correto da compra e emissão dos ingressos. Em nenhuma circunstância ultrapassará o valor pago pelo ingresso.</p>
-                    </div>
-
-                    <div class="terms-section changes-card">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>11. Alterações nos Termos</h2>
-                        <p>Mudanças relevantes serão comunicadas com pelo menos <strong>30 dias de antecedência</strong> por e-mail e aviso na plataforma. O uso continuado após as alterações constitui aceitação.</p>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.76l1.22-5.5a2 2 0 0 0-1.22-2.24z"/></svg></span>12. Lei Aplicável e Foro</h2>
-                        <p>Estes termos são regidos pelas leis da República Federativa do Brasil. Eventuais disputas serão resolvidas no foro da comarca de Goiânia/GO, sempre buscando resolução amigável.</p>
-                    </div>
-
-                </div><!-- /tab-termos -->
-
-
-                <!-- ══ ABA 2 — POLÍTICA DE PRIVACIDADE ══ -->
-                <div id="tab-privacidade" class="tab-panel">
-
-                    <div class="important-alert">
-                        <div class="alert-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                        <div class="alert-text">
-                            <p class="alert-title">Seu dado, sua privacidade</p>
-                            <p>O Rolês leva a privacidade dos seus usuários a sério. Esta política explica de forma transparente o que coletamos, como usamos e como protegemos suas informações.</p>
-                        </div>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>1. Dados Coletados</h2>
-                        <h3 class="subsection-title">1.1 Dados de Cadastro</h3>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Nome completo</li>
-                            <li>CPF</li>
-                            <li>E-mail</li>
-                            <li>Telefone</li>
-                            <li>Data de nascimento</li>
-                        </ul>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">1.2 Dados de Pagamento</h3>
-                        <p>Informações de pagamento são processadas diretamente por nossos parceiros certificados PCI-DSS. <strong>O Rolês não armazena dados completos de cartão de crédito.</strong></p>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">1.3 Dados de Uso</h3>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Histórico de compras e ingressos</li>
-                            <li>Eventos visualizados e favoritos</li>
-                            <li>Dados de navegação dentro da plataforma</li>
-                        </ul>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">1.4 O que NÃO coletamos</h3>
-                        <div class="highlight-box security-box">
-                            <ul class="simple-list bullet-list green-bullets">
-                                <li>Não usamos cookies de rastreamento</li>
-                                <li>Não utilizamos ferramentas de analytics de terceiros</li>
-                                <li>Não coletamos dados de localização em tempo real</li>
-                                <li>Não acessamos contatos, câmera ou microfone do dispositivo</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>2. Como Usamos os Dados</h2>
-                        <p>Seus dados são utilizados exclusivamente para:</p>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Criar e gerenciar sua conta na plataforma</li>
-                            <li>Processar compras e emitir ingressos</li>
-                            <li>Enviar confirmações e notificações importantes de pedidos</li>
-                            <li>Verificar identidade e prevenir fraudes</li>
-                            <li>Melhorar a experiência da plataforma</li>
-                            <li>Comunicações sobre eventos de seu interesse (opcional — você pode cancelar)</li>
-                        </ul>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>3. Compartilhamento de Dados</h2>
-                        <p>Compartilhamos apenas o mínimo necessário com:</p>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li><strong>Organizadores de eventos:</strong> nome e quantidade de ingressos comprados</li>
-                            <li><strong>Processadores de pagamento:</strong> apenas os dados necessários para a transação</li>
-                            <li><strong>Autoridades:</strong> quando exigido por lei ou ordem judicial</li>
-                        </ul>
-                        <div class="privacy-highlight">
-                            <div class="privacy-highlight-icon">&#8709;</div>
-                            <p>Seus dados <strong>NUNCA são vendidos, alugados ou compartilhados com anunciantes</strong> ou quaisquer terceiros com fins comerciais.</p>
-                        </div>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>4. Segurança dos Dados</h2>
-                        <div class="highlight-box security-box">
-                            <ul class="simple-list bullet-list green-bullets">
-                                <li>Todas as comunicações são criptografadas via SSL/TLS</li>
-                                <li>Acesso restrito aos dados — apenas equipe autorizada</li>
-                                <li>Monitoramento contínuo contra acessos não autorizados</li>
-                                <li>Parceiros de pagamento certificados PCI-DSS</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>5. Seus Direitos (LGPD)</h2>
-                        <p>De acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018), você tem direito a:</p>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li><strong>Acesso:</strong> consultar quais dados temos sobre você</li>
-                            <li><strong>Correção:</strong> corrigir dados incompletos ou incorretos</li>
-                            <li><strong>Exclusão:</strong> solicitar a remoção dos seus dados pessoais</li>
-                            <li><strong>Portabilidade:</strong> receber seus dados em formato estruturado</li>
-                            <li><strong>Revogação:</strong> cancelar o consentimento para uso dos dados a qualquer momento</li>
-                        </ul>
-                        <p>Para exercer seus direitos, entre em contato pelo e-mail <a href="mailto:roles.suporte@gmail.com" style="color:#0d6efd">roles.suporte@gmail.com</a>.</p>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>6. Retenção de Dados</h2>
-                        <p>Seus dados são mantidos enquanto sua conta estiver ativa. Após a exclusão da conta, os dados são removidos em até <strong>90 dias</strong>, exceto quando há obrigação legal de retenção.</p>
-                    </div>
-
-                    <div class="terms-section changes-card">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>7. Alterações nesta Política</h2>
-                        <p>Atualizações relevantes serão comunicadas com pelo menos <strong>30 dias de antecedência</strong> por e-mail e aviso na plataforma.</p>
-                    </div>
-
-                </div><!-- /tab-privacidade -->
-
-
-                <!-- ══ ABA 3 — MEIA-ENTRADA ══ -->
-                <div id="tab-meia" class="tab-panel">
-
-                    <div class="important-alert">
-                        <div class="alert-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-                        <div class="alert-text">
-                            <p class="alert-title">Atenção</p>
-                            <p>A meia-entrada é um direito garantido por lei. O Rolês oferece suporte ao benefício conforme a legislação vigente (<strong>Lei Federal nº 12.933/2013</strong>, regulamentada pelo <strong>Decreto nº 8.537/2015</strong>). A disponibilidade depende de cada evento.</p>
-                        </div>
-                    </div>
-
-                    <div class="terms-section meia-card">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>Quem tem direito à Meia-Entrada?</h2>
-                        <p>Conforme a <strong>Lei Federal nº 12.933/2013</strong> e o <strong>Decreto nº 8.537/2015</strong>, têm direito ao benefício:</p>
-                        <div class="benefit-grid">
-                            <div class="benefit-item">
-                                <div class="benefit-icon">Est</div>
-                                <div>
-                                    <p class="benefit-label">Estudantes</p>
-                                    <p class="benefit-desc">Com Carteira de Identificação Estudantil (CIE) válida, emitida por entidade credenciada (UNE, UBES, ANPG)</p>
-                                </div>
-                            </div>
-                            <div class="benefit-item">
-                                <div class="benefit-icon">60+</div>
-                                <div>
-                                    <p class="benefit-label">Idosos</p>
-                                    <p class="benefit-desc">Pessoas com 60 anos ou mais, conforme a Lei nº 10.741/2003 (Estatuto do Idoso)</p>
-                                </div>
-                            </div>
-                            <div class="benefit-item">
-                                <div class="benefit-icon">PCD</div>
-                                <div>
-                                    <p class="benefit-label">Pessoas com Deficiência</p>
-                                    <p class="benefit-desc">PCD e seu acompanhante, quando necessário, mediante comprovação</p>
-                                </div>
-                            </div>
-                            <div class="benefit-item">
-                                <div class="benefit-icon">Jov</div>
-                                <div>
-                                    <p class="benefit-label">Jovem de Baixa Renda</p>
-                                    <p class="benefit-desc">De 15 a 29 anos, de família com renda mensal de até 2 salários mínimos, inscrita no CadÚnico (ID Jovem)</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>Como funciona no Rolês?</h2>
-                        <h3 class="subsection-title">Na compra online</h3>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Selecione o tipo de ingresso "Meia-Entrada" ao comprar, se disponível no evento</li>
-                            <li>Você precisará declarar o enquadramento no benefício durante a compra</li>
-                            <li>O comprovante do direito será exigido na entrada do evento</li>
-                        </ul>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">Na entrada do evento</h3>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Apresente o QR Code do ingresso</li>
-                            <li>Apresente o documento que comprova o direito à meia-entrada</li>
-                            <li>Documentos inválidos ou vencidos resultarão na recusa de entrada ou cobrança da diferença</li>
-                        </ul>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>Documentos aceitos por categoria</h2>
-                        <h3 class="subsection-title">Estudantes</h3>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Carteira de Identificação Estudantil (CIE) emitida por entidades credenciadas (UNE, UBES, ANPG)</li>
-                            <li>A carteira deve estar dentro do prazo de validade (ano letivo vigente)</li>
-                            <li>A CIE deve conter: nome completo, foto, CPF, instituição de ensino, curso e data de validade</li>
-                        </ul>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">Idosos (60 anos ou mais)</h3>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Documento de identidade com foto (RG, CNH ou passaporte) que comprove ter 60 anos ou mais</li>
-                            <li>Benefício assegurado pelo art. 23 da Lei nº 10.741/2003 (Estatuto do Idoso)</li>
-                        </ul>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">Pessoas com Deficiência (PCD)</h3>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Laudo médico atualizado, carteira de habilitação especial ou documento de identidade com indicação de deficiência</li>
-                            <li>O acompanhante também tem direito à meia-entrada, quando comprovada a necessidade</li>
-                            <li>Benefício aplicável conforme art. 1º, III, da Lei nº 12.933/2013</li>
-                        </ul>
-                        <hr class="subsection-divider">
-                        <h3 class="subsection-title">Jovem de Baixa Renda (ID Jovem)</h3>
-                        <ul class="simple-list bullet-list default-bullets">
-                            <li>Deve ter entre <strong>15 e 29 anos</strong> e ser membro de família com renda mensal de até 2 salários mínimos</li>
-                            <li>Deve estar inscrito no CadÚnico (Cadastro Único para Programas Sociais)</li>
-                            <li>Documento aceito: <strong>ID Jovem</strong> (app do Governo Federal) ou comprovante físico emitido pelo CRAS</li>
-                            <li>Abrange 50% da cota de meia-entrada, nos termos do Decreto nº 8.537/2015</li>
-                        </ul>
-                        <div class="highlight-box" style="margin-top:12px">
-                            <p class="highlight-text">O <strong>ID Jovem</strong> é um aplicativo gratuito (Android e iOS), emitido pelo Ministério dos Direitos Humanos. Basta ter o CadÚnico atualizado para gerar o documento digitalmente.</p>
-                        </div>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>Cota e disponibilidade</h2>
-                        <p>Por lei, <strong>40% dos ingressos</strong> de cada evento devem ser reservados para meia-entrada. A distribuição entre os grupos beneficiados fica a critério do organizador, respeitando o mínimo legal.</p>
-                        <div class="important-alert policy-alert">
-                            <div class="alert-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                            <div class="alert-text"><p class="alert-title">Atenção</p><p>A meia-entrada pode esgotar antes dos ingressos inteiros. Compre com antecedência para garantir o benefício.</p></div>
-                        </div>
-                    </div>
-
-                    <div class="terms-section">
-                        <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></span>Fraude no benefício</h2>
-                        <div class="highlight-box prohibitions-box">
-                            <p class="small-title-text red-text">O uso indevido da meia-entrada é crime.</p>
-                            <ul class="simple-list bullet-list red-bullets">
-                                <li>Utilizar documentos falsos ou de terceiros</li>
-                                <li>Declarar falso enquadramento no benefício</li>
-                                <li>Adquirir ingressos de meia-entrada para revenda</li>
-                                <li>Falsificar ou adulterar a CIE ou o ID Jovem</li>
-                            </ul>
-                            <p class="small-text red-text">Além do impedimento de entrada, o usuário estará sujeito às penalidades dos arts. 297 e 298 do Código Penal Brasileiro (falsificação de documento) e banimento permanente da plataforma.</p>
-                        </div>
-                    </div>
-
-                </div><!-- /tab-meia -->
-
-
-                <!-- Contato (comum a todas as abas) -->
-                <div class="terms-section contact-card" style="margin-top: 24px;">
-                    <h2>Dúvidas e Contato</h2>
-                    <p>Para dúvidas sobre qualquer um destes documentos ou sobre a plataforma:</p>
-                    <div class="contact-grid">
-                        <div class="contact-box">
-                            <p class="contact-title">Suporte Geral</p>
-                            <p class="contact-email">Email: <a href="mailto:roles.suporte@gmail.com">roles.suporte@gmail.com</a></p>
-                        </div>
-                        <div class="contact-box">
-                            <p class="contact-title">Questões Legais</p>
-                            <p class="contact-email">Email: <a href="mailto:roles.suporte@gmail.com">roles.suporte@gmail.com</a></p>
-                        </div>
-                        <div class="contact-box">
-                            <p class="contact-title">Reembolsos</p>
-                            <p class="contact-email">Email: <a href="mailto:roles.suporte@gmail.com">roles.suporte@gmail.com</a></p>
-                        </div>
-                        <div class="contact-box">
-                            <p class="contact-title">Parcerias</p>
-                            <p class="contact-email">Email: <a href="mailto:roles.suporte@gmail.com">roles.suporte@gmail.com</a></p>
-                        </div>
-                    </div>
-                    <hr class="subsection-divider" style="margin-top:28px">
-                    <div class="footer-info">
-                        <p id="update-date">Última atualização: —</p>
-                        <p>Rolês — Plataforma de Entretenimento em Goiânia</p>
-                        <p>CNPJ: 00.000.000/0001-00</p>
-                    </div>
-                </div>
-
+        <section class="terms-section">
+          <h2>O que é o Rolês</h2>
+          <p>O Rolês é uma plataforma para descobrir eventos e locais no Brasil e, quando o organizador oferece, comprar ingressos.</p>
+          <div class="services-container">
+            <div class="service-box discovery-box">
+              <p class="service-title">Descoberta</p>
+              <ul class="simple-list">
+                <li>Busca de eventos e locais</li>
+                <li>Categorias e filtros</li>
+                <li>Confirmação de presença</li>
+              </ul>
             </div>
+            <div class="service-box sales-box">
+              <p class="service-title">Ingressos</p>
+              <ul class="simple-list">
+                <li>Compra direta na plataforma</li>
+                <li>Ingresso digital na sua conta</li>
+                <li>Meia-entrada, quando aplicável</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="terms-section">
+          <h2>Sua conta</h2>
+          <p>Você é responsável pelas informações do cadastro e pela segurança da sua senha. Para proteger sua conta, bloqueamos temporariamente o acesso após várias tentativas de login com senha errada.</p>
+          <ul class="simple-list">
+            <li>Use dados verdadeiros e mantenha-os atualizados.</li>
+            <li>Não compartilhe seu login com outras pessoas.</li>
+            <li>Avise-nos se suspeitar de uso indevido da sua conta.</li>
+          </ul>
+        </section>
+
+        <section class="terms-section">
+          <h2>O que não é permitido</h2>
+          <div class="highlight-box prohibitions-box">
+            <ul class="simple-list red-bullets" style="margin:0">
+              <li>Criar eventos falsos ou enganosos.</li>
+              <li>Revender ingressos por valor acima do original.</li>
+              <li>Tentar invadir, sobrecarregar ou copiar o sistema.</li>
+              <li>Publicar conteúdo ofensivo, discriminatório ou ilegal.</li>
+            </ul>
+          </div>
+          <p>Contas que descumprirem estas regras podem ser suspensas ou removidas.</p>
+        </section>
+
+        <section class="terms-section">
+          <h2>Compras e cancelamentos</h2>
+          <div class="highlight-box fee-box">
+            <p><strong>Taxa de serviço.</strong> Se houver taxa, ela aparece antes de você confirmar o pagamento.</p>
+          </div>
+          <h3 class="subsection-title">Cancelamento pelo comprador</h3>
+          <p>Compras online podem ser canceladas em até 7 dias após o pagamento, desde que o evento ainda não tenha acontecido, conforme o Código de Defesa do Consumidor.</p>
+          <h3 class="subsection-title">Cancelamento pelo organizador</h3>
+          <div class="highlight-box cancel-box">
+            <p>Se o organizador cancelar ou adiar o evento, o organizador é responsável por definir o reembolso ou a remarcação. Avisaremos você pelo e-mail da conta.</p>
+          </div>
+        </section>
+
+        <section class="terms-section">
+          <h2>Meia-entrada</h2>
+          <p>Quando o evento oferece meia-entrada, você precisa comprovar o direito na entrada. Grupos com direito previsto em lei:</p>
+          <div class="benefit-grid">
+            <div class="benefit-item"><div class="benefit-icon">Est</div><div><p class="benefit-label">Estudantes</p><p class="benefit-desc">Com carteira estudantil válida.</p></div></div>
+            <div class="benefit-item"><div class="benefit-icon">60+</div><div><p class="benefit-label">Idosos</p><p class="benefit-desc">A partir de 60 anos, com documento.</p></div></div>
+            <div class="benefit-item"><div class="benefit-icon">PcD</div><div><p class="benefit-label">Pessoas com deficiência</p><p class="benefit-desc">E acompanhante, quando previsto.</p></div></div>
+            <div class="benefit-item"><div class="benefit-icon">Jov</div><div><p class="benefit-label">Jovens de baixa renda</p><p class="benefit-desc">Com ID Jovem válido.</p></div></div>
+          </div>
+        </section>
+
+        <section class="terms-section contact-card">
+          <h2>Dúvidas sobre os termos?</h2>
+          <p>Fale com a gente pelo canal que preferir.</p>
+          <div class="contact-grid">
+            <div class="contact-box"><p class="contact-title">Suporte</p><p><a href="mailto:suporte@roles.com.br">suporte@roles.com.br</a></p></div>
+            <div class="contact-box"><p class="contact-title">Privacidade</p><p><a href="mailto:privacidade@roles.com.br">privacidade@roles.com.br</a></p></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ABA 2: PRIVACIDADE -->
+      <div class="tab-panel" id="privacidade">
+        <div class="important-alert">
+          <div class="alert-text">
+            <p class="alert-title">Seus dados, suas regras</p>
+            <p>Tratamos seus dados conforme a Lei Geral de Proteção de Dados (LGPD, Lei 13.709/2018).</p>
+          </div>
         </div>
-    </main>
-    <script src="/frontend/js/config.js"></script>
-    <script src="/frontend/js/footer.js" defer></script>
-    <script src="/frontend/js/loadHeader.js"></script>
 
-    <script>
-        const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-        const now = new Date();
-        document.getElementById('update-date').textContent =
-            `Última atualização: ${months[now.getMonth()]} de ${now.getFullYear()}`;
+        <section class="terms-section">
+          <h2>Quais dados coletamos</h2>
+          <ul class="simple-list">
+            <li><strong>Cadastro:</strong> nome, e-mail e senha (armazenada de forma protegida).</li>
+            <li><strong>Uso:</strong> buscas, eventos que você confirma presença e ingressos comprados.</li>
+            <li><strong>Técnicos:</strong> tipo de navegador e registros de acesso, para segurança.</li>
+          </ul>
+        </section>
 
-        function switchTab(tab, btn) {
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            btn.classList.add('active');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        <section class="terms-section">
+          <h2>Para que usamos</h2>
+          <ul class="simple-list check-list">
+            <li>Criar e proteger sua conta.</li>
+            <li>Processar compras e emitir ingressos.</li>
+            <li>Sugerir eventos perto de você.</li>
+            <li>Enviar avisos importantes sobre seus eventos.</li>
+          </ul>
+          <div class="privacy-highlight">
+            <p><strong>Não vendemos seus dados pessoais.</strong> Compartilhamos apenas o necessário com o organizador do evento e com o meio de pagamento.</p>
+          </div>
+        </section>
+
+        <section class="terms-section">
+          <h2>Seus direitos</h2>
+          <p>Pela LGPD, você pode a qualquer momento:</p>
+          <ul class="simple-list">
+            <li>Saber quais dados temos sobre você.</li>
+            <li>Corrigir dados incorretos.</li>
+            <li>Pedir a exclusão da sua conta e dos seus dados.</li>
+            <li>Revogar consentimentos dados anteriormente.</li>
+          </ul>
+        </section>
+
+        <section class="terms-section contact-card">
+          <h2>Fale com o encarregado de dados</h2>
+          <p>Para exercer qualquer direito acima, escreva para o e-mail abaixo.</p>
+          <div class="contact-grid">
+            <div class="contact-box"><p class="contact-title">Privacidade</p><p><a href="mailto:privacidade@roles.com.br">privacidade@roles.com.br</a></p></div>
+          </div>
+        </section>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <div id="footer-container"></div>
+  </footer>
+
+  <script src="/frontend/js/config.js"></script>
+  <script src="/frontend/js/footer.js" defer></script>
+  <script src="/frontend/js/loadHeader.js"></script>
+
+  <script>
+
+    // Troca de abas
+    function switchTab(id, btn) {
+      document.querySelectorAll('.tab-panel').forEach(function (p) {
+        p.classList.toggle('active', p.id === id);
+      });
+      document.querySelectorAll('.tab-btn').forEach(function (b) {
+        b.classList.toggle('active', b === btn);
+      });
+      window.scrollTo({ top: 0 });
+    }
+  </script>
+
+  <script>
+    // Índice lateral ("Nesta aba") gerado a partir dos h2 da aba ativa
+    (function () {
+      function init() {
+        var wrapper = document.querySelector('.terms-page-wrapper');
+        if (!wrapper) return;
+
+        var toc = document.createElement('aside');
+        toc.className = 'legal-toc';
+        toc.setAttribute('aria-label', 'Índice desta aba');
+        wrapper.classList.add('legal-layout');
+        wrapper.insertBefore(toc, wrapper.firstChild);
+
+        var painelAtual = null, secoes = [], ticking = false;
+
+        function marcarAtiva() {
+          ticking = false;
+          var ativa = null;
+          secoes.forEach(function (s) {
+            if (s.getBoundingClientRect().top <= 140) ativa = s;
+          });
+          if (!ativa && secoes.length) ativa = secoes[0];
+          toc.querySelectorAll('a').forEach(function (a) {
+            a.classList.toggle('on', !!ativa && a.dataset.id === ativa.id);
+          });
         }
 
-        const hash = window.location.hash.replace('#', '');
-        if (['privacidade', 'meia'].includes(hash)) {
-            const btn = document.querySelector(`[onclick*="'${hash}'"]`);
-            if (btn) switchTab(hash, btn);
+        function montarIndice() {
+          var painel = document.querySelector('.tab-panel.active');
+          if (!painel || painel === painelAtual) return;
+          painelAtual = painel;
+
+          secoes = Array.prototype.slice.call(
+            painel.querySelectorAll('.terms-section:not(.contact-card)')
+          );
+          var html = '<strong>Nesta aba</strong>';
+          secoes.forEach(function (sec, i) {
+            if (!sec.id) sec.id = painel.id + '-sec-' + (i + 1);
+            html += '<a href="#' + sec.id + '" data-id="' + sec.id + '">' +
+                    sec.querySelector('h2').textContent.trim() + '</a>';
+          });
+          toc.innerHTML = html;
+
+          toc.querySelectorAll('a').forEach(function (a) {
+            a.addEventListener('click', function (e) {
+              e.preventDefault();
+              document.getElementById(a.dataset.id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+          });
+          marcarAtiva();
         }
-    </script>
+
+        var mo = new MutationObserver(montarIndice);
+        document.querySelectorAll('.tab-panel').forEach(function (p) {
+          mo.observe(p, { attributes: true, attributeFilter: ['class'] });
+        });
+        window.addEventListener('scroll', function () {
+          if (!ticking) { ticking = true; requestAnimationFrame(marcarAtiva); }
+        }, { passive: true });
+
+        montarIndice();
+      }
+
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+  </script>
 </body>
 </html>

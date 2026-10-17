@@ -39,21 +39,94 @@ function parseRow(row) {
   return row;
 }
 
-// Lista pública (continua igual)
+// Monta o endereço da rota que serve a imagem. O parametro v (tamanho da
+// imagem) muda quando a imagem muda, entao o navegador nao fica com cache velho.
+function urlImagem(req, id, tipo, versao) {
+  const proto = String(req.headers["x-forwarded-proto"] || req.protocol).split(",")[0];
+  return `${proto}://${req.get("host")}${req.baseUrl}/${id}/imagem/${tipo}?v=${versao || 0}`;
+}
+
+// Lista pública — as imagens guardadas dentro do banco (data:...base64) NAO vão
+// mais no JSON da lista (pesavam MB por chamada). No lugar vai uma URL curta.
+// Imagens que já são URL ou caminho continuam iguais.
 router.get("/", async (req, res) => {
   try {
     const rows = await db.query(`
       SELECT id, nome, tipo, especialidade, faixa_preco, descricao,
              endereco, cidade, estado, bairro, rua, numero,
-             telefone, website, comodidades, img_logo, img_capa,
+             telefone, website, comodidades,
+             CASE WHEN img_logo LIKE 'data:%' THEN NULL ELSE img_logo END AS img_logo,
+             CASE WHEN img_capa LIKE 'data:%' THEN NULL ELSE img_capa END AS img_capa,
+             (img_logo LIKE 'data:%') AS logo_inline,
+             (img_capa LIKE 'data:%') AS capa_inline,
+             LENGTH(img_logo) AS logo_tam,
+             LENGTH(img_capa) AS capa_tam,
              nota, avaliacoes, categoria_card, visibilidade
       FROM estabelecimentos
       WHERE visibilidade = ?
       ORDER BY criado_em DESC`, ["publico"]);
+
+    for (const r of rows) {
+      if (r.logo_inline) r.img_logo = urlImagem(req, r.id, "logo", r.logo_tam);
+      if (r.capa_inline) r.img_capa = urlImagem(req, r.id, "capa", r.capa_tam);
+      delete r.logo_inline;
+      delete r.capa_inline;
+      delete r.logo_tam;
+      delete r.capa_tam;
+    }
+
     res.json(rows);
   } catch (err) {
     console.error("Erro ao listar estabelecimentos:", err);
     res.status(500).json({ erro: "Erro interno ao buscar estabelecimentos." });
+  }
+});
+
+// Serve o logo ou a capa de um estabelecimento público como imagem de verdade,
+// com cache no navegador. Só busca no banco a coluna da imagem pedida.
+router.get("/:id/imagem/:tipo", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(404).end();
+
+    let rows;
+    if (req.params.tipo === "logo") {
+      rows = await db.query("SELECT img_logo AS imagem FROM estabelecimentos WHERE id = ? AND visibilidade = ?", [id, "publico"]);
+    } else if (req.params.tipo === "capa") {
+      rows = await db.query("SELECT img_capa AS imagem FROM estabelecimentos WHERE id = ? AND visibilidade = ?", [id, "publico"]);
+    } else {
+      return res.status(404).end();
+    }
+
+    const valor = rows && rows[0] && rows[0].imagem;
+    if (!valor) return res.status(404).end();
+
+    // Imagem que já é URL ou caminho: só redireciona.
+    if (!valor.startsWith("data:")) return res.redirect(valor);
+
+    // Imagem guardada como data URI: decodifica e devolve os bytes.
+    const virgula = valor.indexOf(",");
+    if (virgula === -1) return res.status(404).end();
+    const meta = valor.slice(5, virgula);
+    const ehBase64 = /;base64$/i.test(meta);
+    const mime = meta.replace(/;base64$/i, "").toLowerCase();
+
+    // Só imagens comuns, pra essa rota nunca servir HTML ou script.
+    if (!/^image\/(png|jpe?g|gif|webp|avif|bmp)$/.test(mime)) return res.status(415).end();
+
+    const dados = valor.slice(virgula + 1);
+    const buffer = ehBase64 ? Buffer.from(dados, "base64") : Buffer.from(decodeURIComponent(dados));
+
+    res.set({
+      "Content-Type": mime,
+      "Cache-Control": "public, max-age=86400",
+      "X-Content-Type-Options": "nosniff",
+      "Cross-Origin-Resource-Policy": "cross-origin"
+    });
+    res.send(buffer);
+  } catch (err) {
+    console.error("Erro ao servir imagem do estabelecimento:", err);
+    res.status(500).end();
   }
 });
 

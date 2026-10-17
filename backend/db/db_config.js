@@ -10,12 +10,116 @@ types.setTypeParser(1114, (val) => val); // timestamp without time zone
 types.setTypeParser(1082, (val) => val); // date
 types.setTypeParser(1184, (val) => val); // timestamptz
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+/* ── BANCOS ──────────────────────────────────────────────
+   DATABASE_URL          -> banco principal (Neon)
+   DATABASE_URL_RESERVA  -> banco reserva (Aiven). Opcional: se não existir
+                            no .env, o sistema roda só com o principal.      */
 
-console.log("🟢 Usando PostgreSQL (Supabase)");
+// Remove da URL os parâmetros sslmode e channel_binding. O driver 'pg' deixa
+// a URL sobrescrever a configuração de SSL abaixo, e isso quebra a conexão
+// com certificados como o do Aiven. O SSL continua ativo pela opção 'ssl'.
+function limparUrl(url) {
+  if (!url) return url;
+  const pos = url.indexOf("?");
+  if (pos === -1) return url;
+  const base = url.slice(0, pos);
+  const resto = url
+    .slice(pos + 1)
+    .split("&")
+    .filter((p) => !/^(sslmode|channel_binding)=/i.test(p))
+    .join("&");
+  return resto ? `${base}?${resto}` : base;
+}
+
+function criarPool(url, max) {
+  const p = new Pool({
+    connectionString: limparUrl(url),
+    ssl: { rejectUnauthorized: false },
+    max,
+    connectionTimeoutMillis: 8000, // falha rápido se o banco não responder
+    idleTimeoutMillis: 30000
+  });
+  // Sem este handler, uma conexão ociosa derrubada pelo servidor
+  // (comum em banco gratuito) derruba o Node inteiro.
+  p.on("error", (err) => console.error("[db] Erro em conexao ociosa:", err.message));
+  return p;
+}
+
+const poolPrincipal = criarPool(process.env.DATABASE_URL, 10);
+const poolReserva = process.env.DATABASE_URL_RESERVA
+  ? criarPool(process.env.DATABASE_URL_RESERVA, 5) // Aiven gratuito aceita no máximo 20 conexões
+  : null;
+
+console.log(
+  "Usando PostgreSQL (Neon)" + (poolReserva ? " com banco reserva (Aiven)" : " sem banco reserva")
+);
+
+/* ── FALLBACK PARA O BANCO RESERVA ───────────────────────
+   Só troca de banco quando o problema é de CONEXÃO (banco fora do ar,
+   timeout, cota estourada). Erros de SQL normais continuam sendo
+   lançados pro controller, como antes.
+   Depois de trocar, usa o reserva por 60 segundos e então tenta o
+   principal de novo.                                                     */
+const TEMPO_RESERVA_MS = 60000;
+let reservaAte = 0;
+
+function erroDeConexao(err) {
+  const codigosRede = ["ECONNREFUSED", "ETIMEDOUT", "ENOTFOUND", "ECONNRESET", "EAI_AGAIN", "EPIPE"];
+  if (codigosRede.includes(err.code)) return true;
+  if (
+    typeof err.code === "string" &&
+    (err.code.startsWith("08") || // falhas de conexão
+      err.code.startsWith("57P") || // banco desligando/reiniciando
+      err.code === "53300" || // conexões demais
+      err.code === "53100") // disco/cota cheia
+  ) {
+    return true;
+  }
+  return /timeout exceeded when trying to connect|Connection terminated|connection.*(closed|ended)|the database system is (starting up|shutting down)/i.test(
+    String(err.message || "")
+  );
+}
+
+function ativarReserva(err) {
+  reservaAte = Date.now() + TEMPO_RESERVA_MS;
+  console.warn(
+    "[db] Banco principal indisponivel (" + (err.code || err.message) + "). Usando banco reserva por 60s."
+  );
+}
+
+// Executa uma query: tenta o principal (com uma nova tentativa) e, se a
+// conexão falhar de novo e houver reserva, usa o reserva.
+async function executar(pgSql, params) {
+  if (poolReserva && Date.now() < reservaAte) {
+    return poolReserva.query(pgSql, params);
+  }
+  try {
+    return await poolPrincipal.query(pgSql, params);
+  } catch (err) {
+    if (!erroDeConexao(err)) throw err;
+    try {
+      return await poolPrincipal.query(pgSql, params); // segunda tentativa
+    } catch (err2) {
+      if (!poolReserva || !erroDeConexao(err2)) throw err2;
+      ativarReserva(err2);
+      return poolReserva.query(pgSql, params);
+    }
+  }
+}
+
+// Pega uma conexão dedicada (usada nas transações).
+async function conectar() {
+  if (poolReserva && Date.now() < reservaAte) {
+    return poolReserva.connect();
+  }
+  try {
+    return await poolPrincipal.connect();
+  } catch (err) {
+    if (!poolReserva || !erroDeConexao(err)) throw err;
+    ativarReserva(err);
+    return poolReserva.connect();
+  }
+}
 
 /* Converte ? → $1, $2... (suas queries foram escritas nesse estilo) */
 function converterParams(sql) {
@@ -61,7 +165,7 @@ function converterSQL(sql) {
 // Se qualquer query dentro do callback lançar erro, TUDO é revertido (ROLLBACK)
 // e nada fica salvo pela metade. Se tudo der certo, comita (COMMIT) no final.
 async function transacao(callback) {
-  const client = await pool.connect();
+  const client = await conectar();
   try {
     await client.query('BEGIN');
 
@@ -95,7 +199,7 @@ const db = {
 
     // ── MODO CALLBACK ──────────────────────────────────
     if (typeof callback === 'function') {
-      pool.query(pgSql, params)
+      executar(pgSql, params)
         .then(r => {
           const rows = r.rows;
           if (r.command === 'INSERT' && rows.length > 0 && rows[0].id) {
@@ -108,7 +212,7 @@ const db = {
     }
 
     // ── MODO PROMISE / ASYNC-AWAIT ─────────────────────
-    return pool.query(pgSql, params).then(r => {
+    return executar(pgSql, params).then(r => {
       const rows = r.rows;
       if (r.command === 'INSERT' && rows.length > 0 && rows[0].id) {
         rows.insertId = rows[0].id;

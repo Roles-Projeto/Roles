@@ -25,3 +25,6 @@ rl.question("Código: ", async (code) => {
     console.log(tokens.refresh_token);
     rl.close();
 });
+
+
+

@@ -1,3 +1,13 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
 /* ============================================
    VARIÁVEIS DE DESIGN
 ============================================ */
@@ -32,7 +42,7 @@
    GERAL
 ============================================ */
 body {
-    font-family: 'Poppins', Arial, sans-serif;
+    font-family: 'Inter', sans-serif;
     margin: 0;
     background: linear-gradient(160deg, #F5F3FF 0%, #F9FAFB 60%);
     display: flex;
@@ -160,7 +170,7 @@ header {
     font-size: 14px;
     box-sizing: border-box;
     color: var(--gray-800);
-    font-family: 'Poppins', Arial, sans-serif;
+    font-family: 'Inter', sans-serif;
     transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
 }
 
@@ -253,7 +263,7 @@ header {
     border: none;
     background: transparent;
     color: var(--gray-500);
-    font-family: 'Poppins', Arial, sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -487,8 +497,8 @@ header {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
 }
-
 .btn-copy {
     background: linear-gradient(135deg, var(--primary), var(--primary-mid));
     color: white;
@@ -636,7 +646,7 @@ header {
     font-weight: 700;
     cursor: pointer;
     transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
-    font-family: 'Poppins', Arial, sans-serif;
+    font-family: 'Inter', sans-serif;
     letter-spacing: 0.2px;
     box-shadow: 0 4px 14px rgba(124,58,237,0.35);
 }
@@ -825,22 +835,41 @@ header {
     text-align: center;
 }
 
-/* ============================================
-   RESPONSIVIDADE
-============================================ */
 @media (max-width: 900px) {
+    .page-content {
+        padding: 20px 16px;
+    }
     .checkout-container {
         flex-direction: column;
+        gap: 16px;
     }
     .summary-section {
         position: static;
+        order: 1;
+    }
+    .form-section {
+        order: 2;
+    }
+    .event-details {
+        margin-bottom: 14px;
+        padding-bottom: 14px;
+    }
+    .ticket-selected {
+        margin-bottom: 14px;
+        padding-bottom: 14px;
+    }
+    .form-group {
+        margin-bottom: 16px;
+    }
+    .form-subtitle {
+        margin-top: 18px;
     }
 }
 
 @media (max-width: 600px) {
     .form-section,
     .summary-section {
-        padding: 20px 16px;
+        padding: 18px 16px;
     }
     .dados-pessoais {
         grid-template-columns: 1fr;
@@ -853,5 +882,32 @@ header {
     }
     .payment-tab i {
         font-size: 16px;
+    }
+    .section-title {
+        font-size: 18px;
+        margin-bottom: 2px;
+    }
+    .section-subtitle {
+        margin-bottom: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .quantity-control {
+        flex-wrap: wrap;
+    }
+    .quantity-control > span {
+        width: 100%;
+        margin-top: 4px;
+    }
+}
+
+@media (max-width: 400px) {
+    .page-content {
+        padding: 16px 12px;
+    }
+    .event-image {
+        width: 64px;
+        height: 64px;
     }
 }

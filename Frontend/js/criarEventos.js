@@ -3,17 +3,18 @@
 // ====================================================
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 const API_BASE = isLocal ? "http://localhost:3000" : window.location.origin;
-const API_URL  = `${API_BASE}/eventos`;
+const API_URL = `${API_BASE}/eventos`;
 
-const steps         = document.querySelectorAll(".step");
-const nextBtn       = document.getElementById("nextBtn");
-const prevBtn       = document.getElementById("prevBtn");
-const progressBar   = document.getElementById("progress-bar");
+const steps = document.querySelectorAll(".step");
+const nextBtn = document.getElementById("nextBtn");
+const prevBtn = document.getElementById("prevBtn");
+const progressBar = document.getElementById("progress-bar");
 const stepIndicator = document.getElementById("step-indicator");
+const stepLabels = document.querySelectorAll(".step-label");
 
-const modal        = document.getElementById("modalConfirmacao");
+const modal = document.getElementById("modalConfirmacao");
 const resumoEvento = document.getElementById("resumoEvento");
-const cancelarBtn  = document.getElementById("cancelarPublicacao");
+const cancelarBtn = document.getElementById("cancelarPublicacao");
 const confirmarBtn = document.getElementById("confirmarPublicacao");
 
 let currentStep = 0;
@@ -24,12 +25,10 @@ let currentStep = 0;
 function showStep(index) {
     steps.forEach((step, i) => { step.style.display = i === index ? "block" : "none"; });
     prevBtn.style.display = index === 0 ? "none" : "inline-block";
-    if (index > 0) prevBtn.innerHTML = '<img src="/frontend/imagens/seta-direita.png" style="transform:scaleX(-1);width:40px;">';
-    if (index === steps.length - 1) {
-        nextBtn.textContent = "Publicar Evento"; nextBtn.className = "btn-primary"; nextBtn.style.padding = "12px 28px";
-    } else {
-        nextBtn.innerHTML = '<img src="/frontend/imagens/seta-direita.png" style="width:40px;">'; nextBtn.className = "btn-success"; nextBtn.style.padding = "";
-    }
+    prevBtn.textContent = "Voltar";
+    prevBtn.className = "btn-primary";
+    nextBtn.textContent = index === steps.length - 1 ? "Publicar Evento" : "Próximo";
+    nextBtn.className = "btn-primary";
     atualizarProgresso();
 }
 
@@ -38,8 +37,15 @@ function showStep(index) {
 // ====================================================
 function atualizarProgresso() {
     const total = steps.length;
-    progressBar.style.width   = ((currentStep + 1) / total * 100) + "%";
+    progressBar.style.width = ((currentStep + 1) / total * 100) + "%";
     stepIndicator.textContent = `Etapa ${currentStep + 1} de ${total}`;
+
+    stepLabels.forEach(label => {
+        const labelStep = parseInt(label.dataset.step, 10);
+        label.classList.remove("active", "completed");
+        if (labelStep === currentStep) label.classList.add("active");
+        else if (labelStep < currentStep) label.classList.add("completed");
+    });
 }
 
 // ====================================================
@@ -48,8 +54,8 @@ function atualizarProgresso() {
 function marcarErro(el) {
     if (!el) return;
     el.style.borderColor = "#ef4444";
-    el.style.boxShadow   = "0 0 0 3px rgba(239,68,68,0.15)";
-    el.addEventListener("input",  () => limparErro(el), { once: true });
+    el.style.boxShadow = "0 0 0 3px rgba(239,68,68,0.15)";
+    el.addEventListener("input", () => limparErro(el), { once: true });
     el.addEventListener("change", () => limparErro(el), { once: true });
 }
 function limparErro(el) { if (!el) return; el.style.borderColor = ""; el.style.boxShadow = ""; }
@@ -60,90 +66,82 @@ function alerta(msg, el) { if (el) el.focus(); alert(msg); }
 // ====================================================
 function validarEtapa(index) {
 
-    // ── Etapa 1: Informações básicas ──────────────────
-    // Obrigatórios: nome, assunto
+    // ── Etapa 1: O Evento ─────────────────────────────
+    // Obrigatórios: nome, assunto, imagem de divulgação, descrição
     // Opcional: categoria
     if (index === 0) {
-        const nome    = document.getElementById("event-name");
+        const nome = document.getElementById("event-name");
         const assunto = document.getElementById("assunto");
         if (!nome?.value?.trim()) { marcarErro(nome); alerta("Informe o nome do evento.", nome); return false; }
-        if (!assunto?.value)      { marcarErro(assunto); alerta("Selecione um assunto para o evento.", assunto); return false; }
-        return true;
-    }
+        if (!assunto?.value) { marcarErro(assunto); alerta("Selecione um assunto para o evento.", assunto); return false; }
 
-    // ── Etapa 2: Imagem ───────────────────────────────
-    // Obrigatório: imagem de divulgação
-    if (index === 1) {
         if (!imagemEvento) { alert("Adicione uma imagem de divulgação para o evento."); return false; }
-        return true;
-    }
-
-    // ── Etapa 3: Data e horário ───────────────────────
-    // Todos obrigatórios
-    if (index === 2) {
-        const dataInicio = document.getElementById("start-date");
-        const horaInicio = document.getElementById("start-time");
-        const dataFim    = document.getElementById("end-date");
-        const horaFim    = document.getElementById("end-time");
-
-        if (!dataInicio?.value) { marcarErro(dataInicio); alerta("Informe a data de início.", dataInicio); return false; }
-        if (!horaInicio?.value) { marcarErro(horaInicio); alerta("Informe a hora de início.", horaInicio); return false; }
-        if (!dataFim?.value)    { marcarErro(dataFim);    alerta("Informe a data de término.", dataFim);   return false; }
-        if (!horaFim?.value)    { marcarErro(horaFim);    alerta("Informe a hora de término.", horaFim);   return false; }
-
-        const inicio = new Date(`${dataInicio.value}T${horaInicio.value}`);
-        const fim    = new Date(`${dataFim.value}T${horaFim.value}`);
-        const agora  = new Date();
-
-        if (inicio < agora)  { marcarErro(dataInicio); marcarErro(horaInicio); alert("A data de início não pode ser no passado."); return false; }
-        if (fim <= inicio)   { marcarErro(dataFim); marcarErro(horaFim); alert("A data de término deve ser depois da data de início."); return false; }
-        return true;
-    }
-
-    // ── Etapa 4: Descrição ────────────────────────────
-    // Obrigatório: descrição
-    if (index === 3) {
         const descricao = document.getElementById("descricao");
         if (!descricao?.value?.trim()) { marcarErro(descricao); alerta("Adicione uma descrição para o evento.", descricao); return false; }
         return true;
     }
 
-    // ── Etapa 5: Local do evento ──────────────────────
-    // Obrigatórios: nome do local, CEP, rua, cidade, estado
-    // Opcional: —
-    if (index === 4) {
+    // ── Etapa 2: Onde e Quando ─────────────────────────
+    // Data/horário: todos obrigatórios
+    // Localização: nome do local, CEP, rua, cidade, estado
+    if (index === 1) {
+        const dataInicio = document.getElementById("start-date");
+        const horaInicio = document.getElementById("start-time");
+        const dataFim = document.getElementById("end-date");
+        const horaFim = document.getElementById("end-time");
+
+        if (!dataInicio?.value) { marcarErro(dataInicio); alerta("Informe a data de início.", dataInicio); return false; }
+        if (!horaInicio?.value) { marcarErro(horaInicio); alerta("Informe a hora de início.", horaInicio); return false; }
+        if (!dataFim?.value) { marcarErro(dataFim); alerta("Informe a data de término.", dataFim); return false; }
+        if (!horaFim?.value) { marcarErro(horaFim); alerta("Informe a hora de término.", horaFim); return false; }
+
+        const inicio = new Date(`${dataInicio.value}T${horaInicio.value}`);
+        const fim = new Date(`${dataFim.value}T${horaFim.value}`);
+        const agora = new Date();
+
+        if (inicio < agora) { marcarErro(dataInicio); marcarErro(horaInicio); alert("A data de início não pode ser no passado."); return false; }
+        if (fim <= inicio) { marcarErro(dataFim); marcarErro(horaFim); alert("A data de término deve ser depois da data de início."); return false; }
+
         const localNome = document.getElementById("local-nome");
-        const cep       = document.getElementById("cep");
-        const rua       = document.getElementById("rua");
-        const cidade    = document.getElementById("cidade");
-        const estado    = document.getElementById("estado");
+        const cep = document.getElementById("cep");
+        const rua = document.getElementById("rua");
+        const cidade = document.getElementById("cidade");
+        const estado = document.getElementById("estado");
 
         if (!localNome?.value?.trim()) { marcarErro(localNome); alerta("Informe o nome ou endereço do local.", localNome); return false; }
-        if (!cep?.value?.trim() || cep.value.replace(/\D/g,"").length < 8) { marcarErro(cep); alerta("Informe um CEP válido.", cep); return false; }
-        if (!rua?.value?.trim())    { marcarErro(rua); alerta("Informe a rua do local.", rua); return false; }
+        if (!cep?.value?.trim() || cep.value.replace(/\D/g, "").length < 8) { marcarErro(cep); alerta("Informe um CEP válido.", cep); return false; }
+        if (!rua?.value?.trim()) { marcarErro(rua); alerta("Informe a rua do local.", rua); return false; }
         if (!cidade?.value?.trim()) { alerta("A cidade não foi preenchida. Verifique o CEP."); return false; }
         if (!estado?.value?.trim()) { alerta("O estado não foi preenchido. Verifique o CEP."); return false; }
         return true;
     }
 
-    // ── Etapa 6: Ingressos ────────────────────────────
-    // Obrigatório: ao menos 1 ingresso criado
-    if (index === 5) {
-        if (listaIngressos.length === 0) {
-            alert("Adicione ao menos um ingresso (pago ou gratuito) antes de continuar.");
-            return false;
-        }
-        return true;
+    // ── Etapa 3: Ingressos e Publicação ───────────────
+    // Ingressos: ao menos 1 ingresso criado
+    // Publicação: nome do produtor, termos
+    if (index === 2) {
+    if (listaIngressos.length === 0) {
+        alert("Adicione ao menos um ingresso (pago ou gratuito) antes de continuar.");
+        return false;
     }
 
-    // ── Etapa 7: Publicação ───────────────────────────
-    // Obrigatórios: nome do produtor, termos
-    if (index === 6) {
-        const produtor = document.getElementById("producer-name");
-        const termos   = document.getElementById("terms");
-        if (!produtor?.value?.trim()) { marcarErro(produtor); alerta("Informe o nome do produtor.", produtor); return false; }
-        if (!termos?.checked)         { alert("Você precisa aceitar os Termos de Uso para publicar."); return false; }
-        return true;
+    if (tipoMapaSelecionado() === "imagem") {
+        if (!mapaImagem) { alert("Envie o PNG do mapa do evento."); return false; }
+        if (!setoresImagem.length) { alert("Cadastre ao menos um setor para o mapa."); return false; }
+        const semArea = setoresImagem.find(s => !s.areas || !s.areas.length);
+if (semArea) { alert(`Marque no mapa a área do setor "${semArea.nome}".`); return false; }
+        const chaves = setoresImagem.map(s => s.chave);
+        if (listaIngressos.some(i => !i.setor_mapa || !chaves.includes(i.setor_mapa))) {
+            alert("Todos os ingressos precisam ter um setor do mapa. Edite os ingressos sem setor ou com setor inválido.");
+            return false;
+        }
+    }
+
+    const produtor = document.getElementById("producer-name");
+    const termos = document.getElementById("terms");
+    if (!produtor?.value?.trim()) { marcarErro(produtor); alerta("Informe o nome do produtor.", produtor); return false; }
+       if (!termos?.checked) { alert("Você precisa aceitar os Termos de Uso para publicar."); return false; }
+    return true;
     }
 
     return true;
@@ -151,7 +149,6 @@ function validarEtapa(index) {
 
 // ====================================================
 // BOTÃO PRÓXIMO
-// ====================================================
 nextBtn.addEventListener("click", () => {
     if (!validarEtapa(currentStep)) return;
     if (currentStep === steps.length - 1) { mostrarResumo(); return; }
@@ -167,30 +164,6 @@ prevBtn.addEventListener("click", () => {
 });
 
 // ====================================================
-// AUTOSAVE
-// ====================================================
-function salvarRascunho() {
-    const dados = {};
-    document.querySelectorAll("input, textarea, select").forEach(input => {
-        dados[input.id] = input.type === "checkbox" ? input.checked : input.value;
-    });
-    localStorage.setItem("rascunhoEvento", JSON.stringify(dados));
-}
-setInterval(salvarRascunho, 5000);
-
-function carregarRascunho() {
-    const dados = JSON.parse(localStorage.getItem("rascunhoEvento"));
-    if (!dados) return;
-    Object.keys(dados).forEach(id => {
-        const input = document.getElementById(id);
-        if (!input) return;
-        if (input.type === "checkbox") input.checked = dados[id];
-        else input.value = dados[id];
-    });
-}
-window.addEventListener("load", carregarRascunho);
-
-// ====================================================
 // MOSTRAR RESUMO
 // ====================================================
 const stepNavigation = document.querySelector(".step-navigation");
@@ -198,26 +171,29 @@ const stepNavigation = document.querySelector(".step-navigation");
 function mostrarResumo() {
     stepNavigation.style.display = "none";
 
-    const nome       = document.getElementById("event-name")?.value || "-";
-    const produtor   = document.getElementById("producer-name")?.value || "-";
+    const nome = document.getElementById("event-name")?.value || "-";
+    const produtor = document.getElementById("producer-name")?.value || "-";
     const dataInicio = document.getElementById("start-date")?.value || "-";
     const horaInicio = document.getElementById("start-time")?.value || "-";
-    const dataFim    = document.getElementById("end-date")?.value || "-";
-    const horaFim    = document.getElementById("end-time")?.value || "-";
-    const nomeLocal  = document.getElementById("local-nome")?.value || "";
-    const rua        = document.getElementById("rua")?.value || "";
-    const cidade     = document.getElementById("cidade")?.value || "";
-    const estado     = document.getElementById("estado")?.value || "";
-    const descricao  = document.getElementById("descricao")?.value || "-";
+    const dataFim = document.getElementById("end-date")?.value || "-";
+    const horaFim = document.getElementById("end-time")?.value || "-";
+    const nomeLocal = document.getElementById("local-nome")?.value || "";
+    const rua = document.getElementById("rua")?.value || "";
+    const cidade = document.getElementById("cidade")?.value || "";
+    const estado = document.getElementById("estado")?.value || "";
+    const descricao = document.getElementById("descricao")?.value || "-";
 
     let local = "-";
     if (nomeLocal || rua || cidade) local = `${nomeLocal}<br>${rua}<br>${cidade}${estado ? " - " + estado : ""}`;
 
     let ingressosHTML = "<ul>";
     listaIngressos.forEach(ing => {
-        ingressosHTML += `<li>${ing.titulo} — ${ing.tipo === "pago" ? "R$ " + ing.valor : "Gratuito"} (${ing.quantidade_total} unid.)</li>`;
+        const setorTexto = ing.setor_mapa ? ` — setor: ${ing.setor_mapa}` : "";
+        ingressosHTML += `<li>${ing.titulo} — ${ing.tipo === "pago" ? "R$ " + ing.valor : "Gratuito"} (${ing.quantidade_total} unid.)${setorTexto}</li>`;
     });
     ingressosHTML += "</ul>";
+
+    const mapaTexto = obterTextoMapaResumo();
 
     resumoEvento.innerHTML = `
         <h3>Resumo do Evento</h3>
@@ -227,6 +203,7 @@ function mostrarResumo() {
         <p><strong>Início:</strong> ${dataInicio} às ${horaInicio}</p>
         <p><strong>Término:</strong> ${dataFim} às ${horaFim}</p>
         <p><strong>Produtor:</strong> ${produtor}</p>
+        <p><strong>Mapa do evento:</strong> ${mapaTexto}</p>
         <p><strong>Ingressos:</strong></p>${ingressosHTML}
         ${imagemEvento ? `<p><strong>Imagem:</strong> ✅ Carregada</p>` : ""}
     `;
@@ -241,57 +218,98 @@ cancelarBtn.addEventListener("click", () => {
     modal.style.display = "none";
     stepNavigation.style.display = "flex";
 });
-
+async function uploadImagem(file) {
+    const formData = new FormData();
+    formData.append("imagem", file);
+    const res = await fetch(`${API_BASE}/eventos/upload-imagem`, { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.erro ? `${data.erro} ${data.detalhes || ""}` : `Erro ${res.status} ao enviar imagem.`);
+    if (!data.url) throw new Error("O upload não retornou uma URL válida.");
+    return data.url;
+}
 // ====================================================
 // CONFIRMAR PUBLICAÇÃO
 // ====================================================
 confirmarBtn.addEventListener("click", async () => {
     const dataInicio = document.getElementById("start-date")?.value;
     const horaInicio = document.getElementById("start-time")?.value;
-    const dataFim    = document.getElementById("end-date")?.value;
-    const horaFim    = document.getElementById("end-time")?.value;
+    const dataFim = document.getElementById("end-date")?.value;
+    const horaFim = document.getElementById("end-time")?.value;
+    
+
+    confirmarBtn.disabled = true;
+    confirmarBtn.textContent = "Publicando...";
 
     let imagemUrl = null;
     if (imagemEvento) {
         try {
             const formData = new FormData();
             formData.append("imagem", imagemEvento);
-            const uploadRes  = await fetch(`${API_BASE}/eventos/upload-imagem`, { method: "POST", body: formData });
+            const uploadRes = await fetch(`${API_BASE}/eventos/upload-imagem`, { method: "POST", body: formData });
             const uploadData = await uploadRes.json();
+
+            if (!uploadRes.ok) {
+                throw new Error(uploadData.erro ? `${uploadData.erro} ${uploadData.detalhes || ""}` : `Erro ${uploadRes.status} ao enviar imagem.`);
+            }
+            if (!uploadData.url) {
+                throw new Error("O upload não retornou uma URL válida.");
+            }
             imagemUrl = uploadData.url;
-        } catch (err) { console.error("Erro no upload da imagem:", err); }
+        } catch (err) {
+            console.error("Erro no upload da imagem:", err);
+            alert("❌ Não foi possível enviar a imagem: " + err.message + "\n\nA publicação foi cancelada. Corrija e tente novamente.");
+            confirmarBtn.disabled = false;
+            confirmarBtn.textContent = "Confirmar publicação";
+            return;
+        }
     }
 
     const toISO = (date, time) => {
-        const d = new Date(`${date}T${time}:00`);
-        d.setHours(d.getHours() + 3);
-        return d.toISOString().slice(0, 19).replace("T", " ");
+        return `${date} ${time}:00`;
     };
+
+    let mapaImagemUrl = null;
+if (tipoMapaSelecionado() === "imagem" && mapaImagem) {
+    try {
+        mapaImagemUrl = await uploadImagem(mapaImagem);
+    } catch (err) {
+        console.error("Erro no upload do mapa:", err);
+        alert("❌ Não foi possível enviar o mapa: " + err.message + "\n\nA publicação foi cancelada. Corrija e tente novamente.");
+        confirmarBtn.disabled = false;
+        confirmarBtn.textContent = "Confirmar publicação";
+        return;
+    }
+}
+
+const { tipo_mapa, mapa_config } = montarDadosMapa(mapaImagemUrl);
 
     const evento = {
-        nome:          document.getElementById("event-name")?.value?.trim(),
-        assunto:       document.getElementById("assunto")?.value,
-        categoria:     document.getElementById("categoria")?.value,
-        imagem:        imagemUrl,
-        data_inicio:   dataInicio && horaInicio ? toISO(dataInicio, horaInicio) : null,
-        data_fim:      dataFim && horaFim ? toISO(dataFim, horaFim) : null,
-        descricao:     document.getElementById("descricao")?.value?.trim(),
-        local_nome:    document.getElementById("local-nome")?.value?.trim(),
-        cep:           document.getElementById("cep")?.value?.trim(),
-        rua:           document.getElementById("rua")?.value?.trim(),
-        cidade:        document.getElementById("cidade")?.value?.trim(),
-        estado:        document.getElementById("estado")?.value?.trim(),
+        nome: document.getElementById("event-name")?.value?.trim(),
+        assunto: document.getElementById("assunto")?.value,
+        categoria: document.getElementById("categoria")?.value,
+        imagem: imagemUrl,
+        data_inicio: dataInicio && horaInicio ? toISO(dataInicio, horaInicio) : null,
+        data_fim: dataFim && horaFim ? toISO(dataFim, horaFim) : null,
+        descricao: document.getElementById("descricao")?.value?.trim(),
+        local_nome: document.getElementById("local-nome")?.value?.trim(),
+        cep: document.getElementById("cep")?.value?.trim(),
+        rua: document.getElementById("rua")?.value?.trim(),
+        cidade: document.getElementById("cidade")?.value?.trim(),
+        estado: document.getElementById("estado")?.value?.trim(),
         nome_produtor: document.getElementById("producer-name")?.value?.trim(),
-        ingressos:     listaIngressos,
+        tipo_mapa,
+        mapa_config,
+        ingressos: listaIngressos,
     };
 
-    confirmarBtn.disabled    = true;
-    confirmarBtn.textContent = "Publicando...";
-
-    try {
+        try {
+        const token = localStorage.getItem("token");
         const response = await fetch(API_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
             body: JSON.stringify(evento),
         });
         const data = await response.json();
@@ -302,7 +320,7 @@ confirmarBtn.addEventListener("click", async () => {
     } catch (err) {
         console.error(err);
         alert("❌ Erro ao publicar: " + err.message);
-        confirmarBtn.disabled    = false;
+        confirmarBtn.disabled = false;
         confirmarBtn.textContent = "Confirmar publicação";
     }
 });
@@ -316,24 +334,24 @@ showStep(currentStep);
 // BLOQUEIO DE DATAS PASSADAS + DURAÇÃO EM TEMPO REAL
 // ====================================================
 (function inicializarDatas() {
-    const hoje       = new Date().toISOString().split('T')[0];
-    const startDate  = document.getElementById('start-date');
-    const startTime  = document.getElementById('start-time');
-    const endDate    = document.getElementById('end-date');
-    const endTime    = document.getElementById('end-time');
-    const badge      = document.getElementById('duracao-badge');
+    const hoje = new Date().toISOString().split('T')[0];
+    const startDate = document.getElementById('start-date');
+    const startTime = document.getElementById('start-time');
+    const endDate = document.getElementById('end-date');
+    const endTime = document.getElementById('end-time');
+    const badge = document.getElementById('duracao-badge');
     const badgeTexto = document.getElementById('duracao-texto');
 
     // Bloqueia datas passadas diretamente no input
     if (startDate) startDate.min = hoje;
-    if (endDate)   endDate.min   = hoje;
+    if (endDate) endDate.min = hoje;
 
     function calcularDuracao() {
         if (!startDate?.value || !startTime?.value || !endDate?.value || !endTime?.value || !badge) return;
 
         const inicio = new Date(`${startDate.value}T${startTime.value}`);
-        const fim    = new Date(`${endDate.value}T${endTime.value}`);
-        const agora  = new Date();
+        const fim = new Date(`${endDate.value}T${endTime.value}`);
+        const agora = new Date();
 
         badge.classList.remove('tem-duracao', 'erro-data');
 
@@ -351,15 +369,15 @@ showStep(currentStep);
             return;
         }
 
-        const diff        = fim - inicio;
-        const totalMin    = Math.floor(diff / 60000);
-        const dias        = Math.floor(totalMin / (60 * 24));
-        const horas       = Math.floor((totalMin % (60 * 24)) / 60);
-        const minutos     = totalMin % 60;
+        const diff = fim - inicio;
+        const totalMin = Math.floor(diff / 60000);
+        const dias = Math.floor(totalMin / (60 * 24));
+        const horas = Math.floor((totalMin % (60 * 24)) / 60);
+        const minutos = totalMin % 60;
 
         let durStr = 'Duração: ';
-        if (dias > 0)    durStr += `${dias} dia${dias > 1 ? 's' : ''} `;
-        if (horas > 0)   durStr += `${horas}h `;
+        if (dias > 0) durStr += `${dias} dia${dias > 1 ? 's' : ''} `;
+        if (horas > 0) durStr += `${horas}h `;
         if (minutos > 0) durStr += `${minutos}min`;
 
         badgeTexto.textContent = durStr.trim();
@@ -399,7 +417,7 @@ const categoriasPorAssunto = {
     "Festivais": ["Festival de música", "Festival gastronômico", "Festival cultural"],
 };
 
-const assuntoSelect   = document.getElementById("assunto");
+const assuntoSelect = document.getElementById("assunto");
 const categoriaSelect = document.getElementById("categoria");
 
 assuntoSelect.addEventListener("change", () => {
@@ -420,15 +438,15 @@ const fileInput = document.createElement("input");
 fileInput.type = "file"; fileInput.accept = "image/jpeg,image/png,image/gif"; fileInput.style.display = "none";
 document.body.appendChild(fileInput);
 
-dropZone.addEventListener("click",    () => fileInput.click());
-fileInput.addEventListener("change",  e => processarImagem(e.target.files[0]));
+dropZone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", e => processarImagem(e.target.files[0]));
 dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.style.border = "2px dashed #7c3aed"; });
-dropZone.addEventListener("dragleave",  () => { dropZone.style.border = ""; });
-dropZone.addEventListener("drop",     e => { e.preventDefault(); dropZone.style.border = ""; processarImagem(e.dataTransfer.files[0]); });
+dropZone.addEventListener("dragleave", () => { dropZone.style.border = ""; });
+dropZone.addEventListener("drop", e => { e.preventDefault(); dropZone.style.border = ""; processarImagem(e.dataTransfer.files[0]); });
 
 function processarImagem(file) {
     if (!file) return;
-    if (!["image/jpeg","image/png","image/gif"].includes(file.type)) { alert("Formato inválido. Use JPEG, PNG ou GIF."); return; }
+    if (!["image/jpeg", "image/png", "image/gif"].includes(file.type)) { alert("Formato inválido. Use JPEG, PNG ou GIF."); return; }
     if (file.size > 2 * 1024 * 1024) { alert("Imagem muito grande. Máximo 2MB."); return; }
     imagemEvento = file;
     const reader = new FileReader();
@@ -439,36 +457,344 @@ function processarImagem(file) {
 // ====================================================
 // CEP
 // ====================================================
-const cepInput    = document.getElementById("cep");
-const ruaInput    = document.getElementById("rua");
+const cepInput = document.getElementById("cep");
+const ruaInput = document.getElementById("rua");
 const cidadeInput = document.getElementById("cidade");
 const estadoInput = document.getElementById("estado");
 
 cepInput.addEventListener("input", () => {
-    let v = cepInput.value.replace(/\D/g,"");
-    if (v.length > 5) v = v.slice(0,5) + "-" + v.slice(5,8);
+    let v = cepInput.value.replace(/\D/g, "");
+    if (v.length > 5) v = v.slice(0, 5) + "-" + v.slice(5, 8);
     cepInput.value = v;
 });
 
 cepInput.addEventListener("blur", async () => {
-    const cep = cepInput.value.replace(/\D/g,"");
+    const cep = cepInput.value.replace(/\D/g, "");
     if (cep.length !== 8) return;
     try {
-        const res  = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
         const data = await res.json();
         if (data.erro) { alert("CEP não encontrado."); ruaInput.value = cidadeInput.value = estadoInput.value = ""; return; }
-        ruaInput.value    = data.logradouro || ""; limparErro(ruaInput);
+        ruaInput.value = data.logradouro || ""; limparErro(ruaInput);
         cidadeInput.value = data.localidade || "";
         estadoInput.value = data.uf || "";
     } catch { alert("Erro ao buscar CEP."); }
 });
 
 // ====================================================
+// MAPA DO EVENTO
+// Cada template define os setores disponíveis (mesma chave
+// usada pelo front de detalhes do evento em SETORES).
+// ====================================================
+const TEMPLATES_MAPA = {
+    arena: {
+        nome: "Arena / Estádio",
+        setores: [
+            { chave: "arquibancada", nome: "Arquibancada" },
+            { chave: "cadeira superior", nome: "Cadeira Superior" },
+            { chave: "cadeira inferior", nome: "Cadeira Inferior" },
+            { chave: "pista", nome: "Pista" },
+            { chave: "vip", nome: "VIP" },
+        ],
+    },
+    pista_camarote: {
+        nome: "Casa de show",
+        setores: [
+            { chave: "pista", nome: "Pista" },
+            { chave: "camarote", nome: "Camarote" },
+        ],
+    },
+    teatro: {
+        nome: "Teatro",
+        setores: [
+            { chave: "plateia", nome: "Plateia" },
+            { chave: "balcao", nome: "Balcão" },
+        ],
+    },
+    simples: {
+        nome: "Simples",
+        setores: [
+            { chave: "geral", nome: "Geral" },
+        ],
+    },
+};
+
+const mapaTipoGroup = document.getElementById("mapa-tipo-group");
+const mapaTemplateGroup = document.getElementById("mapa-template-group");
+const mapaTemplateSelect = document.getElementById("mapa-template");
+
+const mapaImagemGroup = document.getElementById("mapa-imagem-group");
+const mapaImagemDrop = document.getElementById("mapa-imagem-drop");
+const mapaSetorNovo = document.getElementById("mapa-setor-novo");
+const mapaSetorAdd = document.getElementById("mapa-setor-add");
+const mapaSetoresLista = document.getElementById("mapa-setores-lista");
+
+let mapaImagem = null;          // File do PNG
+const setoresImagem = [];       // [{ chave, nome }]
+
+const slugify = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
+// ---------- upload do PNG do mapa ----------
+const mapaFileInput = document.createElement("input");
+mapaFileInput.type = "file"; mapaFileInput.accept = "image/png"; mapaFileInput.style.display = "none";
+document.body.appendChild(mapaFileInput);
+
+mapaImagemDrop?.addEventListener("click", (e) => {
+    if (e.target.closest("#mapa-editor")) return;
+    mapaFileInput.click();
+});
+mapaFileInput.addEventListener("change", e => processarImagemMapa(e.target.files[0]));
+mapaImagemDrop?.addEventListener("dragover", e => { e.preventDefault(); mapaImagemDrop.style.border = "2px dashed #7c3aed"; });
+mapaImagemDrop?.addEventListener("dragleave", () => { mapaImagemDrop.style.border = ""; });
+mapaImagemDrop?.addEventListener("drop", e => {
+    e.preventDefault(); mapaImagemDrop.style.border = "";
+    processarImagemMapa(e.dataTransfer.files[0]);
+});
+function processarImagemMapa(file) {
+    if (!file) return;
+    if (file.type !== "image/png") { alert("O mapa deve ser um arquivo PNG."); return; }
+    if (file.size > 5 * 1024 * 1024) { alert("Imagem do mapa muito grande. Máximo 5MB."); return; }
+    mapaImagem = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+        mapaImagemDrop.innerHTML = "";
+        mapaImagemDrop.style.cssText += ";height:auto !important;min-height:0 !important;max-height:none !important;overflow:visible !important;width:100% !important;max-width:900px !important;padding:0 !important;display:block !important;";
+        const wrap = document.createElement("div");
+        wrap.id = "mapa-editor";
+        wrap.style.cssText = "position:relative;width:100%;line-height:0;user-select:none;touch-action:none;";
+        const img = document.createElement("img");
+        img.src = e.target.result;
+        img.draggable = false;
+        img.style.cssText = "width:100%;height:auto;display:block;border-radius:8px;";
+        const camada = document.createElement("div");
+        camada.id = "mapa-editor-camada";
+        camada.style.cssText = "position:absolute;inset:0;cursor:crosshair;";
+        wrap.append(img, camada);
+        mapaImagemDrop.appendChild(wrap);
+        ativarDesenhoAreas(camada);
+        renderizarAreasEditor();
+    };
+    reader.readAsDataURL(file);
+}
+// ---------- setores do mapa em imagem ----------
+function renderizarSetoresImagem() {
+    mapaSetoresLista.innerHTML = "";
+    setoresImagem.forEach((s, i) => {
+        const qtd = (s.areas || []).length;
+        const li = document.createElement("li");
+        li.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;";
+        const nome = document.createElement("span");
+        nome.textContent = s.nome + (qtd ? ` ✅ (${qtd} ${qtd === 1 ? "área" : "áreas"})` : " (sem área)");
+        const acoes = document.createElement("span");
+        acoes.style.cssText = "display:flex;gap:6px;";
+
+        const marcar = document.createElement("button");
+        marcar.type = "button"; marcar.className = "btn-editar";
+        marcar.textContent = setorParaDesenhar === s.chave ? "Desenhando... (clique para parar)" : (qtd ? "Adicionar área" : "Marcar no mapa");
+        marcar.addEventListener("click", () => {
+            if (!mapaImagem) { alert("Envie o PNG do mapa primeiro."); return; }
+            setorParaDesenhar = setorParaDesenhar === s.chave ? null : s.chave;
+            renderizarSetoresImagem();
+        });
+        acoes.appendChild(marcar);
+
+        if (qtd) {
+            const limpar = document.createElement("button");
+            limpar.type = "button"; limpar.className = "btn-editar";
+            limpar.textContent = "Limpar áreas";
+            limpar.addEventListener("click", () => { s.areas = []; renderizarSetoresImagem(); });
+            acoes.appendChild(limpar);
+        }
+
+        const btn = document.createElement("button");
+        btn.type = "button"; btn.className = "btn-excluir"; btn.textContent = "Remover";
+        btn.addEventListener("click", () => removerSetorImagem(i));
+        acoes.appendChild(btn);
+
+        li.append(nome, acoes);
+        mapaSetoresLista.appendChild(li);
+    });
+    renderizarAreasEditor();
+    atualizarCamposSetorNosFormulariosAbertos();
+}
+function adicionarSetorImagem() {
+    const nome = mapaSetorNovo.value.trim();
+    if (!nome) { marcarErro(mapaSetorNovo); alerta("Informe o nome do setor.", mapaSetorNovo); return; }
+    const chave = slugify(nome);
+    if (!chave) { alerta("Nome de setor inválido.", mapaSetorNovo); return; }
+    if (setoresImagem.some(s => s.chave === chave)) { alerta("Esse setor já foi adicionado.", mapaSetorNovo); return; }
+    setoresImagem.push({ chave, nome });
+    mapaSetorNovo.value = "";
+    renderizarSetoresImagem();
+}
+
+function removerSetorImagem(i) {
+    const emUso = listaIngressos.some(ing => ing.setor_mapa === setoresImagem[i].chave);
+    if (emUso) { alert("Esse setor está sendo usado por um ingresso. Edite ou exclua o ingresso primeiro."); return; }
+    setoresImagem.splice(i, 1);
+    renderizarSetoresImagem();
+}
+// ---------- áreas clicáveis do mapa em imagem ----------
+let setorParaDesenhar = null; // chave do setor escolhido na lista
+
+function renderizarAreasEditor() {
+    const camada = document.getElementById("mapa-editor-camada");
+    if (!camada) return;
+    camada.innerHTML = "";
+    setoresImagem.forEach(s => {
+        (s.areas || []).forEach(a => {
+            const el = document.createElement("div");
+            el.style.cssText = `position:absolute;left:${a.x}%;top:${a.y}%;width:${a.w}%;height:${a.h}%;` +
+                "border:2px solid #7c3aed;background:rgba(124,58,237,.3);box-sizing:border-box;" +
+                "display:flex;align-items:center;justify-content:center;pointer-events:none;overflow:hidden;";
+            const t = document.createElement("span");
+            t.textContent = s.nome;
+            t.style.cssText = "font:700 10px sans-serif;color:#fff;background:#6c2bd9;padding:1px 4px;border-radius:4px;line-height:1.2;white-space:nowrap;";
+            el.appendChild(t);
+            camada.appendChild(el);
+        });
+    });
+}
+function ativarDesenhoAreas(camada) {
+    let inicio = null, previa = null;
+    const pos = (ev) => {
+        const r = camada.getBoundingClientRect();
+        return {
+            x: Math.min(100, Math.max(0, (ev.clientX - r.left) / r.width * 100)),
+            y: Math.min(100, Math.max(0, (ev.clientY - r.top) / r.height * 100))
+        };
+    };
+
+    camada.addEventListener("pointerdown", ev => {
+        if (!setorParaDesenhar) { alert("Primeiro clique em \"Marcar no mapa\" ao lado do setor que você quer desenhar."); return; }
+        camada.setPointerCapture(ev.pointerId);
+        inicio = pos(ev);
+        previa = document.createElement("div");
+        previa.style.cssText = "position:absolute;border:2px dashed #7c3aed;background:rgba(124,58,237,.2);pointer-events:none;";
+        camada.appendChild(previa);
+    });
+
+    camada.addEventListener("pointermove", ev => {
+        if (!inicio || !previa) return;
+        const p = pos(ev);
+        previa.style.left = Math.min(inicio.x, p.x) + "%";
+        previa.style.top = Math.min(inicio.y, p.y) + "%";
+        previa.style.width = Math.abs(p.x - inicio.x) + "%";
+        previa.style.height = Math.abs(p.y - inicio.y) + "%";
+    });
+
+    camada.addEventListener("pointerup", ev => {
+        if (!inicio) return;
+        const p = pos(ev);
+        const area = {
+            x: +Math.min(inicio.x, p.x).toFixed(2),
+            y: +Math.min(inicio.y, p.y).toFixed(2),
+            w: +Math.abs(p.x - inicio.x).toFixed(2),
+            h: +Math.abs(p.y - inicio.y).toFixed(2)
+        };
+        inicio = null;
+        previa?.remove(); previa = null;
+        if (area.w < 1 || area.h < 1) return; // clique sem arrastar
+                const setor = setoresImagem.find(s => s.chave === setorParaDesenhar);
+        if (setor) {
+            if (!Array.isArray(setor.areas)) setor.areas = [];
+            setor.areas.push(area);
+        }
+        // O setor continua selecionado: dá para desenhar a próxima área em seguida
+        renderizarSetoresImagem();
+    });
+}
+mapaSetorAdd?.addEventListener("click", adicionarSetorImagem);
+mapaSetorNovo?.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); adicionarSetorImagem(); } });
+
+function tipoMapaSelecionado() {
+    const radio = mapaTipoGroup?.querySelector('input[name="tipo-mapa"]:checked');
+    return radio ? radio.value : "nenhum";
+}
+
+function templateMapaSelecionado() {
+    return mapaTemplateSelect?.value || "arena";
+}
+
+function setoresDoMapaAtual() {
+    const tipo = tipoMapaSelecionado();
+    if (tipo === "ilustrativo") return TEMPLATES_MAPA[templateMapaSelecionado()]?.setores || [];
+    if (tipo === "imagem") return setoresImagem;
+    return [];
+}
+
+// recebe a URL já enviada (null se ainda não subiu)
+function montarDadosMapa(imagemUrl = null) {
+    const tipo = tipoMapaSelecionado();
+    if (tipo === "ilustrativo") {
+        return { tipo_mapa: "ilustrativo", mapa_config: { template: templateMapaSelecionado() } };
+    }
+    if (tipo === "imagem") {
+        return { tipo_mapa: "imagem", mapa_config: { imagem_url: imagemUrl, setores: setoresImagem } };
+    }
+    return { tipo_mapa: "nenhum", mapa_config: null };
+}
+
+function obterTextoMapaResumo() {
+    const tipo = tipoMapaSelecionado();
+    if (tipo === "ilustrativo") {
+        const tpl = TEMPLATES_MAPA[templateMapaSelecionado()];
+        return `Ilustrativo — ${tpl ? tpl.nome : templateMapaSelecionado()}`;
+    }
+    if (tipo === "imagem") {
+        return `Imagem própria (${setoresImagem.length} setor${setoresImagem.length === 1 ? "" : "es"})`;
+    }
+    return "Sem mapa";
+}
+
+// Atualiza a visibilidade do seletor de template e dos selects de
+// setor já existentes em formulários de ingresso abertos
+function atualizarVisibilidadeMapa() {
+    const tipo = tipoMapaSelecionado();
+    if (mapaTemplateGroup) mapaTemplateGroup.style.display = tipo === "ilustrativo" ? "block" : "none";
+    if (mapaImagemGroup) mapaImagemGroup.style.display = tipo === "imagem" ? "block" : "none";
+    atualizarCamposSetorNosFormulariosAbertos();
+}
+
+mapaTipoGroup?.addEventListener("change", atualizarVisibilidadeMapa);
+mapaTemplateSelect?.addEventListener("change", atualizarCamposSetorNosFormulariosAbertos);
+
+// Reaplica as opções de setor em qualquer form de ingresso aberto no momento
+function atualizarCamposSetorNosFormulariosAbertos() {
+    document.querySelectorAll(".ticket-item").forEach(ticketItem => {
+        preencherCampoSetor(ticketItem);
+    });
+}
+
+// Mostra/esconde e preenche o select "Setor no mapa" dentro de um form de ingresso
+function preencherCampoSetor(ticketItem) {
+    const label = ticketItem.querySelector(".label-setor-mapa");
+    const select = ticketItem.querySelector(".setor-mapa-ingresso");
+    if (!label || !select) return;
+
+    const setores = setoresDoMapaAtual();
+    if (tipoMapaSelecionado() === "nenhum" || !setores.length) {
+        label.style.display = "none";
+        select.style.display = "none";
+        select.innerHTML = "";
+        return;
+    }
+
+    const valorAtual = select.value;
+    select.innerHTML = setores.map(s => `<option value="${s.chave}">${s.nome}</option>`).join("");
+    if (setores.some(s => s.chave === valorAtual)) select.value = valorAtual;
+
+    label.style.display = "block";
+    select.style.display = "block";
+}
+
+// ====================================================
 // INGRESSOS
 // ====================================================
-const ticketConfigCard  = document.querySelector(".ticket-config-card");
-const listaContainer    = document.querySelector(".lista-ingressos");
-const listaIngressos    = [];
+const ticketConfigCard = document.querySelector(".ticket-config-card");
+const listaContainer = document.querySelector(".lista-ingressos");
+const listaIngressos = [];
 let ingressoEditandoIndex = null;
 
 document.querySelectorAll(".btn-ticket-action").forEach(btn => {
@@ -480,54 +806,220 @@ document.querySelectorAll(".btn-ticket-action").forEach(btn => {
     });
 });
 
+function injetarEstiloFormIngresso() {
+    if (document.getElementById("tkFormStyle")) return;
+    const s = document.createElement("style");
+    s.id = "tkFormStyle";
+    s.textContent = `
+        .ticket-item .tk-secao { margin-top: 24px; padding-top: 20px; border-top: 1px solid #e9e7f0; }
+        .ticket-item .tk-secao-titulo { margin: 0 0 2px; font-size: 15px; font-weight: 800; color: #14121f; text-transform: none; letter-spacing: normal; }
+        .ticket-item .tk-secao-sub { margin: 0 0 6px; font-size: 12.5px; font-weight: 400; color: #7a7590; text-transform: none; letter-spacing: normal; }
+        .ticket-item .tk-campo { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+        .ticket-item .tk-linha { display: flex; gap: 16px; flex-wrap: wrap; }
+        .ticket-item .tk-linha > .tk-campo { flex: 1; min-width: 200px; }
+        .ticket-item .tk-dica { margin: 0; font-size: 12px; font-weight: 400; color: #7a7590; text-transform: none; letter-spacing: normal; }
+        .ticket-item .tk-aviso { margin: 0; font-size: 12.5px; font-weight: 600; color: #dc2626; text-transform: none; letter-spacing: normal; }
+        .ticket-item .tk-opcoes { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+        .ticket-item .tk-opcao,
+        .ticket-item .tk-cartao {
+            display: flex; align-items: center; gap: 10px; box-sizing: border-box;
+            padding: 12px 14px; border: 1.5px solid #e1ddf0; border-radius: 10px; background: #fff;
+            cursor: pointer; text-transform: none; letter-spacing: normal;
+            font-size: 14px; font-weight: 600; color: #14121f;
+        }
+        .ticket-item .tk-cartao { align-items: flex-start; width: 100%; margin-top: 14px; background: #f7f5fd; border-color: #ddd6fe; }
+        .ticket-item .tk-opcao input[type="radio"],
+        .ticket-item .tk-cartao input[type="checkbox"] {
+            width: 20px; height: 20px; min-width: 20px; margin: 0; padding: 0; flex: none;
+            accent-color: #6c2bd9; cursor: pointer; box-shadow: none;
+        }
+        .ticket-item .tk-cartao input[type="checkbox"] { margin-top: 2px; }
+        .ticket-item .tk-cartao-texto { display: flex; flex-direction: column; gap: 2px; }
+        .ticket-item .tk-cartao-titulo { font-size: 14px; font-weight: 700; color: #14121f; }
+        .ticket-item .tk-opcao:has(input:checked),
+        .ticket-item .tk-cartao:has(input:checked) { border-color: #6c2bd9; background: #f3eefe; }
+        .ticket-item .tk-link { font-size: 12.5px; font-weight: 600; }
+        @media (max-width: 600px) { .ticket-item .tk-linha { flex-direction: column; gap: 0; } }
+    `;
+    document.head.appendChild(s);
+}
+
 function criarFormIngresso(tipo) {
+    injetarEstiloFormIngresso();
+
     const ticketItem = document.createElement("div");
     ticketItem.classList.add("ticket-item");
     ticketItem.dataset.tipo = tipo;
 
-    const camposValor = tipo === "pago" ? `
-        <label>Valor a receber (R$) <span style="color:red">*</span></label>
-        <input type="number" step="0.01" placeholder="0,00" class="valor-ingresso">
-        <label>Valor do participante (R$)</label>
-        <input type="number" step="0.01" value="0.00" class="valor-participante" readonly>
-    ` : "";
+    const pago = tipo === "pago";
 
     ticketItem.innerHTML = `
         <button class="remove-ticket" type="button"><img src="/frontend/imagens/fechar.png" alt="Excluir" style="width:20px;height:20px;"></button>
-        <h4>${tipo === "pago" ? "Criar ingresso pago" : "Criar ingresso gratuito"}</h4>
-        <p>${tipo === "pago" ? "A taxa de serviço é repassada ao comprador." : "Este ingresso é gratuito. Nenhum valor será cobrado."}</p>
-        <label>Título do ingresso <span style="color:red">*</span></label>
-        <input type="text" class="titulo-ingresso" maxlength="45" placeholder="Ingresso único, Meia-Entrada, VIP, etc.">
-        <label>Quantidade <span style="color:red">*</span></label>
-        <input type="number" class="quantidade-ingresso" placeholder="Ex. 100" min="1">
-        ${camposValor}
-        <label><input type="checkbox"> Criar meia-entrada para este ingresso</label>
-        <a href="#">Saiba mais sobre as políticas de meia-entrada</a>
-        <div class="radio-group" style="margin-top:12px;">
-            <label><input type="radio" name="venda-form" value="por-data" checked> Por data</label>
-            <label><input type="radio" name="venda-form" value="por-lote" class="radio-lote"> Por lote <span class="help-lote" title="Permite vender em etapas.">?</span></label>
+        <h4>${pago ? "Criar ingresso pago" : "Criar ingresso gratuito"}</h4>
+        <p>${pago ? "A taxa de serviço é repassada ao comprador." : "Este ingresso é gratuito. Nenhum valor será cobrado."}</p>
+
+        <div class="tk-secao" style="border-top:none;padding-top:0;margin-top:12px;">
+            <h5 class="tk-secao-titulo">Informações do ingresso</h5>
+            <p class="tk-secao-sub">O que o comprador vai ver na página do evento.</p>
+
+            <div class="tk-campo">
+                <label>Título do ingresso <span style="color:red">*</span></label>
+                <input type="text" class="titulo-ingresso" maxlength="45" placeholder="Ingresso único, Meia-Entrada, VIP, etc.">
+            </div>
+
+                        <div class="tk-linha">
+                <div class="tk-campo">
+                    <label>Quantidade <span style="color:red">*</span></label>
+                    <input type="number" class="quantidade-ingresso" placeholder="Ex. 100" min="1">
+                </div>
+                ${pago ? `
+                <div class="tk-campo">
+                    <label>Valor a receber (R$) <span style="color:red">*</span></label>
+                    <input type="number" step="0.01" placeholder="0,00" class="valor-ingresso">
+                </div>` : ""}
+            </div>
+
+            <div class="tk-campo">
+                <label>Tipo de venda</label>
+                <div class="tk-opcoes">
+                    <label class="tk-opcao"><input type="radio" name="tipo-selecao" value="livre" class="tipo-selecao-radio" checked> Livre (por quantidade)</label>
+                    <label class="tk-opcao"><input type="radio" name="tipo-selecao" value="numerado" class="tipo-selecao-radio"> Numerado (assento marcado)</label>
+                </div>
+                <p class="tk-dica">No tipo numerado, o comprador escolhe um assento específico (fileira e número) ao comprar. A quantidade é calculada automaticamente.</p>
+            </div>
+
+            <div class="tk-linha tk-campos-numerado" style="display:none;">
+                <div class="tk-campo">
+                    <label>Fileiras <span style="color:red">*</span></label>
+                    <input type="number" class="fileiras-ingresso" placeholder="Ex. 10" min="1">
+                </div>
+                <div class="tk-campo">
+                    <label>Assentos por fileira <span style="color:red">*</span></label>
+                    <input type="number" class="assentos-por-fileira-ingresso" placeholder="Ex. 20" min="1">
+                </div>
+            </div>
+
+            ${pago ? `
+            <div class="tk-campo">
+                <label>Valor do participante (R$)</label>
+                <input type="number" step="0.01" value="0.00" class="valor-participante" readonly>
+                <p class="tk-dica">Valor a receber + taxa de serviço de 10%.</p>
+            </div>` : ""}
+
+            <div class="tk-campo">
+                <label class="label-setor-mapa" style="display:none;">Setor no mapa</label>
+                <select class="setor-mapa-ingresso" style="display:none;"></select>
+            </div>
         </div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;">
-            <div style="flex:1;min-width:220px;"><label style="display:block;margin-bottom:6px;">Início das Vendas</label><input type="datetime-local" class="data-inicio-venda" style="padding:10px;width:100%;border-radius:8px;border:1px solid #ccc;font-size:14px;box-sizing:border-box;"></div>
-            <div style="flex:1;min-width:220px;"><label style="display:block;margin-bottom:6px;">Término das Vendas</label><input type="datetime-local" class="data-fim-venda" style="padding:10px;width:100%;border-radius:8px;border:1px solid #ccc;font-size:14px;box-sizing:border-box;"></div>
+
+        <div class="tk-secao">
+            <h5 class="tk-secao-titulo">Período de vendas</h5>
+            <p class="tk-secao-sub">Quando este ingresso fica disponível para compra.</p>
+
+            <div class="tk-opcoes">
+                <label class="tk-opcao"><input type="radio" name="venda-form" value="por-data" checked> Por data</label>
+                <label class="tk-opcao"><input type="radio" name="venda-form" value="por-lote" class="radio-lote"> Por lote <span class="help-lote" title="Permite vender em etapas.">?</span></label>
+            </div>
+
+            <div class="tk-linha">
+                <div class="tk-campo">
+                    <label>Início das vendas</label>
+                    <input type="datetime-local" class="data-inicio-venda">
+                </div>
+                <div class="tk-campo">
+                    <label>Término das vendas</label>
+                    <input type="datetime-local" class="data-fim-venda">
+                </div>
+            </div>
         </div>
-        <label>Quem pode comprar</label>
-        <select class="quem-compra"><option>Para todo o público</option><option>Restrito a convidados</option><option>Adicionar manualmente</option></select>
-        <label>Quantidade por compra (opcional)</label>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <input type="number" class="min-compra" placeholder="Mínima" min="1" style="flex:1;min-width:120px;">
-            <input type="number" class="max-compra" placeholder="Máxima" min="1" style="flex:1;min-width:120px;">
+
+        <div class="tk-secao">
+            <h5 class="tk-secao-titulo">Regras de compra</h5>
+            <p class="tk-secao-sub">Quem pode comprar e quantos ingressos cada pessoa pode levar.</p>
+
+            <div class="tk-campo">
+                <label>Quem pode comprar</label>
+                <select class="quem-compra"><option>Para todo o público</option><option>Restrito a convidados</option><option>Adicionar manualmente</option></select>
+            </div>
+
+                        <div class="tk-campo">
+                <label>Quantidade por pessoa (CPF) (opcional)</label>
+                <div class="tk-linha">
+                    <div class="tk-campo" style="margin-top:0;"><input type="number" class="min-compra" placeholder="Mínima" min="1"></div>
+                    <div class="tk-campo" style="margin-top:0;"><input type="number" class="max-compra" placeholder="Máxima" min="1"></div>
+                </div>
+                <p class="tk-dica">Máxima: limite total por CPF, somando todas as compras (a pessoa pode comprar de uma vez ou em várias). Mínima: menor quantidade que a pessoa pode levar em cada compra.</p>
+                <p class="tk-aviso tk-aviso-cpf" style="display:none;">A mínima não pode ser maior que a máxima.</p>
+            </div>
         </div>
-        <label>Descrição do ingresso (opcional)</label>
-        <textarea class="descricao-ingresso" maxlength="100" placeholder="Informações adicionais."></textarea>
-        <div class="ticket-actions"><button class="btnSalvarIngresso btn-primary" type="button">Salvar ingresso</button></div>
+
+        <div class="tk-secao">
+            <h5 class="tk-secao-titulo">Extras (opcional)</h5>
+
+            <label class="tk-cartao">
+                <input type="checkbox">
+                <span class="tk-cartao-texto">
+                    <span class="tk-cartao-titulo">Criar meia-entrada para este ingresso</span>
+                    <a href="#" class="tk-link">Saiba mais sobre as políticas de meia-entrada</a>
+                </span>
+            </label>
+
+            <div class="tk-campo">
+                <label>Descrição do ingresso</label>
+                <textarea class="descricao-ingresso" maxlength="100" placeholder="Informações adicionais."></textarea>
+            </div>
+        </div>
+
+        <div class="ticket-actions" style="margin-top:24px;"><button class="btnSalvarIngresso btn-primary" type="button">Salvar ingresso</button></div>
     `;
 
-    if (tipo === "pago") {
+    if (pago) {
         const vi = ticketItem.querySelector(".valor-ingresso");
         const vp = ticketItem.querySelector(".valor-participante");
         vi.addEventListener("input", () => { const v = parseFloat(vi.value); vp.value = !isNaN(v) ? (v * 1.10).toFixed(2) : "0.00"; });
     }
+
+      // Aviso na hora se a mínima for maior que a máxima
+    const minCompraEl = ticketItem.querySelector(".min-compra");
+    const maxCompraEl = ticketItem.querySelector(".max-compra");
+    const avisoCpf = ticketItem.querySelector(".tk-aviso-cpf");
+    const conferirLimites = () => {
+        const min = parseInt(minCompraEl.value, 10);
+        const max = parseInt(maxCompraEl.value, 10);
+        avisoCpf.style.display = (min && max && min > max) ? "block" : "none";
+    };
+        minCompraEl.addEventListener("input", conferirLimites);
+    maxCompraEl.addEventListener("input", conferirLimites);
+
+    // Alterna entre "Livre" e "Numerado": mostra/esconde campos de
+    // fileiras/assentos e calcula a quantidade total automaticamente
+    const camposNumerado = ticketItem.querySelector(".tk-campos-numerado");
+    const fileirasEl = ticketItem.querySelector(".fileiras-ingresso");
+    const assentosPorFileiraEl = ticketItem.querySelector(".assentos-por-fileira-ingresso");
+    const quantidadeEl = ticketItem.querySelector(".quantidade-ingresso");
+
+    const atualizarQuantidadeNumerada = () => {
+        const f = parseInt(fileirasEl.value, 10) || 0;
+        const a = parseInt(assentosPorFileiraEl.value, 10) || 0;
+        quantidadeEl.value = f && a ? f * a : "";
+    };
+
+    ticketItem.querySelectorAll(".tipo-selecao-radio").forEach(radio => {
+        radio.addEventListener("change", () => {
+            const numerado = ticketItem.querySelector('input[name="tipo-selecao"]:checked').value === "numerado";
+            camposNumerado.style.display = numerado ? "flex" : "none";
+            quantidadeEl.readOnly = numerado;
+            quantidadeEl.placeholder = numerado ? "Calculado automaticamente" : "Ex. 100";
+            if (numerado) {
+                atualizarQuantidadeNumerada();
+            } else {
+                quantidadeEl.value = "";
+            }
+        });
+    });
+
+    fileirasEl.addEventListener("input", atualizarQuantidadeNumerada);
+    assentosPorFileiraEl.addEventListener("input", atualizarQuantidadeNumerada);
 
     ticketItem.querySelector(".radio-lote").addEventListener("change", () => {
         if (listaIngressos.length < 1) { alert("Para 'Por lote', crie mais de um ingresso."); ticketItem.querySelector('input[value="por-data"]').checked = true; }
@@ -540,12 +1032,12 @@ function criarFormIngresso(tipo) {
     });
 
     ticketItem.querySelector(".btnSalvarIngresso").addEventListener("click", () => {
-        const tituloInput    = ticketItem.querySelector(".titulo-ingresso");
+        const tituloInput = ticketItem.querySelector(".titulo-ingresso");
         const quantidadeInput = ticketItem.querySelector(".quantidade-ingresso");
-        const titulo     = tituloInput.value.trim();
+        const titulo = tituloInput.value.trim();
         const quantidade = quantidadeInput.value;
 
-        if (!titulo)                       { marcarErro(tituloInput);     alerta("Informe o título do ingresso.", tituloInput);     return; }
+        if (!titulo) { marcarErro(tituloInput); alerta("Informe o título do ingresso.", tituloInput); return; }
         if (!quantidade || quantidade <= 0) { marcarErro(quantidadeInput); alerta("Informe a quantidade de ingressos.", quantidadeInput); return; }
 
         let valor = 0;
@@ -555,7 +1047,44 @@ function criarFormIngresso(tipo) {
             valor = parseFloat(vi.value).toFixed(2);
         }
 
-        const ingresso = { titulo, valor, tipo, quantidade_total: quantidade };
+        const setorSelect = ticketItem.querySelector(".setor-mapa-ingresso");
+        const setorMapa = (tipoMapaSelecionado() !== "nenhum" && setorSelect?.value) ? setorSelect.value : null;
+
+                const qtdMinima = minCompraEl.value ? parseInt(minCompraEl.value, 10) : null;
+        const qtdMaxima = maxCompraEl.value ? parseInt(maxCompraEl.value, 10) : null;
+
+        if (minCompraEl.value && (!qtdMinima || qtdMinima < 1)) {
+            marcarErro(minCompraEl); alerta("A quantidade mínima precisa ser 1 ou mais.", minCompraEl); return;
+        }
+        if (maxCompraEl.value && (!qtdMaxima || qtdMaxima < 1)) {
+            marcarErro(maxCompraEl); alerta("A quantidade máxima precisa ser 1 ou mais.", maxCompraEl); return;
+        }
+                if (qtdMinima && qtdMaxima && qtdMinima > qtdMaxima) {
+            marcarErro(minCompraEl); alerta("A quantidade mínima não pode ser maior que a máxima.", minCompraEl); return;
+        }
+
+        const tipoSelecao = ticketItem.querySelector('input[name="tipo-selecao"]:checked').value;
+        const numerado = tipoSelecao === "numerado";
+
+        if (numerado) {
+            if (!fileirasEl.value || parseInt(fileirasEl.value, 10) < 1) {
+                marcarErro(fileirasEl); alerta("Informe o número de fileiras.", fileirasEl); return;
+            }
+            if (!assentosPorFileiraEl.value || parseInt(assentosPorFileiraEl.value, 10) < 1) {
+                marcarErro(assentosPorFileiraEl); alerta("Informe os assentos por fileira.", assentosPorFileiraEl); return;
+            }
+        }
+
+        const ingresso = {
+            titulo, valor, tipo,
+            quantidade_total: quantidade,
+            setor_mapa: setorMapa,
+            limite_por_cpf: qtdMaxima,
+            quantidade_min_por_compra: qtdMinima,
+            tipo_selecao: numerado ? "numerado" : "livre",
+            fileiras: numerado ? parseInt(fileirasEl.value, 10) : null,
+            assentos_por_fileira: numerado ? parseInt(assentosPorFileiraEl.value, 10) : null,
+        };
         if (ingressoEditandoIndex !== null) { listaIngressos[ingressoEditandoIndex] = ingresso; ingressoEditandoIndex = null; }
         else listaIngressos.push(ingresso);
 
@@ -564,6 +1093,9 @@ function criarFormIngresso(tipo) {
     });
 
     ticketConfigCard.insertBefore(ticketItem, listaContainer);
+
+    // Aplica a visibilidade/opções do setor logo que o form é criado
+    preencherCampoSetor(ticketItem);
 }
 
 function renderizarIngressos() {
@@ -573,8 +1105,9 @@ function renderizarIngressos() {
     listaIngressos.forEach((ing, i) => {
         const item = document.createElement("div");
         item.classList.add("ingresso-resumo");
+        const setorTexto = ing.setor_mapa ? ` — setor: ${ing.setor_mapa}` : "";
         item.innerHTML = `
-            <div><strong>${ing.titulo}</strong> &nbsp;— ${ing.tipo === "pago" ? "R$ " + ing.valor : "Gratuito"} (${ing.quantidade_total} unid.)</div>
+            <div><strong>${ing.titulo}</strong> &nbsp;— ${ing.tipo === "pago" ? "R$ " + ing.valor : "Gratuito"} (${ing.quantidade_total} unid.)${setorTexto}</div>
             <div>
                 <button class="btn-editar" onclick="editarIngresso(${i})">Editar</button>
                 <button class="btn-excluir" onclick="excluirIngresso(${i})">Excluir</button>
@@ -592,7 +1125,7 @@ function editarIngresso(index) {
     ticketConfigCard.style.display = "flex";
     criarFormIngresso(ing.tipo);
     const form = ticketConfigCard.querySelector(".ticket-item");
-    form.querySelector(".titulo-ingresso").value    = ing.titulo;
+    form.querySelector(".titulo-ingresso").value = ing.titulo;
     form.querySelector(".quantidade-ingresso").value = ing.quantidade_total;
     if (ing.tipo === "pago") {
         const vi = form.querySelector(".valor-ingresso");
@@ -600,6 +1133,13 @@ function editarIngresso(index) {
         vi.value = ing.valor;
         vp.value = (parseFloat(ing.valor) * 1.10).toFixed(2);
     }
-}
+        const setorSelect = form.querySelector(".setor-mapa-ingresso");
+    if (setorSelect && ing.setor_mapa) setorSelect.value = ing.setor_mapa;
 
+            const minCompra = form.querySelector(".min-compra");
+    if (minCompra && ing.quantidade_min_por_compra) minCompra.value = ing.quantidade_min_por_compra;
+
+    const maxCompra = form.querySelector(".max-compra");
+    if (maxCompra && ing.limite_por_cpf) maxCompra.value = ing.limite_por_cpf;
+}
 function excluirIngresso(index) { listaIngressos.splice(index, 1); renderizarIngressos(); }

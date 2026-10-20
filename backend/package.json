@@ -16,6 +16,7 @@
     "express": "^4.22.1",
     "express-rate-limit": "^8.7.0",
     "form-data": "^4.0.6",
+    "google-auth-library": "^11.3.1",
     "googleapis": "^172.0.0",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",

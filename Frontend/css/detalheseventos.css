@@ -1028,3 +1028,1099 @@ body {
 
   .perfil-organizador { flex-wrap: wrap; }
 }
+
+/* ═══════════════════════════════════════
+   MODAL DE SELEÇÃO DE ASSENTO
+   Colar no FINAL de detalheseventos.css
+═══════════════════════════════════════ */
+.modal-assentos {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(8, 6, 16, 0.65);
+}
+.modal-assentos.aberto { display: flex; }
+
+.modal-assentos-caixa {
+  width: 100%;
+  max-width: 760px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 28px 28px 22px;
+  overflow: hidden;
+}
+
+.modal-assentos-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.modal-assentos-topo .rotulo-secao { margin-bottom: 6px; }
+.modal-assentos-titulo {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text-dark);
+}
+.modal-assentos-fechar {
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0 4px;
+}
+.modal-assentos-fechar:hover { color: var(--text-dark); }
+
+.modal-assentos-palco {
+  align-self: center;
+  width: 60%;
+  text-align: center;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 8px 0;
+  border-radius: 6px;
+  margin-bottom: 18px;
+}
+
+.modal-assentos-grade {
+  flex: 1;
+  min-height: 120px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 2px 12px;
+}
+.assentos-fileira {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 auto;
+}
+.assentos-fileira-nome {
+  width: 22px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-light);
+}
+
+.assento {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 6px 6px 3px 3px;
+  border: 1px solid var(--p200);
+  background: var(--p50);
+  color: var(--text-mid);
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.assento:hover:not(:disabled):not(.assento-selecionado) {
+  border-color: var(--p600);
+  background: var(--p100);
+}
+.assento.assento-selecionado {
+  background: var(--p600);
+  border-color: var(--p600);
+  color: #fff;
+}
+.assento.assento-ocupado,
+.assento:disabled {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+.assento:focus-visible { outline: 2px solid var(--p500); outline-offset: 2px; }
+
+.modal-assentos-msg {
+  width: 100%;
+  text-align: center;
+  padding: 28px 0;
+  font-size: 13.5px;
+  color: var(--text-light);
+}
+.modal-assentos-msg.modal-assentos-erro { color: #dc2626; }
+
+.modal-assentos-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+.legenda-assento {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-mid);
+  font-weight: 500;
+}
+.amostra-assento {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px 4px 2px 2px;
+  background: var(--p50);
+  border: 1px solid var(--p200);
+}
+.amostra-assento.amostra-selecionado { background: var(--p600); border-color: var(--p600); }
+.amostra-assento.amostra-ocupado { background: #e5e7eb; border-color: #d1d5db; }
+
+.modal-assentos-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.modal-assentos-escolhido {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+.modal-assentos-confirmar {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 13px 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.modal-assentos-confirmar:hover:not(:disabled) { opacity: 0.85; }
+.modal-assentos-confirmar:disabled {
+  background: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .modal-assentos { padding: 0; align-items: flex-end; }
+  .modal-assentos-caixa {
+    max-width: none;
+    max-height: 92vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 22px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .assento { width: 26px; height: 26px; font-size: 9.5px; }
+  .modal-assentos-rodape { flex-direction: column; align-items: stretch; }
+  .modal-assentos-confirmar { width: 100%; }
+}
+
+/* ═══════════════════════════════════════
+   MODO ESTADIO (template arena): assentos em aneis em volta do palco
+   Colar tambem no final do detalheseventos.css
+═══════════════════════════════════════ */
+.modal-assentos-caixa.modo-estadio .modal-assentos-palco { display: none; }
+
+.assentos-svg {
+  width: 100%;
+  height: auto;
+  max-height: 56vh;
+  display: block;
+}
+
+.assentos-trilha {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.assentos-palco-svg { fill: var(--ink); }
+.assentos-palco-texto {
+  fill: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-anchor: middle;
+}
+
+.assentos-fileira-svg {
+  fill: var(--text-light);
+  font-size: 9px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.assento-svg { cursor: pointer; outline: none; }
+.assento-svg circle {
+  fill: var(--p50);
+  stroke: var(--p200);
+  stroke-width: 1.2;
+  transition: fill 0.15s, stroke 0.15s;
+}
+.assento-svg text {
+  fill: var(--text-mid);
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.assento-svg:hover circle { fill: var(--p100); stroke: var(--p600); }
+.assento-svg:focus-visible circle { stroke: var(--p500); stroke-width: 2.5; }
+
+.assento-svg.assento-selecionado circle { fill: var(--p600); stroke: var(--p600); }
+.assento-svg.assento-selecionado text { fill: #fff; }
+
+.assento-svg.assento-ocupado { cursor: not-allowed; }
+.assento-svg.assento-ocupado circle { fill: #e5e7eb; stroke: #d1d5db; }
+.assento-svg.assento-ocupado text { fill: #9ca3af; }
+
+/* ═══════════════════════════════════════
+   CONTEXTO DO ESTADIO: setor do ingresso + minimapa + nomes dos lados
+   Colar tambem no final do detalheseventos.css
+═══════════════════════════════════════ */
+.modal-assentos-contexto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.modal-assentos-contexto:empty { display: none; }
+
+.assentos-contexto-texto { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.assentos-contexto-setor {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+.assentos-contexto-dica { font-size: 12.5px; color: var(--text-light); }
+
+.assentos-minimapa { width: 130px; flex-shrink: 0; pointer-events: none; }
+.assentos-minimapa-svg { width: 100%; height: auto; display: block; }
+.assentos-minimapa text { display: none; }
+.assentos-minimapa .mapa-setor { cursor: default; stroke-width: 1; }
+.assentos-minimapa .mapa-setor:not(.mapa-setor-selecionado) { opacity: 0.35; }
+.assentos-minimapa .mapa-setor.mapa-setor-selecionado { stroke: var(--ink); stroke-width: 5; }
+
+.assentos-lado-svg {
+  fill: var(--text-light);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+/* ═══════════════════════════════════════
+   MODAL DE SELEÇÃO DE ASSENTO
+   Colar no FINAL de detalheseventos.css
+═══════════════════════════════════════ */
+.modal-assentos {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(8, 6, 16, 0.65);
+}
+.modal-assentos.aberto { display: flex; }
+
+.modal-assentos-caixa {
+  width: 100%;
+  max-width: 760px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 28px 28px 22px;
+  overflow: hidden;
+}
+
+.modal-assentos-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.modal-assentos-topo .rotulo-secao { margin-bottom: 6px; }
+.modal-assentos-titulo {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text-dark);
+}
+.modal-assentos-fechar {
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0 4px;
+}
+.modal-assentos-fechar:hover { color: var(--text-dark); }
+
+.modal-assentos-palco {
+  align-self: center;
+  width: 60%;
+  text-align: center;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 8px 0;
+  border-radius: 6px;
+  margin-bottom: 18px;
+}
+
+.modal-assentos-grade {
+  flex: 1;
+  min-height: 120px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 2px 12px;
+}
+.assentos-fileira {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 auto;
+}
+.assentos-fileira-nome {
+  width: 22px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-light);
+}
+
+.assento {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 6px 6px 3px 3px;
+  border: 1px solid var(--p200);
+  background: var(--p50);
+  color: var(--text-mid);
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.assento:hover:not(:disabled):not(.assento-selecionado) {
+  border-color: var(--p600);
+  background: var(--p100);
+}
+.assento.assento-selecionado {
+  background: var(--p600);
+  border-color: var(--p600);
+  color: #fff;
+}
+.assento.assento-ocupado,
+.assento:disabled {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+.assento:focus-visible { outline: 2px solid var(--p500); outline-offset: 2px; }
+
+.modal-assentos-msg {
+  width: 100%;
+  text-align: center;
+  padding: 28px 0;
+  font-size: 13.5px;
+  color: var(--text-light);
+}
+.modal-assentos-msg.modal-assentos-erro { color: #dc2626; }
+
+.modal-assentos-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+.legenda-assento {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-mid);
+  font-weight: 500;
+}
+.amostra-assento {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px 4px 2px 2px;
+  background: var(--p50);
+  border: 1px solid var(--p200);
+}
+.amostra-assento.amostra-selecionado { background: var(--p600); border-color: var(--p600); }
+.amostra-assento.amostra-ocupado { background: #e5e7eb; border-color: #d1d5db; }
+
+.modal-assentos-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.modal-assentos-escolhido {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+.modal-assentos-confirmar {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 13px 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.modal-assentos-confirmar:hover:not(:disabled) { opacity: 0.85; }
+.modal-assentos-confirmar:disabled {
+  background: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .modal-assentos { padding: 0; align-items: flex-end; }
+  .modal-assentos-caixa {
+    max-width: none;
+    max-height: 92vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 22px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .assento { width: 26px; height: 26px; font-size: 9.5px; }
+  .modal-assentos-rodape { flex-direction: column; align-items: stretch; }
+  .modal-assentos-confirmar { width: 100%; }
+}
+
+/* ═══════════════════════════════════════
+   MODO ESTADIO (template arena): assentos em aneis em volta do palco
+   Colar tambem no final do detalheseventos.css
+═══════════════════════════════════════ */
+.modal-assentos-caixa.modo-estadio .modal-assentos-palco { display: none; }
+
+.assentos-svg {
+  width: 100%;
+  height: auto;
+  max-height: 56vh;
+  display: block;
+}
+
+.assentos-trilha {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.assentos-palco-svg { fill: var(--ink); }
+.assentos-palco-texto {
+  fill: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-anchor: middle;
+}
+
+.assentos-fileira-svg {
+  fill: var(--text-light);
+  font-size: 9px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.assento-svg { cursor: pointer; outline: none; }
+.assento-svg circle {
+  fill: var(--p50);
+  stroke: var(--p200);
+  stroke-width: 1.2;
+  transition: fill 0.15s, stroke 0.15s;
+}
+.assento-svg text {
+  fill: var(--text-mid);
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.assento-svg:hover circle { fill: var(--p100); stroke: var(--p600); }
+.assento-svg:focus-visible circle { stroke: var(--p500); stroke-width: 2.5; }
+
+.assento-svg.assento-selecionado circle { fill: var(--p600); stroke: var(--p600); }
+.assento-svg.assento-selecionado text { fill: #fff; }
+
+.assento-svg.assento-ocupado { cursor: not-allowed; }
+.assento-svg.assento-ocupado circle { fill: #e5e7eb; stroke: #d1d5db; }
+.assento-svg.assento-ocupado text { fill: #9ca3af; }
+
+/* ═══════════════════════════════════════
+   CONTEXTO DO ESTADIO: setor do ingresso + minimapa + nomes dos lados
+   Colar tambem no final do detalheseventos.css
+═══════════════════════════════════════ */
+.modal-assentos-contexto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.modal-assentos-contexto:empty { display: none; }
+
+.assentos-contexto-texto { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.assentos-contexto-setor {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+.assentos-contexto-dica { font-size: 12.5px; color: var(--text-light); }
+
+.assentos-minimapa { width: 130px; flex-shrink: 0; pointer-events: none; }
+.assentos-minimapa-svg { width: 100%; height: auto; display: block; }
+.assentos-minimapa text { display: none; }
+.assentos-minimapa .mapa-setor { cursor: default; stroke-width: 1; }
+.assentos-minimapa .mapa-setor:not(.mapa-setor-selecionado) { opacity: 0.35; }
+.assentos-minimapa .mapa-setor.mapa-setor-selecionado { stroke: var(--ink); stroke-width: 5; }
+
+.assentos-lado-svg {
+  fill: var(--text-light);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* ═══════════════════════════════════════
+   ESTADIO POR BLOCOS (estilo Ticketmaster)
+   Colar no final do detalheseventos.css.
+   Os blocos "MODO ESTADIO" (aneis) e "minimapa/lados" antigos nao sao mais usados.
+═══════════════════════════════════════ */
+.estadio-svg {
+  width: 100%;
+  height: auto;
+  max-height: 58vh;
+  display: block;
+}
+
+.estadio-faixa { fill: #eceaf3; }
+.estadio-faixa-texto {
+  fill: var(--text-light);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.estadio-palco { fill: var(--ink); }
+.estadio-palco-texto {
+  fill: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-anchor: middle;
+}
+
+.estadio-bloco { cursor: pointer; outline: none; }
+.estadio-bloco path {
+  fill: var(--p200);
+  stroke: #fff;
+  stroke-width: 2;
+  transition: fill 0.15s;
+}
+.estadio-bloco text {
+  fill: var(--p900);
+  font-size: 11px;
+  font-weight: 800;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.estadio-bloco:hover path,
+.estadio-bloco:focus-visible path { fill: var(--p400); }
+
+.estadio-bloco.bloco-esgotado { cursor: not-allowed; }
+.estadio-bloco.bloco-esgotado path { fill: #e5e7eb; }
+.estadio-bloco.bloco-esgotado text { fill: #9ca3af; }
+
+.estadio-bloco.bloco-com-selecao path { fill: var(--p600); }
+.estadio-bloco.bloco-com-selecao text { fill: #fff; }
+
+/* Tela do bloco: fileiras e assentos */
+.bloco-detalhe { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.bloco-detalhe-topo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.bloco-voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+.bloco-voltar:hover { background: var(--p50); border-color: var(--p200); }
+.bloco-detalhe-titulo { font-size: 15px; font-weight: 800; color: var(--text-dark); }
+.bloco-detalhe-info { font-size: 12.5px; color: var(--text-light); }
+.bloco-grade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+}
+
+/* ═══════════════════════════════════════
+   MODAL DE SELEÇÃO DE ASSENTO
+   Colar no FINAL de detalheseventos.css
+═══════════════════════════════════════ */
+.modal-assentos {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(8, 6, 16, 0.65);
+}
+.modal-assentos.aberto { display: flex; }
+
+.modal-assentos-caixa {
+  width: 100%;
+  max-width: 760px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 28px 28px 22px;
+  overflow: hidden;
+}
+
+.modal-assentos-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.modal-assentos-topo .rotulo-secao { margin-bottom: 6px; }
+.modal-assentos-titulo {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text-dark);
+}
+.modal-assentos-fechar {
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0 4px;
+}
+.modal-assentos-fechar:hover { color: var(--text-dark); }
+
+.modal-assentos-palco {
+  align-self: center;
+  width: 60%;
+  text-align: center;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 8px 0;
+  border-radius: 6px;
+  margin-bottom: 18px;
+}
+
+.modal-assentos-grade {
+  flex: 1;
+  min-height: 120px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 2px 12px;
+}
+.assentos-fileira {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 auto;
+}
+.assentos-fileira-nome {
+  width: 22px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-light);
+}
+
+.assento {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 6px 6px 3px 3px;
+  border: 1px solid var(--p200);
+  background: var(--p50);
+  color: var(--text-mid);
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.assento:hover:not(:disabled):not(.assento-selecionado) {
+  border-color: var(--p600);
+  background: var(--p100);
+}
+.assento.assento-selecionado {
+  background: var(--p600);
+  border-color: var(--p600);
+  color: #fff;
+}
+.assento.assento-ocupado,
+.assento:disabled {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+.assento:focus-visible { outline: 2px solid var(--p500); outline-offset: 2px; }
+
+.modal-assentos-msg {
+  width: 100%;
+  text-align: center;
+  padding: 28px 0;
+  font-size: 13.5px;
+  color: var(--text-light);
+}
+.modal-assentos-msg.modal-assentos-erro { color: #dc2626; }
+
+.modal-assentos-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+.legenda-assento {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-mid);
+  font-weight: 500;
+}
+.amostra-assento {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px 4px 2px 2px;
+  background: var(--p50);
+  border: 1px solid var(--p200);
+}
+.amostra-assento.amostra-selecionado { background: var(--p600); border-color: var(--p600); }
+.amostra-assento.amostra-ocupado { background: #e5e7eb; border-color: #d1d5db; }
+
+.modal-assentos-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.modal-assentos-escolhido {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+.modal-assentos-confirmar {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 13px 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.modal-assentos-confirmar:hover:not(:disabled) { opacity: 0.85; }
+.modal-assentos-confirmar:disabled {
+  background: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .modal-assentos { padding: 0; align-items: flex-end; }
+  .modal-assentos-caixa {
+    max-width: none;
+    max-height: 92vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 22px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .assento { width: 26px; height: 26px; font-size: 9.5px; }
+  .modal-assentos-rodape { flex-direction: column; align-items: stretch; }
+  .modal-assentos-confirmar { width: 100%; }
+}
+
+/* ═══════════════════════════════════════
+   MODO ESTADIO (template arena): assentos em aneis em volta do palco
+   Colar tambem no final do detalheseventos.css
+═══════════════════════════════════════ */
+.modal-assentos-caixa.modo-estadio .modal-assentos-palco { display: none; }
+
+.assentos-svg {
+  width: 100%;
+  height: auto;
+  max-height: 56vh;
+  display: block;
+}
+
+.assentos-trilha {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.assentos-palco-svg { fill: var(--ink); }
+.assentos-palco-texto {
+  fill: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-anchor: middle;
+}
+
+.assentos-fileira-svg {
+  fill: var(--text-light);
+  font-size: 9px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.assento-svg { cursor: pointer; outline: none; }
+.assento-svg circle {
+  fill: var(--p50);
+  stroke: var(--p200);
+  stroke-width: 1.2;
+  transition: fill 0.15s, stroke 0.15s;
+}
+.assento-svg text {
+  fill: var(--text-mid);
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.assento-svg:hover circle { fill: var(--p100); stroke: var(--p600); }
+.assento-svg:focus-visible circle { stroke: var(--p500); stroke-width: 2.5; }
+
+.assento-svg.assento-selecionado circle { fill: var(--p600); stroke: var(--p600); }
+.assento-svg.assento-selecionado text { fill: #fff; }
+
+.assento-svg.assento-ocupado { cursor: not-allowed; }
+.assento-svg.assento-ocupado circle { fill: #e5e7eb; stroke: #d1d5db; }
+.assento-svg.assento-ocupado text { fill: #9ca3af; }
+
+/* ═══════════════════════════════════════
+   CONTEXTO DO ESTADIO: setor do ingresso + minimapa + nomes dos lados
+   Colar tambem no final do detalheseventos.css
+═══════════════════════════════════════ */
+.modal-assentos-contexto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.modal-assentos-contexto:empty { display: none; }
+
+.assentos-contexto-texto { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.assentos-contexto-setor {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+.assentos-contexto-dica { font-size: 12.5px; color: var(--text-light); }
+
+.assentos-minimapa { width: 130px; flex-shrink: 0; pointer-events: none; }
+.assentos-minimapa-svg { width: 100%; height: auto; display: block; }
+.assentos-minimapa text { display: none; }
+.assentos-minimapa .mapa-setor { cursor: default; stroke-width: 1; }
+.assentos-minimapa .mapa-setor:not(.mapa-setor-selecionado) { opacity: 0.35; }
+.assentos-minimapa .mapa-setor.mapa-setor-selecionado { stroke: var(--ink); stroke-width: 5; }
+
+.assentos-lado-svg {
+  fill: var(--text-light);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* ═══════════════════════════════════════
+   ESTADIO POR BLOCOS (estilo Ticketmaster)
+   Colar no final do detalheseventos.css.
+   Os blocos "MODO ESTADIO" (aneis) e "minimapa/lados" antigos nao sao mais usados.
+═══════════════════════════════════════ */
+.estadio-svg {
+  width: 100%;
+  height: auto;
+  max-height: 58vh;
+  display: block;
+}
+
+.estadio-faixa { fill: #eceaf3; }
+.estadio-faixa-texto {
+  fill: var(--text-light);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.estadio-palco { fill: var(--ink); }
+.estadio-palco-texto {
+  fill: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-anchor: middle;
+}
+
+.estadio-bloco { cursor: pointer; outline: none; }
+.estadio-bloco path {
+  fill: var(--p200);
+  stroke: #fff;
+  stroke-width: 2;
+  transition: fill 0.15s;
+}
+.estadio-bloco text {
+  fill: var(--p900);
+  font-size: 11px;
+  font-weight: 800;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.estadio-bloco:hover path,
+.estadio-bloco:focus-visible path { fill: var(--p400); }
+
+.estadio-bloco.bloco-esgotado { cursor: not-allowed; }
+.estadio-bloco.bloco-esgotado path { fill: #e5e7eb; }
+.estadio-bloco.bloco-esgotado text { fill: #9ca3af; }
+
+.estadio-bloco.bloco-com-selecao path { fill: var(--p600); }
+.estadio-bloco.bloco-com-selecao text { fill: #fff; }
+
+/* Tela do bloco: fileiras e assentos */
+.bloco-detalhe { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.bloco-detalhe-topo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.bloco-voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+.bloco-voltar:hover { background: var(--p50); border-color: var(--p200); }
+.bloco-detalhe-titulo { font-size: 15px; font-weight: 800; color: var(--text-dark); }
+.bloco-detalhe-info { font-size: 12.5px; color: var(--text-light); }
+.bloco-grade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+}
+
+/* Rodape com varios assentos: nao estoura a largura */
+.modal-assentos-escolhido {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -3,6 +3,13 @@ const db = require("../db/db_config");
 
 const MINUTOS_RESERVA = 10;
 
+// Erro com status HTTP, para as rotas responderem 400/404/409 em vez de 500
+function erroHttp(status, mensagem) {
+  const erro = new Error(mensagem);
+  erro.status = status;
+  return erro;
+}
+
 // =====================================================
 // GERAR GRADE DE ASSENTOS
 // Chamada internamente (não é uma rota) sempre que um ingresso é
@@ -39,6 +46,10 @@ async function gerarAssentosParaIngresso(tx, ingressoId, fileiras, assentosPorFi
 //   reservado             -> tem reserva ativa de OUTRA pessoa
 //   reservado_por_voce   -> tem reserva ativa do próprio usuário logado
 //   disponivel           -> livre (inclui reservas já expiradas)
+//
+// Para "reservado_por_voce" funcionar, a rota precisa de um middleware de
+// token OPCIONAL (que preenche req.usuario quando há token, sem bloquear
+// quem não está logado).
 // =====================================================
 exports.listarAssentosPorIngresso = async (req, res) => {
   try {
@@ -91,6 +102,10 @@ exports.listarAssentosPorIngresso = async (req, res) => {
 // tempo, a segunda requisição espera a primeira terminar (commit
 // ou rollback) antes de rodar sua própria checagem — não existe
 // brecha onde as duas passam pela checagem "está livre?" juntas.
+//
+// Também aplica, no servidor, os limites configurados no ingresso:
+//   - quantidade_max_por_compra: quantos assentos a pessoa pode segurar ao mesmo tempo
+//   - limite_por_cpf: total por CPF, somando o que já foi retirado + o que está reservado
 // =====================================================
 exports.reservarAssento = async (req, res) => {
   const { id } = req.params;
@@ -100,19 +115,13 @@ exports.reservarAssento = async (req, res) => {
   try {
     const resultado = await db.transacao(async (tx) => {
       const linhas = await tx.query(
-        "SELECT id, status FROM assentos WHERE id = ? FOR UPDATE",
+        "SELECT id, status, ingresso_id FROM assentos WHERE id = ? FOR UPDATE",
         [id]
       );
-      if (!linhas.length) {
-        const erro = new Error("Assento não encontrado.");
-        erro.status = 404;
-        throw erro;
-      }
+      if (!linhas.length) throw erroHttp(404, "Assento não encontrado.");
 
       if (linhas[0].status === "vendido") {
-        const erro = new Error("Este assento já foi vendido.");
-        erro.status = 409;
-        throw erro;
+        throw erroHttp(409, "Este assento já foi vendido.");
       }
 
       const reservasAtivas = await tx.query(
@@ -124,9 +133,57 @@ exports.reservarAssento = async (req, res) => {
         (r) => String(r.usuario_id) !== String(usuarioId)
       );
       if (reservaDeOutraPessoa) {
-        const erro = new Error("Este assento já está sendo reservado por outra pessoa.");
-        erro.status = 409;
-        throw erro;
+        throw erroHttp(409, "Este assento já está sendo reservado por outra pessoa.");
+      }
+
+      // ── Limites do ingresso ──────────────────────────
+      const ingressoId = linhas[0].ingresso_id;
+      const ingRows = await tx.query("SELECT * FROM ingressos WHERE id = ?", [ingressoId]);
+      const ingresso = ingRows[0];
+
+      const maxPorCompra = Number(ingresso?.quantidade_max_por_compra) || 0;
+      const limiteCpf = Number(ingresso?.limite_por_cpf) || (ingresso?.limite_um_por_cpf ? 1 : 0);
+
+      if (maxPorCompra > 0 || limiteCpf > 0) {
+        // Assentos deste ingresso que a pessoa já está segurando (fora este)
+        const seguradosRows = await tx.query(
+          `SELECT COUNT(*) AS total
+           FROM reservas_assento r
+           JOIN assentos a ON a.id = r.assento_id
+           WHERE a.ingresso_id = ? AND r.usuario_id = ?
+             AND r.expira_em > NOW() AND r.assento_id <> ?`,
+          [ingressoId, usuarioId, id]
+        );
+        const segurados = Number(seguradosRows[0]?.total) || 0;
+
+        if (maxPorCompra > 0 && segurados + 1 > maxPorCompra) {
+          throw erroHttp(409, `Você pode reservar no máximo ${maxPorCompra} assento(s) de "${ingresso.titulo}" por compra.`);
+        }
+
+        if (limiteCpf > 0) {
+          const usuarioRows = await tx.query("SELECT cpf FROM usuarios WHERE id = ?", [usuarioId]);
+          const cpf = usuarioRows[0]?.cpf;
+          if (!cpf || !String(cpf).replace(/\D/g, "")) {
+            throw erroHttp(400, "Para retirar este ingresso, cadastre seu CPF no seu perfil.");
+          }
+
+          const retiradosRows = await tx.query(
+            `SELECT COALESCE(SUM(v.quantidade), 0) AS total
+             FROM vendas v
+             JOIN usuarios u ON u.id = v.usuario_id
+             WHERE v.ingresso_id = ? AND u.cpf = ?
+               AND v.status IN ('aprovado', 'cortesia')`,
+            [ingressoId, cpf]
+          );
+          const jaRetirados = Number(retiradosRows[0]?.total) || 0;
+
+          if (jaRetirados + segurados + 1 > limiteCpf) {
+            const restam = Math.max(0, limiteCpf - jaRetirados);
+            throw erroHttp(409, restam === 0
+              ? `Este CPF já retirou o limite de ${limiteCpf} ingresso(s) de "${ingresso.titulo}".`
+              : `Cada CPF pode retirar até ${limiteCpf} ingresso(s) de "${ingresso.titulo}". Você ainda pode reservar ${restam}.`);
+          }
+        }
       }
 
       // Remove uma reserva anterior do próprio usuário para esse assento
@@ -183,14 +240,54 @@ exports.liberarReserva = async (req, res) => {
 
 // =====================================================
 // CONFIRMAR ASSENTO COMO VENDIDO (helper interno)
-// Não é uma rota própria — vai ser chamada de dentro do fluxo de
-// finalização de compra (ingressosController), quando esse fluxo
-// for atualizado para suportar ingressos numerados. Recebe "tx"
-// para rodar na mesma transação que grava a venda.
+// Não é uma rota própria — roda dentro da transação da compra
+// (ingressosController.comprarIngresso). Guarda o pedido que ficou
+// com o assento (coluna assentos.pedido_id — ver migração em
+// migracao_assentos_pedido.sql).
 // =====================================================
-async function confirmarAssentoVendido(tx, assentoId) {
-  await tx.query("UPDATE assentos SET status = 'vendido' WHERE id = ?", [assentoId]);
+async function confirmarAssentoVendido(tx, assentoId, pedidoId = null) {
+  await tx.query(
+    "UPDATE assentos SET status = 'vendido', pedido_id = ? WHERE id = ?",
+    [pedidoId, assentoId]
+  );
   await tx.query("DELETE FROM reservas_assento WHERE assento_id = ?", [assentoId]);
+}
+
+// =====================================================
+// VENDER ASSENTOS RESERVADOS (helper interno, dentro da transação da compra)
+// Para cada assento: trava a linha, confere que é do ingresso comprado,
+// que não foi vendido e que a reserva é DE QUEM ESTÁ COMPRANDO e ainda
+// está valida. Só então marca como vendido. Qualquer falha lança erro com
+// status HTTP e a transação inteira (pedido + vendas) é revertida.
+// =====================================================
+async function venderAssentosReservados(tx, { ingressoId, assentoIds, usuarioId, pedidoId }) {
+  const ordenados = [...assentoIds].map(Number).sort((a, b) => a - b); // ordem fixa evita deadlock
+
+  for (const assentoId of ordenados) {
+    const linhas = await tx.query(
+      "SELECT id, status, ingresso_id FROM assentos WHERE id = ? FOR UPDATE",
+      [assentoId]
+    );
+    const assento = linhas[0];
+
+    if (!assento || String(assento.ingresso_id) !== String(ingressoId)) {
+      throw erroHttp(400, "Um dos assentos escolhidos não pertence a este ingresso.");
+    }
+    if (assento.status === "vendido") {
+      throw erroHttp(409, "Um dos assentos escolhidos já foi vendido. Escolha outro.");
+    }
+
+    const reserva = await tx.query(
+      `SELECT 1 AS ok FROM reservas_assento
+       WHERE assento_id = ? AND usuario_id = ? AND expira_em > NOW()`,
+      [assentoId, usuarioId]
+    );
+    if (!reserva.length) {
+      throw erroHttp(409, "A reserva de um dos assentos expirou. Volte e escolha novamente.");
+    }
+
+    await confirmarAssentoVendido(tx, assentoId, pedidoId);
+  }
 }
 
 // =====================================================
@@ -210,3 +307,4 @@ exports.limparReservasExpiradas = async () => {
 
 exports.gerarAssentosParaIngresso = gerarAssentosParaIngresso;
 exports.confirmarAssentoVendido = confirmarAssentoVendido;
+exports.venderAssentosReservados = venderAssentosReservados;

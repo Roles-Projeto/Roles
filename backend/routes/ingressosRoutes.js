@@ -1,6 +1,8 @@
 "use strict";
 
 const express = require("express");
+// Use o MESMO require de verificarToken que o routes/eventos.js já usa
+const { verificarToken } = require("../middleware/auth");
 const {
     listarEventos,
     detalheEvento,
@@ -11,10 +13,10 @@ const {
     reenviarEmailIngresso,
     vendasDoDono,
     totalIngressosPorUsuario,
-    listarTiposIngresso,   // ← novo
-    criarTipoIngresso,     // ← novo
-    atualizarTipoIngresso, // ← novo
-    excluirTipoIngresso,   // ← novo
+    listarTiposIngresso,
+    criarTipoIngresso,
+    atualizarTipoIngresso,
+    excluirTipoIngresso,
 } = require("../controllers/ingressosController");
 
 const { downloadIngressoPDF } = require("../controllers/ticketPdfController");
@@ -31,10 +33,11 @@ ingressosRouter.get("/usuario/:usuario_id", meusIngressos);
 ingressosRouter.get("/totais/:usuario_id",  totalIngressosPorUsuario);
 
 // -- Tipos de ingresso (modal "Gerenciar ingressos" do dashboard) --
-ingressosRouter.get("/tipos/:evento_id",    listarTiposIngresso);  // ← novo
-ingressosRouter.post("/tipos",              criarTipoIngresso);    // ← novo
-ingressosRouter.put("/tipos/:id",           atualizarTipoIngresso);// ← novo
-ingressosRouter.delete("/tipos/:id",        excluirTipoIngresso);  // ← novo
+// Criar/editar/excluir exigem login e checam se o evento é do usuário (no controller).
+ingressosRouter.get("/tipos/:evento_id",    listarTiposIngresso);
+ingressosRouter.post("/tipos",              verificarToken, criarTipoIngresso);
+ingressosRouter.put("/tipos/:id",           verificarToken, atualizarTipoIngresso);
+ingressosRouter.delete("/tipos/:id",        verificarToken, excluirTipoIngresso);
 
 ingressosRouter.get("/validar/:codigo_qr",  validarQRCode);
 ingressosRouter.get("/:id/download",        downloadIngressoPDF);  // ← antes de /:id

@@ -5,7 +5,7 @@ const router  = express.Router();
 
 // ⚠️ Caminho confirmado: middlewares/auth.js (plural "middlewares"),
 //    exporta a função diretamente (module.exports = verificarToken;)
-const verificarToken = require("../middleware/auth");
+const { verificarToken } = require("../middleware/auth");
 
 const seguidoresController = require("../controllers/seguidoresController");
 

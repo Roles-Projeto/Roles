@@ -889,3 +889,45 @@ body {
 }
 .export-menu-item:hover { background:var(--card-alt); color:var(--p); }
 .edit-box--wide { width: 820px; }
+
+/* ════ MODAL — TIPOS DE INGRESSO: campos novos (cole no FIM do dashboard.css) ════ */
+
+.tf select {
+  width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:7px;
+  font-size:13px; font-family:var(--font-body); background:var(--bg); color:var(--text);
+  transition:var(--tr-fast); cursor:pointer;
+  appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239689B8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center; padding-right:30px;
+}
+.tf select:focus { border-color:var(--p); }
+.tf input:disabled,
+.tf input[readonly] { background:var(--card-alt); color:var(--text-3); cursor:not-allowed; }
+
+.tipo-row-fields--2 { grid-template-columns:1fr 1fr; }
+.tipo-row-fields--3 { grid-template-columns:1fr 1fr 1fr; }
+
+.tipo-dica { font-size:11.5px; color:var(--text-4); margin:0; line-height:1.5; }
+
+.tipo-badge-numerado {
+  display:inline-block;
+  background:rgba(79,214,199,.12); color:var(--teal);
+  border:1px solid #1F5A54;
+  font-size:11px; font-weight:700; padding:3px 10px; border-radius:6px;
+  text-transform:uppercase; letter-spacing:.03em;
+}
+
+.tipo-radios { display:flex; gap:10px; flex-wrap:wrap; margin-top:4px; }
+.tipo-radio {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px; border:1px solid var(--border); border-radius:8px;
+  background:var(--bg); font-size:12.5px; color:var(--text-2); cursor:pointer;
+  text-transform:none; letter-spacing:normal; font-weight:500;
+}
+.tipo-radio input { accent-color:var(--p); width:auto; margin:0; }
+.tipo-radio:has(input:checked) { border-color:var(--p); background:var(--p-bg); color:var(--text); }
+
+@media (max-width:640px) {
+  .tipo-row-fields--2,
+  .tipo-row-fields--3 { grid-template-columns:1fr; }
+}

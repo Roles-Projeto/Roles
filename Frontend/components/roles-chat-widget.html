@@ -149,8 +149,8 @@
 </style>
 
 <script>
-  // Ajuste esta URL para o endereço real do seu backend
-  const ENDPOINT = "http://localhost:3000/api/chat";
+  // Usa o mesmo API_BASE definido em /frontend/js/config.js (já carregado antes deste widget)
+  const ENDPOINT = `${API_BASE}/api/chat`;
 
   const bubble = document.getElementById("roles-chat-bubble");
   const chatWindow = document.getElementById("roles-chat-window");

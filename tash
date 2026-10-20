@@ -1,0 +1,172 @@
+[1mdiff --git a/Frontend/eventos/eventos.html b/Frontend/eventos/eventos.html[m
+[1mindex 2ef5fcb..3ddb0ac 100644[m
+[1m--- a/Frontend/eventos/eventos.html[m
+[1m+++ b/Frontend/eventos/eventos.html[m
+[36m@@ -72,26 +72,26 @@[m
+         </div>[m
+ [m
+         <section class="estatisticas">[m
+[31m-            <div class="item">[m
+[31m-                <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>[m
+[31m-                <p>6+<br><span>Eventos cadastrados</span></p>[m
+[31m-            </div>[m
+[31m-            <div class="item">[m
+[31m-                <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>[m
+[31m-                <p>24/7<br><span>Atualizações constantes</span></p>[m
+[31m-            </div>[m
+[31m-            <div class="item">[m
+[31m-                <i class="fa-solid fa-unlock-keyhole" aria-hidden="true"></i>[m
+[31m-                <p>Grátis<br><span>Acesso às informações</span></p>[m
+[31m-            </div>[m
+[31m-        </section>[m
+[32m+[m[32m    <div class="item">[m
+[32m+[m[32m        <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>[m
+[32m+[m[32m        <p><strong id="stat-eventos">--</strong><br><span>Eventos cadastrados</span></p>[m
+[32m+[m[32m    </div>[m
+[32m+[m[32m    <div class="item">[m
+[32m+[m[32m        <i class="fa-solid fa-calendar-week" aria-hidden="true"></i>[m
+[32m+[m[32m        <p><strong id="stat-semana">--</strong><br><span>Acontecem esta semana</span></p>[m
+[32m+[m[32m    </div>[m
+[32m+[m[32m    <div class="item">[m
+[32m+[m[32m        <i class="fa-solid fa-gift" aria-hidden="true"></i>[m
+[32m+[m[32m        <p><strong id="stat-gratuitos">--</strong><br><span>Eventos gratuitos</span></p>[m
+[32m+[m[32m    </div>[m
+[32m+[m[32m</section>[m
+ [m
+     </main>[m
+ [m
+     <script src="/frontend/js/config.js"></script>[m
+     <script src="/frontend/js/footer.js" defer></script>[m
+     <script src="/frontend/js/loadHeader.js"></script>[m
+[31m-    <script src="/Frontend/js/Evento.js"></script>[m
+[32m+[m[32m    <script src="/frontend/js/evento.js"></script>[m
+ [m
+ </body>[m
+ </html>[m
+\ No newline at end of file[m
+[1mdiff --git a/Frontend/js/Evento.js b/Frontend/js/Evento.js[m
+[1mindex 104c981..a4bda11 100644[m
+[1m--- a/Frontend/js/Evento.js[m
+[1m+++ b/Frontend/js/Evento.js[m
+[36m@@ -174,16 +174,51 @@[m [mdocument.addEventListener("DOMContentLoaded", async () => {[m
+       aplicarFiltros();[m
+     });[m
+   }[m
+[32m+[m[32m// -------------------------------------------------------[m
+[32m+[m[32m// ESTATÍSTICAS DA BARRA[m
+[32m+[m[32m// -------------------------------------------------------[m
+[32m+[m[32mfunction atualizarEstatisticaEventos(eventos) {[m
+[32m+[m[32m  const elTotal     = document.getElementById("stat-eventos");[m
+[32m+[m[32m  const elSemana    = document.getElementById("stat-semana");[m
+[32m+[m[32m  const elGratuitos = document.getElementById("stat-gratuitos");[m
+[32m+[m
+[32m+[m[32m  // Total[m
+[32m+[m[32m  if (elTotal) elTotal.textContent = eventos.length;[m
+[32m+[m
+[32m+[m[32m  // Próximos 7 dias (mesma regra do filtro "Esta semana")[m
+[32m+[m[32m  if (elSemana) {[m
+[32m+[m[32m    const hoje      = new Date();[m
+[32m+[m[32m    hoje.setHours(0, 0, 0, 0);[m
+[32m+[m[32m    const fimSemana = new Date(hoje);[m
+[32m+[m[32m    fimSemana.setDate(fimSemana.getDate() + 7);[m
+[32m+[m
+[32m+[m[32m    const daSemana = eventos.filter(e => {[m
+[32m+[m[32m      if (!e.data_inicio) return false;[m
+[32m+[m[32m      const d = new Date(e.data_inicio);[m
+[32m+[m[32m      return d >= hoje && d <= fimSemana;[m
+[32m+[m[32m    });[m
+[32m+[m[32m    elSemana.textContent = daSemana.length;[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  // Gratuitos (mesma regra do card: sem preço mínimo ou zero)[m
+[32m+[m[32m  if (elGratuitos) {[m
+[32m+[m[32m    const gratuitos = eventos.filter([m
+[32m+[m[32m      e => !e.preco_minimo || parseFloat(e.preco_minimo) === 0[m
+[32m+[m[32m    );[m
+[32m+[m[32m    elGratuitos.textContent = gratuitos.length;[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+ [m
+   // -------------------------------------------------------[m
+   // CARREGAR EVENTOS[m
+   // -------------------------------------------------------[m
+   async function carregarEventos() {[m
+[31m-    try {[m
+[31m-      const res  = await fetch(API_URL);[m
+[31m-      const data = await res.json();[m
+[31m-      document.querySelectorAll(".evento-card").forEach(c => c.remove());[m
+[31m-      if (data.length === 0) {[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const res  = await fetch(API_URL);[m
+[32m+[m[32m    const data = await res.json();[m
+[32m+[m[32m    atualizarEstatisticaEventos(data);[m[41m [m
+[32m+[m[32m    document.querySelectorAll(".evento-card").forEach(c => c.remove());[m
+[32m+[m[32m    if (data.length === 0) {[m
+         container.insertAdjacentHTML("afterbegin",[m
+           `<p style="grid-column:1/-1;text-align:center;padding:40px;color:#888;">Nenhum evento encontrado.</p>`);[m
+         atualizarContador();[m
+[1mdiff --git a/Frontend/js/Locais.js b/Frontend/js/Locais.js[m
+[1mindex a50e0f0..fbff21c 100644[m
+[1m--- a/Frontend/js/Locais.js[m
+[1m+++ b/Frontend/js/Locais.js[m
+[36m@@ -153,6 +153,39 @@[m
+         return card;[m
+     }[m
+ [m
+[32m+[m[32m// =========================================================[m
+[32m+[m[32m// ESTATÍSTICAS[m
+[32m+[m[32m// =========================================================[m
+[32m+[m[32mfunction atualizarEstatisticas(estabelecimentos) {[m
+[32m+[m[32m    const elLocais     = document.getElementById('stat-locais');[m
+[32m+[m[32m    const elCategorias = document.getElementById('stat-categorias');[m
+[32m+[m[32m    const elAvaliacao  = document.getElementById('stat-avaliacao');[m
+[32m+[m
+[32m+[m[32m    // Total de locais[m
+[32m+[m[32m    if (elLocais) elLocais.textContent = estabelecimentos.length;[m
+[32m+[m
+[32m+[m[32m    // Categorias distintas (mesmo campo usado nos filtros da página)[m
+[32m+[m[32m    if (elCategorias) {[m
+[32m+[m[32m        const categorias = new Set([m
+[32m+[m[32m            estabelecimentos[m
+[32m+[m[32m                .map(e => norm(e.categoria_card))[m
+[32m+[m[32m                .filter(Boolean)[m
+[32m+[m[32m        );[m
+[32m+[m[32m        elCategorias.textContent = categorias.size;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // Média das notas (ignora locais sem nota)[m
+[32m+[m[32m    if (elAvaliacao) {[m
+[32m+[m[32m        const notas = estabelecimentos[m
+[32m+[m[32m            .map(e => parseFloat(e.nota))[m
+[32m+[m[32m            .filter(n => n > 0);[m
+[32m+[m
+[32m+[m[32m        elAvaliacao.textContent = notas.length > 0[m
+[32m+[m[32m            ? (notas.reduce((soma, n) => soma + n, 0) / notas.length).toFixed(1)[m
+[32m+[m[32m            : '—';[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[32m+[m
+     // =========================================================[m
+     // CARREGAR CARDS[m
+     // =========================================================[m
+[36m@@ -162,7 +195,7 @@[m
+ [m
+         container.style.visibility = 'hidden';[m
+         const estabelecimentos = await fetchEstabelecimentos();[m
+[31m-[m
+[32m+[m[32m        atualizarEstatisticas(estabelecimentos);[m[41m [m
+         container.querySelectorAll('.card').forEach(c => c.remove());[m
+ [m
+         if (estabelecimentos.length > 0) {[m
+[1mdiff --git a/Frontend/locais/locais.html b/Frontend/locais/locais.html[m
+[1mindex 2c0cf8c..6353e38 100644[m
+[1m--- a/Frontend/locais/locais.html[m
+[1m+++ b/Frontend/locais/locais.html[m
+[36m@@ -237,20 +237,20 @@[m
+             </section>[m
+ [m
+             <!-- Estatísticas -->[m
+[31m-            <section class="estatisticas">[m
+[31m-                <div class="item">[m
+[31m-                    <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>[m
+[31m-                    <p>10+<br><span>Locais cadastrados<

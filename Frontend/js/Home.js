@@ -1,10 +1,130 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     /* ==================================================
+    ================= AJUDANTES DE CIDADE ===============
+    ✅ NOVO: lê a cidade escolhida no seletor do header
+       (localStorage) e filtra os eventos por ela
+    ================================================== */
+
+    const normTexto = (s) => (s || '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+    function escapeHtml(s) {
+        return String(s ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // Compara cidades de forma tolerante:
+    // "Goiânia - GO", "Goiânia/GO", "Goiânia, GO" e "Goiânia (GO)" viram "goiania"
+    function normCidade(s) {
+        return normTexto(s)
+            .replace(/\s*[-–—\/,]\s*[a-z]{2}$/, '')
+            .replace(/\s*\([a-z]{2}\)$/, '')
+            .trim();
+    }
+
+    // Retorna '' quando não há cidade escolhida (mostra todos os eventos)
+    function getCidadeSelecionada() {
+        const c = localStorage.getItem('cidade');
+        if (!c) return '';
+        const n = normTexto(c);
+        // Nomes "genéricos" que o seletor usa quando não achou a cidade de verdade
+        if (['minha localizacao', 'localizacao atual', 'localizacao', 'todas as cidades'].includes(n)) return '';
+        return c;
+    }
+
+    function filtrarPorCidade(eventos, cidade) {
+        if (!cidade) return eventos;
+        const alvo = normCidade(cidade);
+        return eventos.filter(ev => normCidade(ev.cidade) === alvo);
+    }
+
+    // Troca a cidade pela página (usado pelo botão "Voltar para Goiânia")
+    function trocarCidade(nome, uf) {
+        localStorage.setItem('cidade', nome);
+        if (uf) localStorage.setItem('cidadeUF', uf);
+        else localStorage.removeItem('cidadeUF');
+
+        // Atualiza o texto dos botões de cidade no header
+        document.querySelectorAll('.city-btn, #cityBtnMobile').forEach(btn => {
+            btn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${escapeHtml(nome)}`;
+        });
+
+        // Avisa a página (o seletor do header dispara esse mesmo evento)
+        window.dispatchEvent(new CustomEvent('roles:cidade', { detail: { nome, uf: uf || '' } }));
+    }
+
+    // Mensagem quando não há eventos, com botão para sair da tela vazia
+    function htmlSemEventos(cidade, corTexto, padding) {
+        if (!cidade) {
+            return `<p style="color:${corTexto};text-align:center;padding:${padding}">Nenhum evento encontrado.</p>`;
+        }
+
+        const jaEstaEmGoiania = normCidade(cidade) === 'goiania';
+        const estiloBotao = `margin:14px 6px 0;padding:10px 22px;border:none;border-radius:50px;
+                           background:#6C1DCE;color:#fff;font-weight:600;font-size:14px;
+                           cursor:pointer;font-family:inherit;`;
+
+        const botaoGoiania = jaEstaEmGoiania ? '' : `
+            <button type="button" class="btn-voltar-cidade" style="${estiloBotao}">
+                <i class="fas fa-location-arrow"></i> Voltar para Goiânia
+            </button>`;
+
+        const botaoTodas = `
+            <button type="button" class="btn-todas-cidades" style="${estiloBotao}">
+                <i class="fas fa-earth-americas"></i> Ver todas as cidades
+            </button>`;
+
+        return `
+            <div style="color:${corTexto};text-align:center;padding:${padding}">
+                <p style="margin:0">Nenhum evento em <strong>${escapeHtml(cidade)}</strong> por enquanto.</p>
+                ${botaoGoiania}${botaoTodas}
+            </div>`;
+    }
+
+    // Botões da tela vazia (delegação: funciona mesmo com o conteúdo redesenhado)
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-voltar-cidade')) {
+            e.preventDefault();
+            trocarCidade('Goiânia', 'GO');
+        }
+        if (e.target.closest('.btn-todas-cidades')) {
+            e.preventDefault();
+            trocarCidade('Todas as cidades', '');
+        }
+    });
+
+    // Busca os eventos uma única vez e reaproveita (carrossel + próximos eventos)
+    let eventosPromise = null;
+
+    function carregarEventos() {
+        if (!eventosPromise) {
+            eventosPromise = fetch(`${window.API_BASE}/eventos`)
+                .then(res => res.json())
+                .then(dados => Array.isArray(dados) ? dados : [])
+                .catch(err => { eventosPromise = null; throw err; });
+        }
+        return eventosPromise;
+    }
+
+    /* ==================================================
     ================= CARROSSEL SYMPLA-STYLE ============
     ================================================== */
 
+    // ✅ NOVO: o carrossel pode ser redesenhado quando a cidade muda,
+    // então guardamos aqui como "desligar" o que foi ligado na vez anterior
+    let limparCarrossel = null;
+    let idCarrossel = 0;
+
     async function iniciarCarrossel() {
+
+        // Desliga timers e listeners da versão anterior do carrossel
+        if (limparCarrossel) { limparCarrossel(); limparCarrossel = null; }
+        const meuId = ++idCarrossel;
 
         const track   = document.querySelector(".carousel-track");
         const btnNext = document.querySelector(".carousel-btn.next");
@@ -12,16 +132,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!track) return;
 
+        function mostrarBotoes(visivel) {
+            if (btnNext) btnNext.style.display = visivel ? '' : 'none';
+            if (btnPrev) btnPrev.style.display = visivel ? '' : 'none';
+        }
+
+        const cidade = getCidadeSelecionada();
+
         try {
-            const res          = await fetch(`${window.API_BASE}/eventos`);
-            const todosEventos = await res.json();
-            const eventos      = todosEventos.slice(0, 10);
+            const todosEventos = await carregarEventos();
+
+            // Se a cidade mudou de novo enquanto carregava, esta execução é descartada
+            if (meuId !== idCarrossel) return;
+
+            const eventos = filtrarPorCidade(todosEventos, cidade).slice(0, 10);
 
             if (!eventos || eventos.length === 0) {
-                track.innerHTML = '<p style="color:#fff;text-align:center;padding:20px">Nenhum evento encontrado.</p>';
+                track.innerHTML = htmlSemEventos(cidade, '#fff', '20px');
+                mostrarBotoes(false);
                 return;
             }
 
+            mostrarBotoes(true);
             track.innerHTML = "";
 
             const cliques       = JSON.parse(localStorage.getItem('eventosCliques') || '{}');
@@ -54,10 +186,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 card.innerHTML = `
                     ${badgeEmAlta}
                     <img src="${imagem}"
-                         alt="${evento.nome}"
+                         alt="${escapeHtml(evento.nome)}"
                          onerror="this.onerror=null; this.src='/frontend/imagens/1º imagem cad.png'">
                     <div class="carousel-info">
-                        <h3>${evento.nome}</h3>
+                        <h3>${escapeHtml(evento.nome)}</h3>
                         <p>${data}${hora ? ' • ' + hora : ''}</p>
                     </div>
                 `;
@@ -127,8 +259,27 @@ document.addEventListener("DOMContentLoaded", () => {
             aplicarCarrossel();
         }
 
-        if (btnNext) btnNext.addEventListener("click", () => { proximoCard(); resetAutoplay(); });
-        if (btnPrev) btnPrev.addEventListener("click", () => { cardAnterior(); resetAutoplay(); });
+        let autoplayTimer = setInterval(proximoCard, 4000);
+
+        function resetAutoplay() {
+            clearInterval(autoplayTimer);
+            autoplayTimer = setInterval(proximoCard, 4000);
+        }
+
+        // Handlers com nome, para poder remover quando o carrossel for redesenhado
+        const aoClicarNext = () => { proximoCard(); resetAutoplay(); };
+        const aoClicarPrev = () => { cardAnterior(); resetAutoplay(); };
+        const aoEntrarTrack = () => clearInterval(autoplayTimer);
+        const aoSairTrack = () => {
+            clearInterval(autoplayTimer);
+            autoplayTimer = setInterval(proximoCard, 4000);
+        };
+
+        if (btnNext) btnNext.addEventListener("click", aoClicarNext);
+        if (btnPrev) btnPrev.addEventListener("click", aoClicarPrev);
+        track.addEventListener("mouseenter", aoEntrarTrack);
+        track.addEventListener("mouseleave", aoSairTrack);
+        window.addEventListener("resize", aplicarCarrossel);
 
         cards.forEach((card, i) => {
             card.addEventListener("click", (e) => {
@@ -144,18 +295,17 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        let autoplayTimer = setInterval(proximoCard, 4000);
-
-        function resetAutoplay() {
-            clearInterval(autoplayTimer);
-            autoplayTimer = setInterval(proximoCard, 4000);
-        }
-
-        track.addEventListener("mouseenter", () => clearInterval(autoplayTimer));
-        track.addEventListener("mouseleave", () => { autoplayTimer = setInterval(proximoCard, 4000); });
-
         aplicarCarrossel();
-        window.addEventListener("resize", aplicarCarrossel);
+
+        // Quando a cidade mudar, isso desliga tudo o que foi ligado acima
+        limparCarrossel = () => {
+            clearInterval(autoplayTimer);
+            if (btnNext) btnNext.removeEventListener("click", aoClicarNext);
+            if (btnPrev) btnPrev.removeEventListener("click", aoClicarPrev);
+            track.removeEventListener("mouseenter", aoEntrarTrack);
+            track.removeEventListener("mouseleave", aoSairTrack);
+            window.removeEventListener("resize", aplicarCarrossel);
+        };
     }
 
     function registrarClique(eventoId) {
@@ -175,12 +325,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const grid = document.getElementById("eventosGrid");
         if (!grid) return;
 
+        const cidade = getCidadeSelecionada();
+
         try {
-            const res     = await fetch(`${window.API_BASE}/eventos`);
-            const eventos = await res.json();
+            const todosEventos = await carregarEventos();
+            const eventos      = filtrarPorCidade(todosEventos, cidade);
 
             if (!eventos || eventos.length === 0) {
-                grid.innerHTML = '<p style="text-align:center;padding:40px;color:#888;">Nenhum evento encontrado.</p>';
+                grid.innerHTML = htmlSemEventos(cidade, '#888', '40px');
                 return;
             }
 
@@ -206,18 +358,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 card.className = 'card-evento';
                 card.innerHTML = `
                     <div class="evento-imagem-wrap">
-                        <img src="${imagem}" alt="${evento.nome}"
+                        <img src="${imagem}" alt="${escapeHtml(evento.nome)}"
                              onerror="this.onerror=null;this.src='/frontend/imagens/1º imagem cad.png'">
-                        <span class="tag-evento">${evento.assunto || 'Evento'}</span>
+                        <span class="tag-evento">${escapeHtml(evento.assunto || 'Evento')}</span>
                     </div>
                     <div class="evento-content">
-                        <h3>${evento.nome}</h3>
+                        <h3>${escapeHtml(evento.nome)}</h3>
                         <div class="evento-data-local">
                             <p><i class="fas fa-calendar-alt"></i> ${data}${hora ? ' - ' + hora : ''}</p>
                         </div>
                         <p class="evento-local">
                             <i class="fas fa-map-marker-alt"></i>
-                            ${evento.local_nome || ''}${evento.cidade ? ' — ' + evento.cidade : ''}
+                            ${escapeHtml(evento.local_nome || '')}${evento.cidade ? ' — ' + escapeHtml(evento.cidade) : ''}
                         </p>
                     </div>
                 `;
@@ -230,6 +382,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     carregarEventosProximos();
+
+    // ✅ NOVO: o seletor de cidade (loadHeader.js) dispara esse evento quando a pessoa escolhe uma cidade.
+    // Aqui a página se atualiza na hora, sem recarregar.
+    window.addEventListener('roles:cidade', () => {
+        iniciarCarrossel();
+        carregarEventosProximos();
+    });
 
     /* ==================================================
     ================= LOCAIS POPULARES ==================

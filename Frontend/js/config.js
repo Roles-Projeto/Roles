@@ -21,3 +21,6 @@
 
   console.log("🔧 API_BASE: " + window.API_BASE);
 })();
+
+
+window.GOOGLE_CLIENT_ID ="35611681280-a0qsif5rr4ujcsof2l334slr2d5cg9v9.apps.googleusercontent.com"

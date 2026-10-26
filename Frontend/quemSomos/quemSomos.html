@@ -163,6 +163,30 @@ button:focus-visible {
 .qs-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .qs-hero-actions--center { justify-content: center; margin-top: 28px; }
 
+/* botão voltar */
+.qs-back-wrapper {
+    position: absolute;
+    top: 24px;
+    left: max(24px, calc(50% - 540px));
+    z-index: 2;
+}
+.qs-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    color: var(--ink);
+    border: 0;
+    border-radius: 99px;
+    padding: 9px 18px 9px 14px;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.qs-back-btn:hover { transform: translateX(-2px); }
+
 /* cartões decorativos do hero */
 .qs-hero-stack { position: relative; height: 340px; }
 
@@ -393,7 +417,7 @@ button:focus-visible {
    RESPONSIVO
    ============================================================ */
 @media (max-width: 900px) {
-    .qs-hero { padding: 56px 24px 56px; }
+    .qs-hero { padding: 72px 24px 56px; }
     .qs-hero-inner { grid-template-columns: 1fr; gap: 40px; }
     .qs-hero-stack { height: auto; display: flex; flex-direction: column; gap: 12px; }
     .qs-pill { position: static; transform: none !important; min-width: 0; }
@@ -413,7 +437,7 @@ button:focus-visible {
 }
 
 @media (max-width: 420px) {
-    .qs-hero { padding: 48px 16px 44px; }
+    .qs-hero { padding: 72px 16px 44px; }
     .qs-stats-grid { grid-template-columns: 1fr; }
     .qs-hero-actions .qs-btn { width: 100%; }
 }
@@ -432,6 +456,14 @@ button:focus-visible {
       <section class="qs-hero">
         <div class="qs-hero-grid" aria-hidden="true"></div>
 
+        <!-- Botão Voltar -->
+        <div class="qs-back-wrapper">
+          <button type="button" class="qs-back-btn" id="qs-back-btn">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+            Voltar
+          </button>
+        </div>
+
         <div class="qs-hero-inner">
           <div class="qs-hero-copy">
             <p class="qs-hero-kicker">Quem somos</p>
@@ -449,7 +481,7 @@ button:focus-visible {
                 class="qs-btn qs-btn--ghost"
                 href="/frontend/Cadastro/cadastro.html"
               >
-                Cadastrar meu local
+                Cadastrar meu evento
               </a>
             </div>
           </div>
@@ -611,7 +643,7 @@ button:focus-visible {
       <!-- PARA QUEM SAI / PARA ESTABELECIMENTOS -->
       <section class="qs-sec qs-sec--bg" id="publicos">
         <div class="qs-sec-inner">
-          <h2 class="qs-h2 qs-h2--center">Um Rolês, dois lados</h2>
+          <h2 class="qs-h2 qs-h2--center">Um Rolê, dois lados</h2>
 
           <div class="qs-split">
             <article class="qs-panel qs-panel--light">
@@ -719,5 +751,16 @@ button:focus-visible {
     <script src="/frontend/js/footer.js" defer></script>
     <script src="/frontend/js/loadHeader.js"></script>
     <script src="/frontend/js/qemsomos.js"></script>
+
+    <!-- Botão Voltar -->
+    <script>
+      document.getElementById('qs-back-btn').addEventListener('click', function () {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = '/frontend/index.html';
+        }
+      });
+    </script>
   </body>
 </html>

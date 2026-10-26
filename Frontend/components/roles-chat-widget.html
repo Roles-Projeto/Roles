@@ -1,5 +1,3 @@
-
-
 <div id="roles-chat-bubble">💬</div>
 
 <div id="roles-chat-window">
@@ -139,11 +137,20 @@
     padding: 0 16px;
     cursor: pointer;
   }
+
+  #roles-chat-send:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 </style>
 
 <script>
   // Usa o mesmo API_BASE definido em /frontend/js/config.js (já carregado antes deste widget)
   const ENDPOINT = `${API_BASE}/api/chat`;
+
+  // Tempo máximo de espera pela resposta do servidor (ms).
+  // Folga para o cold start do Render, mas sem deixar o usuário esperando para sempre.
+  const FETCH_TIMEOUT_MS = 45000;
 
   const bubble = document.getElementById("roles-chat-bubble");
   const chatWindow = document.getElementById("roles-chat-window");
@@ -154,15 +161,22 @@
 
   let history = [];
   let chatOpened = false;
+  let sending = false;
 
   // ─── Perguntas pré-programadas ───
   // Edite este array para mudar as sugestões mostradas na abertura do chat.
   const PRESET_QUESTIONS = [
     "Como funciona a compra de ingressos?",
-    "Como faço para cadastrar meu estabelecimento?",
+    "Como faço para cadastrar meu estabelecimento ou evento?",
     "Posso cancelar minha compra?",
     "Os eventos são apenas em Goiânia?"
   ];
+
+  // "Acorda" o servidor (Render free dorme após alguns minutos parado)
+  // assim que o usuário abre o chat, antes de ele enviar a primeira mensagem.
+  function warmUpServer() {
+    fetch(`${API_BASE}/api/health`, { method: "GET" }).catch(() => {});
+  }
 
   bubble.addEventListener("click", () => {
     chatWindow.classList.toggle("open");
@@ -170,6 +184,7 @@
     // Na primeira abertura, manda uma saudação e mostra as sugestões
     if (!chatOpened && chatWindow.classList.contains("open")) {
       chatOpened = true;
+      warmUpServer();
       addMessage(
         "Oi! 👋 Eu sou o assistente do Rolês. Escolha uma pergunta abaixo ou digite a sua dúvida.",
         "bot"
@@ -188,6 +203,7 @@
     div.textContent = text;
     messagesEl.appendChild(div);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
   }
 
   // Renderiza os botões de perguntas pré-programadas dentro da janela de mensagens
@@ -201,6 +217,7 @@
       btn.className = "roles-quick-btn";
       btn.textContent = question;
       btn.addEventListener("click", () => {
+        if (sending) return;
         wrap.remove(); // some com as sugestões depois de escolhida uma
         sendMessage(question);
       });
@@ -211,40 +228,72 @@
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
+  function setSending(value) {
+    sending = value;
+    sendBtn.disabled = value;
+  }
+
   // Aceita um texto opcional (usado pelos botões de sugestão);
   // se não vier nada, usa o que está digitado no input.
   async function sendMessage(presetText) {
+    if (sending) return; // evita enviar duas mensagens ao mesmo tempo
+
     const text = (presetText ?? input.value).trim();
     if (!text) return;
 
+    setSending(true);
     addMessage(text, "user");
     history.push({ role: "user", content: text });
     input.value = "";
 
-    addMessage("Digitando...", "bot");
-    const typingIndicator = messagesEl.lastChild;
+    const typingIndicator = addMessage("Digitando...", "bot");
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
     try {
       const response = await fetch(ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history })
+        body: JSON.stringify({ messages: history }),
+        signal: controller.signal
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       typingIndicator.remove();
+
+      if (!response.ok || !data.reply) {
+        // Mostra o erro real do servidor e tira a pergunta do histórico,
+        // para não enviar duas mensagens seguidas do usuário na próxima vez.
+        history.pop();
+        addMessage(
+          data.error || "Não consegui responder agora. Tente novamente.",
+          "bot"
+        );
+        return;
+      }
 
       addMessage(data.reply, "bot");
       history.push({ role: "assistant", content: data.reply });
     } catch (err) {
       typingIndicator.remove();
-      addMessage("Erro ao conectar com o assistente. Tente novamente.", "bot");
+      history.pop();
+      addMessage(
+        err.name === "AbortError"
+          ? "A resposta demorou demais. Tente novamente."
+          : "Erro ao conectar com o assistente. Tente novamente.",
+        "bot"
+      );
       console.error(err);
+    } finally {
+      clearTimeout(timeoutId);
+      setSending(false);
+      input.focus();
     }
   }
 
   sendBtn.addEventListener("click", () => sendMessage());
-  input.addEventListener("keypress", (e) => {
+  input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") sendMessage();
   });
 </script>

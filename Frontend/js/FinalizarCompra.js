@@ -3,10 +3,11 @@
 /* ==================================================
    CONFIGURAÇÃO
 ================================================== */
-const BASE_URL = window.API_BASE_URL || window.API_BASE || "";
-
-
-
+// Se o config.js não definir a URL da API, usa o backend local (porta 3000)
+// quando a página roda no Live Server (127.0.0.1:5502). Sem isso, as chamadas
+// iam para o próprio Live Server e davam erro (404/405).
+const _hostLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+const BASE_URL = window.API_BASE_URL || window.API_BASE || (_hostLocal ? "http://localhost:3000" : "");
 
 /* ==================================================
    ESTADO GLOBAL
@@ -20,6 +21,9 @@ let pixTimerInterval = null;
 
 let eventoAtual = null;
 let tipoAtual = null;
+
+// Quantas compras PAGAS o usuário já fez (null = desconhecido: sem benefício)
+let COMPRAS_PAGAS = null;
 
 /* ==================================================
    GET USER ID
@@ -75,6 +79,41 @@ function montarItens(tipoIngressoId, quantidade) {
 function tratarSessaoExpirada() {
     showToast("Sua sessão expirou. Entre novamente para concluir a compra.", "warn");
     setTimeout(() => { window.location.href = "/frontend/login/login.html"; }, 1800);
+}
+
+/* ==================================================
+   BENEFÍCIO DE BOAS-VINDAS (1ª e 2ª compra)
+   A regra fica em /frontend/js/beneficios.js. Aqui só mostramos o valor;
+   quem vale de verdade é o cálculo do backend.
+================================================== */
+async function carregarStatusBeneficio() {
+    if (!localStorage.getItem("token")) {
+        console.warn("[beneficio] sem token no localStorage: desconto desativado");
+        return;
+    }
+    try {
+        const res = await fetch(`${BASE_URL}/beneficios/status`, { headers: headersAutenticados() });
+        if (!res.ok) {
+            console.warn(`[beneficio] GET ${BASE_URL}/beneficios/status respondeu ${res.status}: desconto desativado`);
+            return;
+        }
+        const dados = await res.json();
+        const n = Number(dados.comprasPagas);
+        COMPRAS_PAGAS = Number.isFinite(n) ? n : null;
+        console.log("[beneficio] comprasPagas =", COMPRAS_PAGAS);
+    } catch (err) {
+        console.warn("[beneficio] erro ao consultar /beneficios/status:", err.message);
+    }
+}
+
+function calcularPedidoAtual(quantidade) {
+    const nome = tipoAtual?.nome || document.getElementById("ticket-type")?.textContent || "";
+    return window.Beneficios.calcularPedido({
+        precoUnitario: PRICE_PER_TICKET,
+        quantidade,
+        comprasPagas: COMPRAS_PAGAS ?? 0,
+        elegivel: COMPRAS_PAGAS !== null && !/meia/i.test(nome),
+    });
 }
 
 /* ==================================================
@@ -246,17 +285,23 @@ function configurarValidacaoRealTime() {
         if (campo) campo.addEventListener("blur", () => setFieldStatus(id, validador(campo.value), fb, err));
     });
 
+    // "input" pega quem digita; "change" pega o preenchimento automático do navegador
     ["nome", "cpf"].forEach(id => {
-        document.getElementById(id)?.addEventListener("input", sincronizarResumoPagador);
+        const campo = document.getElementById(id);
+        if (!campo) return;
+        campo.addEventListener("input", sincronizarResumoPagador);
+        campo.addEventListener("change", sincronizarResumoPagador);
     });
 }
 
 function sincronizarResumoPagador() {
-    const nome = document.getElementById("nome").value || "—";
-    const cpf = document.getElementById("cpf").value || "—";
+    const nome = document.getElementById("nome")?.value || "—";
+    const cpf = document.getElementById("cpf")?.value || "—";
     ["pix", "boleto"].forEach(m => {
-        document.getElementById(`${m}-nome-display`).textContent = nome;
-        document.getElementById(`${m}-cpf-display`).textContent = cpf;
+        const n = document.getElementById(`${m}-nome-display`);
+        const c = document.getElementById(`${m}-cpf-display`);
+        if (n) n.textContent = nome;
+        if (c) c.textContent = cpf;
     });
 }
 
@@ -355,6 +400,8 @@ function switchPaymentMethod(method) {
     document.querySelector(`[data-method="${method}"]`).classList.add("active");
     currentPaymentMethod = method;
 
+    sincronizarResumoPagador();
+
     if (method !== "pix" && pixTimerInterval) {
         clearInterval(pixTimerInterval);
         pixTimerInterval = null;
@@ -380,6 +427,7 @@ function gerarPix() {
         document.getElementById("pix-dados-incompletos").style.display = "flex";
         return;
     }
+    sincronizarResumoPagador();
     document.getElementById("pix-dados-incompletos").style.display = "none";
     document.getElementById("pix-step-1").style.display = "none";
     document.getElementById("pix-step-2").style.display = "block";
@@ -397,6 +445,7 @@ async function gerarBoleto() {
         document.getElementById("boleto-dados-incompletos").style.display = "flex";
         return;
     }
+    sincronizarResumoPagador();
 
     const cepInput = document.getElementById("cep-boleto");
     if (cepInput.value.replace(/\D/g, "").length !== 8 || cepInput.classList.contains("invalid")) {
@@ -458,24 +507,111 @@ function formatBRL(value) {
 
 function calcularTotal() {
     const quantidade = parseInt(document.getElementById("quantidade").value) || 1;
-    return quantidade * PRICE_PER_TICKET * (1 + SERVICE_TAX_RATE);
+    return calcularPedidoAtual(quantidade).total;
 }
 
 function updatePrice(quantity) {
-    const subtotal = quantity * PRICE_PER_TICKET;
-    const taxa = subtotal * SERVICE_TAX_RATE;
-    const total = subtotal + taxa;
+    const r = calcularPedidoAtual(quantity);
 
     document.getElementById("quantidade").value = quantity;
-    document.getElementById("subtotal").textContent = formatBRL(subtotal);
-    document.getElementById("taxa").textContent = formatBRL(taxa);
-    document.getElementById("total").textContent = formatBRL(total);
+    document.getElementById("subtotal").textContent = formatBRL(r.subtotal);
+    document.getElementById("total").textContent = formatBRL(r.total);
     document.getElementById("ticket-price-display").textContent = formatBRL(PRICE_PER_TICKET);
-    document.getElementById("subtotal-label").textContent = `Subtotal (${quantity}x)`;
+    document.getElementById("subtotal-label").textContent =
+        `Subtotal (${quantity}x ${formatBRL(PRICE_PER_TICKET)})`;
+
+    // Linha do desconto de boas-vindas
+    const rowDesconto = document.getElementById("row-desconto");
+    if (rowDesconto) {
+        rowDesconto.style.display = r.beneficio ? "" : "none";
+        if (r.beneficio) {
+            const qb = Math.min(quantity, r.beneficio.ingressos);
+            document.getElementById("desconto-label").textContent =
+                `Desconto de boas-vindas (${Math.round(r.beneficio.percentual * 100)}% sobre ${qb} ingresso de ${formatBRL(PRICE_PER_TICKET)})`;
+            document.getElementById("desconto-valor").textContent = "- " + formatBRL(r.desconto);
+        }
+    }
+
+    // Taxa de serviço: o valor final e, logo abaixo, o detalhe de como foi calculada
+    const taxaLabel = document.getElementById("taxa-label");
+    if (taxaLabel) taxaLabel.textContent = "Taxa de serviço (10%)";
+    document.getElementById("taxa").textContent =
+        (r.taxaDispensada > 0 && r.taxa === 0) ? "Grátis" : formatBRL(r.taxa);
+
+    atualizarDetalheResumo(r, quantity);
 
     const btnPagar = document.getElementById("btn-pagar-cartao");
-        aplicarModoGratuito();
-    if (btnPagar) btnPagar.textContent = `Pagar ${formatBRL(total)}`;
+    aplicarModoGratuito();
+    if (btnPagar) btnPagar.textContent = `Pagar ${formatBRL(r.total)}`;
+}
+
+/* ==================================================
+   DETALHAMENTO DO RESUMO (mostra ao cliente como cada valor foi calculado)
+================================================== */
+function injetarEstiloResumo() {
+    if (document.getElementById("resumoDetalheStyle")) return;
+    const st = document.createElement("style");
+    st.id = "resumoDetalheStyle";
+    st.textContent = `
+        .price-row .price { white-space: nowrap; }
+        .price-row > span:first-child { min-width: 0; }
+        .resumo-detalhe { margin: -2px 0 10px; padding-left: 10px; border-left: 2px solid #e4dcf7; font-size: 12px; line-height: 1.5; color: #6b6585; }
+        .resumo-detalhe div + div { margin-top: 2px; }
+        .resumo-economia { display: flex; justify-content: space-between; gap: 12px; margin: 10px 0; padding: 9px 12px; border-radius: 8px; background: #e8f8ee; color: #176b3a; font-size: 13px; font-weight: 600; }
+    `;
+    document.head.appendChild(st);
+}
+
+function atualizarDetalheResumo(r, quantity) {
+    injetarEstiloResumo();
+
+    const taxaRow = document.getElementById("taxa")?.closest(".price-row");
+    const totalRow = document.querySelector(".price-breakdown .total-row");
+    if (!taxaRow || !totalRow) return;
+
+    let detalhe = document.getElementById("taxa-detalhe");
+    if (!detalhe) {
+        detalhe = document.createElement("div");
+        detalhe.id = "taxa-detalhe";
+        detalhe.className = "resumo-detalhe";
+        taxaRow.insertAdjacentElement("afterend", detalhe);
+    }
+
+    let economia = document.getElementById("resumo-economia");
+    if (!economia) {
+        economia = document.createElement("div");
+        economia.id = "resumo-economia";
+        economia.className = "resumo-economia";
+        totalRow.insertAdjacentElement("beforebegin", economia);
+    }
+
+    // Sem benefício: nada a detalhar além da taxa de 10%
+    if (!r.beneficio) {
+        detalhe.style.display = "none";
+        economia.style.display = "none";
+        return;
+    }
+
+    const qb = Math.min(quantity, r.beneficio.ingressos);
+    const resto = quantity - qb;
+    const taxaPorIngresso = PRICE_PER_TICKET * SERVICE_TAX_RATE;
+
+    const linhas = [
+        `Taxa grátis em ${qb} ingresso (você economiza ${formatBRL(r.taxaDispensada)})`,
+    ];
+    if (resto > 0) {
+        linhas.push(
+            `Taxa de 10% em ${resto} ingresso${resto > 1 ? "s" : ""}: ` +
+            `${resto} x ${formatBRL(taxaPorIngresso)} = ${formatBRL(r.taxa)}`
+        );
+    }
+    detalhe.innerHTML = linhas.map(t => `<div>${t}</div>`).join("");
+    detalhe.style.display = "";
+
+    const economizado = r.desconto + r.taxaDispensada;
+    economia.innerHTML =
+        `<span>Você está economizando nesta compra</span><span>${formatBRL(economizado)}</span>`;
+    economia.style.display = "";
 }
 
 function changeQuantity(change) {
@@ -543,6 +679,7 @@ async function handleGratuitoSubmit() {
         const data = await res.json().catch(() => ({}));
 
         if (res.status === 401) {
+            if (btn) { btn.disabled = false; btn.textContent = "Confirmar Presença"; }
             tratarSessaoExpirada();
             return;
         }
@@ -603,12 +740,12 @@ async function loadEventData() {
 
             const img = document.getElementById("event-image");
             const imgFile = evento.imagem || evento.img_capa;
-            
+
             if (img && imgFile) {
                 const finalSrc = imgFile.startsWith("/uploads/") || imgFile.startsWith("http")
                     ? `${BASE_URL}${imgFile.startsWith("/") ? imgFile : "/" + imgFile}`
                     : `${BASE_URL}/uploads/${imgFile}`;
-                
+
                 img.src = finalSrc;
             }
             document.getElementById("event-name").textContent = evento.titulo || evento.nome || "—";
@@ -634,6 +771,7 @@ async function loadEventData() {
     }
 
     // ── Fallback: localStorage ─────────────────────────
+    let quantidadeInicial = 1;
     const stored = localStorage.getItem("eventoSelecionado");
     if (stored) {
         const ev = JSON.parse(stored);
@@ -660,6 +798,20 @@ async function loadEventData() {
         const precoStored = parseFloat(ev.ingressoPreco);
         PRICE_PER_TICKET = Number.isNaN(precoStored) ? 30.00 : precoStored;
 
+        // Limite de quantidade vindo da tela de detalhes (em vez do "85" fixo)
+        const maxStored = Number(ev.maxQuantidade);
+        if (Number.isFinite(maxStored) && maxStored >= 1) {
+            MAX_AVAILABLE_TICKETS = maxStored;
+            const disponEl = document.querySelector(".quantity-control span");
+            if (disponEl) disponEl.textContent = `Máximo de ${maxStored} por compra`;
+        }
+
+        // Mantém a quantidade que o usuário escolheu na tela do evento
+        const qtdStored = Number(ev.quantidade);
+        if (Number.isFinite(qtdStored) && qtdStored >= 1) {
+            quantidadeInicial = Math.min(qtdStored, MAX_AVAILABLE_TICKETS);
+        }
+
         // ← Salva evento_id e tipo no estado global para o finalizarCompra usar
         eventoAtual = { id: ev.evento_id, titulo: ev.nome };
         tipoAtual = { id: ev.tipo_ingresso_id, nome: nomeExibicao };
@@ -669,17 +821,32 @@ async function loadEventData() {
 
     // Ingresso numerado: a quantidade é o número de assentos escolhidos
     const marcado = assentosDoEstado();
-    const quantidadeInicial = marcado ? marcado.assento_ids.length : 1;
-    if (marcado) MAX_AVAILABLE_TICKETS = quantidadeInicial;
+    if (marcado) {
+        quantidadeInicial = marcado.assento_ids.length;
+        MAX_AVAILABLE_TICKETS = quantidadeInicial;
+    }
     updatePrice(quantidadeInicial);
 }
 
 /* ==================================================
    FINALIZAR COMPRA
 ================================================== */
+function restaurarBotaoPagamento(forma_pagamento) {
+    if (forma_pagamento === "credito") {
+        const btn = document.getElementById("btn-pagar-cartao");
+        if (btn) { btn.disabled = false; btn.textContent = `Pagar ${document.getElementById("total").textContent}`; }
+    } else if (forma_pagamento === "pix") {
+        const btn = document.getElementById("btn-pix-pay");
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-check-circle" style="margin-right:8px;"></i>Tentar novamente`;
+        }
+    }
+}
+
 async function finalizarCompra(forma_pagamento) {
 
-        const usuarioId = getUserId();
+    const usuarioId = getUserId();
     if (!usuarioId) {
         showToast("Você precisa estar logado para comprar ingressos.", "warn");
         setTimeout(() => { window.location.href = "/frontend/login/login.html"; }, 1800);
@@ -687,7 +854,7 @@ async function finalizarCompra(forma_pagamento) {
     }
     const btnCartao = document.getElementById("btn-pagar-cartao");
     const btnPix = document.getElementById("btn-pix-pay");
-    const btnAtivo = forma_pagamento === "credito" ? btnCartao : btnPix;
+    const btnAtivo = forma_pagamento === "credito" ? btnCartao : (forma_pagamento === "pix" ? btnPix : null);
     if (btnAtivo) { btnAtivo.disabled = true; btnAtivo.textContent = "Processando..."; }
 
     const quantidade = parseInt(document.getElementById("quantidade").value) || 1;
@@ -700,9 +867,9 @@ async function finalizarCompra(forma_pagamento) {
 
     console.log("finalizarCompra", { usuarioId, eventoId, tipoIngressoId, forma_pagamento, quantidade });
 
-        if (!eventoId || !tipoIngressoId) {
+    if (!eventoId || !tipoIngressoId) {
         showToast("Dados do evento não encontrados. Volte e selecione o ingresso novamente.", "error");
-        if (btnAtivo) { btnAtivo.disabled = false; btnAtivo.textContent = "Tentar novamente"; }
+        restaurarBotaoPagamento(forma_pagamento);
         return;
     }
 
@@ -719,24 +886,27 @@ async function finalizarCompra(forma_pagamento) {
             headers: headersAutenticados(),
             body: JSON.stringify(body),
         });
-        const data = await res.json();
+        // Se o servidor devolver HTML (ex.: erro 404/500 da página), não quebra aqui
+        const data = await res.json().catch(() => ({}));
 
         if (res.status === 401) {
+            restaurarBotaoPagamento(forma_pagamento);
             tratarSessaoExpirada();
             return;
         }
 
         if (!res.ok) {
-            console.error("Erro da API:", data);
-            showToast(data.erro || "Não foi possível processar sua compra. Tente novamente.", "error");
-            if (btnAtivo) { btnAtivo.disabled = false; btnAtivo.textContent = "Tentar novamente"; }
+            console.error(`Erro da API (${res.status}) em ${BASE_URL}/ingressos/comprar:`, data);
+            showToast(data.erro || `Não foi possível processar sua compra (erro ${res.status}). Tente novamente.`, "error");
+            restaurarBotaoPagamento(forma_pagamento);
             return;
         }
 
         if (pixTimerInterval) clearInterval(pixTimerInterval);
 
-        const subtotal = quantidade * PRICE_PER_TICKET;
-        const taxa = subtotal * SERVICE_TAX_RATE;
+        const calculo = calcularPedidoAtual(quantidade);
+        const subtotal = calculo.subtotal;
+        const taxa = calculo.taxa;
 
         sessionStorage.setItem("compraConfirmada", JSON.stringify({
             pedido_id: data.pedido_id,
@@ -752,16 +922,18 @@ async function finalizarCompra(forma_pagamento) {
             quantidade,
             subtotal,
             taxaServico: taxa,
-            totalPago: subtotal + taxa,
+            totalPago: calculo.total,
+            desconto: calculo.desconto,
+            beneficio: calculo.beneficio,
             forma_pagamento,
         }));
 
         window.location.href = "confirmacao.html";
 
-        } catch (err) {
+    } catch (err) {
         console.error("Erro na requisição:", err);
         showToast("Erro de conexão com o servidor. Tente novamente em instantes.", "error");
-        if (btnAtivo) { btnAtivo.disabled = false; btnAtivo.textContent = "Tentar novamente"; }
+        restaurarBotaoPagamento(forma_pagamento);
     }
 }
 
@@ -775,7 +947,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
+    await carregarStatusBeneficio();
     await loadEventData();
     aplicarMascaras();
     configurarValidacaoRealTime();
+    sincronizarResumoPagador();
 });

@@ -14,6 +14,154 @@
     />
     <link rel="stylesheet" href="/frontend/css/footer.css" />
     <link rel="stylesheet" href="/frontend/css/detalheseventos.css" />
+
+    <!-- AJUSTE DE LAYOUT (desktop): ingressos, mapa, sobre e organizador empilhados
+         na coluna da esquerda; checkout fixo na direita. Elimina o espaço vazio.
+         Fica depois do CSS principal para sobrescrevê-lo. -->
+    <style id="ajuste-layout-evento">
+      /* ===== LAYOUT DA PÁGINA DO EVENTO =====
+         Celular: tudo empilhado (ingressos, mapa, checkout, sobre, organizador).
+         Desktop: coluna principal à esquerda + checkout fixo à direita. */
+      .ev-layout {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 32px 24px 72px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+      .ev-principal { display: contents; }
+
+      .ev-layout .ingressos-disponiveis,
+      .ev-layout .mapa-setores,
+      .ev-layout .sobre-evento,
+      .ev-layout .organizador,
+      .ev-layout .card-transparencia,
+      .ev-layout .compra-ingresso {
+        grid-column: auto !important;
+        grid-row: auto !important;
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0;
+        margin: 0 !important;
+        box-sizing: border-box;
+      }
+      .ev-layout .ingressos-disponiveis { border-right: 0 !important; padding-right: 0 !important; order: 1; }
+      .ev-layout .mapa-setores          { order: 2; }
+      .ev-layout .compra-ingresso       { border-left: 0 !important; order: 3; }
+      .ev-layout .sobre-evento          { order: 4; }
+      .ev-layout .organizador           { order: 5; }
+      .ev-layout .card-transparencia    { order: 6; }
+
+      @media (min-width: 992px) {
+        .ev-layout {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 410px;
+          column-gap: 40px;
+          align-items: start;
+        }
+        .ev-principal {
+          display: flex;
+          flex-direction: column;
+          gap: 32px;
+          grid-column: 1;
+          grid-row: 1;
+          min-width: 0;
+        }
+        .ev-layout .ingressos-disponiveis,
+        .ev-layout .mapa-setores,
+        .ev-layout .sobre-evento,
+        .ev-layout .organizador,
+        .ev-layout .card-transparencia { order: 0; }
+
+        .ev-layout .compra-ingresso {
+          grid-column: 2 !important;
+          grid-row: 1 !important;
+          order: 0;
+          position: sticky !important;
+          top: 90px;
+          align-self: start;
+        }
+      }
+
+
+      /* ===== TRANSPARÊNCIA TOTAL: cartão com ícone ===== */
+      .ev-layout .card-transparencia {
+        display: flex !important;
+        align-items: flex-start;
+        gap: 18px;
+        padding: 22px 26px !important;
+        background: #f6f1ff !important;
+        border: 1px solid #e4dcf7 !important;
+        border-radius: 16px !important;
+      }
+      .ev-layout .card-transparencia .transparencia-icone {
+        flex: 0 0 46px;
+        width: 46px;
+        height: 46px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #6c1dce;
+        color: #fff;
+        font-size: 19px;
+      }
+      .ev-layout .card-transparencia .transparencia-icone i { color: #fff; }
+      .ev-layout .card-transparencia .texto-transparencia { min-width: 0; }
+      .ev-layout .card-transparencia .titulo-transparencia {
+        margin: 0 0 6px;
+        font-size: 17px;
+        font-weight: 700;
+        color: #1a1530;
+      }
+      .ev-layout .card-transparencia .detalhe-taxa {
+        margin: 0;
+        font-size: 14.5px;
+        line-height: 1.65;
+        color: #5d5873;
+      }
+      .ev-layout .card-transparencia .destaque-taxa { color: #6c1dce; font-weight: 700; }
+
+      /* ===== CHECKOUT: cartão maior e mais confortável ===== */
+      .ev-layout .compra-ingresso .card-garantia-ingresso {
+        padding: 30px 30px 26px;
+        background: #fff;
+        border: 1px solid #ebe5f7;
+        border-radius: 22px;
+        box-shadow: 0 14px 40px rgba(60, 30, 120, 0.10);
+      }
+      .ev-layout .compra-ingresso .linha-detalhe { padding: 11px 0; }
+      .ev-layout .compra-ingresso .label-detalhe,
+      .ev-layout .compra-ingresso .valor-detalhe { font-size: 15px; }
+      .ev-layout .compra-ingresso .seletor-quantidade { padding: 16px 0 8px; }
+      .ev-layout .compra-ingresso .seletor-quantidade .label-valor { font-size: 16px; }
+      .ev-layout .compra-ingresso .controle-quantidade button {
+        width: 36px;
+        height: 36px;
+        font-size: 17px;
+      }
+      .ev-layout .compra-ingresso #qtd-valor { font-size: 18px; min-width: 28px; text-align: center; }
+      .ev-layout .compra-ingresso .resumo-valores { padding: 14px 0 4px; }
+      .ev-layout .compra-ingresso .linha-resumo { font-size: 14.5px; line-height: 1.5; padding: 5px 0; }
+      .ev-layout .compra-ingresso .detalhe-valor-total { padding: 18px 0 8px; }
+      .ev-layout .compra-ingresso .detalhe-valor-total .label-valor { font-size: 16px; }
+      .ev-layout .compra-ingresso .valor-ingresso { font-size: 36px; }
+      .ev-layout .compra-ingresso .botao-comprar {
+        padding: 18px 20px;
+        font-size: 17px;
+        border-radius: 14px;
+      }
+      .ev-layout .compra-ingresso .beneficios-compra { margin-top: 18px; gap: 8px 16px; }
+      .ev-layout .compra-ingresso .beneficios-compra { min-height: 48px; }
+
+      /* Valores do resumo nunca quebram em duas linhas ("R$" / "150,00") */
+      .resumo-valores .linha-resumo span:last-child,
+      .detalhe-valor-total .valor-ingresso {
+        white-space: nowrap;
+      }
+    </style>
   </head>
   <body>
     <header><div id="header-container"></div></header>
@@ -72,12 +220,11 @@
       </section>
 
       <!-- CONTEÚDO -->
-      <div class="conteudo-evento">
+      <div class="ev-layout">
 
-        <!-- Topo em 3 colunas: Ingressos | Mapa | Pagamento -->
-        <div class="ingressos-e-mapa">
-
-          <!-- Coluna 1: ingressos -->
+        <!-- COLUNA PRINCIPAL: ingressos, mapa, sobre, organizador e transparência -->
+        <div class="ev-principal">
+          <!-- Ingressos -->
           <section class="ingressos-disponiveis">
             <span class="rotulo-secao">Setores</span>
             <h3 class="titulo-ingressos">Ingressos Disponíveis</h3>
@@ -86,7 +233,9 @@
             </p>
           </section>
 
-          <!-- Coluna 2: mapa, legenda e local -->
+          
+
+          <!-- Mapa, legenda e local -->
           <section class="card-informacoes mapa-setores">
             <span class="rotulo-secao">Local</span>
             <h2 class="titulo-secao">Mapa do Setor</h2>
@@ -108,72 +257,9 @@
             <div class="mapa-legenda-precos" id="mapa-legenda-precos"></div>
           </section>
 
-          <!-- Coluna 3: pagamento -->
-          <aside class="compra-ingresso">
-            <div class="card-garantia-ingresso">
-              <span class="rotulo-secao">Checkout</span>
-              <div class="detalhes-data-local">
-                <div class="linha-detalhe">
-                  <span class="label-detalhe"><i class="fa-regular fa-calendar"></i> Data</span>
-                  <span class="valor-detalhe data-resumo">--</span>
-                </div>
-                <div class="linha-detalhe">
-                  <span class="label-detalhe"><i class="fa-regular fa-clock"></i> Horário</span>
-                  <span class="valor-detalhe hora-resumo">--</span>
-                </div>
-                <div class="linha-detalhe">
-                  <span class="label-detalhe"><i class="fa-solid fa-location-dot"></i> Local</span>
-                  <span class="valor-detalhe local-resumo">--</span>
-                </div>
-                <div class="linha-detalhe">
-                  <span class="label-detalhe"><i class="fa-solid fa-ticket"></i> Ingresso</span>
-                  <span class="valor-detalhe ingresso-resumo">--</span>
-                </div>
-              </div>
+          
 
-              <div class="seletor-quantidade" id="seletor-quantidade" style="display: none">
-                <span class="label-valor">Quantidade</span>
-                <div class="controle-quantidade">
-                  <button type="button" id="qtd-menos" aria-label="Diminuir quantidade">-</button>
-                  <span id="qtd-valor">1</span>
-                  <button type="button" id="qtd-mais" aria-label="Aumentar quantidade">+</button>
-                </div>
-              </div>
-              <p class="aviso-quantidade" id="aviso-quantidade"></p>
-
-              <div class="resumo-valores" id="resumo-valores" style="display: none">
-                <div class="linha-resumo">
-                  <span id="resumo-linha-ingresso">--</span>
-                  <span id="resumo-subtotal">R$ 0,00</span>
-                </div>
-
-                
-                <div class="linha-resumo">
-                  <span>Taxa de serviço (10%)</span>
-                  <span id="resumo-taxa">R$ 0,00</span>
-                </div>
-              </div>
-
-              <div class="detalhe-valor-total">
-                <span class="label-valor">Total</span>
-                <span class="valor-ingresso">R$ 0,00</span>
-              </div>
-
-              <button class="botao-comprar" type="button">Comprar Ingresso</button>
-
-              <div class="beneficios-compra">
-                <div class="beneficio-item"><i class="fa-solid fa-circle-check"></i> Confirmação imediata</div>
-                <div class="beneficio-item"><i class="fa-solid fa-circle-check"></i> Ingresso por email e app</div>
-                <div class="beneficio-item"><i class="fa-solid fa-circle-check"></i> Pagamento seguro</div>
-              </div>
-            </div>
-          </aside>
-        </div>
-        <!-- /ingressos-e-mapa -->
-
-        <!-- Detalhes do evento: Sobre e Organizador lado a lado no desktop -->
-        <div class="colunas-evento">
-          <div class="detalhes-evento">
+          <!-- Detalhes do evento -->
             <section class="card-informacoes sobre-evento">
               <span class="rotulo-secao">O Evento</span>
               <h2 class="titulo-secao">Sobre o Evento</h2>
@@ -224,12 +310,75 @@
               </div>
             </div>
 
-          </div>
-          <!-- /detalhes-evento -->
+          
         </div>
-        <!-- /colunas-evento -->
+        <!-- /ev-principal -->
+
+        <!-- COLUNA DA DIREITA: checkout (fixo na rolagem no desktop) -->
+          <aside class="compra-ingresso">
+            <div class="card-garantia-ingresso">
+              <span class="rotulo-secao">Checkout</span>
+              <div class="detalhes-data-local">
+                <div class="linha-detalhe">
+                  <span class="label-detalhe"><i class="fa-regular fa-calendar"></i> Data</span>
+                  <span class="valor-detalhe data-resumo">--</span>
+                </div>
+                <div class="linha-detalhe">
+                  <span class="label-detalhe"><i class="fa-regular fa-clock"></i> Horário</span>
+                  <span class="valor-detalhe hora-resumo">--</span>
+                </div>
+                <div class="linha-detalhe">
+                  <span class="label-detalhe"><i class="fa-solid fa-location-dot"></i> Local</span>
+                  <span class="valor-detalhe local-resumo">--</span>
+                </div>
+                <div class="linha-detalhe">
+                  <span class="label-detalhe"><i class="fa-solid fa-ticket"></i> Ingresso</span>
+                  <span class="valor-detalhe ingresso-resumo">--</span>
+                </div>
+              </div>
+
+              <div class="seletor-quantidade" id="seletor-quantidade" style="display: none">
+                <span class="label-valor">Quantidade</span>
+                <div class="controle-quantidade">
+                  <button type="button" id="qtd-menos" aria-label="Diminuir quantidade">-</button>
+                  <span id="qtd-valor">1</span>
+                  <button type="button" id="qtd-mais" aria-label="Aumentar quantidade">+</button>
+                </div>
+              </div>
+              <p class="aviso-quantidade" id="aviso-quantidade"></p>
+
+              <div class="resumo-valores" id="resumo-valores" style="display: none">
+                <div class="linha-resumo">
+                  <span id="resumo-linha-ingresso">--</span>
+                  <span id="resumo-subtotal">R$ 0,00</span>
+                </div>
+
+                <!-- Desconto de boas-vindas (aparece só quando o usuário tem direito) -->
+                <div class="linha-resumo" id="linha-desconto" style="display: none">
+                  <span id="resumo-desconto-rotulo">Desconto de boas-vindas</span>
+                  <span id="resumo-desconto">- R$ 0,00</span>
+                </div>
+
+                <div class="linha-resumo">
+                  <span id="resumo-taxa-rotulo">Taxa de serviço (10%)</span>
+                  <span id="resumo-taxa">R$ 0,00</span>
+                </div>
+              </div>
+
+              <div class="detalhe-valor-total">
+                <span class="label-valor">Total</span>
+                <span class="valor-ingresso">R$ 0,00</span>
+              </div>
+
+              <button class="botao-comprar" type="button">Comprar Ingresso</button>
+
+              <!-- Rodapé do checkout: espaço mantido, sem conteúdo -->
+              <div class="beneficios-compra" aria-hidden="true"></div>
+            </div>
+          </aside>
+        
       </div>
-      <!-- /conteudo-evento -->
+      <!-- /ev-layout -->
 
       <div class="barra-compra-mobile">
         <div class="barra-compra-info">
@@ -246,6 +395,7 @@
     <script src="/frontend/js/config.js"></script>
     <script src="/frontend/js/footer.js" defer></script>
     <script src="/frontend/js/loadHeader.js"></script>
+    <script src="/frontend/js/beneficios.js"></script>
     <script src="/frontend/js/detalhesEventos.js"></script>
     <script src="/frontend/js/favoritoCompartilhar.js"></script>
   </body>

@@ -1,11 +1,11 @@
-<div id="roles-chat-bubble">💬</div>
+<div id="roles-chat-bubble" role="button" tabindex="0" aria-label="Abrir assistente de chat do Rolês">💬</div>
 
 <div id="roles-chat-window">
   <div id="roles-chat-header">
     Assistente Rolês
-    <span id="roles-chat-close">✕</span>
+    <span id="roles-chat-close" role="button" tabindex="0" aria-label="Fechar chat">✕</span>
   </div>
-  <div id="roles-chat-messages"></div>
+  <div id="roles-chat-messages" role="log" aria-live="polite"></div>
   <div id="roles-chat-input-area">
     <input type="text" id="roles-chat-input" placeholder="Digite sua mensagem..." />
     <button id="roles-chat-send">Enviar</button>
@@ -178,8 +178,9 @@
     fetch(`${API_BASE}/api/health`, { method: "GET" }).catch(() => {});
   }
 
-  bubble.addEventListener("click", () => {
+  function toggleChat() {
     chatWindow.classList.toggle("open");
+    if (chatWindow.classList.contains("open")) input.focus();
 
     // Na primeira abertura, manda uma saudação e mostra as sugestões
     if (!chatOpened && chatWindow.classList.contains("open")) {
@@ -191,11 +192,27 @@
       );
       renderQuickQuestions();
     }
-  });
+  }
 
-  closeBtn.addEventListener("click", () => {
+  function closeChat() {
     chatWindow.classList.remove("open");
-  });
+    bubble.focus();
+  }
+
+  // Também funciona pelo teclado (Enter ou Espaço), para quem não usa mouse
+  function onKeyActivate(handler) {
+    return (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handler();
+      }
+    };
+  }
+
+  bubble.addEventListener("click", toggleChat);
+  bubble.addEventListener("keydown", onKeyActivate(toggleChat));
+  closeBtn.addEventListener("click", closeChat);
+  closeBtn.addEventListener("keydown", onKeyActivate(closeChat));
 
   function addMessage(text, sender) {
     const div = document.createElement("div");
@@ -275,6 +292,9 @@
 
       addMessage(data.reply, "bot");
       history.push({ role: "assistant", content: data.reply });
+
+      // Se o narrador do menu de acessibilidade estiver ligado, lê a resposta
+      if (window.RolesNarrator) window.RolesNarrator.speak(data.reply);
     } catch (err) {
       typingIndicator.remove();
       history.pop();

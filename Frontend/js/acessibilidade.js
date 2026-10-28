@@ -24,6 +24,8 @@
     spacing: false,
     noAnim: false,
     cursor: false,
+    narrator: false,  // narrador (leitura em voz alta)
+    rate: 1,          // velocidade da voz: índice 0..3 em RATES
   };
   var MAX_FONT = 3;
   var STEP = 0.12; // +12% por nível
@@ -112,6 +114,37 @@
     width: 100%; margin-top: 14px; padding: 12px; border-radius: 12px; border: 0;
     background: #1b1b1f; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
   }
+
+  /* ---------- narrador ---------- */
+  .a11y-narrator {
+    background: #f3f0ff; border-radius: 12px; padding: 12px; margin-bottom: 12px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .a11y-narr-toggle {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; min-height: 48px; padding: 10px;
+    border: 2px solid #5b2bd6; border-radius: 12px; background: #fff; color: #5b2bd6;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .a11y-narr-toggle i { font-size: 18px; }
+  .a11y-narr-toggle[aria-pressed="true"] { background: #5b2bd6; color: #fff; }
+  .a11y-narr-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .a11y-narr-actions button {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 42px; border-radius: 10px; border: 2px solid #5b2bd6;
+    background: #fff; color: #5b2bd6; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .a11y-narrator button:disabled { opacity: .4; cursor: not-allowed; }
+  .a11y-narrator .a11y-size { margin-bottom: 0; background: #fff; }
+  .a11y-note { margin: 0; font-size: 12px; color: #555; }
+  .a11y-note:empty { display: none; }
+
+  /* elemento que o narrador está lendo agora */
+  .a11y-speaking {
+    outline: 3px solid #5b2bd6 !important; outline-offset: 2px;
+    background-color: rgba(91,43,214,.12) !important;
+  }
+  html.a11y-contrast .a11y-speaking { outline-color: #ffe600 !important; }
 
   /* ---------- efeitos aplicados no site ---------- */
   html.a11y-gray { filter: grayscale(1); }
@@ -221,6 +254,302 @@
     mo.observe(document.body, { childList: true, subtree: true });
   }
 
+  /* ---------------- Narrador (leitura em voz alta) ----------------
+     Usa a voz do próprio navegador (Web Speech API), em português.
+     - Lê cada elemento ao receber foco (Tab) e ao passar o mouse.
+     - "Ler a página" lê o conteúdo inteiro, em ordem.
+     - Atalhos: Alt+N liga/desliga; Esc interrompe a leitura.
+  ----------------------------------------------------------------- */
+  var synth = window.speechSynthesis || null;
+  var RATES = [0.8, 1, 1.25, 1.5];
+  var RATE_LABELS = ["Lenta", "Normal", "Rápida", "Muito rápida"];
+  var TARGETS = "a, button, input, select, textarea, img, h1, h2, h3, h4, h5, h6, label, p, li, summary, [role='button'], [role='link']";
+  var voice = null;
+  var queueToken = 0;
+  var speakingEl = null;
+  var hoverTimer = null;
+  var lastHover = null;
+  var lastFocusEl = null;
+  var lastFocusTime = 0;
+  var narrToggle, readBtn, stopBtn, rateMinus, ratePlus, rateLevel, narrNote;
+
+  function clean(t) {
+    return (t || "").replace(/\s+/g, " ").trim();
+  }
+
+  function pickVoice() {
+    if (!synth) return;
+    var list = synth.getVoices() || [];
+    var br = list.filter(function (v) { return /^pt[-_]BR/i.test(v.lang); });
+    var pt = list.filter(function (v) { return /^pt/i.test(v.lang); });
+    voice = br[0] || pt[0] || null;
+  }
+
+  function labelOf(el) {
+    var t = clean(el.getAttribute("aria-label"));
+    if (t) return t;
+    var by = el.getAttribute("aria-labelledby");
+    if (by) {
+      t = clean(by.split(/\s+/).map(function (id) {
+        var n = document.getElementById(id);
+        return n ? n.textContent : "";
+      }).join(" "));
+      if (t) return t;
+    }
+    if (el.id) {
+      var id = window.CSS && CSS.escape ? CSS.escape(el.id) : el.id;
+      var l = document.querySelector('label[for="' + id + '"]');
+      if (l) return clean(l.textContent);
+    }
+    var wrap = el.closest ? el.closest("label") : null;
+    if (wrap) return clean(wrap.textContent);
+    return clean(el.getAttribute("title") || el.getAttribute("placeholder"));
+  }
+
+  function imgAlt(el) {
+    var img = el.querySelector ? el.querySelector("img[alt]") : null;
+    return img ? clean(img.getAttribute("alt")) : "";
+  }
+
+  // Texto que o narrador fala para cada tipo de elemento.
+  function describe(el) {
+    var tag = el.tagName.toLowerCase();
+    var role = el.getAttribute("role");
+    var name = labelOf(el);
+    var text = clean(el.textContent);
+    var out;
+
+    if (tag === "img") {
+      return "Imagem: " + (clean(el.getAttribute("alt")) || name || "sem descrição");
+    }
+    if (/^h[1-6]$/.test(tag)) return "Título: " + (name || text);
+    if (tag === "a" || role === "link") {
+      return (name || text || imgAlt(el) || "sem texto") + ", link";
+    }
+    if (tag === "button" || role === "button") {
+      out = (name || text || imgAlt(el) || "sem nome") + ", botão";
+      var pressed = el.getAttribute("aria-pressed");
+      if (pressed === "true") out += ", ativado";
+      else if (pressed === "false") out += ", desativado";
+      if (el.disabled) out += ", indisponível";
+      return out;
+    }
+    if (tag === "input") {
+      var type = (el.getAttribute("type") || "text").toLowerCase();
+      if (type === "submit" || type === "button" || type === "reset") {
+        return (el.value || name || "sem nome") + ", botão";
+      }
+      if (type === "checkbox") {
+        return (name || "Caixa de seleção") + ", caixa de seleção, " + (el.checked ? "marcada" : "desmarcada");
+      }
+      if (type === "radio") {
+        return (name || "Opção") + ", opção, " + (el.checked ? "selecionada" : "não selecionada");
+      }
+      var kinds = { password: "campo de senha", email: "campo de e-mail", search: "campo de busca", tel: "campo de telefone", date: "campo de data", number: "campo numérico" };
+      out = (name || "Campo") + ", " + (kinds[type] || "campo de texto");
+      if (el.required) out += ", obrigatório";
+      if (type === "password") out += el.value ? ", preenchido" : ", vazio";
+      else out += el.value ? ", preenchido com " + el.value : ", vazio";
+      return out;
+    }
+    if (tag === "textarea") {
+      out = (name || "Campo") + ", campo de texto longo";
+      if (el.required) out += ", obrigatório";
+      out += el.value ? ", preenchido com " + el.value : ", vazio";
+      return out;
+    }
+    if (tag === "select") {
+      var opt = el.options && el.options[el.selectedIndex];
+      return (name || "Lista") + ", lista de opções, selecionado: " + (opt ? clean(opt.textContent) : "nenhum");
+    }
+    return text.length > 400 ? text.slice(0, 400) : text;
+  }
+
+  function clearHighlight() {
+    if (speakingEl) speakingEl.classList.remove("a11y-speaking");
+    speakingEl = null;
+  }
+  function highlight(el, scroll) {
+    clearHighlight();
+    speakingEl = el;
+    el.classList.add("a11y-speaking");
+    if (scroll && el.scrollIntoView) el.scrollIntoView({ block: "center" });
+  }
+
+  function speakNow(text, onend) {
+    if (!synth || !text) { if (onend) onend(); return; }
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = "pt-BR";
+    if (voice) u.voice = voice;
+    u.rate = RATES[state.rate] || 1;
+    u.onend = u.onerror = function () { if (onend) onend(); };
+    synth.speak(u);
+  }
+
+  function stopSpeech() {
+    queueToken++;
+    clearHighlight();
+    if (synth) synth.cancel();
+  }
+
+  // Interrompe o que estiver sendo falado e fala o novo texto.
+  function say(text, el) {
+    if (!synth) return;
+    stopSpeech();
+    speakNow(text, function () {
+      if (el && speakingEl === el) clearHighlight();
+    });
+    if (el) highlight(el, false);
+  }
+  function announce(text) {
+    if (state.narrator) say(text);
+  }
+
+  function chunkText(t) {
+    var parts = t.match(/[^.!?;:]+[.!?;:]*\s*/g) || [t];
+    var out = [];
+    var cur = "";
+    parts.forEach(function (p) {
+      if (cur && (cur + p).length > 180) { out.push(cur); cur = p; }
+      else cur += p;
+    });
+    if (clean(cur)) out.push(cur);
+    return out;
+  }
+
+  function isVisible(el) {
+    if (el.closest("[aria-hidden='true'], [hidden], script, style, noscript, #a11y-root, #roles-chat-window, #roles-chat-bubble")) return false;
+    if (el.getClientRects().length === 0) return false;
+    return window.getComputedStyle(el).visibility !== "hidden";
+  }
+
+  // Lista, em ordem, o que deve ser lido na página inteira.
+  function collectPageItems() {
+    var root = document.querySelector("main") || document.body;
+    var nodes = root.querySelectorAll("h1,h2,h3,h4,h5,h6,p,li,a,button,input,select,textarea,summary,img[alt],label");
+    var items = [];
+    nodes.forEach(function (el) {
+      var tag = el.tagName.toLowerCase();
+      if (!isVisible(el)) return;
+      if (tag === "input" && (el.getAttribute("type") || "").toLowerCase() === "hidden") return;
+      // evita ler duas vezes o que já faz parte de outro elemento
+      if (tag === "li" && el.querySelector("a,button,p,h1,h2,h3,h4,h5,h6,input,select,textarea,li")) return;
+      if ((tag === "a" || tag === "button") && el.closest("p,h1,h2,h3,h4,h5,h6")) return;
+      if (tag === "img" && el.closest("a,button")) return;
+      if (tag === "label" && (el.control || el.querySelector("input,select,textarea"))) return;
+      if (!clean(describe(el))) return;
+      items.push(el);
+    });
+    return items;
+  }
+
+  function readPage() {
+    if (!synth) return;
+    stopSpeech();
+    var items = collectPageItems();
+    if (!items.length) { say("Não encontrei conteúdo para ler nesta página."); return; }
+    var token = queueToken;
+    var i = 0;
+
+    function next() {
+      if (token !== queueToken) return;
+      if (i >= items.length) {
+        clearHighlight();
+        speakNow("Fim da página.");
+        return;
+      }
+      var el = items[i++];
+      highlight(el, true);
+      var chunks = chunkText(describe(el));
+      var j = 0;
+      (function nextChunk() {
+        if (token !== queueToken) return;
+        if (j >= chunks.length) { next(); return; }
+        speakNow(chunks[j++], nextChunk);
+      })();
+    }
+
+    speakNow("Lendo a página.", next);
+  }
+
+  function onFocusIn(e) {
+    if (!state.narrator || !synth) return;
+    var el = e.target;
+    if (!el || el === document.body || el === document.documentElement || !el.tagName) return;
+    var now = Date.now();
+    if (el === lastFocusEl && now - lastFocusTime < 800) return;
+    lastFocusEl = el;
+    lastFocusTime = now;
+    var text = describe(el);
+    if (text) say(text);
+  }
+
+  function onMouseOver(e) {
+    if (!state.narrator || !synth || !e.target.closest) return;
+    var target = e.target.closest(TARGETS);
+    if (!target || target === lastHover) return;
+    clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(function () {
+      var text = describe(target);
+      if (!text) return;
+      lastHover = target;
+      say(text, target);
+    }, 350);
+  }
+  function onMouseOut() {
+    clearTimeout(hoverTimer);
+    lastHover = null;
+  }
+
+  function setNarrator(on) {
+    if (!synth) return;
+    state.narrator = on;
+    save();
+    if (on) {
+      say("Narrador ativado. Use a tecla Tab para navegar e ouvir cada elemento. Alt mais N desativa o narrador. Escape interrompe a leitura.");
+    } else {
+      stopSpeech();
+      speakNow("Narrador desativado.");
+    }
+    syncUI();
+  }
+
+  function initNarrator() {
+    if (!synth || typeof SpeechSynthesisUtterance === "undefined") {
+      synth = null;
+      narrNote.textContent = "Seu navegador não suporta narração por voz.";
+      [narrToggle, readBtn, stopBtn, rateMinus, ratePlus].forEach(function (b) { b.disabled = true; });
+      window.RolesNarrator = { speak: function () {}, stop: function () {}, isOn: function () { return false; } };
+      return;
+    }
+
+    pickVoice();
+    if (synth.addEventListener) synth.addEventListener("voiceschanged", pickVoice);
+    else synth.onvoiceschanged = pickVoice;
+
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("mouseover", onMouseOver);
+    document.addEventListener("mouseout", onMouseOut);
+    window.addEventListener("beforeunload", function () { synth.cancel(); });
+
+    narrToggle.addEventListener("click", function () { setNarrator(!state.narrator); });
+    readBtn.addEventListener("click", readPage);
+    stopBtn.addEventListener("click", stopSpeech);
+    rateMinus.addEventListener("click", function () {
+      if (state.rate > 0) { state.rate--; save(); syncUI(); say("Voz " + RATE_LABELS[state.rate].toLowerCase()); }
+    });
+    ratePlus.addEventListener("click", function () {
+      if (state.rate < RATES.length - 1) { state.rate++; save(); syncUI(); say("Voz " + RATE_LABELS[state.rate].toLowerCase()); }
+    });
+
+    // Para outros scripts (ex.: o chat) falarem quando o narrador estiver ligado.
+    window.RolesNarrator = {
+      speak: function (text) { if (state.narrator) say(text); },
+      stop: stopSpeech,
+      isOn: function () { return !!state.narrator; },
+    };
+  }
+
   /* ---------------- UI ---------------- */
   var OPTIONS = [
     { key: "contrast", icon: "fa-circle-half-stroke", label: "Alto contraste" },
@@ -262,6 +591,17 @@
     panel.innerHTML =
       '<div class="a11y-head"><h2>Acessibilidade</h2>' +
       '<button type="button" class="a11y-close" aria-label="Fechar menu de acessibilidade">&times;</button></div>' +
+      '<div class="a11y-narrator" role="group" aria-label="Narrador">' +
+      '<button type="button" class="a11y-narr-toggle" id="a11y-narr-toggle" aria-pressed="false" aria-keyshortcuts="Alt+N">' +
+      '<i class="fa-solid fa-volume-high" aria-hidden="true"></i><span>Narrador (Alt+N)</span></button>' +
+      '<div class="a11y-narr-actions">' +
+      '<button type="button" id="a11y-read-page"><i class="fa-solid fa-play" aria-hidden="true"></i><span>Ler a página</span></button>' +
+      '<button type="button" id="a11y-stop"><i class="fa-solid fa-stop" aria-hidden="true"></i><span>Parar</span></button></div>' +
+      '<div class="a11y-size" role="group" aria-label="Velocidade da voz">' +
+      '<button type="button" id="a11y-rate-minus" aria-label="Voz mais lenta">&minus;</button>' +
+      '<span>Voz <span class="a11y-level" id="a11y-rate-level" aria-live="polite">Normal</span></span>' +
+      '<button type="button" id="a11y-rate-plus" aria-label="Voz mais rápida">+</button></div>' +
+      '<p class="a11y-note" id="a11y-narr-note" role="status"></p></div>' +
       '<div class="a11y-size" role="group" aria-label="Tamanho do texto">' +
       '<button type="button" id="a11y-minus" aria-label="Diminuir texto">A-</button>' +
       '<span>Texto <span class="a11y-level" id="a11y-level" aria-live="polite">100%</span></span>' +
@@ -276,8 +616,16 @@
     levelEl = panel.querySelector("#a11y-level");
     btnMinus = panel.querySelector("#a11y-minus");
     btnPlus = panel.querySelector("#a11y-plus");
+    narrToggle = panel.querySelector("#a11y-narr-toggle");
+    readBtn = panel.querySelector("#a11y-read-page");
+    stopBtn = panel.querySelector("#a11y-stop");
+    rateMinus = panel.querySelector("#a11y-rate-minus");
+    ratePlus = panel.querySelector("#a11y-rate-plus");
+    rateLevel = panel.querySelector("#a11y-rate-level");
+    narrNote = panel.querySelector("#a11y-narr-note");
 
     bindEvents();
+    initNarrator();
     syncUI();
   }
 
@@ -307,7 +655,9 @@
   function openPanel() {
     panel.classList.add("open");
     trigger.setAttribute("aria-expanded", "true");
-    panel.querySelector(".a11y-close").focus();
+    var closeBtn = panel.querySelector(".a11y-close");
+    closeBtn.focus();
+    announce("Menu de acessibilidade aberto. " + describe(closeBtn));
   }
   function closePanel(returnFocus) {
     panel.classList.remove("open");
@@ -322,7 +672,16 @@
     panel.querySelector(".a11y-close").addEventListener("click", function () { closePanel(true); });
 
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && panel.classList.contains("open")) closePanel(true);
+      // Alt+N liga/desliga o narrador em qualquer lugar do site
+      if (e.altKey && !e.ctrlKey && !e.shiftKey && !e.metaKey && e.code === "KeyN" && synth) {
+        e.preventDefault();
+        setNarrator(!state.narrator);
+        return;
+      }
+      if (e.key === "Escape") {
+        if (synth && (synth.speaking || synth.pending)) stopSpeech();
+        if (panel.classList.contains("open")) closePanel(true);
+      }
     });
     document.addEventListener("click", function (e) {
       if (!panel.classList.contains("open")) return;
@@ -335,17 +694,22 @@
         var k = b.dataset.key;
         state[k] = !state[k];
         commit();
+        announce(b.textContent.trim() + (state[k] ? " ativado" : " desativado"));
       });
     });
 
+    function announceFont() {
+      announce("Texto em " + Math.round((1 + state.font * STEP) * 100) + " por cento");
+    }
     btnMinus.addEventListener("click", function () {
-      if (state.font > 0) { state.font--; commit(true); }
+      if (state.font > 0) { state.font--; commit(true); announceFont(); }
     });
     btnPlus.addEventListener("click", function () {
-      if (state.font < MAX_FONT) { state.font++; commit(true); }
+      if (state.font < MAX_FONT) { state.font++; commit(true); announceFont(); }
     });
 
     panel.querySelector(".a11y-reset").addEventListener("click", function () {
+      stopSpeech();
       state = Object.assign({}, DEFAULTS);
       commit(true);
     });
@@ -358,6 +722,13 @@
     levelEl.textContent = Math.round((1 + state.font * STEP) * 100) + "%";
     btnMinus.disabled = state.font === 0;
     btnPlus.disabled = state.font === MAX_FONT;
+
+    narrToggle.setAttribute("aria-pressed", state.narrator ? "true" : "false");
+    rateLevel.textContent = RATE_LABELS[state.rate] || RATE_LABELS[1];
+    if (synth) {
+      rateMinus.disabled = state.rate === 0;
+      ratePlus.disabled = state.rate === RATES.length - 1;
+    }
   }
 
   function commit(fontChanged) {

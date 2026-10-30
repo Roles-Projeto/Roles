@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* ── Footer ─────────────────────────────────────────── */
 /* IMPORTANTE: não há regras fora de .roles-footer-main  */
 /* para não vazar estilos para outras páginas.           */
@@ -12,7 +19,7 @@
     background-color: var(--fc-bg);
     padding: 4rem 2rem 0;
     color: var(--fc-light);
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 /* Reset scoped — só afeta filhos do footer */
@@ -170,5 +177,248 @@
     .roles-footer-bottom {
         flex-direction: column;
         text-align: center;
+    }
+}
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
+.roles-footer-main {
+    --fc-bg:        #03021A;
+    --fc-light:     #fefefe;
+    --fc-dimmed:    #b3b3b3;
+    --fc-highlight: #ffc600;
+    --fc-divider:   #2a2a3a;
+
+    background-color: var(--fc-bg);
+    padding: 4rem 2rem 0;
+    color: var(--fc-light);
+    font-family: 'Inter', sans-serif;
+}
+
+.roles-footer-main *,
+.roles-footer-main *::before,
+.roles-footer-main *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.roles-footer-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.8fr 1fr 1fr 1.3fr;
+    gap: 2rem;
+    padding-bottom: 3rem;
+}
+
+/* ── Branding ── */
+.roles-footer-logo {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--fc-highlight);
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.5px;
+}
+
+.roles-footer-description {
+    font-size: 0.9rem;
+    color: var(--fc-dimmed);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    max-width: 260px;
+}
+
+/* ── Social icons ── */
+.roles-footer-social {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.roles-footer-social a {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #2a2a3a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fc-dimmed);
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.roles-footer-social a:hover {
+    border-color: var(--fc-highlight);
+    color: var(--fc-highlight);
+    background: rgba(255, 198, 0, 0.08);
+}
+
+/* ── Colunas ── */
+.roles-footer-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fc-highlight);
+    margin-bottom: 1.25rem;
+}
+
+.roles-footer-column ul {
+    list-style: none;
+}
+
+.roles-footer-column ul li {
+    margin-bottom: 0.6rem;
+}
+
+.roles-footer-column a {
+    color: var(--fc-dimmed);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: color 0.2s;
+}
+
+.roles-footer-column a:hover {
+    color: var(--fc-light);
+}
+
+/* ── Contato ── */
+.roles-footer-contact-line {
+    font-size: 0.875rem;
+    color: var(--fc-dimmed);
+    margin-bottom: 0.6rem;
+}
+
+.roles-footer-contact-line a {
+    color: var(--fc-dimmed);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: color 0.2s;
+}
+
+.roles-footer-contact-line a:hover {
+    color: var(--fc-light);
+}
+
+/* ── Rodapé inferior ── */
+.roles-footer-bottom {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.25rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-top: 1px solid var(--fc-divider);
+}
+
+.roles-footer-copy {
+    font-size: 0.8rem;
+    color: var(--fc-dimmed);
+}
+
+.roles-footer-legal {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.roles-footer-legal a {
+    font-size: 0.8rem;
+    color: var(--fc-dimmed);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.roles-footer-legal a:hover {
+    color: var(--fc-light);
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVIDADE
+══════════════════════════════════════ */
+
+@media (max-width: 520px) {
+    .roles-footer-main {
+        padding: 2rem 1.25rem 0;
+    }
+
+    .roles-footer-wrapper {
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+        padding-bottom: 0;
+    }
+
+    /* Branding ocupa tudo no topo */
+    .roles-footer-wrapper > .roles-footer-column:first-child {
+        grid-column: 1 / -1;
+        padding-bottom: 1.75rem;
+        margin-bottom: 1.75rem;
+        border-bottom: 1px solid var(--fc-divider);
+    }
+
+    .roles-footer-logo {
+        font-size: 1.4rem;
+    }
+
+    .roles-footer-description {
+        font-size: 0.83rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Colunas de links em 2 colunas lado a lado */
+    .roles-footer-wrapper > .roles-footer-column:not(:first-child) {
+        padding: 1.5rem 0;
+    }
+
+    /* Coluna Explore — borda direita separando das outras */
+    .roles-footer-wrapper > .roles-footer-column:nth-child(2) {
+        padding-right: 1.25rem;
+        border-right: 1px solid var(--fc-divider);
+    }
+
+    /* Coluna Empresa — padding esquerdo */
+    .roles-footer-wrapper > .roles-footer-column:nth-child(3) {
+        padding-left: 1.25rem;
+    }
+
+    /* Contato ocupa tudo embaixo */
+    .roles-footer-wrapper > .roles-footer-column:last-child {
+        grid-column: 1 / -1;
+        padding-top: 0;
+        padding-bottom: 1.75rem;
+        border-top: 1px solid var(--fc-divider);
+        margin-top: 0;
+    }
+
+    .roles-footer-title {
+        font-size: 0.7rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .roles-footer-column ul li {
+        margin-bottom: 0.5rem;
+    }
+
+    .roles-footer-column a,
+    .roles-footer-contact-line,
+    .roles-footer-contact-line a {
+        font-size: 0.82rem;
+    }
+
+    .roles-footer-bottom {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.5rem;
+        padding: 1rem 0;
+    }
+
+    .roles-footer-legal {
+        gap: 1.25rem;
     }
 }

@@ -4,7 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rolês - Para Empresarios</title>
+    <title>Rolês - Para Empresários</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="/frontend/css/footer.css">
     <link rel="stylesheet" href="/frontend/css/empresario.css">
@@ -18,17 +21,20 @@
 
     <main class="empresario-page">
         <section class="hero-business-cta">
+            <button type="button" class="back-btn" onclick="window.history.back()">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                Voltar
+            </button>
             <div class="container">
                 <h1>Leve Seu Negócio para o Próximo Nível</h1>
 
-                <p>Cadastre seu estabelecimento no Rolês e seja encontrado por milhares de pessoas em Goiânia
-                    procurando
-                    onde sair</p>
+                <p>Cadastre seu estabelecimento no Rolês e seja encontrado por quem está em Goiânia procurando onde sair</p>
 
                 <div class="cta-buttons">
-                    <a href="/frontend/cadastro/cadastro.html" class="btn-primary">Cadastrar Meu Negócio
-                        &rarr;</a>
-                    <a href="/frontend/login/login.html" class="btn-secondary">Já Tenho Conta</a>
+                    <a href="/frontend/cadastro/cadastro.html" class="btn-primary" data-cta-cadastro>
+                        <span data-cta-label>Cadastrar Meu Negócio</span> &rarr;
+                    </a>
+                    <a href="/frontend/login/login.html" class="btn-secondary" data-cta-login>Já Tenho Conta</a>
                 </div>
             </div>
         </section>
@@ -36,37 +42,36 @@
         <section class="why-choose-us">
             <div class="container">
                 <h2>Por Que Escolher o Rolês?</h2>
-                <p class="subtitle">Oferecemos tudo que você precisa para promover seu estabelecimento e atrair mais
-                    clientes</p>
+                <p class="subtitle">Oferecemos tudo que você precisa para promover seu estabelecimento e atrair mais clientes</p>
 
                 <div class="features-grid">
                     <div class="feature-card">
-                        <div class="icon-box"><i class="fa-solid fa-arrow-up-right-dots"></i></div>
+                        <div class="icon-box"><i class="fa-solid fa-arrow-up-right-dots" aria-hidden="true"></i></div>
                         <h3>Aumente sua Visibilidade</h3>
-                        <p>Apareça nas buscas de milhares de usuários em Goiânia procurando lugares para sair</p>
+                        <p>Apareça nas buscas de quem está em Goiânia procurando lugares para sair</p>
                     </div>
                     <div class="feature-card">
-                        <div class="icon-box"><i class="fa-solid fa-ticket-simple"></i></div>
+                        <div class="icon-box"><i class="fa-solid fa-ticket-simple" aria-hidden="true"></i></div>
                         <h3>Venda Ingressos Online</h3>
-                        <p>Venda ingressos para seus eventos diretamente na plataforma com taxas reduzidas</p>
+                        <p>Venda ingressos para seus eventos diretamente na plataforma</p>
                     </div>
                     <div class="feature-card">
-                        <div class="icon-box"><i class="fa-solid fa-user-group"></i></div>
+                        <div class="icon-box"><i class="fa-solid fa-user-group" aria-hidden="true"></i></div>
                         <h3>Atraia Mais Clientes</h3>
                         <p>Conecte-se diretamente com pessoas interessadas no que você oferece</p>
                     </div>
                     <div class="feature-card">
-                        <div class="icon-box"><i class="fa-solid fa-chart-column"></i></div>
+                        <div class="icon-box"><i class="fa-solid fa-chart-column" aria-hidden="true"></i></div>
                         <h3>Análise de Dados</h3>
                         <p>Acompanhe visualizações, vendas de ingressos e engajamento do seu estabelecimento</p>
                     </div>
                     <div class="feature-card">
-                        <div class="icon-box"><i class="fa-solid fa-calendar-days"></i></div>
+                        <div class="icon-box"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></div>
                         <h3>Divulgue Eventos</h3>
                         <p>Promova eventos especiais e gerencie inscrições facilmente</p>
                     </div>
                     <div class="feature-card">
-                        <div class="icon-box"><i class="fa-solid fa-star"></i></div>
+                        <div class="icon-box"><i class="fa-solid fa-star" aria-hidden="true"></i></div>
                         <h3>Destaque Premium</h3>
                         <p>Apareça em posições privilegiadas nos resultados de busca</p>
                     </div>
@@ -80,105 +85,75 @@
                     <span class="tag tag-dark">Recursos Completos</span>
                     <h2>Tudo Que Seu Negócio Precisa em Um Só Lugar</h2>
 
+                    <!-- ⚠️ Confira cada item com o painel real antes de publicar (ver tabela na resposta) -->
                     <ul class="resource-list">
-                        <li><i class="fa-solid fa-circle-check"></i> Dashboard completo de gerenciamento</li>
-                        <li><i class="fa-solid fa-circle-check"></i> Criação e gestão de eventos</li>
-                        <li><i class="fa-solid fa-circle-check"></i> Controle de tipos e preços de ingressos</li>
-                        <li><i class="fa-solid fa-circle-check"></i> Estatísticas e relatórios de vendas</li>
-                        <li><i class="fa-solid fa-circle-check"></i> Respostas a avaliações de clientes</li>
-
-                        <li><i class="fa-solid fa-circle-check"></i> Cadastro de múltiplos estabelecimentos</li>
-                        <li><i class="fa-solid fa-circle-check"></i> Venda de ingressos com taxas reduzidas</li>
-                        <li><i class="fa-solid fa-circle-check"></i> Galeria de fotos ilimitada</li>
-                        <li><i class="fa-solid fa-circle-check"></i> Suporte dedicado</li>
-                        <li><i class="fa-solid fa-circle-check"></i> Notificações de novas vendas</li>
+                        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Dashboard completo de gerenciamento</li>
+                        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Criação e gestão de eventos</li>
+                        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Controle de tipos e preços de ingressos</li>
+                        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Estatísticas e relatórios de vendas</li>
+                        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Respostas a avaliações de clientes</li>
+                        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Cadastro de múltiplos estabelecimentos</li>
+                        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Venda de ingressos com taxas reduzidas</li>
+                        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Galeria de fotos ilimitada</li>
+                        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Suporte dedicado</li>
+                        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Notificações de novas vendas</li>
                     </ul>
 
-                    <a href="/frontend/cadastro/cadastro.html" class="btn-black-start">
-                        <i class="fa-solid fa-briefcase"></i> Começar Agora
+                    <a href="/frontend/cadastro/cadastro.html" class="btn-black-start" data-cta-cadastro>
+                        <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
+                        <span data-cta-label>Começar Agora</span>
                     </a>
                 </div>
 
+                <!-- Valores preenchidos por empresario.js (nada de números fixos no HTML) -->
                 <div class="data-right">
-                    <div class="data-card">
-                        <strong>0k+</strong>
+                    <div class="data-card" data-stat="usuarios">
+                        <strong>—</strong>
                         <span>Usuários Ativos</span>
                     </div>
-                    <div class="data-card">
-                        <strong>0+</strong>
+                    <div class="data-card" data-stat="estabelecimentos">
+                        <strong>—</strong>
                         <span>Estabelecimentos</span>
                     </div>
-                    <div class="data-card">
-                        <strong>0k+</strong>
+                    <div class="data-card" data-stat="eventos">
+                        <strong>—</strong>
                         <span>Eventos/Mês</span>
                     </div>
-                    <div class="data-card">
-                        <strong>0.0</strong>
+                    <div class="data-card" data-stat="avaliacao">
+                        <strong>—</strong>
                         <span>Avaliação Média</span>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="testimonials">
+        <!-- Começa escondida: só aparece se a API devolver depoimentos aprovados -->
+        <section class="testimonials" id="testimonials-section" hidden>
             <div class="container">
-                <h2 class="section-title">O Que Nossos Parceiros Dizem</h2>
-                <p class="subtitle section-subtitle">Confira alguns depoimentos de estabelecimentos que cresceram
-                    com o
-                    Rolês.</p>
+                <h2 class="section-title">O Que Nossos Usuários Dizem</h2>
+                <p class="subtitle section-subtitle">Avaliações reais de quem já frequentou lugares e eventos pelo Rolês.</p>
 
-                <div class="testimonials-grid">
-                    <div class="testimonial-card">
-                        <div class="quote-icon"><i class="fa-solid fa-quote-left"></i></div>
-                        <p class="testimonial-text">"O Rolês aumentou nosso fluxo de clientes em 40% no primeiro
-                            mês. A
-                            gestão de eventos e a venda de ingressos online são um diferencial enorme!"</p>
-                        <div class="author-info">
-                            <span class="author-name">Pedro Henrique</span>
-                            <span class="author-role">Churrascaria do Pedro</span>
-                        </div>
-                    </div>
-
-                    <div class="testimonial-card">
-                        <div class="quote-icon"><i class="fa-solid fa-quote-left"></i></div>
-                        <p class="testimonial-text">"Tínhamos dificuldade em divulgar eventos. Com a plataforma,
-                            ganhamos visibilidade imediata e o processo de vendas é muito mais prático."</p>
-                        <div class="author-info">
-                            <span class="author-name">Mariana Silva</span>
-                            <span class="author-role">Bar da Esquina</span>
-                        </div>
-                    </div>
-
-                    <div class="testimonial-card">
-                        <div class="quote-icon"><i class="fa-solid fa-quote-left"></i></div>
-                        <p class="testimonial-text">"As análises de dados que o painel oferece nos ajudaram a
-                            entender o
-                            público e a criar promoções muito mais eficazes. Recomendo a todos!"</p>
-                        <div class="author-info">
-                            <span class="author-name">Lucas Ferreira</span>
-                            <span class="author-role">Pizzaria Gourmet</span>
-                        </div>
-                    </div>
-                </div>
+                <div class="testimonials-grid" id="testimonials-grid"></div>
             </div>
         </section>
 
         <section class="final-cta-dark">
             <div class="container">
                 <h2>Pronto para Crescer?</h2>
-                <p>Junte-se a centenas de estabelecimentos que já estão atraindo mais clientes com o Rolês</p>
-                <a href="/frontend/Cadastro/cadastro.html" class="btn-white-cta">
-                    Cadastrar Meu Estabelecimento <i class="fa-solid fa-arrow-right"></i>
+                <p>Junte-se aos estabelecimentos que já estão atraindo mais clientes com o Rolês</p>
+                <a href="/frontend/cadastro/cadastro.html" class="btn-white-cta" data-cta-cadastro>
+                    <span data-cta-label>Cadastrar Meu Estabelecimento</span>
+                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                 </a>
             </div>
             <hr class="divider-line">
         </section>
     </main>
 
-
-</body>
-<script src="/frontend/js/config.js"></script>
+    <script src="/frontend/js/config.js"></script>
     <script src="/frontend/js/footer.js" defer></script>
-<script src="/frontend/js/loadHeader.js"></script>
+    <script src="/frontend/js/loadHeader.js"></script>
+    <script src="/frontend/js/empresario.js" defer></script>
+</body>
 
 </html>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Perfil do Organizador | Rolê.AI</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="/frontend/css/footer.css">
   <link rel="stylesheet" href="/frontend/css/verperfil.css">
@@ -39,17 +39,17 @@
             <div class="stats-row">
               <div class="stat-chip">
                 <i class="fa-solid fa-star"></i>
-                <strong id="avaliacao-perfil">4.9</strong>
+                <strong id="avaliacao-perfil">—</strong>
                 <span>avaliação</span>
               </div>
               <div class="stat-chip">
                 <i class="fa-solid fa-calendar-check"></i>
-                <strong id="eventos-realizados">127</strong>
+                <strong id="eventos-realizados">0</strong>
                 <span>eventos</span>
               </div>
               <div class="stat-chip">
                 <i class="fa-solid fa-users"></i>
-                <strong id="participantes-totais">15.420</strong>
+                <strong id="participantes-totais">0</strong>
                 <span>participantes</span>
               </div>
             </div>
@@ -76,97 +76,42 @@
           <nav class="abas-nav">
             <button class="aba js-tab-button ativo" data-tab="proximos-eventos">
               <i class="fa-solid fa-calendar-days"></i> Próximos
-              <span class="aba-badge">8</span>
+              <span class="aba-badge">0</span>
             </button>
             <button class="aba js-tab-button" data-tab="eventos-passados">
               <i class="fa-solid fa-clock-rotate-left"></i> Passados
-              <span class="aba-badge">119</span>
+              <span class="aba-badge">0</span>
             </button>
             <button class="aba js-tab-button" data-tab="avaliacoes">
               <i class="fa-solid fa-star"></i> Avaliações
             </button>
           </nav>
 
-          <!-- PRÓXIMOS EVENTOS -->
+          <!-- PRÓXIMOS EVENTOS (preenchido dinamicamente pelo VerPerfil.js) -->
           <div id="proximos-eventos" class="painel-aba ativo">
-            <div class="evento-proximo-card">
-              <img src="/frontend/imagens/7º imagem card.png" alt="Festival de Jazz">
-              <div class="ep-info">
-                <span class="ep-badge">Em breve</span>
-                <h3>Festival de Jazz ao Ar Livre</h3>
-                <p class="ep-meta"><i class="fa-regular fa-calendar"></i> 25/10/2025 · <i class="fa-regular fa-clock"></i> 19:00</p>
-                <p class="ep-meta"><i class="fa-solid fa-location-dot"></i> Parque Vaca Brava, Goiânia</p>
-                <div class="ep-footer">
-                  <span class="ep-confirmados"><i class="fa-solid fa-circle-check"></i> 145 confirmados</span>
-                  <strong class="ep-preco">R$ 50</strong>
-                </div>
-              </div>
-              <button class="btn-ver-detalhes" onclick="alert('Em breve!')">
-                Ver detalhes <i class="fa-solid fa-arrow-right"></i>
-              </button>
-            </div>
-
-            <div class="evento-proximo-card">
-              <img src="/frontend/imagens/4º imagem cad.png" alt="Stand-up">
-              <div class="ep-info">
-                <span class="ep-badge">Em breve</span>
-                <h3>Noite de Stand-up Comedy</h3>
-                <p class="ep-meta"><i class="fa-regular fa-calendar"></i> 28/10/2025 · <i class="fa-regular fa-clock"></i> 20:30</p>
-                <p class="ep-meta"><i class="fa-solid fa-location-dot"></i> Teatro Goiânia</p>
-                <div class="ep-footer">
-                  <span class="ep-confirmados"><i class="fa-solid fa-circle-check"></i> 88 confirmados</span>
-                  <strong class="ep-preco">R$ 45</strong>
-                </div>
-              </div>
-              <button class="btn-ver-detalhes" onclick="alert('Em breve!')">
-                Ver detalhes <i class="fa-solid fa-arrow-right"></i>
-              </button>
-            </div>
+            <p class="sem-dados">Carregando eventos...</p>
           </div>
 
-          <!-- EVENTOS PASSADOS -->
+          <!-- EVENTOS PASSADOS (preenchido dinamicamente pelo VerPerfil.js) -->
           <div id="eventos-passados" class="painel-aba">
-            <div class="evento-passado-card">
-              <div class="ep-icone"><i class="fa-solid fa-music"></i></div>
-              <div class="ep-texto">
-                <h4>Rock na Praça 2024</h4>
-                <p><i class="fa-regular fa-calendar"></i> 15/09/2024 · <i class="fa-solid fa-users"></i> 933 participantes</p>
-              </div>
-              <div class="ep-nota"><i class="fa-solid fa-star"></i> 4.8</div>
-            </div>
-            <div class="evento-passado-card">
-              <div class="ep-icone"><i class="fa-solid fa-utensils"></i></div>
-              <div class="ep-texto">
-                <h4>Festival Gastronômico</h4>
-                <p><i class="fa-regular fa-calendar"></i> 20/08/2024 · <i class="fa-solid fa-users"></i> 495 participantes</p>
-              </div>
-              <div class="ep-nota"><i class="fa-solid fa-star"></i> 4.9</div>
-            </div>
-            <div class="evento-passado-card">
-              <div class="ep-icone"><i class="fa-solid fa-sun"></i></div>
-              <div class="ep-texto">
-                <h4>Sunset Session</h4>
-                <p><i class="fa-regular fa-calendar"></i> 10/07/2024 · <i class="fa-solid fa-users"></i> 168 participantes</p>
-              </div>
-              <div class="ep-nota perfeita"><i class="fa-solid fa-star"></i> 5.0</div>
-            </div>
+            <p class="sem-dados">Carregando eventos...</p>
           </div>
 
           <!-- AVALIAÇÕES -->
           <div id="avaliacoes" class="painel-aba">
 
-            <!-- Resumo de notas -->
+            <!-- Resumo de notas (preenchido dinamicamente) -->
             <div class="avaliacoes-resumo">
               <div class="nota-grande">
-                <span class="nota-num">4.9</span>
-                <div class="estrelas-grandes">★★★★★</div>
-                <small>Baseado em 48 avaliações</small>
+                <span class="nota-num">—</span>
+                <div class="estrelas-grandes">☆☆☆☆☆</div>
+                <small>Carregando...</small>
               </div>
               <div class="nota-barras">
-                <div class="barra-linha"><span>5 ★</span><div class="barra-track"><div class="barra-fill" style="width:78%"></div></div><span>78%</span></div>
-                <div class="barra-linha"><span>4 ★</span><div class="barra-track"><div class="barra-fill" style="width:15%"></div></div><span>15%</span></div>
-                <div class="barra-linha"><span>3 ★</span><div class="barra-track"><div class="barra-fill" style="width:5%"></div></div><span>5%</span></div>
-                <div class="barra-linha"><span>2 ★</span><div class="barra-track"><div class="barra-fill" style="width:2%"></div></div><span>2%</span></div>
+                <div class="barra-linha"><span>5 ★</span><div class="barra-track"><div class="barra-fill" style="width:0%"></div></div><span>0%</span></div>
+                <div class="barra-linha"><span>4 ★</span><div class="barra-track"><div class="barra-fill" style="width:0%"></div></div><span>0%</span></div>
+                <div class="barra-linha"><span>3 ★</span><div class="barra-track"><div class="barra-fill" style="width:0%"></div></div><span>0%</span></div>
+                <div class="barra-linha"><span>2 ★</span><div class="barra-track"><div class="barra-fill" style="width:0%"></div></div><span>0%</span></div>
                 <div class="barra-linha"><span>1 ★</span><div class="barra-track"><div class="barra-fill" style="width:0%"></div></div><span>0%</span></div>
               </div>
             </div>
@@ -188,30 +133,12 @@
               </button>
             </div>
 
-            <!-- Lista de avaliações -->
+            <!-- Lista de avaliações — SEM conteúdo fictício fixo.
+                 É preenchida 100% via JS (VerPerfil.js -> renderizarAvaliacoesOrganizador),
+                 puxando dados reais de GET /avaliacoes?organizador_id=X e
+                 GET /avaliacoes?evento_id=X de cada evento do organizador. -->
             <div id="lista-avaliacoes">
-              <div class="cartao-avaliacao">
-                <div class="avaliacao-topo">
-                  <div class="avaliador-inicial">M</div>
-                  <div class="avaliador-info">
-                    <strong>Maiara Santos</strong>
-                    <span>03/10/2025</span>
-                  </div>
-                  <div class="avaliacao-estrelas">★★★☆☆</div>
-                </div>
-                <p>Eventos sempre bem organizados! Super recomendo.</p>
-              </div>
-              <div class="cartao-avaliacao">
-                <div class="avaliacao-topo">
-                  <div class="avaliador-inicial">C</div>
-                  <div class="avaliador-info">
-                    <strong>Carlos Oliveira</strong>
-                    <span>05/10/2025</span>
-                  </div>
-                  <div class="avaliacao-estrelas">★★★★★</div>
-                </div>
-                <p>Experiência incrível em todos os eventos que participei.</p>
-              </div>
+              <p class="sem-dados">Carregando avaliações...</p>
             </div>
           </div>
 
@@ -224,19 +151,19 @@
             <h3 class="sidebar-title"><i class="fa-solid fa-chart-simple"></i> Estatísticas</h3>
             <div class="stat-item">
               <span><i class="fa-solid fa-users"></i> Seguidores</span>
-              <strong id="seguidores">2.340</strong>
+              <strong id="seguidores">0</strong>
             </div>
             <div class="stat-item">
               <span><i class="fa-solid fa-calendar-check"></i> Eventos Ativos</span>
-              <strong id="eventos-ativos">8</strong>
+              <strong id="eventos-ativos">0</strong>
             </div>
             <div class="stat-item">
               <span><i class="fa-solid fa-layer-group"></i> Total de Eventos</span>
-              <strong id="total-eventos-estatistica">127</strong>
+              <strong id="total-eventos-estatistica">0</strong>
             </div>
             <div class="stat-item last">
               <span><i class="fa-solid fa-clock"></i> Membro desde</span>
-              <strong id="membro-desde">Jan 2020</strong>
+              <strong id="membro-desde">—</strong>
             </div>
           </div>
 
@@ -244,11 +171,11 @@
             <h3 class="sidebar-title"><i class="fa-solid fa-address-card"></i> Contato</h3>
             <div class="contato-row">
               <i class="fa-solid fa-envelope"></i>
-              <span id="email-contato">contato@eventosgp.com.br</span>
+              <span id="email-contato">—</span>
             </div>
             <div class="contato-row">
               <i class="fa-solid fa-phone"></i>
-              <span id="telefone-contato">(62) 98765-4321</span>
+              <span id="telefone-contato">—</span>
             </div>
           </div>
 

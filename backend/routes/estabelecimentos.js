@@ -1,22 +1,45 @@
-// routes/estabelecimentos.js
 const express = require("express");
 const router = express.Router();
 const db = require("../db/db_config");
+const { verificarToken, autenticacaoOpcional } = require("../middleware/auth");
 
-const isProd = !!process.env.DATABASE_URL;
+// ── Upload de imagens (Supabase Storage) ──
+const { usarSupabase, criarUpload, uploadParaSupabase } = require("../utils/supabaseUpload");
 
-function query(sql, params) {
-  if (isProd) {
-    return db.query(sql, params).then(r => r.rows);
-  } else {
-    return new Promise((resolve, reject) => {
-      db.query(sql, params, (err, results) => {
-        if (err) return reject(err);
-        resolve(results);
-      });
-    });
+const BUCKET_ESTABELECIMENTOS = "imagens-estabelecimentos";
+// criarUpload já vem com o filtro de tipo (só imagens) e o limite de
+// tamanho (5 MB) configurados — ver utils/supabaseUpload.js.
+const upload = criarUpload("uploads-estabelecimentos");
+
+// Rota de upload — devolve a URL pra ser usada em img_logo, img_capa ou fotos_galeria.
+// Exige login (achado do teste de segurança de outubro/2026: sem isso, qualquer
+// pessoa, sem conta, conseguia enviar arquivos pro servidor). O multer roda dentro
+// de um wrapper pra que um arquivo recusado (tipo errado ou maior que 5 MB) vire
+// uma resposta JSON normal, em vez de um erro 500 sem tratamento.
+router.post("/upload-imagem", verificarToken, (req, res, next) => {
+  upload.single("imagem")(req, res, (err) => {
+    if (err) {
+      const status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+      return res.status(status).json({ erro: err.message || "Erro ao processar o arquivo enviado." });
+    }
+    next();
+  });
+}, async (req, res) => {
+  if (!req.file) return res.status(400).json({ erro: "Nenhuma imagem enviada" });
+
+  // Modo local: multer já salvou o arquivo em disco, só devolve o caminho relativo.
+  if (!usarSupabase) {
+    return res.json({ url: `/uploads-estabelecimentos/${req.file.filename}` });
   }
-}
+
+  // Modo Supabase: o arquivo está em memória (req.file.buffer), sobe pro Storage.
+  try {
+    const url = await uploadParaSupabase(req.file, BUCKET_ESTABELECIMENTOS);
+    res.json({ url });
+  } catch (err) {
+    res.status(500).json({ erro: "Erro ao enviar imagem para o Supabase Storage.", detalhes: err.message });
+  }
+});
 
 function parseRow(row) {
   if (!row) return row;
@@ -25,18 +48,51 @@ function parseRow(row) {
   return row;
 }
 
-// ── GET /estabelecimentos ── Lista todos os públicos
+// Remove, de uma linha já carregada, os campos que só o dono pode ver.
+// Usada quando quem pediu não é dono do estabelecimento.
+function removerCamposSensiveis(row) {
+  delete row.cnpj;
+  delete row.responsavel;
+  delete row.usuario_id;
+  return row;
+}
+
+// Monta o endereço da rota que serve a imagem. O parametro v (tamanho da
+// imagem) muda quando a imagem muda, entao o navegador nao fica com cache velho.
+function urlImagem(req, id, tipo, versao) {
+  const proto = String(req.headers["x-forwarded-proto"] || req.protocol).split(",")[0];
+  return `${proto}://${req.get("host")}${req.baseUrl}/${id}/imagem/${tipo}?v=${versao || 0}`;
+}
+
+// Lista pública — as imagens guardadas dentro do banco (data:...base64) NAO vão
+// mais no JSON da lista (pesavam MB por chamada). No lugar vai uma URL curta.
+// Imagens que já são URL ou caminho continuam iguais.
 router.get("/", async (req, res) => {
   try {
-    const sql = `SELECT id, nome, tipo, especialidade, faixa_preco, descricao,
-               endereco, cidade, estado, bairro, rua, numero,
-               telefone, website, comodidades, img_logo, img_capa,
-               nota, avaliacoes, categoria_card, visibilidade
-         FROM estabelecimentos
-         WHERE visibilidade = ${isProd ? "$1" : "?"}
-         ORDER BY criado_em DESC`;
+    const rows = await db.query(`
+      SELECT id, nome, tipo, especialidade, faixa_preco, descricao,
+             endereco, cidade, estado, bairro, rua, numero,
+             telefone, website, comodidades,
+             CASE WHEN img_logo LIKE 'data:%' THEN NULL ELSE img_logo END AS img_logo,
+             CASE WHEN img_capa LIKE 'data:%' THEN NULL ELSE img_capa END AS img_capa,
+             (img_logo LIKE 'data:%') AS logo_inline,
+             (img_capa LIKE 'data:%') AS capa_inline,
+             LENGTH(img_logo) AS logo_tam,
+             LENGTH(img_capa) AS capa_tam,
+             nota, avaliacoes, categoria_card, visibilidade
+      FROM estabelecimentos
+      WHERE visibilidade = ?
+      ORDER BY criado_em DESC`, ["publico"]);
 
-    const rows = await query(sql, ["publico"]);
+    for (const r of rows) {
+      if (r.logo_inline) r.img_logo = urlImagem(req, r.id, "logo", r.logo_tam);
+      if (r.capa_inline) r.img_capa = urlImagem(req, r.id, "capa", r.capa_tam);
+      delete r.logo_inline;
+      delete r.capa_inline;
+      delete r.logo_tam;
+      delete r.capa_tam;
+    }
+
     res.json(rows);
   } catch (err) {
     console.error("Erro ao listar estabelecimentos:", err);
@@ -44,21 +100,91 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ── GET /estabelecimentos/:id ── Detalhe de um estabelecimento
-router.get("/:id", async (req, res) => {
+// Serve o logo ou a capa de um estabelecimento público como imagem de verdade,
+// com cache no navegador. Só busca no banco a coluna da imagem pedida.
+router.get("/:id/imagem/:tipo", async (req, res) => {
   try {
-    const { id } = req.params;
-    const sql = isProd
-      ? `SELECT * FROM estabelecimentos WHERE id = $1`
-      : `SELECT * FROM estabelecimentos WHERE id = ?`;
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(404).end();
 
-    const rows = await query(sql, [id]);
-
-    if (!rows || rows.length === 0) {
-      return res.status(404).json({ erro: "Estabelecimento não encontrado." });
+    let rows;
+    if (req.params.tipo === "logo") {
+      rows = await db.query("SELECT img_logo AS imagem FROM estabelecimentos WHERE id = ? AND visibilidade = ?", [id, "publico"]);
+    } else if (req.params.tipo === "capa") {
+      rows = await db.query("SELECT img_capa AS imagem FROM estabelecimentos WHERE id = ? AND visibilidade = ?", [id, "publico"]);
+    } else {
+      return res.status(404).end();
     }
 
+    const valor = rows && rows[0] && rows[0].imagem;
+    if (!valor) return res.status(404).end();
+
+    // Imagem que já é URL ou caminho: só redireciona.
+    if (!valor.startsWith("data:")) return res.redirect(valor);
+
+    // Imagem guardada como data URI: decodifica e devolve os bytes.
+    const virgula = valor.indexOf(",");
+    if (virgula === -1) return res.status(404).end();
+    const meta = valor.slice(5, virgula);
+    const ehBase64 = /;base64$/i.test(meta);
+    const mime = meta.replace(/;base64$/i, "").toLowerCase();
+
+    // Só imagens comuns, pra essa rota nunca servir HTML ou script.
+    if (!/^image\/(png|jpe?g|gif|webp|avif|bmp)$/.test(mime)) return res.status(415).end();
+
+    const dados = valor.slice(virgula + 1);
+    const buffer = ehBase64 ? Buffer.from(dados, "base64") : Buffer.from(decodeURIComponent(dados));
+
+    res.set({
+      "Content-Type": mime,
+      "Cache-Control": "public, max-age=86400",
+      "X-Content-Type-Options": "nosniff",
+      "Cross-Origin-Resource-Policy": "cross-origin"
+    });
+    res.send(buffer);
+  } catch (err) {
+    console.error("Erro ao servir imagem do estabelecimento:", err);
+    res.status(500).end();
+  }
+});
+
+// Estabelecimentos do usuário logado (pro Dashboard)
+router.get("/meus", verificarToken, async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const rows = await db.query(
+      `SELECT * FROM estabelecimentos WHERE usuario_id = ? ORDER BY criado_em DESC`,
+      [usuarioId]
+    );
+    res.json(rows.map(parseRow));
+  } catch (err) {
+    console.error("Erro ao listar meus estabelecimentos:", err);
+    res.status(500).json({ erro: "Erro interno ao buscar seus estabelecimentos." });
+  }
+});
+
+// Busca por id — pública, mas agora respeita a visibilidade e esconde
+// campos sensíveis de quem não é o dono (achado do teste de segurança de
+// outubro/2026: a rota devolvia estabelecimentos privados, com CNPJ e
+// responsável, pra qualquer visitante sem login). autenticacaoOpcional
+// não bloqueia quem não está logado, só identifica quem está.
+router.get("/:id", autenticacaoOpcional, async (req, res) => {
+  try {
+    const rows = await db.query("SELECT * FROM estabelecimentos WHERE id = ?", [req.params.id]);
+    if (!rows || rows.length === 0)
+      return res.status(404).json({ erro: "Estabelecimento não encontrado." });
+
     const row = parseRow(rows[0]);
+    const souDono = req.usuario && String(req.usuario.id) === String(row.usuario_id);
+
+    if (!souDono) {
+      // Privado e não é o dono: nem confirma que existe.
+      if (row.visibilidade !== "publico") {
+        return res.status(404).json({ erro: "Estabelecimento não encontrado." });
+      }
+      removerCamposSensiveis(row);
+    }
+
     res.json(row);
   } catch (err) {
     console.error("Erro ao buscar estabelecimento:", err);
@@ -66,9 +192,11 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// ── POST /estabelecimentos ── Cadastrar novo estabelecimento
-router.post("/", async (req, res) => {
+// Cadastro exige token e salva usuario_id
+router.post("/", verificarToken, async (req, res) => {
   try {
+    const usuarioId = req.usuario.id; // vem do token, não do body
+
     const {
       nome, tipo, especialidade, faixa_preco, capacidade, descricao,
       local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
@@ -77,52 +205,47 @@ router.post("/", async (req, res) => {
       categoria_card, fotos_galeria, pratos
     } = req.body;
 
-    if (!nome) {
-      return res.status(400).json({ erro: "O campo 'nome' é obrigatório." });
-    }
+    if (!nome) return res.status(400).json({ erro: "O campo 'nome' é obrigatório." });
 
-    const fotos_json = JSON.stringify(fotos_galeria || []);
-    const pratos_json = JSON.stringify(pratos || []);
+    const result = await db.query(`
+      INSERT INTO estabelecimentos
+        (usuario_id, nome, tipo, especialidade, faixa_preco, capacidade, descricao,
+         local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
+         endereco, telefone, website, responsavel, cnpj,
+         visibilidade, horario, comodidades, img_logo, img_capa,
+         categoria_card, fotos_galeria, pratos)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
+            usuarioId, nome, tipo ?? null, especialidade ?? null, faixa_preco ?? null,
+      capacidade !== undefined && capacidade !== null && capacidade !== "" ? Number(capacidade) : null,
+      descricao ?? null, local_nome ?? null, cep ?? null, rua ?? null, numero ?? null,
+      complemento ?? null, bairro ?? null, cidade ?? null, estado ?? null,
+      endereco ?? null, telefone ?? null, website ?? null, responsavel ?? null, cnpj ?? null,
+      visibilidade || "publico", horario || "", comodidades ?? null,
+      img_logo ?? null, img_capa ?? null, categoria_card ?? null,
+      JSON.stringify(fotos_galeria || []), JSON.stringify(pratos || [])
+    ]);
 
-    const sql = isProd
-      ? `INSERT INTO estabelecimentos
-           (nome, tipo, especialidade, faixa_preco, capacidade, descricao,
-            local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
-            endereco, telefone, website, responsavel, cnpj,
-            visibilidade, horario, comodidades, img_logo, img_capa,
-            categoria_card, fotos_galeria, pratos)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27)
-         RETURNING id`
-      : `INSERT INTO estabelecimentos
-           (nome, tipo, especialidade, faixa_preco, capacidade, descricao,
-            local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
-            endereco, telefone, website, responsavel, cnpj,
-            visibilidade, horario, comodidades, img_logo, img_capa,
-            categoria_card, fotos_galeria, pratos)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-
-    const params = [
-      nome, tipo, especialidade, faixa_preco, capacidade, descricao,
-      local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
-      endereco, telefone, website, responsavel, cnpj,
-      visibilidade || "publico", horario || "", comodidades,
-      img_logo, img_capa, categoria_card, fotos_json, pratos_json
-    ];
-
-    const result = await query(sql, params);
-    const novoId = isProd ? result[0]?.id : result.insertId;
-    res.status(201).json({ mensagem: "Estabelecimento cadastrado com sucesso!", id: novoId });
-
+    res.status(201).json({ mensagem: "Estabelecimento cadastrado com sucesso!", id: result.insertId });
   } catch (err) {
     console.error("Erro ao cadastrar estabelecimento:", err);
     res.status(500).json({ erro: "Erro interno ao cadastrar estabelecimento." });
   }
 });
 
-// ── PUT /estabelecimentos/:id ── Atualizar estabelecimento
-router.put("/:id", async (req, res) => {
+// Edição — exige token e checa se o estabelecimento é do usuário logado
+router.put("/:id", verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const usuarioId = req.usuario.id;
+
+    const existentes = await db.query("SELECT usuario_id FROM estabelecimentos WHERE id = ?", [id]);
+    if (!existentes || existentes.length === 0) {
+      return res.status(404).json({ erro: "Estabelecimento não encontrado." });
+    }
+    if (String(existentes[0].usuario_id) !== String(usuarioId)) {
+      return res.status(403).json({ erro: "Você não tem permissão para editar este estabelecimento." });
+    }
+
     const {
       nome, tipo, especialidade, faixa_preco, capacidade, descricao,
       local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
@@ -131,54 +254,47 @@ router.put("/:id", async (req, res) => {
       categoria_card, fotos_galeria, pratos
     } = req.body;
 
-    const fotos_json = JSON.stringify(fotos_galeria || []);
-    const pratos_json = JSON.stringify(pratos || []);
+    await db.query(`
+      UPDATE estabelecimentos SET
+        nome=?, tipo=?, especialidade=?, faixa_preco=?, capacidade=?,
+        descricao=?, local_nome=?, cep=?, rua=?, numero=?,
+        complemento=?, bairro=?, cidade=?, estado=?, endereco=?,
+        telefone=?, website=?, responsavel=?, cnpj=?,
+        visibilidade=?, horario=?, comodidades=?, img_logo=?,
+        img_capa=?, categoria_card=?, fotos_galeria=?, pratos=?
+      WHERE id=?`, [
+            nome ?? null, tipo ?? null, especialidade ?? null, faixa_preco ?? null,
+      capacidade !== undefined && capacidade !== null && capacidade !== "" ? Number(capacidade) : null,
+      descricao ?? null, local_nome ?? null, cep ?? null, rua ?? null, numero ?? null,
+      complemento ?? null, bairro ?? null, cidade ?? null, estado ?? null, endereco ?? null,
+      telefone ?? null, website ?? null, responsavel ?? null, cnpj ?? null,
+      visibilidade ?? "publico", horario ?? "", comodidades ?? null, img_logo ?? null,
+      img_capa ?? null, categoria_card ?? null,
+      JSON.stringify(fotos_galeria ?? []), JSON.stringify(pratos ?? []), id
+    ]);
 
-    const sql = isProd
-      ? `UPDATE estabelecimentos SET
-           nome=$1, tipo=$2, especialidade=$3, faixa_preco=$4, capacidade=$5,
-           descricao=$6, local_nome=$7, cep=$8, rua=$9, numero=$10,
-           complemento=$11, bairro=$12, cidade=$13, estado=$14, endereco=$15,
-           telefone=$16, website=$17, responsavel=$18, cnpj=$19,
-           visibilidade=$20, horario=$21, comodidades=$22, img_logo=$23,
-           img_capa=$24, categoria_card=$25, fotos_galeria=$26, pratos=$27
-         WHERE id=$28`
-      : `UPDATE estabelecimentos SET
-           nome=?, tipo=?, especialidade=?, faixa_preco=?, capacidade=?,
-           descricao=?, local_nome=?, cep=?, rua=?, numero=?,
-           complemento=?, bairro=?, cidade=?, estado=?, endereco=?,
-           telefone=?, website=?, responsavel=?, cnpj=?,
-           visibilidade=?, horario=?, comodidades=?, img_logo=?,
-           img_capa=?, categoria_card=?, fotos_galeria=?, pratos=?
-         WHERE id=?`;
-
-    const params = [
-      nome, tipo, especialidade, faixa_preco, capacidade,
-      descricao, local_nome, cep, rua, numero,
-      complemento, bairro, cidade, estado, endereco,
-      telefone, website, responsavel, cnpj,
-      visibilidade, horario || "", comodidades, img_logo,
-      img_capa, categoria_card, fotos_json, pratos_json, id
-    ];
-
-    await query(sql, params);
     res.json({ mensagem: "Estabelecimento atualizado com sucesso!" });
-
   } catch (err) {
     console.error("Erro ao atualizar estabelecimento:", err);
     res.status(500).json({ erro: "Erro interno ao atualizar estabelecimento." });
   }
 });
 
-// ── DELETE /estabelecimentos/:id ── Remover estabelecimento
-router.delete("/:id", async (req, res) => {
+// Exclusão — exige token e checa dono também (antes não tinha nenhuma proteção)
+router.delete("/:id", verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const sql = isProd
-      ? `DELETE FROM estabelecimentos WHERE id = $1`
-      : `DELETE FROM estabelecimentos WHERE id = ?`;
+    const usuarioId = req.usuario.id;
 
-    await query(sql, [id]);
+    const existentes = await db.query("SELECT usuario_id FROM estabelecimentos WHERE id = ?", [id]);
+    if (!existentes || existentes.length === 0) {
+      return res.status(404).json({ erro: "Estabelecimento não encontrado." });
+    }
+    if (String(existentes[0].usuario_id) !== String(usuarioId)) {
+      return res.status(403).json({ erro: "Você não tem permissão para remover este estabelecimento." });
+    }
+
+    await db.query("DELETE FROM estabelecimentos WHERE id = ?", [id]);
     res.json({ mensagem: "Estabelecimento removido com sucesso!" });
   } catch (err) {
     console.error("Erro ao remover estabelecimento:", err);

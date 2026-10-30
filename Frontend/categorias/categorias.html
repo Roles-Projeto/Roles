@@ -5,9 +5,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rolês - Categoria</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <link rel="stylesheet" href="/frontend/css/eventos.css">
@@ -15,108 +15,6 @@
     <link rel="stylesheet" href="/frontend/css/footer.css">
     <link rel="stylesheet" href="/frontend/css/style.css">
     <link rel="stylesheet" href="/frontend/css/categoria.css">
-
-    <!-- Override styles — prioridade máxima -->
-    <style>
-        html, body { background: #f7f7fb !important; color: #1a1a2e !important; }
-        main        { background: #f7f7fb !important; }
-        .categoria-content { background: #ffffff !important; color: #1a1a2e !important; }
-
-        /* Reset geral — cancela qualquer color:white herdado dos CSS externos */
-        .categoria-content .card-local *,
-        .categoria-content .card-evento * {
-            color: unset;
-        }
-
-        /* Cards */
-        .card-local  { background: #ffffff !important; color: #1a1a2e !important; }
-        .card-evento { background: #ffffff !important; color: #1a1a2e !important; }
-
-        /* Textos internos */
-        .card-content          { background: #ffffff !important; }
-        .card-content h3       { color: #1a1a2e !important; font-size: 0.97rem !important; }
-        .evento-content h3     { color: #1a1a2e !important; }
-        .descricao             { color: #888 !important; }
-        .descricao-evento      { color: #888 !important; }
-        .endereco              { color: #9b9bb0 !important; }
-        .preco-faixa           { color: #5d3fd3 !important; background: #f3f0fd !important; }
-        .horario               { color: #aaa !important; }
-        .avaliacoes-count      { color: #c0bcd8 !important; }
-        .evento-data-local p,
-        .evento-local,
-        .evento-interessados   { color: #aaa !important; }
-
-        /* Badge de preço */
-        .preco-evento {
-            color: #16a34a !important;
-            background: #f0fdf4 !important;
-            border-color: #bbf7d0 !important;
-        }
-
-        /* Tags */
-        .atributo { background: #f5f2ff !important; color: #7060c0 !important; border-color: #e8e0fa !important; }
-
-        /* Botões */
-        .btn-detalhes-evento {
-            background: #f5f2ff !important;
-            color: #5d3fd3 !important;
-            border: 1.5px solid #e8e0fa !important;
-        }
-        .btn-detalhes-evento:hover {
-            background: #ece6fd !important;
-            color: #5d3fd3 !important;
-        }
-        .btn-confirmar-evento {
-            background: linear-gradient(135deg, #6b4fe0 0%, #5036c0 100%) !important;
-            color: #fff !important;
-        }
-        .btn-detalhes {
-            background: linear-gradient(135deg, #6b4fe0 0%, #5036c0 100%) !important;
-            color: #fff !important;
-        }
-
-        /* Imagem do card */
-        .card-image-wrap { background: #f0eef9 !important; position: relative !important; }
-        .card-image-wrap img {
-            display: block !important;
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important;
-            opacity: 1 !important;
-        }
-
-        /* Tag dentro da imagem */
-        .card-image-wrap .tag {
-            position: absolute !important;
-            bottom: 12px !important;
-            top: auto !important;
-            left: 12px !important;
-            background: rgba(255,255,255,0.95) !important;
-            color: #5d3fd3 !important;
-            font-size: 10px !important;
-            padding: 4px 12px !important;
-            border-radius: 8px !important;
-            width: auto !important;
-            height: auto !important;
-            font-weight: 700 !important;
-            letter-spacing: 0.08em !important;
-        }
-        .card-image-wrap .avaliacao {
-            position: absolute !important;
-            top: 12px !important;
-            right: 12px !important;
-            background: rgba(255,255,255,0.95) !important;
-            color: #f59e0b !important;
-            font-size: 12px !important;
-        }
-
-        /* Tabs */
-        .tab-button        { color: #b0b0c0 !important; background: none !important; }
-        .tab-button.active { color: #5d3fd3 !important; border-bottom-color: #5d3fd3 !important; }
-        .tabs-container    { border-bottom-color: #f0f0f5 !important; }
-        .btn-filtros       { background: #faf9ff !important; color: #7b6cb0 !important; border-color: #e8e4f8 !important; }
-        .fonte-dados       { color: #ccc !important; }
-    </style>
 </head>
 
 <body>
@@ -128,16 +26,17 @@
         <!-- ===== HERO ===== -->
         <section class="categoria-hero" id="categoria-hero">
             <div class="hero-noise"></div>
-            <div class="categoria-header container">
-                <a href="/frontend/index.html" class="btn-voltar">
-                    <i class="fas fa-arrow-left"></i> Voltar
-                </a>
 
+            <!-- Botão fora do .container, direto no hero -->
+            <a href="/frontend/index.html" class="btn-voltar">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+
+            <div class="categoria-header">
                 <div class="categoria-info">
                     <div class="icon" id="categoria-icon"></div>
                     <h1 id="categoria-nome"></h1>
                 </div>
-
                 <p class="locais-eventos-count" id="locais-eventos-count">
                     Carregando…
                 </p>
@@ -145,7 +44,7 @@
         </section>
 
         <!-- ===== CONTEÚDO ===== -->
-        <section class="categoria-content container">
+        <section class="categoria-content">
 
             <div class="tabs-container">
                 <button class="tab-button active" data-tab="locais">Locais</button>

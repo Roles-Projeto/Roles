@@ -153,6 +153,39 @@
         return card;
     }
 
+// =========================================================
+// ESTATÍSTICAS
+// =========================================================
+function atualizarEstatisticas(estabelecimentos) {
+    const elLocais     = document.getElementById('stat-locais');
+    const elCategorias = document.getElementById('stat-categorias');
+    const elAvaliacao  = document.getElementById('stat-avaliacao');
+
+    // Total de locais
+    if (elLocais) elLocais.textContent = estabelecimentos.length;
+
+    // Categorias distintas (mesmo campo usado nos filtros da página)
+    if (elCategorias) {
+        const categorias = new Set(
+            estabelecimentos
+                .map(e => norm(e.categoria_card))
+                .filter(Boolean)
+        );
+        elCategorias.textContent = categorias.size;
+    }
+
+    // Média das notas (ignora locais sem nota)
+    if (elAvaliacao) {
+        const notas = estabelecimentos
+            .map(e => parseFloat(e.nota))
+            .filter(n => n > 0);
+
+        elAvaliacao.textContent = notas.length > 0
+            ? (notas.reduce((soma, n) => soma + n, 0) / notas.length).toFixed(1)
+            : '—';
+    }
+}
+
     // =========================================================
     // CARREGAR CARDS
     // =========================================================
@@ -162,7 +195,7 @@
 
         container.style.visibility = 'hidden';
         const estabelecimentos = await fetchEstabelecimentos();
-
+        atualizarEstatisticas(estabelecimentos); 
         container.querySelectorAll('.card').forEach(c => c.remove());
 
         if (estabelecimentos.length > 0) {

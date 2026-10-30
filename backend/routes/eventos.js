@@ -3,7 +3,20 @@ const router = express.Router();
 const eventosController = require("../controllers/eventosController");
 const { verificarToken } = require("../middleware/auth");
 
-router.post("/upload-imagem", eventosController.upload.single("imagem"), async (req, res) => {
+// Upload de imagem — exige login (achado do teste de segurança de
+// outubro/2026: sem isso, qualquer pessoa, sem conta, conseguia enviar
+// arquivos pro servidor). O multer roda dentro de um wrapper pra que um
+// arquivo recusado (tipo errado ou maior que 5 MB, ver eventosController.js)
+// vire uma resposta JSON normal, em vez de um erro 500 sem tratamento.
+router.post("/upload-imagem", verificarToken, (req, res, next) => {
+    eventosController.upload.single("imagem")(req, res, (err) => {
+        if (err) {
+            const status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+            return res.status(status).json({ erro: err.message || "Erro ao processar o arquivo enviado." });
+        }
+        next();
+    });
+}, async (req, res) => {
     if (!req.file) return res.status(400).json({ erro: "Nenhuma imagem enviada" });
 
     // Modo local: multer já salvou o arquivo em disco, só devolve o caminho relativo.

@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="/frontend/css/login.css">
     <!-- ✅ CORREÇÃO: login-modal.css removido — arquivo não existe, causava erro de MIME type no console -->
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body class="modal-body">
@@ -79,11 +82,9 @@
                 <p id="sub-text" class="social-label">Entre rapidamente com</p>
 
                 <div class="social-row">
-                    <button class="btn-social google-btn" type="button">
-                        <img src="https://developers.google.com/identity/images/g-logo.png"
-                             alt="Google" class="social-icon">
-                        <span>Continuar com Google</span>
-                    </button>
+                    <!-- Botão oficial do Google (renderizado pelo Login.js) -->
+                    <div id="googleBtnContainer"
+                         style="display:flex;justify-content:center;width:100%;"></div>
                 </div>
 
                 <p class="register-link">
@@ -94,6 +95,50 @@
                 </p>
 
             </div><!-- /#loginContent -->
+
+            <!-- ─── VERIFICAÇÃO 2FA ─── -->
+            <div id="twoFactorBox" class="two-factor-box">
+
+                <div class="card-top">
+                    <div class="card-icon">
+                        <i class="fas fa-envelope-circle-check"></i>
+                    </div>
+                    <h1>Verificação em duas etapas</h1>
+                    <p class="text-muted" id="twoFactorTexto">
+                        Enviamos um código de 6 dígitos para o seu e-mail.
+                    </p>
+                </div>
+
+                <div id="notificacao2fa" class="notificacao" role="alert"></div>
+
+                <div id="email2faExibido" class="text-muted"
+                     style="text-align:center; margin-bottom:20px; font-weight:600;"></div>
+
+                <div id="etapaCodigoApp" class="otp-row" role="group"
+                     aria-label="Código de 6 dígitos">
+                    <input type="text" class="otp-input" inputmode="numeric" maxlength="1"
+                           autocomplete="one-time-code" aria-label="Dígito 1">
+                    <input type="text" class="otp-input" inputmode="numeric" maxlength="1" aria-label="Dígito 2">
+                    <input type="text" class="otp-input" inputmode="numeric" maxlength="1" aria-label="Dígito 3">
+                    <input type="text" class="otp-input" inputmode="numeric" maxlength="1" aria-label="Dígito 4">
+                    <input type="text" class="otp-input" inputmode="numeric" maxlength="1" aria-label="Dígito 5">
+                    <input type="text" class="otp-input" inputmode="numeric" maxlength="1" aria-label="Dígito 6">
+                </div>
+
+                <button id="verificar2faBtn" class="btn-entrar" type="button">
+                    <span>Verificar código</span>
+                    <i class="fas fa-check"></i>
+                </button>
+
+                <p class="spam-aviso" id="avisoEmail2fa">
+                    Não recebeu o código? Verifique sua caixa de spam.
+                </p>
+
+                <p class="back-login" id="backToLogin2fa">
+                    <i class="fas fa-arrow-left"></i> Voltar para o login
+                </p>
+
+            </div><!-- /#twoFactorBox -->
 
             <!-- ─── RECUPERAR SENHA ─── -->
             <div id="forgotPasswordBox" class="forgot-password-box">

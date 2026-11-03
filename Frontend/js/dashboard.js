@@ -599,7 +599,7 @@ function showSection(sectionId, btn) {
   }
 }
 
-showToast('Tipo de ingresso criado!', 'success');
+
 
 // ─────────────────────────────────────────────
 // RENDERIZAÇÃO DE VENDAS REAIS
@@ -1225,7 +1225,7 @@ const DIAS_SEMANA = [
 // ─────────────────────────────────────────────
 
 async function excluirEventoCard(id) {
-  if (!confirm('Excluir este evento? Essa ação não pode ser desfeita e remove os ingressos e vendas associados.')) return;
+  if (!(await confirmarAviso('Excluir este evento? Essa ação não pode ser desfeita e remove os ingressos e vendas associados.', { titulo: 'Excluir evento', confirmar: 'Excluir' }))) return;
   const token = localStorage.getItem('token');
   const headers = { 'Authorization': 'Bearer ' + token };
   try {
@@ -1241,7 +1241,7 @@ async function excluirEventoCard(id) {
 }
 
 async function excluirEstabelecimentoCard(id) {
-  if (!confirm('Excluir este estabelecimento? Essa ação não pode ser desfeita.')) return;
+ if (!(await confirmarAviso('Excluir este estabelecimento? Essa ação não pode ser desfeita.', { titulo: 'Excluir estabelecimento', confirmar: 'Excluir' }))) return;
   const token = localStorage.getItem('token');
   const headers = { 'Authorization': 'Bearer ' + token };
   try {
@@ -2347,6 +2347,7 @@ async function salvarEdicao() {
 // ─────────────────────────────────────────────
 function showToast(msg, tipo) {
   document.querySelectorAll('.dash-toast').forEach(t => t.remove());
+  if (window.mostrarAviso) return mostrarAviso(msg, { success: 'sucesso', error: 'erro', warn: 'aviso', info: 'info' }[tipo] || 'info');
 
   const colors = { success: '#35D399', error: '#FF5C7A', info: '#FFB627', warn: '#FF8A3D' };
   const icons = { success: '✓', error: '✕', info: 'ℹ', warn: '⚠' };
@@ -2791,7 +2792,7 @@ async function salvarTipoIngresso(id) {
 }
 
 async function excluirTipoIngressoModal(id) {
-  if (!confirm('Excluir este tipo de ingresso?')) return;
+  if (!(await confirmarAviso('Excluir este tipo de ingresso?', { titulo: 'Excluir tipo de ingresso', confirmar: 'Excluir' }))) return;
   try {
     const res = await fetch(`${window.API_BASE}/ingressos/tipos/${id}`, {
       method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }

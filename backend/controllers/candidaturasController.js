@@ -1,6 +1,7 @@
 "use strict";
 
 const connection = require("../db/db_config");
+const { enviarEmailCandidatura } = require("../services/emailService");
 
 /* ════════════════════════════════════════
    HELPERS
@@ -109,11 +110,13 @@ async function criarCandidatura(req, res) {
             curriculoDados = req.file.buffer;
         }
 
-        await connection.query(
+        // 1) Salva no banco (fonte da verdade)
+        const resultado = await connection.query(
             `INSERT INTO candidaturas
                 (nome, whatsapp, email, vaga, cidade_estado,
                  curriculo_nome, curriculo_tipo, curriculo_dados)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+             RETURNING id`,
             [
                 nome,
                 whatsapp,
@@ -126,6 +129,43 @@ async function criarCandidatura(req, res) {
             ]
         );
 
+        const candidaturaId = resultado?.[0]?.id;
+
+        // 2) Notificação por e-mail
+        // A candidatura JÁ está salva. Qualquer falha aqui é registrada,
+        // mas não derruba a resposta ao usuário.
+        try {
+            await enviarEmailCandidatura(
+                { nome, whatsapp, email, vaga, cidadeEstado },
+                curriculoDados
+                    ? { nome: curriculoNome, tipo: curriculoTipo, dados: curriculoDados }
+                    : null
+            );
+
+            if (candidaturaId) {
+                await connection.query(
+                    `UPDATE candidaturas
+                        SET email_enviado = TRUE, email_enviado_em = NOW(), email_erro = NULL
+                      WHERE id = ?`,
+                    [candidaturaId]
+                );
+            }
+        } catch (errEmail) {
+            console.error(`⚠️ Falha ao enviar e-mail da candidatura ${candidaturaId}:`, errEmail.message);
+
+            if (candidaturaId) {
+                try {
+                    await connection.query(
+                        "UPDATE candidaturas SET email_erro = ? WHERE id = ?",
+                        [String(errEmail.message).slice(0, 500), candidaturaId]
+                    );
+                } catch (errLog) {
+                    console.error("⚠️ Não foi possível registrar o erro do e-mail:", errLog.message);
+                }
+            }
+        }
+
+        // 3) Usuário recebe sucesso porque o banco gravou
         return res.status(201).json({ mensagem: "Candidatura recebida!" });
 
     } catch (err) {

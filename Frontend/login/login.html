@@ -13,6 +13,9 @@
 
     <link rel="stylesheet" href="/frontend/css/footer.css">
     <link rel="stylesheet" href="/frontend/css/login.css">
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -220,20 +223,11 @@
 
                         <div class="social-row">
 
-                            <button
-                                class="btn-social google-btn"
-                                type="button">
-
-                                <img
-                                    src="https://developers.google.com/identity/images/g-logo.png"
-                                    alt="Google"
-                                    class="social-icon">
-
-                                <span>
-                                    Continuar com Google
-                                </span>
-
-                            </button>
+                            <!-- Botão oficial do Google (renderizado pelo Login.js) -->
+                            <div
+                                id="googleBtnContainer"
+                                style="display:flex;justify-content:center;width:100%;">
+                            </div>
 
                         </div>
 

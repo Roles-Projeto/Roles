@@ -117,7 +117,11 @@ const adminRoutes            = require("./routes/admin");
 const { ingressosRouter, pedidosRouter } = require("./routes/ingressosRoutes");
 const recomendacaoRoutes     = require("./routes/recomendacaoRoutes");
 const assentosRoutes         = require("./routes/assentos");
+<<<<<<< HEAD
 const beneficiosRoutes       = require("./routes/beneficios");
+=======
+const publicoRoutes          = require("./routes/publico");      // ← NOVO
+>>>>>>> origin/main
 
 // 🤖 Chat Gemini
 const chatRoutes             = require("./routes/chat");
@@ -159,7 +163,11 @@ app.use("/seguidores", require("./routes/seguidoresRoutes"));
 
 app.use("/recomendacoes",    recomendacaoRoutes);
 app.use("/assentos",         assentosRoutes);
+<<<<<<< HEAD
 app.use("/beneficios",       beneficiosRoutes);
+=======
+app.use("/publico",          publicoRoutes);                     // ← NOVO
+>>>>>>> origin/main
 
 // 🤖 POST /api/chat
 app.use("/api", chatRoutes);
@@ -193,7 +201,11 @@ const API_PREFIXES = [
   "/recomendacoes",
   "/assentos",
   "/seguidores",
+<<<<<<< HEAD
   "/beneficios",
+=======
+  "/publico",                                                     // ← NOVO
+>>>>>>> origin/main
 ];
 
 

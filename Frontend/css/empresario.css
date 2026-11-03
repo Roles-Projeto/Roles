@@ -494,120 +494,110 @@ body {
     font-size: 0.9em;
 }
 
-/* ====================================================================== */
-/* 10. RESPONSIVO                                                          */
-/* ====================================================================== */
-@media (max-width: 900px) {
-    .empresario-page .hero-business-cta {
-        padding: 9em 0 7em 0;
-    }
+/* ======================================================================
+   ADICIONAR NO FINAL DE /frontend/css/empresario.css
+   ====================================================================== */
 
-    .empresario-page .back-btn {
-        top: 2em;
-        left: 2em;
-    }
-
-    .empresario-page .complete-resources-data .container {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 3em;
-    }
-
-    .empresario-page .content-left {
-        min-width: 0;
-    }
-
-    .empresario-page .data-right {
-        margin-left: 0;
-    }
-
-    .empresario-page .resource-list {
-        font-size: 1.3em;
-    }
+/* ---- CORREÇÃO: no seu CSS atual o bloco ".empresario-page, ... { box-sizing }"
+   está DENTRO do :root { }. Apague-o de lá e use este, fora de qualquer bloco. ---- */
+.empresario-page,
+.empresario-page *,
+.empresario-page *::before,
+.empresario-page *::after {
+    box-sizing: border-box;
 }
 
+/* Atributo hidden precisa vencer os "display" definidos acima */
+.empresario-page [hidden] {
+    display: none !important;
+}
+
+/* ---- Métricas: carregando ---- */
+.empresario-page .data-card strong {
+    display: block;
+    font-variant-numeric: tabular-nums;
+}
+
+.empresario-page .data-card.is-loading strong {
+    color: transparent;
+    width: 60%;
+    margin: 0 auto 0.3em;
+    border-radius: 0.3em;
+    background: linear-gradient(90deg, #eee 25%, #f7f7f7 50%, #eee 75%);
+    background-size: 200% 100%;
+    animation: roles-shimmer 1.2s linear infinite;
+}
+
+@keyframes roles-shimmer {
+    to { background-position: -200% 0; }
+}
+
+/* ---- Depoimentos: cards de mesma altura, autor/cargo em linhas separadas ---- */
+.empresario-page .testimonial-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.empresario-page .testimonial-text {
+    flex: 1;
+}
+
+.empresario-page .author-name,
+.empresario-page .author-role {
+    display: block;
+}
+
+/* 1 depoimento só: não esticar na largura toda */
+.empresario-page .testimonials-grid:has(> :only-child) {
+    max-width: 45em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ---- Alinhamento do bloco de métricas ---- */
+.empresario-page .data-right {
+    align-self: center;
+}
+
+/* ---- Acessibilidade: foco visível ---- */
+.empresario-page a:focus-visible,
+.empresario-page button:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 3px;
+}
+
+/* ---- Celular: 4 métricas em 2 colunas (antes ocupavam 4 linhas) ---- */
 @media (max-width: 600px) {
-    .empresario-page .back-btn {
-        top: 1.6em;
-        left: 1.6em;
-        padding: 0.9em 1.6em 0.9em 1.2em;
-        font-size: 1.3em;
-    }
-
-    .empresario-page .hero-business-cta h1 {
-        font-size: 3.2em;
-    }
-
-    .empresario-page .content-left h2,
-    .empresario-page .final-cta-dark h2 {
-        font-size: 1.8em;
-    }
-
-    .empresario-page .cta-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 1.2em;
-    }
-
-    .empresario-page .btn-primary {
-        margin-right: 0;
-    }
-
-    .empresario-page .features-grid,
-    .empresario-page .testimonials-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .empresario-page .resource-list {
-        grid-template-columns: 1fr;
-    }
-
     .empresario-page .data-right {
-        grid-template-columns: 1fr;
-    }
-
-    .empresario-page .btn-black-start {
-        width: 100%;
-        padding: 1em 2em;
-        justify-content: center;
-    }
-
-    .empresario-page .final-cta-dark .container {
-        padding: 5em 0;
-    }
-
-    .empresario-page .btn-white-cta {
-        padding: 1.2em 2.5em;
-        width: 100%;
-        justify-content: center;
+        grid-template-columns: 1fr 1fr;
     }
 }
 
-@media (max-width: 420px) {
-    .empresario-page .hero-business-cta {
-        flex-direction: column;
-        padding-top: 6em;
+@media (max-width: 340px) {
+    .empresario-page .data-right {
+        grid-template-columns: 1fr;
     }
+}
 
-    .empresario-page .back-btn {
-        position: static;
-        margin-bottom: 2em;
+@media (prefers-reduced-motion: reduce) {
+    .empresario-page .data-card.is-loading strong {
+        animation: none;
     }
+}
 
-    .empresario-page h1 {
-        font-size: 2.6em;
-    }
+/* ---- Estrelas das avaliações ---- */
+.empresario-page .testimonial-stars {
+    display: flex;
+    gap: 0.3em;
+    margin: -0.6em 0 1em;
+    font-size: 1.4em;
+    color: #f5a623;
+}
 
-    .empresario-page .data-card strong {
-        font-size: 2.4em;
-    }
+.empresario-page .testimonial-stars .is-off {
+    color: #ddd;
+}
 
-    .empresario-page .testimonial-card {
-        padding: 1.8em;
-    }
-
-    .empresario-page .icon-box {
-        width: 3.4em;
-        height: 3.4em;
-    }
+.empresario-page .testimonial-stars:empty {
+    display: none;
 }

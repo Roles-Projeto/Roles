@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="/frontend/css/login.css">
     <!-- ✅ CORREÇÃO: login-modal.css removido — arquivo não existe, causava erro de MIME type no console -->
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body class="modal-body">
@@ -79,11 +82,9 @@
                 <p id="sub-text" class="social-label">Entre rapidamente com</p>
 
                 <div class="social-row">
-                    <button class="btn-social google-btn" type="button">
-                        <img src="https://developers.google.com/identity/images/g-logo.png"
-                             alt="Google" class="social-icon">
-                        <span>Continuar com Google</span>
-                    </button>
+                    <!-- Botão oficial do Google (renderizado pelo Login.js) -->
+                    <div id="googleBtnContainer"
+                         style="display:flex;justify-content:center;width:100%;"></div>
                 </div>
 
                 <p class="register-link">

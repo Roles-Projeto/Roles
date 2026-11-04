@@ -353,7 +353,7 @@ async function comprarIngresso(req, res) {
         const pedido_id = await db.transacao(async (tx) => {
             const pedidoResult = await tx.query(
                 "INSERT INTO pedidos (usuario_id, evento_id, valor_total, forma_pagamento, status) VALUES (?, ?, ?, ?, ?)",
-                [usuario_id, evento_id, valor_pedido, formaFinal, status_pagamento]
+                [usuario_id, evento_id, Math.round((valor_total - calculo.desconto + Number.EPSILON) * 100) / 100, formaFinal, status_pagamento]
             );
             const novoPedidoId = pedidoResult.insertId ?? pedidoResult[0]?.id;
 

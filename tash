@@ -35,7 +35,8 @@
  [m
      </main>[m
  [m
-     <script src="/frontend/js/config.js"></script>[m
+     <script src="/frontend/js/config.js"></script>
+     <script src="/frontend/js/feedback.js"></script>>[m
      <script src="/frontend/js/footer.js" defer></script>[m
      <script src="/frontend/js/loadHeader.js"></script>[m
 [31m-    <script src="/Frontend/js/Evento.js"></script>[m

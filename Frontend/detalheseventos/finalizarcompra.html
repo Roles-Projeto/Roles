@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -135,7 +135,7 @@
             <div id="payment-pix" class="payment-card">
                 <div class="pix-info-banner">
                     <i class="fas fa-bolt"></i>
-                    Pagamento instantâneo — aprovado na hora, sem taxas extras!
+                    Pagamento instantâneo — aprovado na hora!
                 </div>
 
                 <!-- Resumo do pagador (dados pessoais) -->
@@ -396,7 +396,7 @@
         <h2 class="section-title">Resumo do Pedido</h2>
 
         <div class="event-details">
-            <img class="event-image" id="event-image" src="caminho/para/imagem_evento.jpg" alt="Evento">
+            <img class="event-image" id="event-image" src="/frontend/imagens/logo3.png" alt="Evento">
             <div class="event-info">
                 <h4 id="event-name">Noite da Sanfona</h4>
                 <div class="event-meta">
@@ -430,8 +430,15 @@
                 <span id="subtotal-label">Subtotal (1x)</span>
                 <span class="price" id="subtotal">R$ 30.00</span>
             </div>
+
+            <!-- Desconto de boas-vindas (aparece só quando o usuário tem direito) -->
+            <div class="price-row" id="row-desconto" style="display:none;">
+                <span id="desconto-label">Desconto de boas-vindas</span>
+                <span class="price" id="desconto-valor">- R$ 0,00</span>
+            </div>
+
             <div class="price-row">
-                <span>Taxa de serviço (10%)</span>
+                <span id="taxa-label">Taxa de serviço (10%)</span>
                 <span class="price" id="taxa">R$ 3.00</span>
             </div>
             <div class="tax-info">
@@ -455,6 +462,7 @@
 <script src="/frontend/js/auth.js"></script>
 <script src="/frontend/js/footer.js"></script>
 <script src="/frontend/js/loadHeader.js"></script>
+<script src="/frontend/js/beneficios.js"></script>
 <script src="/frontend/js/FinalizarCompra.js"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ const beneficios = require("../services/beneficiosService");
 // O criarEventos.js grava "pago" para pagos; confirme aqui o texto que ele usa para os gratuitos.
 const TIPO_GRATUITO = "gratuito";
 
-// false = o dono do evento que "compra" o proprio ingresso paga normalmente
+// false = o dono do evento que "compra" o próprio ingresso paga normalmente
 // (com as taxas da plataforma). true = vira cortesia (valor 0), como era antes.
 const DONO_GERA_CORTESIA = false;
 
@@ -193,6 +193,9 @@ async function comprarIngresso(req, res) {
             return res.status(403).json({ erro: "Este evento ainda não foi aprovado para vendas." });
         }
 
+        // Dono do evento comprando o próprio ingresso paga como qualquer cliente
+        // (com taxa da plataforma). Para voltar a gerar cortesia automática para o
+        // dono, troque DONO_GERA_CORTESIA para true no topo do arquivo.
         const ehCortesia = DONO_GERA_CORTESIA && String(evento.usuario_id) === String(usuario_id);
 
         let valor_total = 0;
@@ -339,6 +342,10 @@ async function comprarIngresso(req, res) {
             ? beneficios.PEDIDO_ZERO
             : beneficios.calcularPedido(detalhes, situacaoBeneficio.disponivel);
 
+        // Valor do pedido gravado no banco (aparece em "Meus Ingressos" e no dashboard):
+        // subtotal dos ingressos MENOS o desconto de boas-vindas, sem a taxa de serviço.
+        const valor_pedido = Math.round((valor_total - calculo.desconto + Number.EPSILON) * 100) / 100;
+
         // Pedido + todas as linhas de venda + assentos vendidos + uso do benefício
         // entram na MESMA transação. Se qualquer passo falhar (inclusive uma reserva
         // expirada ou o benefício já usado), o pedido inteiro é revertido — nunca
@@ -346,7 +353,7 @@ async function comprarIngresso(req, res) {
         const pedido_id = await db.transacao(async (tx) => {
             const pedidoResult = await tx.query(
                 "INSERT INTO pedidos (usuario_id, evento_id, valor_total, forma_pagamento, status) VALUES (?, ?, ?, ?, ?)",
-                [usuario_id, evento_id, valor_total, formaFinal, status_pagamento]
+                [usuario_id, evento_id, valor_pedido, formaFinal, status_pagamento]
             );
             const novoPedidoId = pedidoResult.insertId ?? pedidoResult[0]?.id;
 

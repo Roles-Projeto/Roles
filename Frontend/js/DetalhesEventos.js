@@ -14,6 +14,28 @@ const MAX_VISIVEL_POR_SETOR = 2;     // ingressos mostrados por setor antes do "
 const LIMITE_DESCRICAO_CURTA = 320;  // acima disso a descrição fica recolhida com "Ler mais"
 
 /* ═══════════════════════════════════════════
+   BENEFÍCIO DE BOAS-VINDAS (1ª e 2ª compra)
+   A regra fica em /frontend/js/beneficios.js. Aqui só mostramos o valor;
+   quem vale de verdade é o cálculo do backend.
+═══════════════════════════════════════════ */
+// Quantas compras PAGAS o usuário já fez (null = desconhecido: sem login ou sem endpoint)
+let COMPRAS_PAGAS = null;
+
+async function carregarStatusBeneficio() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+        const res = await fetch(`${API_BASE}/beneficios/status`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const dados = await res.json();
+        const n = Number(dados.comprasPagas);
+        COMPRAS_PAGAS = Number.isFinite(n) ? n : null;
+    } catch (_) { /* sem benefício: tudo segue como antes */ }
+}
+
+/* ═══════════════════════════════════════════
    TEMPLATES DE MAPA
    Cada template define os setores disponíveis e o SVG a ser
    injetado dinamicamente, de acordo com o tipo_mapa/mapa_config
@@ -315,16 +337,40 @@ function atualizarResumo() {
         return;
     }
 
-    const subtotal = preco * qtd;
-    const taxa = Math.round(subtotal * TAXA_SERVICO * 100) / 100;
+    const calculo = window.Beneficios.calcularPedido({
+        precoUnitario: preco,
+        quantidade: qtd,
+        comprasPagas: COMPRAS_PAGAS ?? 0,
+        elegivel: COMPRAS_PAGAS !== null && !/meia/i.test(e.ingressoNome)
+    });
+    const subtotal = calculo.subtotal;
+    const taxa = calculo.taxa;
 
     const sufixoAssento = numerado && e.assento_rotulos?.length
         ? ` (${e.assento_rotulos.length > 1 ? 'assentos' : 'assento'} ${e.assento_rotulos.join(', ')})`
         : '';
     document.getElementById('resumo-linha-ingresso').textContent = `${qtd}x ${e.ingressoNome}${sufixoAssento}`;
     document.getElementById('resumo-subtotal').textContent = formatarMoeda(subtotal);
-    document.getElementById('resumo-taxa').textContent = formatarMoeda(taxa);
-    total.textContent = formatarMoeda(subtotal + taxa);
+
+    const linhaDesconto = document.getElementById('linha-desconto');
+    if (linhaDesconto) {
+        linhaDesconto.style.display = calculo.beneficio ? '' : 'none';
+        if (calculo.beneficio) {
+            document.getElementById('resumo-desconto-rotulo').textContent =
+                `Desconto de boas-vindas (${Math.round(calculo.beneficio.percentual * 100)}% em 1 ingresso)`;
+            document.getElementById('resumo-desconto').textContent = '- ' + formatarMoeda(calculo.desconto);
+        }
+    }
+
+    const rotuloTaxa = document.getElementById('resumo-taxa-rotulo');
+    if (rotuloTaxa) {
+        rotuloTaxa.textContent = calculo.taxaDispensada > 0
+            ? 'Taxa de serviço (grátis em 1 ingresso)'
+            : 'Taxa de serviço (10%)';
+    }
+    document.getElementById('resumo-taxa').textContent =
+        (calculo.taxaDispensada > 0 && taxa === 0) ? 'Grátis' : formatarMoeda(taxa);
+    total.textContent = formatarMoeda(calculo.total);
     atualizarBarraMobile(total.textContent);
 
     if (bloco) bloco.style.display = '';
@@ -1867,6 +1913,7 @@ function inicializarAcaoBotaoComprar() {
 }
 document.addEventListener('DOMContentLoaded', async function () {
     await carregarDetalhesEvento();
+    carregarStatusBeneficio().then(atualizarResumo);
     inicializarAcaoBotaoComprar();
     inicializarControlesQuantidade();
 

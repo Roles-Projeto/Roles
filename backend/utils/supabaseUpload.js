@@ -24,6 +24,27 @@ function criarStorage(pastaLocal) {
         });
 }
 
+// Só aceita os tipos de imagem usados no site. Qualquer outro tipo
+// (.html, .txt, .exe, etc.) é recusado antes de o arquivo ser salvo —
+// achado do teste de segurança de outubro/2026 (upload sem validação
+// permitia subir um .html com <script> e executá-lo no servidor).
+const TIPOS_IMAGEM_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+function filtrarImagem(req, file, cb) {
+    if (TIPOS_IMAGEM_PERMITIDOS.includes(file.mimetype)) return cb(null, true);
+    cb(new Error('Tipo de arquivo não permitido. Envie uma imagem (jpg, png, webp ou gif).'));
+}
+
+// Pronto pra usar nas rotas: já vem com o filtro de tipo e o limite de
+// tamanho (5 MB) configurados, além do armazenamento (local ou Supabase).
+function criarUpload(pastaLocal) {
+    return multer({
+        storage: criarStorage(pastaLocal),
+        fileFilter: filtrarImagem,
+        limits: { fileSize: 5 * 1024 * 1024 } // 5 MB
+    });
+}
+
 // Faz upload do buffer recebido do multer pro Supabase Storage
 // e devolve a URL pública do arquivo. Só é chamada quando USAR_SUPABASE = true.
 async function uploadParaSupabase(file, bucketName) {
@@ -50,5 +71,6 @@ async function uploadParaSupabase(file, bucketName) {
 module.exports = {
     usarSupabase: USAR_SUPABASE,
     criarStorage,
+    criarUpload,
     uploadParaSupabase,
 };

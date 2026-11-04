@@ -9,6 +9,10 @@ const beneficios = require("../services/beneficiosService");
 // O criarEventos.js grava "pago" para pagos; confirme aqui o texto que ele usa para os gratuitos.
 const TIPO_GRATUITO = "gratuito";
 
+// false = o dono do evento que "compra" o proprio ingresso paga normalmente
+// (com as taxas da plataforma). true = vira cortesia (valor 0), como era antes.
+const DONO_GERA_CORTESIA = false;
+
 // ====================================================
 // LISTAR EVENTOS DISPONÍVEIS
 // Só eventos aprovados por um admin (status_aprovacao = 'aprovado').
@@ -189,7 +193,7 @@ async function comprarIngresso(req, res) {
             return res.status(403).json({ erro: "Este evento ainda não foi aprovado para vendas." });
         }
 
-        const ehCortesia = String(evento.usuario_id) === String(usuario_id);
+        const ehCortesia = DONO_GERA_CORTESIA && String(evento.usuario_id) === String(usuario_id);
 
         let valor_total = 0;
         const detalhes  = [];

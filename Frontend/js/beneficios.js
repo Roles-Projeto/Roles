@@ -1,65 +1,117 @@
-/* ==================================================
-   BENEFÍCIO DE BOAS-VINDAS - Rolês  (arquivo do FRONTEND)
-   Salvar na mesma pasta do FinalizarCompra.js e do config.js
-   (URL: /frontend/js/beneficios.js)
+"use strict";
 
-   Regra atual (só vale para quem NUNCA fez uma compra paga):
-   - 15% de desconto em 1 ingresso
-   - taxa de serviço zerada nesse mesmo ingresso
-   - os demais ingressos da compra pagam preço cheio + taxa de 10%
+const db = require("../db/db_config");
 
-   Usado por detalhesEventos.js e FinalizarCompra.js:
-   window.Beneficios.calcularPedido({ precoUnitario, quantidade, comprasPagas, elegivel })
-================================================== */
-(function (raiz) {
-    "use strict";
+// ====================================================
+// BENEFÍCIO DE BOAS-VINDAS (regra OFICIAL, no backend)
+// O front (Frontend/js/beneficios.js) só exibe o valor; quem vale é este cálculo.
+// Mantenha REGRA igual a REGRAS[0] do Frontend/js/beneficios.js.
+//
+// Regra: só na 1ª compra paga do usuário (e do CPF):
+//   15% de desconto em 1 ingresso + taxa de serviço grátis nesse ingresso.
+// ====================================================
+const TAXA_SERVICO = 0.10;
+const REGRA = { percentual: 0.15, ingressos: 1, taxaZero: true };
+const TIPO_BENEFICIO = "boas_vindas";
 
-    const TAXA_SERVICO = 0.10;
+const PEDIDO_ZERO = Object.freeze({
+    subtotal: 0, desconto: 0, taxa: 0, taxaDispensada: 0, total: 0, aplicou: false,
+});
 
-    // Benefícios por número de compras pagas já feitas (0 = primeira compra).
-    // Para criar um benefício na 2ª compra, adicione a chave 1.
-    const REGRAS = {
-        0: { percentual: 0.15, ingressos: 1, taxaZero: true },
-    };
+const arredondar = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+const soDigitos = (v) => String(v ?? "").replace(/\D/g, "");
+const ehMeia = (titulo) => /meia/i.test(titulo || "");
 
-    const arredondar = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+// Pedidos pagos (valor > 0 e não cancelados) do usuário ou de qualquer conta com o mesmo CPF
+async function contarComprasPagas(usuarioId, cpf) {
+    const filtroCpf = cpf
+        ? " OR REPLACE(REPLACE(REPLACE(u.cpf, '.', ''), '-', ''), ' ', '') = ?"
+        : "";
+    const params = cpf ? [usuarioId, cpf] : [usuarioId];
 
-    function calcularPedido({ precoUnitario, quantidade, comprasPagas, elegivel }) {
-        const preco = Number(precoUnitario) || 0;
-        const qtd = Math.max(1, parseInt(quantidade, 10) || 1);
-        const subtotal = arredondar(preco * qtd);
+    const rows = await db.query(`
+        SELECT COUNT(DISTINCT p.id) AS total
+        FROM pedidos p
+        JOIN usuarios u ON u.id = p.usuario_id
+        WHERE (p.usuario_id = ?${filtroCpf})
+          AND p.valor_total > 0
+          AND LOWER(p.status) NOT IN ('cancelado', 'cancelada', 'estornado', 'expirado')
+    `, params);
 
-        const regra = (elegivel && preco > 0) ? REGRAS[Number(comprasPagas)] : null;
+    return Number(rows[0]?.total) || 0;
+}
 
-        // Sem benefício: preço cheio + taxa de 10%
-        if (!regra) {
-            const taxa = arredondar(subtotal * TAXA_SERVICO);
-            return {
-                subtotal,
-                desconto: 0,
-                taxa,
-                taxaDispensada: 0,
-                total: arredondar(subtotal + taxa),
-                beneficio: null,
-            };
-        }
+// O usuário ainda tem direito ao benefício?
+// Devolve { disponivel, motivo, cpf, comprasPagas }
+async function situacaoBeneficio(usuarioId) {
+    const usuarioRows = await db.query("SELECT cpf FROM usuarios WHERE id = ?", [usuarioId]);
+    const cpfDigitos = soDigitos(usuarioRows[0]?.cpf);
+    const cpf = cpfDigitos.length === 11 ? cpfDigitos : null;
 
-        // Com benefício: só os primeiros "regra.ingressos" ingressos ganham desconto
-        const qtdBeneficio = Math.min(qtd, regra.ingressos);
-        const desconto = arredondar(preco * qtdBeneficio * regra.percentual);
-        const taxaDispensada = regra.taxaZero ? arredondar(preco * qtdBeneficio * TAXA_SERVICO) : 0;
-        const taxa = arredondar(preco * (qtd - (regra.taxaZero ? qtdBeneficio : 0)) * TAXA_SERVICO);
-        const total = arredondar(subtotal - desconto + taxa);
+    const comprasPagas = await contarComprasPagas(usuarioId, cpf);
 
-        return {
-            subtotal,
-            desconto,
-            taxa,
-            taxaDispensada,
-            total,
-            beneficio: { percentual: regra.percentual, ingressos: regra.ingressos },
-        };
+    // Sem CPF no perfil não dá para barrar abuso: sem benefício
+    if (!cpf) return { disponivel: false, motivo: "sem_cpf", cpf: null, comprasPagas };
+
+    // Quem já comprou antes (sem benefício) perde o direito: vale só na 1ª compra
+    if (comprasPagas > 0) return { disponivel: false, motivo: "ja_comprou", cpf, comprasPagas };
+
+    const usados = await db.query(
+        "SELECT id FROM beneficios_usados WHERE tipo = ? AND (usuario_id = ? OR cpf = ?) LIMIT 1",
+        [TIPO_BENEFICIO, usuarioId, cpf]
+    );
+    if (usados.length) return { disponivel: false, motivo: "ja_usado", cpf, comprasPagas };
+
+    return { disponivel: true, motivo: null, cpf, comprasPagas };
+}
+
+// Cálculo do pedido. detalhes = [{ tipo, quantidade }] (mesmo formato do comprarIngresso).
+// O desconto vale para 1 ingresso só (o primeiro item pago que não seja meia-entrada).
+function calcularPedido(detalhes, elegivel) {
+    const subtotal = arredondar(
+        detalhes.reduce((soma, d) => soma + Number(d.tipo.valor) * d.quantidade, 0)
+    );
+
+    const itemBeneficio = elegivel
+        ? detalhes.find(d => Number(d.tipo.valor) > 0 && !ehMeia(d.tipo.titulo)) || null
+        : null;
+
+    let desconto = 0;
+    let taxaDispensada = 0;
+    if (itemBeneficio) {
+        const preco = Number(itemBeneficio.tipo.valor);
+        const qtdBeneficio = Math.min(itemBeneficio.quantidade, REGRA.ingressos);
+        desconto = arredondar(preco * qtdBeneficio * REGRA.percentual);
+        taxaDispensada = REGRA.taxaZero ? arredondar(preco * qtdBeneficio * TAXA_SERVICO) : 0;
     }
 
-    raiz.Beneficios = { calcularPedido, REGRAS, TAXA_SERVICO };
-})(window);
+    const taxa = arredondar(subtotal * TAXA_SERVICO - taxaDispensada);
+    const total = arredondar(subtotal - desconto + taxa);
+
+    return { subtotal, desconto, taxa, taxaDispensada, total, aplicou: !!itemBeneficio };
+}
+
+// Grava o uso do benefício. Chamar DENTRO da transação da compra.
+// Devolve false se a chave única barrou (benefício já usado, ex.: duas compras simultâneas).
+async function registrarUso(tx, { usuarioId, cpf, pedidoId, calculo }) {
+    try {
+        await tx.query(
+            `INSERT INTO beneficios_usados
+                (tipo, usuario_id, cpf, pedido_id, percentual, desconto, taxa_dispensada)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [TIPO_BENEFICIO, usuarioId, cpf, pedidoId, REGRA.percentual, calculo.desconto, calculo.taxaDispensada]
+        );
+        return true;
+    } catch (err) {
+        if (err.code === "ER_DUP_ENTRY" || err.errno === 1062) return false;
+        throw err;
+    }
+}
+
+module.exports = {
+    REGRA,
+    PEDIDO_ZERO,
+    situacaoBeneficio,
+    calcularPedido,
+    registrarUso,
+};

@@ -3,6 +3,7 @@
 const db     = require("../db/db_config");
 const crypto = require("crypto");
 const { venderAssentosReservados, gerarAssentosParaIngresso } = require("./assentosController");
+const beneficios = require("../services/beneficiosService");
 
 // Valor gravado em ingressos.tipo quando o ingresso não tem custo.
 // O criarEventos.js grava "pago" para pagos; confirme aqui o texto que ele usa para os gratuitos.
@@ -10,6 +11,7 @@ const TIPO_GRATUITO = "gratuito";
 
 // ====================================================
 // LISTAR EVENTOS DISPONÍVEIS
+// Só eventos aprovados por um admin (status_aprovacao = 'aprovado').
 // ====================================================
 async function listarEventos(req, res) {
     try {
@@ -20,6 +22,7 @@ async function listarEventos(req, res) {
             FROM eventos e
             LEFT JOIN ingressos i ON i.evento_id = e.id
             WHERE e.data_inicio > NOW()
+              AND e.status_aprovacao = 'aprovado'
             GROUP BY e.id
             ORDER BY e.data_inicio ASC
         `);
@@ -41,7 +44,7 @@ async function vendasDoDono(req, res) {
     }
 
     try {
-              const vendas = await db.query(`
+        const vendas = await db.query(`
             SELECT
                 p.id,
                 p.evento_id,
@@ -96,6 +99,9 @@ async function totalIngressosPorUsuario(req, res) {
 
 // ====================================================
 // DETALHE DO EVENTO + TIPOS DE INGRESSO
+// Evento que não está aprovado só pode ser visto pelo próprio dono
+// (precisa de autenticacaoOpcional na rota pra req.usuario existir);
+// pra qualquer outra pessoa responde 404.
 // ====================================================
 async function detalheEvento(req, res) {
     const { id } = req.params;
@@ -103,6 +109,11 @@ async function detalheEvento(req, res) {
         const rows = await db.query("SELECT * FROM eventos WHERE id = ?", [id]);
         const evento = rows[0];
         if (!evento) return res.status(404).json({ erro: "Evento não encontrado." });
+
+        const souDono = req.usuario && String(req.usuario.id) === String(evento.usuario_id);
+        if (evento.status_aprovacao !== "aprovado" && !souDono) {
+            return res.status(404).json({ erro: "Evento não encontrado." });
+        }
 
         const tiposDb = await db.query(`
             SELECT
@@ -139,25 +150,29 @@ async function detalheEvento(req, res) {
         res.status(500).json({ erro: "Erro interno.", detalhe: err.message });
     }
 }
+
 // ====================================================================
-// SUBSTITUA a função comprarIngresso inteira do ingressosController.js
-// por esta, e adicione esta linha junto dos outros "require" no topo:
-//
-//   const { venderAssentosReservados } = require("./assentosController");
-//
-// O que mudou em relação à versão anterior:
-//  1. quantidade validada (inteiro >= 1) — antes aceitava negativo/quebrado
+// COMPRAR INGRESSO
+//  1. quantidade validada (inteiro >= 1)
 //  2. ingresso numerado exige assento_ids (mesma quantidade) e vende os assentos
 //     RESERVADOS por quem compra, na mesma transação do pedido
 //  3. usuario_id vem do token quando existe (req.usuario); o do body só é
-//     usado enquanto a rota ainda não tem o middleware verificarToken
+//     usado enquanto a rota não tiver o middleware verificarToken
 //  4. erros com status (400/409) lançados dentro da transação viram resposta HTTP
+//  5. evento que ainda não foi aprovado por um admin não pode ter ingresso vendido
+//  6. Benefício de boas-vindas calculado e registrado no BACKEND:
+//     15% de desconto em 1 ingresso + taxa de serviço grátis nele, uma única vez
+//     por usuário e por CPF (só na 1ª compra paga). Só vale com login por token,
+//     compra paga e CPF cadastrado no perfil.
+//  7. O uso é gravado em beneficios_usados na MESMA transação do pedido.
+//  8. Se duas compras tentarem usar o benefício ao mesmo tempo, o banco recusa
+//     a segunda (erro 23505) e ela volta como 409, sem pedido pela metade.
 // ====================================================================
 async function comprarIngresso(req, res) {
     const { evento_id, itens, forma_pagamento } = req.body;
 
-    // Preferência: usuário do token. Fallback temporário: body (inseguro — remover
-    // depois que a rota POST /ingressos/comprar tiver verificarToken).
+    // Preferência: usuário do token. Fallback temporário: body (inseguro — a rota
+    // POST /ingressos/comprar precisa ter o verificarToken).
     const usuario_id = req.usuario?.id ?? req.body.usuario_id;
 
     if (!usuario_id || !evento_id || !itens?.length) {
@@ -165,9 +180,14 @@ async function comprarIngresso(req, res) {
     }
 
     try {
-        const eventoRows = await db.query("SELECT usuario_id FROM eventos WHERE id = ?", [evento_id]);
+        const eventoRows = await db.query("SELECT usuario_id, status_aprovacao FROM eventos WHERE id = ?", [evento_id]);
         const evento = eventoRows[0];
         if (!evento) return res.status(404).json({ erro: "Evento não encontrado." });
+
+        // Evento pendente ou bloqueado não vende ingresso, nem pro dono (cortesia).
+        if (evento.status_aprovacao !== "aprovado") {
+            return res.status(403).json({ erro: "Este evento ainda não foi aprovado para vendas." });
+        }
 
         const ehCortesia = String(evento.usuario_id) === String(usuario_id);
 
@@ -304,9 +324,21 @@ async function comprarIngresso(req, res) {
         const status_pagamento = ehCortesia ? "cortesia" : (ehGratuito ? "aprovado" : simularPagamento(forma_pagamento));
         const formaFinal = ehCortesia ? "cortesia" : (ehGratuito ? "gratuito" : forma_pagamento);
 
-        // Pedido + todas as linhas de venda + assentos vendidos entram na MESMA
-        // transação. Se qualquer passo falhar (inclusive uma reserva expirada),
-        // o pedido inteiro é revertido — nunca fica pedido "órfão" sem venda.
+        // Benefício de boas-vindas: só com login por token (req.usuario), compra paga
+        // e CPF no perfil. A situação (já usou? já comprou antes?) vem do banco.
+        const situacaoBeneficio = (!ehCortesia && !ehGratuito && req.usuario?.id)
+            ? await beneficios.situacaoBeneficio(usuario_id)
+            : { disponivel: false, cpf: null };
+
+        // Valores oficiais da compra (cortesia e gratuito ficam zerados)
+        const calculo = ehCortesia
+            ? beneficios.PEDIDO_ZERO
+            : beneficios.calcularPedido(detalhes, situacaoBeneficio.disponivel);
+
+        // Pedido + todas as linhas de venda + assentos vendidos + uso do benefício
+        // entram na MESMA transação. Se qualquer passo falhar (inclusive uma reserva
+        // expirada ou o benefício já usado), o pedido inteiro é revertido — nunca
+        // fica pedido "órfão" sem venda.
         const pedido_id = await db.transacao(async (tx) => {
             const pedidoResult = await tx.query(
                 "INSERT INTO pedidos (usuario_id, evento_id, valor_total, forma_pagamento, status) VALUES (?, ?, ?, ?, ?)",
@@ -328,6 +360,17 @@ async function comprarIngresso(req, res) {
                         pedidoId: novoPedidoId,
                     });
                 }
+            }
+
+            // Registra o uso do benefício. As chaves únicas do banco (usuário e CPF)
+            // impedem o segundo uso, mesmo com compras simultâneas.
+            if (calculo.aplicou) {
+                await beneficios.registrarUso(tx, {
+                    usuarioId: usuario_id,
+                    cpf: situacaoBeneficio.cpf,
+                    pedidoId: novoPedidoId,
+                    calculo,
+                });
             }
 
             return novoPedidoId;
@@ -362,8 +405,8 @@ async function comprarIngresso(req, res) {
                         nomeIngresso:    detalhes[0]?.tipo?.titulo || "Ingresso",
                         quantidade:      ingressosGerados.length,
                         subtotal:        valor_total,
-                        taxaServico:     valor_total * 0.10,
-                        totalPago:       valor_total * 1.10,
+                        taxaServico:     calculo.taxa,
+                        totalPago:       calculo.total,
                         forma_pagamento: formaFinal,
                         ingressos:       ingressosGerados,
                     }).catch(e => console.error("Erro ao enviar e-mail:", e.message));
@@ -380,17 +423,29 @@ async function comprarIngresso(req, res) {
             pedido_id,
             status:          status_pagamento,
             valor_total,
+            subtotal:        calculo.subtotal,
+            desconto:        calculo.desconto,
+            taxa_servico:    calculo.taxa,
+            total_pago:      calculo.total,
+            beneficio:       calculo.aplicou ? { percentual: 0.15, ingressos: 1 } : null,
             forma_pagamento: formaFinal,
             ingressos:       ingressosGerados,
         });
 
     } catch (err) {
+        // Benefício de boas-vindas já usado (chave única do banco, compra simultânea)
+        if (err.code === "23505" && String(err.constraint || err.message).includes("uq_beneficio")) {
+            return res.status(409).json({
+                erro: "O benefício de boas-vindas já foi utilizado. Atualize a página e tente novamente."
+            });
+        }
         // Erros de regra lançados dentro da transação (assento vendido, reserva expirada...)
         if (err.status) return res.status(err.status).json({ erro: err.message });
         console.error("Erro ao comprar ingresso:", err);
         res.status(500).json({ erro: "Erro interno ao processar compra.", detalhe: err.message });
     }
 }
+
 // ====================================================
 // MEUS INGRESSOS
 // ====================================================
@@ -424,11 +479,11 @@ async function meusIngressos(req, res) {
             ORDER BY p.criado_em DESC
         `, [usuario_id]);
 
-        console.log(`✅ meusIngressos: ${ingressos.length} pedido(s) para usuario_id=${usuario_id}`);
+        console.log(`meusIngressos: ${ingressos.length} pedido(s) para usuario_id=${usuario_id}`);
         res.json(ingressos);
 
     } catch (err) {
-        console.error("❌ ERRO meusIngressos:", err);
+        console.error("ERRO meusIngressos:", err);
         res.status(500).json({ erro: "Erro ao buscar ingressos.", detalhe: err.message });
     }
 }
@@ -561,7 +616,7 @@ async function reenviarEmailIngresso(req, res) {
         res.json({ mensagem: "E-mail reenviado com sucesso." });
 
     } catch (err) {
-        console.error("❌ Erro ao reenviar e-mail:", err);
+        console.error("Erro ao reenviar e-mail:", err);
         res.status(500).json({ erro: "Erro ao reenviar e-mail.", detalhe: err.message });
     }
 }
@@ -906,6 +961,7 @@ async function atualizarTipoIngresso(req, res) {
         res.status(500).json({ erro: "Erro ao atualizar tipo de ingresso.", detalhe: err.message });
     }
 }
+
 // ====================================================
 // TIPOS DE INGRESSO — EXCLUIR
 // DELETE /ingressos/tipos/:id  (exige login; evento precisa ser do usuário)

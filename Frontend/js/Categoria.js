@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
         'Karaoke':    '#9e9e9e',
         'Show':       '#29b6f6',
         'Eventos':    '#ec407a',
+        'Esportes':   '#2e7d32',
         'Parques':    '#0d47a1',
         '50+':        '#e53935',
     };
@@ -27,6 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
         'Karaoke':     'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1400&h=500&fit=crop&q=80',
         'Show':        'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1400&h=500&fit=crop&q=80',
         'Eventos':     'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=1400&h=500&fit=crop&q=80',
+        'Esportes':    'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1400&h=500&fit=crop&q=80',
         'Parques':     'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?w=1400&h=500&fit=crop&q=80',
         '50+':         'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1400&h=500&fit=crop&q=80',
     };
@@ -221,7 +223,7 @@ function renderizarLocais(locais) {
         const avaliacoes = local.avaliacoes || 0;
 
         grid.innerHTML += `
-            <div class="card-local" onclick="window.location='/frontend/detalheslocais/detalheslocais.html?id=${local.id}'"'">
+            <div class="card-local" onclick="window.location='/frontend/detalheslocais/detalheslocais.html?id=${local.id}'">
                 <div class="card-image-wrap">
                     <img src="${imagem}" alt="${local.nome}" loading="lazy"
                          onerror="this.src='/frontend/imagens/placeholder.png'">

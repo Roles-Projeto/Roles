@@ -258,6 +258,19 @@
                         <a id="btn-ligar" href="tel:" class="btn-secondary" style="text-decoration:none;">
                             <i class="fas fa-phone-alt"></i> Ligar Agora
                         </a>
+
+                        <!-- Rodapé do card: botão discreto de denúncia -->
+                        <div class="rodape-card-local">
+                            <button
+                                type="button"
+                                class="link-denuncia"
+                                id="btn-denunciar-local"
+                                aria-label="Denunciar este local"
+                                aria-haspopup="dialog"
+                            >
+                                <i class="fa-regular fa-flag"></i> Denunciar local
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Card info compacto -->
@@ -292,6 +305,69 @@
         </div>
     </main>
 
+    <!-- MODAL: Denunciar local -->
+    <div class="denuncia-overlay" id="denuncia-overlay" hidden>
+        <div class="denuncia-modal" role="dialog" aria-modal="true" aria-labelledby="denuncia-titulo">
+            <button type="button" class="denuncia-fechar" id="denuncia-fechar" aria-label="Fechar">
+                <i class="fas fa-xmark"></i>
+            </button>
+
+            <div class="denuncia-cabecalho">
+                <div class="denuncia-icone"><i class="fa-regular fa-flag"></i></div>
+                <div>
+                    <h3 id="denuncia-titulo">Denunciar local</h3>
+                    <p id="denuncia-nome-local">Conte o que está errado com este local.</p>
+                </div>
+            </div>
+
+            <form id="form-denuncia" novalidate>
+                <fieldset class="denuncia-motivos">
+                    <legend>Qual é o problema?</legend>
+                    <label class="denuncia-opcao">
+                        <input type="radio" name="motivo" value="informacoes_incorretas" />
+                        <span>Informações incorretas (endereço, horário, telefone)</span>
+                    </label>
+                    <label class="denuncia-opcao">
+                        <input type="radio" name="motivo" value="local_fechado" />
+                        <span>O local fechou ou não existe</span>
+                    </label>
+                    <label class="denuncia-opcao">
+                        <input type="radio" name="motivo" value="conteudo_improprio" />
+                        <span>Fotos ou conteúdo impróprio</span>
+                    </label>
+                    <label class="denuncia-opcao">
+                        <input type="radio" name="motivo" value="golpe_fraude" />
+                        <span>Golpe ou fraude</span>
+                    </label>
+                    <label class="denuncia-opcao">
+                        <input type="radio" name="motivo" value="outro" />
+                        <span>Outro motivo</span>
+                    </label>
+                </fieldset>
+
+                <label class="denuncia-label" for="denuncia-descricao">
+                    Detalhes <span class="denuncia-opcional">(opcional)</span>
+                </label>
+                <textarea
+                    id="denuncia-descricao"
+                    rows="4"
+                    maxlength="500"
+                    placeholder="Descreva o que aconteceu para nos ajudar a analisar."
+                ></textarea>
+                <div class="denuncia-contador"><span id="denuncia-contador-valor">0</span>/500</div>
+
+                <p class="denuncia-erro" id="denuncia-erro" role="alert" hidden></p>
+
+                <div class="denuncia-acoes">
+                    <button type="button" class="denuncia-btn-cancelar" id="denuncia-cancelar">Cancelar</button>
+                    <button type="submit" class="denuncia-btn-enviar" id="denuncia-enviar">
+                        <i class="fas fa-paper-plane"></i> Enviar denúncia
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div id="toast-notification"></div>
 
@@ -300,6 +376,7 @@
     <script src="../js/loadheader.js"></script>
     <script src="../js/detalheslocais.js"></script>
     <script src="../js/detalhes-funcionalidades.js"></script>
+    <script src="../js/denunciarLocal.js?v=2"></script>
 
 </body>
 </html>

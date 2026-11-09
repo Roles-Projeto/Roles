@@ -70,7 +70,7 @@ app.use(cors({
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization", "X-Fila-Ticket"]
 }));
 
 app.use(express.json({ limit: "50mb" }));
@@ -177,6 +177,7 @@ app.use("/recomendacoes",    recomendacaoRoutes);
 app.use("/assentos",         assentosRoutes);
 app.use("/beneficios",       beneficiosRoutes);
 app.use("/publico",          publicoRoutes);                     // ← NOVO
+app.use("/fila",             require("./routes/filaRoutes"));           // ← NOVO (fila de espera)
 app.use("/candidaturas",     candidaturasRoutes);                // ← NOVO (Trabalhe conosco)
 
 // 🤖 POST /api/chat
@@ -214,6 +215,7 @@ const API_PREFIXES = [
   "/beneficios",
   "/publico",                                                     // ← NOVO
   "/candidaturas",                                                // ← NOVO (Trabalhe conosco)
+  "/fila",                                                        // ← NOVO (fila de espera)
 ];
 
 

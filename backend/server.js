@@ -132,6 +132,7 @@ const { ingressosRouter, pedidosRouter } = require("./routes/ingressosRoutes");
 const recomendacaoRoutes     = require("./routes/recomendacaoRoutes");
 const assentosRoutes         = require("./routes/assentos");
 const beneficiosRoutes       = require("./routes/beneficios");
+const denunciasRoutes        = require("./routes/denuncias");   // 🚩 Denúncias de eventos e locais
 const publicoRoutes          = require("./routes/publico");      // ← NOVO
 const candidaturasRoutes     = require("./routes/candidaturas"); // ← NOVO (Trabalhe conosco)
 
@@ -176,6 +177,7 @@ app.use("/seguidores", require("./routes/seguidoresRoutes"));
 app.use("/recomendacoes",    recomendacaoRoutes);
 app.use("/assentos",         assentosRoutes);
 app.use("/beneficios",       beneficiosRoutes);
+app.use("/denuncias",        denunciasRoutes);                  // 🚩 POST /denuncias
 app.use("/publico",          publicoRoutes);                     // ← NOVO
 app.use("/fila",             require("./routes/filaRoutes"));           // ← NOVO (fila de espera)
 app.use("/candidaturas",     candidaturasRoutes);                // ← NOVO (Trabalhe conosco)
@@ -213,6 +215,7 @@ const API_PREFIXES = [
   "/assentos",
   "/seguidores",
   "/beneficios",
+  "/denuncias",
   "/publico",                                                     // ← NOVO
   "/candidaturas",                                                // ← NOVO (Trabalhe conosco)
   "/fila",                                                        // ← NOVO (fila de espera)

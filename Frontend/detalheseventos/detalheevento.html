@@ -124,42 +124,74 @@
       }
       .ev-layout .card-transparencia .destaque-taxa { color: #6c1dce; font-weight: 700; }
 
-      /* ===== CHECKOUT: cartão maior e mais confortável ===== */
+      /* ===== CHECKOUT: cartão com fonte um pouco menor ===== */
       .ev-layout .compra-ingresso .card-garantia-ingresso {
-        padding: 30px 30px 26px;
+        padding: 26px 26px 20px;
         background: #fff;
         border: 1px solid #ebe5f7;
         border-radius: 22px;
         box-shadow: 0 14px 40px rgba(60, 30, 120, 0.10);
       }
-      .ev-layout .compra-ingresso .linha-detalhe { padding: 11px 0; }
+      .ev-layout .compra-ingresso .linha-detalhe { padding: 9px 0; }
       .ev-layout .compra-ingresso .label-detalhe,
-      .ev-layout .compra-ingresso .valor-detalhe { font-size: 15px; }
-      .ev-layout .compra-ingresso .seletor-quantidade { padding: 16px 0 8px; }
-      .ev-layout .compra-ingresso .seletor-quantidade .label-valor { font-size: 16px; }
+      .ev-layout .compra-ingresso .valor-detalhe { font-size: 13.5px; }
+      .ev-layout .compra-ingresso .seletor-quantidade { padding: 12px 0 6px; }
+      .ev-layout .compra-ingresso .seletor-quantidade .label-valor { font-size: 14.5px; }
       .ev-layout .compra-ingresso .controle-quantidade button {
-        width: 36px;
-        height: 36px;
-        font-size: 17px;
+        width: 32px;
+        height: 32px;
+        font-size: 15px;
       }
-      .ev-layout .compra-ingresso #qtd-valor { font-size: 18px; min-width: 28px; text-align: center; }
-      .ev-layout .compra-ingresso .resumo-valores { padding: 14px 0 4px; }
-      .ev-layout .compra-ingresso .linha-resumo { font-size: 14.5px; line-height: 1.5; padding: 5px 0; }
-      .ev-layout .compra-ingresso .detalhe-valor-total { padding: 18px 0 8px; }
-      .ev-layout .compra-ingresso .detalhe-valor-total .label-valor { font-size: 16px; }
-      .ev-layout .compra-ingresso .valor-ingresso { font-size: 36px; }
+      .ev-layout .compra-ingresso #qtd-valor { font-size: 16px; min-width: 26px; text-align: center; }
+      .ev-layout .compra-ingresso .resumo-valores { padding: 12px 0 4px; }
+      .ev-layout .compra-ingresso .linha-resumo { font-size: 13px; line-height: 1.5; padding: 4px 0; }
+      .ev-layout .compra-ingresso .detalhe-valor-total { padding: 14px 0 8px; }
+      .ev-layout .compra-ingresso .detalhe-valor-total .label-valor { font-size: 14.5px; }
+      .ev-layout .compra-ingresso .valor-ingresso { font-size: 30px; }
       .ev-layout .compra-ingresso .botao-comprar {
-        padding: 18px 20px;
-        font-size: 17px;
+        padding: 15px 18px;
+        font-size: 15.5px;
         border-radius: 14px;
       }
-      .ev-layout .compra-ingresso .beneficios-compra { margin-top: 18px; gap: 8px 16px; }
-      .ev-layout .compra-ingresso .beneficios-compra { min-height: 48px; }
 
       /* Valores do resumo nunca quebram em duas linhas ("R$" / "150,00") */
       .resumo-valores .linha-resumo span:last-child,
       .detalhe-valor-total .valor-ingresso {
         white-space: nowrap;
+      }
+
+      /* ===== RODAPÉ DO CHECKOUT: botão discreto de denúncia =====
+         Container próprio (não é mais ".beneficios-compra") para nenhum
+         outro script reescrever o conteúdo e fazer o botão sumir. */
+      .ev-layout .compra-ingresso .denuncia-rodape {
+        margin-top: 14px;
+        min-height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .link-denuncia {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 6px;
+        background: none;
+        border: 0;
+        font: inherit;
+        font-size: 11.5px;
+        font-weight: 500;
+        color: #a29db3;
+        cursor: pointer;
+        opacity: 0.85;
+        transition: color 0.15s ease, opacity 0.15s ease;
+      }
+      .link-denuncia i { font-size: 11px; }
+      .link-denuncia:hover,
+      .link-denuncia:focus-visible {
+        color: #6c1dce;
+        opacity: 1;
+        text-decoration: underline;
+        outline: none;
       }
     </style>
   </head>
@@ -233,8 +265,6 @@
             </p>
           </section>
 
-          
-
           <!-- Mapa, legenda e local -->
           <section class="card-informacoes mapa-setores">
             <span class="rotulo-secao">Local</span>
@@ -257,126 +287,131 @@
             <div class="mapa-legenda-precos" id="mapa-legenda-precos"></div>
           </section>
 
-          
-
           <!-- Detalhes do evento -->
-            <section class="card-informacoes sobre-evento">
-              <span class="rotulo-secao">O Evento</span>
-              <h2 class="titulo-secao">Sobre o Evento</h2>
-              <p class="descricao-evento">Carregando descrição...</p>
-              <div class="informacoes-extras">
-                <div class="info-item local-evento">
-                  <div class="info-icone-wrap"><i class="fa-solid fa-location-dot"></i></div>
-                  <div class="texto-info">
-                    <p class="nome-local">Carregando...</p>
-                    <p class="endereco-local">Carregando...</p>
-                  </div>
-                </div>
-                <div class="info-item confirmados">
-                  <div class="info-icone-wrap"><i class="fa-solid fa-users"></i></div>
-                  <div class="texto-info">
-                    <span class="numero-confirmados">--</span>
-                    <span class="texto-confirmacao">confirmaram presença</span>
-                  </div>
+          <section class="card-informacoes sobre-evento">
+            <span class="rotulo-secao">O Evento</span>
+            <h2 class="titulo-secao">Sobre o Evento</h2>
+            <p class="descricao-evento">Carregando descrição...</p>
+            <div class="informacoes-extras">
+              <div class="info-item local-evento">
+                <div class="info-icone-wrap"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="texto-info">
+                  <p class="nome-local">Carregando...</p>
+                  <p class="endereco-local">Carregando...</p>
                 </div>
               </div>
-            </section>
-
-            <section class="card-informacoes organizador">
-              <span class="rotulo-secao">Produção</span>
-              <h2 class="titulo-secao">Organizador</h2>
-              <div class="perfil-organizador">
-                <img src="/frontend/imagens/logo3.png" alt="Logo do Organizador" class="avatar-organizador" id="avatar-organizador" />
-                <div class="dados-organizador">
-                  <p class="nome-produtora" id="nome-produtora">
-                    Carregando...
-                    <span class="etiqueta-verificado"><i class="fa-solid fa-shield-halved"></i> Verificado</span>
-                  </p>
-                  <p class="eventos-organizados" id="eventos-organizados"></p>
+              <div class="info-item confirmados">
+                <div class="info-icone-wrap"><i class="fa-solid fa-users"></i></div>
+                <div class="texto-info">
+                  <span class="numero-confirmados">--</span>
+                  <span class="texto-confirmacao">confirmaram presença</span>
                 </div>
-                <a href="/frontend/eventos/VerPerfil.html" class="botao-ver-perfil js-link-ver-perfil">
-                  Ver Perfil <i class="fa-solid fa-arrow-right"></i>
-                </a>
-              </div>
-            </section>
-
-            <div class="card-transparencia">
-              <div class="transparencia-icone"><i class="fa-solid fa-shield-halved"></i></div>
-              <div class="texto-transparencia">
-                <p class="titulo-transparencia">Transparência Total</p>
-                <p class="detalhe-taxa">
-                  Taxa de serviço de <span class="destaque-taxa">apenas 10%</span> será adicionada no checkout. Esta taxa cobre processamento de pagamento, emissão de ingresso digital e suporte ao cliente.
-                </p>
               </div>
             </div>
+          </section>
 
-          
+          <section class="card-informacoes organizador">
+            <span class="rotulo-secao">Produção</span>
+            <h2 class="titulo-secao">Organizador</h2>
+            <div class="perfil-organizador">
+              <img src="/frontend/imagens/logo3.png" alt="Logo do Organizador" class="avatar-organizador" id="avatar-organizador" />
+              <div class="dados-organizador">
+                <p class="nome-produtora" id="nome-produtora">
+                  Carregando...
+                  <span class="etiqueta-verificado"><i class="fa-solid fa-shield-halved"></i> Verificado</span>
+                </p>
+                <p class="eventos-organizados" id="eventos-organizados"></p>
+              </div>
+              <a href="/frontend/eventos/VerPerfil.html" class="botao-ver-perfil js-link-ver-perfil">
+                Ver Perfil <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </section>
+
+          <div class="card-transparencia">
+            <div class="transparencia-icone"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="texto-transparencia">
+              <p class="titulo-transparencia">Transparência Total</p>
+              <p class="detalhe-taxa">
+                Taxa de serviço de <span class="destaque-taxa">apenas 10%</span> será adicionada no checkout. Esta taxa cobre processamento de pagamento, emissão de ingresso digital e suporte ao cliente.
+              </p>
+            </div>
+          </div>
         </div>
         <!-- /ev-principal -->
 
         <!-- COLUNA DA DIREITA: checkout (fixo na rolagem no desktop) -->
-          <aside class="compra-ingresso">
-            <div class="card-garantia-ingresso">
-              <span class="rotulo-secao">Checkout</span>
-              <div class="detalhes-data-local">
-                <div class="linha-detalhe">
-                  <span class="label-detalhe"><i class="fa-regular fa-calendar"></i> Data</span>
-                  <span class="valor-detalhe data-resumo">--</span>
-                </div>
-                <div class="linha-detalhe">
-                  <span class="label-detalhe"><i class="fa-regular fa-clock"></i> Horário</span>
-                  <span class="valor-detalhe hora-resumo">--</span>
-                </div>
-                <div class="linha-detalhe">
-                  <span class="label-detalhe"><i class="fa-solid fa-location-dot"></i> Local</span>
-                  <span class="valor-detalhe local-resumo">--</span>
-                </div>
-                <div class="linha-detalhe">
-                  <span class="label-detalhe"><i class="fa-solid fa-ticket"></i> Ingresso</span>
-                  <span class="valor-detalhe ingresso-resumo">--</span>
-                </div>
+        <aside class="compra-ingresso">
+          <div class="card-garantia-ingresso">
+            <span class="rotulo-secao">Checkout</span>
+            <div class="detalhes-data-local">
+              <div class="linha-detalhe">
+                <span class="label-detalhe"><i class="fa-regular fa-calendar"></i> Data</span>
+                <span class="valor-detalhe data-resumo">--</span>
               </div>
-
-              <div class="seletor-quantidade" id="seletor-quantidade" style="display: none">
-                <span class="label-valor">Quantidade</span>
-                <div class="controle-quantidade">
-                  <button type="button" id="qtd-menos" aria-label="Diminuir quantidade">-</button>
-                  <span id="qtd-valor">1</span>
-                  <button type="button" id="qtd-mais" aria-label="Aumentar quantidade">+</button>
-                </div>
+              <div class="linha-detalhe">
+                <span class="label-detalhe"><i class="fa-regular fa-clock"></i> Horário</span>
+                <span class="valor-detalhe hora-resumo">--</span>
               </div>
-              <p class="aviso-quantidade" id="aviso-quantidade"></p>
-
-              <div class="resumo-valores" id="resumo-valores" style="display: none">
-                <div class="linha-resumo">
-                  <span id="resumo-linha-ingresso">--</span>
-                  <span id="resumo-subtotal">R$ 0,00</span>
-                </div>
-
-                <!-- Desconto de boas-vindas (aparece só quando o usuário tem direito) -->
-                <div class="linha-resumo" id="linha-desconto" style="display: none">
-                  <span id="resumo-desconto-rotulo">Desconto de boas-vindas</span>
-                  <span id="resumo-desconto">- R$ 0,00</span>
-                </div>
-
-                <div class="linha-resumo">
-                  <span id="resumo-taxa-rotulo">Taxa de serviço (10%)</span>
-                  <span id="resumo-taxa">R$ 0,00</span>
-                </div>
+              <div class="linha-detalhe">
+                <span class="label-detalhe"><i class="fa-solid fa-location-dot"></i> Local</span>
+                <span class="valor-detalhe local-resumo">--</span>
               </div>
-
-              <div class="detalhe-valor-total">
-                <span class="label-valor">Total</span>
-                <span class="valor-ingresso">R$ 0,00</span>
+              <div class="linha-detalhe">
+                <span class="label-detalhe"><i class="fa-solid fa-ticket"></i> Ingresso</span>
+                <span class="valor-detalhe ingresso-resumo">--</span>
               </div>
-
-              <button class="botao-comprar" type="button">Comprar Ingresso</button>
-
-              <!-- Rodapé do checkout: espaço mantido, sem conteúdo -->
-              <div class="beneficios-compra" aria-hidden="true"></div>
             </div>
-          </aside>
-        
+
+            <div class="seletor-quantidade" id="seletor-quantidade" style="display: none">
+              <span class="label-valor">Quantidade</span>
+              <div class="controle-quantidade">
+                <button type="button" id="qtd-menos" aria-label="Diminuir quantidade">-</button>
+                <span id="qtd-valor">1</span>
+                <button type="button" id="qtd-mais" aria-label="Aumentar quantidade">+</button>
+              </div>
+            </div>
+            <p class="aviso-quantidade" id="aviso-quantidade"></p>
+
+            <div class="resumo-valores" id="resumo-valores" style="display: none">
+              <div class="linha-resumo">
+                <span id="resumo-linha-ingresso">--</span>
+                <span id="resumo-subtotal">R$ 0,00</span>
+              </div>
+
+              <!-- Desconto de boas-vindas (aparece só quando o usuário tem direito) -->
+              <div class="linha-resumo" id="linha-desconto" style="display: none">
+                <span id="resumo-desconto-rotulo">Desconto de boas-vindas</span>
+                <span id="resumo-desconto">- R$ 0,00</span>
+              </div>
+
+              <div class="linha-resumo">
+                <span id="resumo-taxa-rotulo">Taxa de serviço (10%)</span>
+                <span id="resumo-taxa">R$ 0,00</span>
+              </div>
+            </div>
+
+            <div class="detalhe-valor-total">
+              <span class="label-valor">Total</span>
+              <span class="valor-ingresso">R$ 0,00</span>
+            </div>
+
+            <button class="botao-comprar" type="button">Comprar Ingresso</button>
+
+            <!-- Rodapé do checkout: botão discreto de denúncia -->
+            <div class="denuncia-rodape">
+              <button
+                type="button"
+                class="link-denuncia"
+                id="btn-denunciar-evento"
+                aria-label="Denunciar este evento"
+              >
+                <i class="fa-regular fa-flag"></i> Denunciar evento
+              </button>
+            </div>
+          </div>
+        </aside>
+
       </div>
       <!-- /ev-layout -->
 
@@ -400,5 +435,7 @@
     <script src="/frontend/js/beneficios.js"></script>
     <script src="/frontend/js/detalhesEventos.js"></script>
     <script src="/frontend/js/favoritoCompartilhar.js"></script>
+    <!-- Denúncia de evento (modal + envio para POST /denuncias) -->
+    <script src="/frontend/js/denunciarEvento.js?v=4"></script>
   </body>
 </html>

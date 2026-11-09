@@ -1903,7 +1903,13 @@ async function realizarAcaoComprar() {
     };
 
     localStorage.setItem('eventoSelecionado', JSON.stringify(dadosParaCheckout));
-       window.location.href = '/frontend/detalheseventos/finalizarcompra.html';
+    // Fila de espera: se houver muita gente comprando, mostra a tela de fila antes do checkout
+    const irParaCheckout = () => { window.location.href = '/frontend/detalheseventos/finalizarcompra.html'; };
+    if (window.FilaEspera && dadosParaCheckout.evento_id) {
+        window.FilaEspera.entrar(dadosParaCheckout.evento_id, irParaCheckout);
+    } else {
+        irParaCheckout();
+    }
 }
 
 function inicializarAcaoBotaoComprar() {

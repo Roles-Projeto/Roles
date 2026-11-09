@@ -118,7 +118,7 @@
   };
   $('b-reset').onclick = async () => {
     await post('/fila/demo/reset', { evento_id: EVENTO });
-    sessionStorage.removeItem('filaTicket_' + EVENTO);
+    localStorage.removeItem('filaTicket_' + EVENTO);
     $('ok').style.display = 'none'; $('b-concluir').style.display = 'none';
     log('Fila zerada'); atualizar();
   };

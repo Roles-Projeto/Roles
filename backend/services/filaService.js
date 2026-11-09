@@ -6,7 +6,12 @@
  *
  *  - "ativo": tem permissão para comprar (até `capacidade` por evento)
  *  - "espera": está na fila, com posição e estimativa de tempo
- *  - fila usa heartbeat: quem fecha a aba e para de consultar sai da fila sozinho
+ *  - cada pessoa recebe uma SENHA (ex.: K7M2-9QXA). Se fechar a página, o lugar
+ *    fica guardado por `ttlSenhaMs`; ao voltar (ou digitando a senha) ela continua
+ *    na mesma posição. Só sai da fila se clicar em "Sair da fila" ou se ficar
+ *    ausente além desse prazo.
+ *  - quando chega a vez de quem está ausente, a vaga fica reservada por
+ *    `ttlResgateMs`; se a pessoa não voltar a tempo, passa para o próximo
  *  - ativo expira depois de `ttlAtivoMs` (tempo máximo para concluir a compra)
  *
  * Observação: por ser em memória, funciona com 1 instância do servidor (caso do
@@ -17,7 +22,8 @@ const crypto = require('crypto');
 const config = {
   capacidade: 50,            // pessoas simultâneas no checkout, por evento
   ttlAtivoMs: 10 * 60 * 1000, // tempo para finalizar a compra depois de liberado
-  ttlHeartbeatMs: 15 * 1000,  // sem consultar a fila por esse tempo = desistiu
+  ttlSenhaMs: 30 * 60 * 1000, // quanto tempo o lugar na fila fica guardado se a pessoa sair da tela
+  ttlResgateMs: 3 * 60 * 1000, // se chegou a vez e a pessoa não voltou, a vaga espera por esse tempo
   tempoMedioCompraSeg: 90     // usado só para estimar o tempo de espera
 };
 
@@ -29,8 +35,17 @@ function getEvento(eventoId) {
   return eventos.get(id);
 }
 
+// Senha curta e legível (sem letras/números parecidos: 0/O, 1/I)
+const ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function novoTicket() {
-  return crypto.randomBytes(12).toString('hex');
+  let t = '';
+  for (let i = 0; i < 8; i++) t += ALFABETO[crypto.randomInt(ALFABETO.length)];
+  return t;
+}
+
+/** Aceita "k7m2-9qxa", "K7M2 9QXA" etc. */
+function normalizar(ticket) {
+  return String(ticket || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
 /** Remove ativos expirados e desistentes da fila, depois promove quem está esperando. */
@@ -48,8 +63,8 @@ function manter(eventoId) {
   ev.fila = ev.fila.filter(t => {
     const info = ev.tickets.get(t);
     if (!info) return false;
-    // tickets de demonstração não dão heartbeat, então não "desistem"
-    if (!info.demo && agora - info.ultimoPing > config.ttlHeartbeatMs) {
+    // tickets de demonstração nunca "somem"; os reais só saem após ficar ausentes por ttlSenhaMs
+    if (!info.demo && agora - info.ultimoPing > config.ttlSenhaMs) {
       ev.tickets.delete(t);
       return false;
     }
@@ -61,7 +76,9 @@ function manter(eventoId) {
     const info = ev.tickets.get(t);
     if (!info) continue;
     info.estado = 'ativo';
-    info.expiraEm = agora + (info.demo ? info.duracaoDemoMs : config.ttlAtivoMs);
+    info.confirmado = !!info.demo; // só vira true quando a pessoa aparece (status)
+    // quem está ausente tem só ttlResgateMs para voltar; quem está presente ganha o tempo cheio em status()
+    info.expiraEm = agora + (info.demo ? info.duracaoDemoMs : config.ttlResgateMs);
     ev.ativos.set(t, info);
   }
 }
@@ -70,8 +87,9 @@ function entrar(eventoId, ticketExistente) {
   manter(eventoId);
   const ev = getEvento(eventoId);
 
-  // quem recarrega a página mantém o lugar
-  if (ticketExistente && ev.tickets.has(ticketExistente)) return status(eventoId, ticketExistente);
+  // quem volta com a senha (ou recarrega a página) mantém o lugar
+  const existente = normalizar(ticketExistente);
+  if (existente && ev.tickets.has(existente)) return status(eventoId, existente);
 
   const ticket = novoTicket();
   const info = { estado: 'espera', ultimoPing: Date.now(), entrouEm: Date.now(), demo: false };
@@ -82,6 +100,7 @@ function entrar(eventoId, ticketExistente) {
 }
 
 function status(eventoId, ticket) {
+  ticket = normalizar(ticket);
   manter(eventoId);
   const ev = getEvento(eventoId);
   const info = ev.tickets.get(ticket);
@@ -90,6 +109,11 @@ function status(eventoId, ticket) {
   info.ultimoPing = Date.now();
 
   if (info.estado === 'ativo') {
+    if (!info.confirmado) {
+      // a pessoa apareceu depois de liberada: ganha o tempo completo para comprar
+      info.confirmado = true;
+      info.expiraEm = Date.now() + config.ttlAtivoMs;
+    }
     return { ticket, estado: 'ativo', expiraEmSeg: Math.max(0, Math.round((info.expiraEm - Date.now()) / 1000)) };
   }
 
@@ -100,11 +124,13 @@ function status(eventoId, ticket) {
     estado: 'espera',
     posicao,
     totalNaFila: ev.fila.length,
-    estimativaSeg: Math.round(rodadas * config.tempoMedioCompraSeg)
+    estimativaSeg: Math.round(rodadas * config.tempoMedioCompraSeg),
+    guardadoPorMin: Math.round(config.ttlSenhaMs / 60000)
   };
 }
 
 function sair(eventoId, ticket) {
+  ticket = normalizar(ticket);
   const ev = getEvento(eventoId);
   ev.ativos.delete(ticket);
   ev.tickets.delete(ticket);
@@ -114,6 +140,7 @@ function sair(eventoId, ticket) {
 
 /** Usado no checkout / na rota de compra: este ticket pode comprar? */
 function podeComprar(eventoId, ticket) {
+  ticket = normalizar(ticket);
   manter(eventoId);
   const info = getEvento(eventoId).tickets.get(ticket);
   return !!info && info.estado === 'ativo';
@@ -167,6 +194,8 @@ function configurar(novo = {}) {
   if (Number(novo.capacidade) > 0) config.capacidade = Math.floor(Number(novo.capacidade));
   if (Number(novo.tempoMedioCompraSeg) > 0) config.tempoMedioCompraSeg = Number(novo.tempoMedioCompraSeg);
   if (Number(novo.ttlAtivoSeg) > 0) config.ttlAtivoMs = Number(novo.ttlAtivoSeg) * 1000;
+  if (Number(novo.ttlSenhaSeg) > 0) config.ttlSenhaMs = Number(novo.ttlSenhaSeg) * 1000;
+  if (Number(novo.ttlResgateSeg) > 0) config.ttlResgateMs = Number(novo.ttlResgateSeg) * 1000;
   return { ...config };
 }
 

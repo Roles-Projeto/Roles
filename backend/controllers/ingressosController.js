@@ -140,18 +140,17 @@ async function detalheEvento(req, res) {
     }
 }
 // ====================================================================
-// SUBSTITUA a função comprarIngresso inteira do ingressosController.js
-// por esta, e adicione esta linha junto dos outros "require" no topo:
+// COMPRAR INGRESSO
 //
-//   const { venderAssentosReservados } = require("./assentosController");
-//
-// O que mudou em relação à versão anterior:
-//  1. quantidade validada (inteiro >= 1) — antes aceitava negativo/quebrado
+// Regras:
+//  1. quantidade validada (inteiro >= 1)
 //  2. ingresso numerado exige assento_ids (mesma quantidade) e vende os assentos
 //     RESERVADOS por quem compra, na mesma transação do pedido
 //  3. usuario_id vem do token quando existe (req.usuario); o do body só é
 //     usado enquanto a rota ainda não tem o middleware verificarToken
 //  4. erros com status (400/409) lançados dentro da transação viram resposta HTTP
+//  5. (branch 179) depois da compra, avisa o organizador se o tipo de
+//     ingresso estiver acabando ou esgotado
 // ====================================================================
 async function comprarIngresso(req, res) {
     const { evento_id, itens, forma_pagamento } = req.body;
@@ -332,6 +331,22 @@ async function comprarIngresso(req, res) {
 
             return novoPedidoId;
         });
+
+        // ── Aviso de ingresso acabando (branch 179) ──
+        // Só compras que ocupam vaga (aprovado/cortesia) mudam o estoque.
+        // Roda em segundo plano: se falhar, a compra já foi concluída e não é afetada.
+        if (status_pagamento === "aprovado" || status_pagamento === "cortesia") {
+            try {
+                const { verificarIngressoAcabando } = require("../services/notificacaoService");
+                for (const d of detalhes) {
+                    verificarIngressoAcabando(d.tipo.id).catch(e =>
+                        console.error("Erro ao verificar ingresso acabando:", e.message)
+                    );
+                }
+            } catch (e) {
+                console.error("Erro ao carregar notificacaoService:", e.message);
+            }
+        }
 
         const ingressosGerados = detalhes.flatMap(d =>
             Array.from({ length: d.quantidade }, () => ({

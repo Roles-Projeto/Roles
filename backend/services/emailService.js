@@ -305,4 +305,68 @@ async function enviarEmailCandidatura(dados, curriculo) {
     await transporter.sendMail(mensagem);
 }
 
-module.exports = { enviarEmailIngresso, enviarEmailCandidatura };
+// ════════════════════════════════════════
+// EMAIL DE INGRESSO ACABANDO / ESGOTADO (para o organizador do evento)
+//
+// dados: { emailDono, nomeDono, nomeEvento, nomeIngresso,
+//          nivel ("acabando" | "esgotado"), restante, total }
+//
+// O link do dashboard usa APP_URL (variável de ambiente). Se não existir,
+// cai no endereço de produção.
+// ════════════════════════════════════════
+async function enviarEmailIngressoAcabando(dados) {
+    const { emailDono, nomeDono, nomeEvento, nomeIngresso, nivel, restante, total } = dados;
+    if (!emailDono) return;
+
+    const esgotado = nivel === "esgotado";
+    const appUrl = (process.env.APP_URL || "https://projeto-integrador-roles-271b.onrender.com").replace(/\/+$/, "");
+    const linkDashboard = `${appUrl}/frontend/dashboard/dashboard.html`;
+
+    const cor      = esgotado ? "#c0392b" : "#e67e22";
+    const fundo    = esgotado ? "#fdecea" : "#fff4e5";
+    const titulo   = esgotado ? "Ingresso esgotado" : "Ingresso acabando";
+    const resumo   = esgotado
+        ? `Todas as ${esc(total)} unidades foram vendidas. Este ingresso não está mais disponível para compra.`
+        : `Restam apenas <strong>${esc(restante)}</strong> de ${esc(total)} unidades. Se quiser vender mais, você pode aumentar a quantidade no dashboard.`;
+
+    const html = wrapper(`
+      ${cabecalho("Aviso", titulo)}
+      <tr><td style="padding:32px 40px 0;">
+        <p style="font-size:16px;color:#333;margin:0;">Olá, <strong>${esc(nomeDono || "organizador")}</strong>!</p>
+        <p style="font-size:15px;color:#555;margin:10px 0 0;line-height:1.6;">${resumo}</p>
+      </td></tr>
+
+      <tr><td style="padding:24px 40px;">
+        <div style="background:${fundo};border-left:4px solid ${cor};border-radius:8px;padding:20px;">
+          <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#1a1a2e;">${esc(nomeEvento)}</p>
+          <p style="margin:0 0 6px;font-size:14px;color:#555;"><strong>Ingresso:</strong> ${esc(nomeIngresso)}</p>
+          <p style="margin:0;font-size:14px;color:${cor};font-weight:700;">
+            ${esgotado ? "Esgotado" : `Restam ${esc(restante)} de ${esc(total)}`}
+          </p>
+        </div>
+      </td></tr>
+
+      <tr><td style="padding:0 40px 32px;text-align:center;">
+        <a href="${esc(linkDashboard)}"
+           style="display:inline-block;background:#6c2bd9;color:#fff;text-decoration:none;
+                  font-size:14px;font-weight:700;padding:14px 28px;border-radius:10px;">
+          Abrir meu dashboard
+        </a>
+      </td></tr>
+      ${rodape()}
+    `);
+
+    await transporter.sendMail({
+        from:    `"Rolês Eventos" <${process.env.EMAIL_USER}>`,
+        to:      emailDono,
+        subject: `${esgotado ? "Esgotou" : "Ingresso acabando"}: ${umaLinha(nomeIngresso)} - ${umaLinha(nomeEvento)}`,
+        html,
+        attachments: [
+            { filename: "logo.png", path: LOGO_PATH, cid: "logo_roles" }
+        ]
+    });
+
+    console.log(`E-mail de ingresso ${nivel} enviado para ${emailDono}`);
+}
+
+module.exports = { enviarEmailIngresso, enviarEmailCandidatura, enviarEmailIngressoAcabando };

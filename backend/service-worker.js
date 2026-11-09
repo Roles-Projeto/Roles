@@ -26,8 +26,9 @@ self.addEventListener('push', (event) => {
 
     const options = {
         body: data.mensagem || data.body || 'Confira os eventos disponíveis!',
-        icon: '/frontend/images/logo.png', // Garanta que este caminho da imagem existe
-        badge: '/frontend/images/logo.png',
+        // A pasta do projeto é "imagens" (não "images"). Confirme que este arquivo existe.
+        icon: '/frontend/imagens/logo3.png',
+        badge: '/frontend/imagens/logo3.png',
         data: { url: data.url || '/frontend/index.html' }
     };
 

@@ -1848,6 +1848,168 @@ if (
 
 
 /* ==================================================
+================ LOGIN / CADASTRO COM GOOGLE =========
+================================================== */
+
+/*
+ * O Client ID vem do config.js:
+ *
+ *   window.GOOGLE_CLIENT_ID = "xxxx.apps.googleusercontent.com";
+ *
+ * O backend valida o token do Google, cria a conta
+ * (se ainda não existir) e devolve o mesmo formato
+ * que o concluirLogin() já espera.
+ */
+
+function iniciarGoogle() {
+
+    const container =
+        document.getElementById(
+            "googleBtnContainer"
+        );
+
+    if (!container) {
+        return;
+    }
+
+
+    if (!window.GOOGLE_CLIENT_ID) {
+
+        console.error(
+            "❌ GOOGLE_CLIENT_ID não definido no config.js."
+        );
+
+        return;
+    }
+
+
+    /*
+     * O script do Google carrega de forma assíncrona.
+     * Se ainda não chegou, tenta de novo.
+     */
+
+    if (
+        !window.google ||
+        !window.google.accounts
+    ) {
+
+        setTimeout(
+            iniciarGoogle,
+            200
+        );
+
+        return;
+    }
+
+
+    google.accounts.id.initialize({
+        client_id:
+            window.GOOGLE_CLIENT_ID,
+
+        callback:
+            loginComGoogle
+    });
+
+
+    google.accounts.id.renderButton(
+        container,
+        {
+            theme: "outline",
+            size: "large",
+            text: "continue_with",
+            shape: "pill",
+            locale: "pt-BR",
+            width: 320
+        }
+    );
+}
+
+
+async function loginComGoogle(
+    resposta
+) {
+
+    if (
+        !resposta ||
+        !resposta.credential
+    ) {
+
+        mostrarNotificacao(
+            "notificacaoLogin",
+            "Não foi possível obter a credencial do Google.",
+            "erro"
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/usuarios/google`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            credential:
+                                resposta.credential
+                        })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            mostrarNotificacao(
+                "notificacaoLogin",
+                data.erro ||
+                    "Não foi possível entrar com o Google.",
+                "erro"
+            );
+
+            return;
+        }
+
+
+        concluirLogin(
+            data,
+            data.email
+        );
+
+
+    } catch (err) {
+
+        console.error(
+            "❌ Google:",
+            err
+        );
+
+
+        mostrarNotificacao(
+            "notificacaoLogin",
+            "Não foi possível conectar ao servidor.",
+            "erro"
+        );
+    }
+}
+
+
+iniciarGoogle();
+
+
+/* ==================================================
 ================ CADASTRO ============================
 ================================================== */
 

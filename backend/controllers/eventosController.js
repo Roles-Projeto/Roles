@@ -26,7 +26,22 @@ const storage = USAR_SUPABASE
         }
     });
 
-exports.upload = multer({ storage });
+// Só aceita os tipos de imagem usados no site. Qualquer outro tipo
+// (.html, .txt, .exe, etc.) é recusado antes de o arquivo ser salvo —
+// achado do teste de segurança de outubro/2026 (upload sem validação
+// permitia subir um .html com <script> e executá-lo em /uploads).
+const TIPOS_IMAGEM_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+function filtrarImagem(req, file, cb) {
+    if (TIPOS_IMAGEM_PERMITIDOS.includes(file.mimetype)) return cb(null, true);
+    cb(new Error('Tipo de arquivo não permitido. Envie uma imagem (jpg, png, webp ou gif).'));
+}
+
+exports.upload = multer({
+    storage,
+    fileFilter: filtrarImagem,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5 MB
+});
 
 // Nome do bucket no Supabase Storage. Precisa existir e estar público.
 const BUCKET_NAME = 'imagens-eventos';
@@ -228,11 +243,12 @@ exports.criarEvento = async (req, res) => {
 
       res.status(201).json({ mensagem: "Evento e ingressos criados com sucesso!", eventoId });
     } catch (errIng) {
-      res.status(500).json({ erro: "Evento salvo, mas erro ao salvar ingressos.", detalhes: errIng.message });
+      console.error("Erro ao salvar ingressos:", errIng);
+      res.status(500).json({ erro: "Evento salvo, mas houve um erro ao salvar os ingressos. Edite o evento para adicioná-los novamente." });
     }
   } catch (err) {
     console.error("Erro ao salvar evento:", err);
-    res.status(500).json({ erro: "Erro ao salvar evento.", detalhes: err.message });
+    res.status(500).json({ erro: "Erro ao salvar evento. Tente novamente em instantes." });
   }
 };
 
@@ -271,7 +287,7 @@ exports.listarEventos = async (req, res) => {
     res.json(results);
   } catch (err) {
     console.error("Erro ao buscar eventos:", err);
-    res.status(500).json({ erro: "Erro ao buscar eventos.", detalhes: err.message });
+    res.status(500).json({ erro: "Erro ao buscar eventos. Tente novamente em instantes." });
   }
 };
 
@@ -337,7 +353,7 @@ exports.buscarEvento = async (req, res) => {
     });
   } catch (err) {
     console.error("Erro ao buscar evento:", err);
-    res.status(500).json({ erro: "Erro ao buscar evento.", detalhes: err.message });
+    res.status(500).json({ erro: "Erro ao buscar evento. Tente novamente em instantes." });
   }
 };
 
@@ -386,7 +402,7 @@ exports.editarEvento = async (req, res) => {
     res.json({ mensagem: "Evento atualizado com sucesso!" });
   } catch (err) {
     console.error("Erro ao editar evento:", err);
-    res.status(500).json({ erro: "Erro ao editar evento.", detalhes: err.message });
+    res.status(500).json({ erro: "Erro ao editar evento. Tente novamente em instantes." });
   }
 };
 
@@ -413,6 +429,6 @@ exports.excluirEvento = async (req, res) => {
     res.json({ mensagem: "Evento excluído com sucesso!" });
   } catch (err) {
     console.error("Erro ao excluir evento:", err);
-    res.status(500).json({ erro: "Erro ao excluir evento.", detalhes: err.message });
+    res.status(500).json({ erro: "Erro ao excluir evento. Tente novamente em instantes." });
   }
 };

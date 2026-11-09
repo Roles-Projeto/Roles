@@ -1,65 +1,84 @@
-/* ==================================================
-   BENEFÍCIO DE BOAS-VINDAS - Rolês  (arquivo do FRONTEND)
-   Salvar na mesma pasta do FinalizarCompra.js e do config.js
-   (URL: /frontend/js/beneficios.js)
+/* ═══════════════════════════════════════════════════════════
+   BENEFÍCIO DE BOAS-VINDAS (front: só EXIBE o valor)
+   Quem vale de verdade é o cálculo do backend
+   (backend/services/beneficiosService.js, chamado no comprarIngresso).
+   Mantenha REGRAS[0] igual a REGRA daquele arquivo.
 
-   Regra atual (só vale para quem NUNCA fez uma compra paga):
-   - 15% de desconto em 1 ingresso
-   - taxa de serviço zerada nesse mesmo ingresso
-   - os demais ingressos da compra pagam preço cheio + taxa de 10%
+   Regra: só na 1ª compra paga do usuário (e do CPF):
+     15% de desconto em 1 ingresso + taxa de serviço grátis nesse ingresso.
 
-   Usado por detalhesEventos.js e FinalizarCompra.js:
-   window.Beneficios.calcularPedido({ precoUnitario, quantidade, comprasPagas, elegivel })
-================================================== */
-(function (raiz) {
-    "use strict";
+   Este arquivo não declara nada solto no escopo global (tudo fica dentro
+   da função abaixo), para não conflitar com o detalhesEventos.js.
+   Só expõe: window.Beneficios
+═══════════════════════════════════════════════════════════ */
+(function () {
+    'use strict';
 
-    const TAXA_SERVICO = 0.10;
+    var TAXA = 0.10; // taxa de serviço (igual ao backend)
 
-    // Benefícios por número de compras pagas já feitas (0 = primeira compra).
-    // Para criar um benefício na 2ª compra, adicione a chave 1.
-    const REGRAS = {
-        0: { percentual: 0.15, ingressos: 1, taxaZero: true },
-    };
+    var REGRAS = [
+        {
+            id: 'boas_vindas',
+            comprasPagas: 0,   // vale quando o usuário ainda não fez nenhuma compra paga
+            percentual: 0.15,  // 15% de desconto
+            ingressos: 1,      // em 1 ingresso só
+            taxaZero: true     // e sem taxa de serviço nesse ingresso
+        }
+    ];
 
-    const arredondar = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+    function arredondar(n) {
+        return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+    }
 
-    function calcularPedido({ precoUnitario, quantidade, comprasPagas, elegivel }) {
-        const preco = Number(precoUnitario) || 0;
-        const qtd = Math.max(1, parseInt(quantidade, 10) || 1);
-        const subtotal = arredondar(preco * qtd);
+    // Descobre qual regra se aplica (ou null)
+    function regraAplicavel(comprasPagas, elegivel) {
+        if (!elegivel) return null;
+        var n = Number(comprasPagas);
+        if (!isFinite(n)) return null;
+        for (var i = 0; i < REGRAS.length; i++) {
+            if (REGRAS[i].comprasPagas === n) return REGRAS[i];
+        }
+        return null;
+    }
 
-        const regra = (elegivel && preco > 0) ? REGRAS[Number(comprasPagas)] : null;
+    /*
+      calcularPedido({ precoUnitario, quantidade, comprasPagas, elegivel })
+      Devolve:
+        { subtotal, desconto, taxa, taxaDispensada, total, beneficio }
+      "beneficio" é a regra aplicada (com .percentual) ou null.
+    */
+    function calcularPedido(dados) {
+        dados = dados || {};
+        var preco = Number(dados.precoUnitario) || 0;
+        var qtd = Math.max(1, parseInt(dados.quantidade, 10) || 1);
 
-        // Sem benefício: preço cheio + taxa de 10%
-        if (!regra) {
-            const taxa = arredondar(subtotal * TAXA_SERVICO);
-            return {
-                subtotal,
-                desconto: 0,
-                taxa,
-                taxaDispensada: 0,
-                total: arredondar(subtotal + taxa),
-                beneficio: null,
-            };
+        var subtotal = arredondar(preco * qtd);
+        var regra = preco > 0 ? regraAplicavel(dados.comprasPagas, dados.elegivel) : null;
+
+        var desconto = 0;
+        var taxaDispensada = 0;
+        if (regra) {
+            var qtdBeneficio = Math.min(qtd, regra.ingressos);
+            desconto = arredondar(preco * qtdBeneficio * regra.percentual);
+            taxaDispensada = regra.taxaZero ? arredondar(preco * qtdBeneficio * TAXA) : 0;
         }
 
-        // Com benefício: só os primeiros "regra.ingressos" ingressos ganham desconto
-        const qtdBeneficio = Math.min(qtd, regra.ingressos);
-        const desconto = arredondar(preco * qtdBeneficio * regra.percentual);
-        const taxaDispensada = regra.taxaZero ? arredondar(preco * qtdBeneficio * TAXA_SERVICO) : 0;
-        const taxa = arredondar(preco * (qtd - (regra.taxaZero ? qtdBeneficio : 0)) * TAXA_SERVICO);
-        const total = arredondar(subtotal - desconto + taxa);
+        var taxa = arredondar(subtotal * TAXA - taxaDispensada);
+        var total = arredondar(subtotal - desconto + taxa);
 
         return {
-            subtotal,
-            desconto,
-            taxa,
-            taxaDispensada,
-            total,
-            beneficio: { percentual: regra.percentual, ingressos: regra.ingressos },
+            subtotal: subtotal,
+            desconto: desconto,
+            taxa: taxa,
+            taxaDispensada: taxaDispensada,
+            total: total,
+            beneficio: regra
         };
     }
 
-    raiz.Beneficios = { calcularPedido, REGRAS, TAXA_SERVICO };
-})(window);
+    window.Beneficios = {
+        TAXA_SERVICO: TAXA,
+        REGRAS: REGRAS,
+        calcularPedido: calcularPedido
+    };
+})();

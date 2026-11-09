@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Demo da Fila de Espera | Rolês</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:#f7f5fd;color:#14121f;padding:32px 20px}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:26px;font-weight:800;margin-bottom:4px}
+  .sub{color:#55506b;font-size:14px;margin-bottom:24px;line-height:1.6}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid #e9e7f0;border-radius:16px;padding:22px}
+  .rotulo{font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#6c2bd9;margin-bottom:12px;display:block}
+  label{display:block;font-size:13px;font-weight:600;margin:12px 0 4px}
+  input[type=number]{width:100%;padding:10px 12px;border:1px solid #d8d5e6;border-radius:10px;font:inherit}
+  .botoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  button{font:inherit;font-size:13px;font-weight:700;padding:11px 16px;border-radius:10px;border:none;cursor:pointer}
+  .p{background:#0d0c14;color:#fff}.s{background:#fff;border:1px solid #d8d5e6;color:#14121f}.r{background:#6c2bd9;color:#fff}
+  button:hover{opacity:.85}
+  .medidores{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+  .med{background:#f7f5fd;border-radius:12px;padding:14px;text-align:center}
+  .med b{display:block;font-size:30px;font-weight:800;letter-spacing:-1px}
+  .med span{font-size:12px;color:#55506b}
+  .barra{height:14px;border-radius:99px;background:#ede9fe;overflow:hidden;margin-top:6px}
+  .barra>i{display:block;height:100%;background:#6c2bd9;width:0;transition:width .5s}
+  .log{font-size:12.5px;color:#55506b;line-height:1.7;max-height:180px;overflow:auto;margin-top:14px}
+  .ok{background:#dcfce7;color:#166534;border-radius:10px;padding:12px;font-size:13px;font-weight:600;margin-top:14px;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="erro-backend" style="display:none;background:#fee2e2;color:#991b1b;border-radius:12px;padding:14px 16px;font-size:13.5px;font-weight:600;line-height:1.6;margin-bottom:18px"></div>
+  <h1>Fila de espera — demonstração</h1>
+  <p class="sub">Simule uma enxurrada de clientes comprando o mesmo evento e entre na fila como um cliente de verdade. A fila libera por ordem de chegada, no máximo <b id="cap-txt">—</b> pessoas ao mesmo tempo na compra.</p>
+
+  <div class="grid">
+    <div class="card">
+      <span class="rotulo">1 · Configurar</span>
+      <label for="capacidade">Vagas simultâneas na compra</label>
+      <input type="number" id="capacidade" value="5" min="1" />
+      <label for="tempo">Tempo médio de compra (seg) — usado na estimativa</label>
+      <input type="number" id="tempo" value="8" min="1" />
+      <label for="qtd">Clientes simulados chegando de uma vez</label>
+      <input type="number" id="qtd" value="200" min="1" max="5000" />
+      <div class="botoes">
+        <button class="p" id="b-config">Aplicar config</button>
+        <button class="r" id="b-simular">Simular pico de clientes</button>
+        <button class="s" id="b-reset">Zerar tudo</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="rotulo">2 · Ao vivo</span>
+      <div class="medidores">
+        <div class="med"><b id="m-ativos">0</b><span>comprando agora</span></div>
+        <div class="med"><b id="m-fila">0</b><span>na fila</span></div>
+        <div class="med"><b id="m-reais">0</b><span>clientes reais</span></div>
+      </div>
+      <span style="font-size:12px;color:#55506b">Ocupação do checkout</span>
+      <div class="barra"><i id="barra"></i></div>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="card" style="grid-column:1/-1">
+      <span class="rotulo">3 · Viver a experiência do cliente</span>
+      <p style="font-size:14px;color:#55506b;line-height:1.6">Depois de simular o pico, clique abaixo. Você entra no fim da fila e vê sua posição diminuir até ser liberado.</p>
+      <div class="botoes">
+        <button class="p" id="b-entrar">Comprar ingresso (entrar na fila)</button>
+        <button class="s" id="b-concluir" style="display:none">Concluir compra e liberar vaga</button>
+      </div>
+      <div class="ok" id="ok">Sua vez chegou! Aqui o cliente seguiria para a tela de pagamento.</div>
+    </div>
+  </div>
+</div>
+
+<script src="/frontend/js/config.js"></script>
+<script src="/frontend/js/filaEspera.js"></script>
+<script>
+  const isLocal = ['localhost','127.0.0.1'].includes(location.hostname);
+  const BASE = typeof API_BASE !== 'undefined' ? API_BASE : (isLocal ? 'http://localhost:3000' : location.origin);
+  const EVENTO = 'demo';
+  const $ = (id) => document.getElementById(id);
+  const mostrarErro = (msg) => { const e=$('erro-backend'); e.innerHTML = msg; e.style.display='block'; };
+  const ocultarErro = () => { $('erro-backend').style.display='none'; };
+  const ERRO_ROTAS = `Backend sem as rotas da fila (${BASE}/fila). Confira: 1) <b>app.use('/fila', require('./filaRoutes'))</b> no server.js, depois do express.json() e antes de qualquer rota 404/estática; 2) filaService.js e filaRoutes.js na mesma pasta do server.js; 3) reinicie o servidor (ou faça novo deploy no Render).`;
+  const post = async (p, b) => {
+    const r = await fetch(BASE + p, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(b||{}) });
+    try { const d = await r.json(); ocultarErro(); return d; }
+    catch (_) { mostrarErro(ERRO_ROTAS); throw new Error('rotas da fila ausentes'); }
+  };
+  const log = (t) => { const d=$('log'); d.insertAdjacentHTML('afterbegin', `<div>${new Date().toLocaleTimeString('pt-BR')} — ${t}</div>`); };
+
+  async function atualizar() {
+    try {
+      const resp = await fetch(`${BASE}/fila/painel/${EVENTO}`);
+      const p = await resp.json();
+      ocultarErro();
+      $('m-ativos').textContent = p.ativos;
+      $('m-fila').textContent = p.naFila;
+      $('m-reais').textContent = p.clientesReais;
+      $('cap-txt').textContent = p.capacidade;
+      $('barra').style.width = Math.min(100, (p.ativos / p.capacidade) * 100) + '%';
+    } catch (_) { mostrarErro(ERRO_ROTAS); }
+  }
+  setInterval(atualizar, 1000); atualizar();
+
+  $('b-config').onclick = async () => {
+    await post('/fila/demo/config', { capacidade: +$('capacidade').value, tempoMedioCompraSeg: +$('tempo').value });
+    log('Configuração aplicada'); atualizar();
+  };
+  $('b-simular').onclick = async () => {
+    try { await post('/fila/demo/simular', { evento_id: EVENTO, quantidade: +$('qtd').value });
+    log(`${$('qtd').value} clientes chegaram ao mesmo tempo`); atualizar(); } catch (_) {}
+  };
+  $('b-reset').onclick = async () => {
+    await post('/fila/demo/reset', { evento_id: EVENTO });
+    sessionStorage.removeItem('filaTicket_' + EVENTO);
+    $('ok').style.display = 'none'; $('b-concluir').style.display = 'none';
+    log('Fila zerada'); atualizar();
+  };
+  $('b-entrar').onclick = () => {
+    $('ok').style.display = 'none';
+    FilaEspera.entrar(EVENTO, () => {
+      $('ok').style.display = 'block'; $('b-concluir').style.display = '';
+      log('Cliente real foi liberado para comprar');
+    });
+  };
+  $('b-concluir').onclick = () => {
+    FilaEspera.sair(EVENTO);
+    $('ok').style.display = 'none'; $('b-concluir').style.display = 'none';
+    log('Compra concluída, vaga liberada para o próximo');
+  };
+</script>
+</body>
+</html>

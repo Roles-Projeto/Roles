@@ -1,5 +1,8 @@
 require("dotenv").config();
 
+// Prefere IPv4 ao resolver nomes (evita timeout em redes sem IPv6 funcionando, ex.: conexão com o Neon)
+require("dns").setDefaultResultOrder("ipv4first");
+
 const express   = require("express");
 const cors      = require("cors");
 const path      = require("path");
@@ -8,6 +11,9 @@ const helmet    = require("helmet");
 const rateLimit = require("express-rate-limit");
 
 const app = express();
+
+// Atrás do proxy do Render: faz o rate limit enxergar o IP real de cada usuário
+app.set("trust proxy", 1);
 
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -36,6 +42,14 @@ const loginLimiter = rateLimit({
 
 app.use("/usuarios/login", loginLimiter);
 
+const candidaturaLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 8,
+  message: { erro: "Muitas candidaturas enviadas. Tente novamente mais tarde." }
+});
+
+app.use("/candidaturas", candidaturaLimiter);
+
 const allowedOrigins = [
     "http://127.0.0.1:5502",
     "http://localhost:5502",
@@ -56,7 +70,7 @@ app.use(cors({
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization", "X-Fila-Ticket"]
 }));
 
 app.use(express.json({ limit: "50mb" }));
@@ -119,6 +133,8 @@ const recomendacaoRoutes     = require("./routes/recomendacaoRoutes");
 const assentosRoutes         = require("./routes/assentos");
 const beneficiosRoutes       = require("./routes/beneficios");
 const denunciasRoutes        = require("./routes/denuncias");   // 🚩 Denúncias de eventos e locais
+const publicoRoutes          = require("./routes/publico");      // ← NOVO
+const candidaturasRoutes     = require("./routes/candidaturas"); // ← NOVO (Trabalhe conosco)
 
 // 🤖 Chat Gemini
 const chatRoutes             = require("./routes/chat");
@@ -162,6 +178,9 @@ app.use("/recomendacoes",    recomendacaoRoutes);
 app.use("/assentos",         assentosRoutes);
 app.use("/beneficios",       beneficiosRoutes);
 app.use("/denuncias",        denunciasRoutes);                  // 🚩 POST /denuncias
+app.use("/publico",          publicoRoutes);                     // ← NOVO
+app.use("/fila",             require("./routes/filaRoutes"));           // ← NOVO (fila de espera)
+app.use("/candidaturas",     candidaturasRoutes);                // ← NOVO (Trabalhe conosco)
 
 // 🤖 POST /api/chat
 app.use("/api", chatRoutes);
@@ -197,6 +216,9 @@ const API_PREFIXES = [
   "/seguidores",
   "/beneficios",
   "/denuncias",
+  "/publico",                                                     // ← NOVO
+  "/candidaturas",                                                // ← NOVO (Trabalhe conosco)
+  "/fila",                                                        // ← NOVO (fila de espera)
 ];
 
 

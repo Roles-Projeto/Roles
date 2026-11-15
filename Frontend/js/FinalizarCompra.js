@@ -25,6 +25,11 @@ let tipoAtual = null;
 // Quantas compras PAGAS o usuário já fez (null = desconhecido: sem benefício)
 let COMPRAS_PAGAS = null;
 
+// Resposta do backend: o usuário ainda tem direito ao benefício de boas-vindas?
+// Quem decide é o servidor (olha pedidos pagos, CPF e benefícios já usados).
+// Começa false: sem resposta do servidor, a tela não mostra desconto.
+let BENEFICIO_DISPONIVEL = false;
+
 /* ==================================================
    GET USER ID
 ================================================== */
@@ -82,17 +87,26 @@ function tratarSessaoExpirada() {
 }
 
 /* ==================================================
-   BENEFÍCIO DE BOAS-VINDAS (1ª e 2ª compra)
+   BENEFÍCIO DE BOAS-VINDAS (só na 1ª compra)
    A regra fica em /frontend/js/beneficios.js. Aqui só mostramos o valor;
    quem vale de verdade é o cálculo do backend.
+   A tela só mostra o desconto quando o backend diz que o benefício está
+   disponível (beneficioDisponivel) E o usuário não tem nenhuma compra paga.
 ================================================== */
 async function carregarStatusBeneficio() {
+    // Sempre começa sem benefício: só liga se o backend confirmar agora
+    BENEFICIO_DISPONIVEL = false;
+    COMPRAS_PAGAS = null;
+
     if (!localStorage.getItem("token")) {
         console.warn("[beneficio] sem token no localStorage: desconto desativado");
         return;
     }
     try {
-        const res = await fetch(`${BASE_URL}/beneficios/status`, { headers: headersAutenticados() });
+        const res = await fetch(`${BASE_URL}/beneficios/status`, {
+            headers: headersAutenticados(),
+            cache: "no-store", // nunca reaproveitar uma resposta antiga
+        });
         if (!res.ok) {
             console.warn(`[beneficio] GET ${BASE_URL}/beneficios/status respondeu ${res.status}: desconto desativado`);
             return;
@@ -100,7 +114,8 @@ async function carregarStatusBeneficio() {
         const dados = await res.json();
         const n = Number(dados.comprasPagas);
         COMPRAS_PAGAS = Number.isFinite(n) ? n : null;
-        console.log("[beneficio] comprasPagas =", COMPRAS_PAGAS);
+        BENEFICIO_DISPONIVEL = dados.beneficioDisponivel === true;
+        console.log("[beneficio]", { comprasPagas: COMPRAS_PAGAS, disponivel: BENEFICIO_DISPONIVEL });
     } catch (err) {
         console.warn("[beneficio] erro ao consultar /beneficios/status:", err.message);
     }
@@ -112,7 +127,7 @@ function calcularPedidoAtual(quantidade) {
         precoUnitario: PRICE_PER_TICKET,
         quantidade,
         comprasPagas: COMPRAS_PAGAS ?? 0,
-        elegivel: COMPRAS_PAGAS !== null && !/meia/i.test(nome),
+        elegivel: BENEFICIO_DISPONIVEL && COMPRAS_PAGAS === 0 && !/meia/i.test(nome),
     });
 }
 
@@ -904,9 +919,9 @@ async function finalizarCompra(forma_pagamento) {
 
         if (pixTimerInterval) clearInterval(pixTimerInterval);
 
+        // Valores oficiais vêm da resposta do servidor. O cálculo da tela
+        // (calcularPedidoAtual) só entra como reserva se algum campo faltar.
         const calculo = calcularPedidoAtual(quantidade);
-        const subtotal = calculo.subtotal;
-        const taxa = calculo.taxa;
 
         sessionStorage.setItem("compraConfirmada", JSON.stringify({
             pedido_id: data.pedido_id,
@@ -920,11 +935,11 @@ async function finalizarCompra(forma_pagamento) {
             ingressoNome: tipoAtual?.nome || document.getElementById("ticket-type").textContent,
             ingressoPreco: PRICE_PER_TICKET,
             quantidade,
-            subtotal,
-            taxaServico: taxa,
-            totalPago: calculo.total,
-            desconto: calculo.desconto,
-            beneficio: calculo.beneficio,
+            subtotal: data.subtotal ?? calculo.subtotal,
+            taxaServico: data.taxa_servico ?? calculo.taxa,
+            totalPago: data.total_pago ?? calculo.total,
+            desconto: data.desconto ?? calculo.desconto,
+            beneficio: data.beneficio ?? null,
             forma_pagamento,
         }));
 

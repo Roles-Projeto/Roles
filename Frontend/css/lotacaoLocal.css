@@ -1,0 +1,136 @@
+/* lotacaoLocal.css — Lotação do local (tarefa 183)
+   Carregar depois de detalheslocais.css (usa as variáveis de cor dele). */
+
+/* ───────── Barra pública (dentro do card principal da sidebar) ───────── */
+.lotacao-local {
+  --lotacao-cor: var(--purple-600, #7c3aed);
+  background: var(--bg-gray, #f7f6fb);
+  border: 1.5px solid var(--border, #e5e2f0);
+  border-radius: var(--radius-sm, 10px);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.lotacao-local-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.lotacao-local-rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-mid, #4b4660);
+}
+.lotacao-local-rotulo i { color: var(--lotacao-cor); font-size: 12px; }
+
+.lotacao-local-status {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--lotacao-cor);
+}
+
+.lotacao-local-barra {
+  width: 100%;
+  height: 8px;
+  background: var(--purple-100, #ede9fe);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.lotacao-local-preenchimento {
+  height: 100%;
+  width: 0;
+  background: var(--lotacao-cor);
+  border-radius: 99px;
+  transition: width 0.6s ease;
+}
+
+.lotacao-local-detalhe {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--text-light, #9ca3af);
+}
+
+.lotacao-local[data-nivel="ultimas"]  { --lotacao-cor: #b45309; }
+.lotacao-local[data-nivel="esgotado"] { --lotacao-cor: #dc2626; }
+
+/* ───────── Painel do dono ───────── */
+.lotacao-gestao h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark, #1e1b2e);
+  margin-bottom: 6px;
+}
+
+.lotacao-gestao-ajuda {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-mid, #4b4660);
+  margin-bottom: 14px;
+}
+
+.lotacao-gestao-controle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.lotacao-gestao-controle button {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid var(--purple-200, #ddd6fe);
+  background: var(--bg-card, #fff);
+  color: var(--purple-700, #5b21b6);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.lotacao-gestao-controle button:hover:not(:disabled) {
+  background: var(--purple-50, #f5f3ff);
+  border-color: var(--purple-600, #7c3aed);
+}
+.lotacao-gestao-controle button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.lotacao-gestao-controle input {
+  width: 90px;
+  padding: 9px 8px;
+  border: 1.5px solid var(--border, #e5e2f0);
+  border-radius: var(--radius-sm, 10px);
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--text-dark, #1e1b2e);
+  background: var(--bg-card, #fff);
+  outline: none;
+}
+.lotacao-gestao-controle input:focus {
+  border-color: var(--purple-600, #7c3aed);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.10);
+}
+.lotacao-gestao-controle input:disabled { opacity: 0.5; }
+
+.lotacao-gestao-msg {
+  min-height: 18px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--purple-700, #5b21b6);
+}
+.lotacao-gestao-msg.lotacao-gestao-erro { color: #dc2626; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lotacao-local-preenchimento { transition: none; }
+}

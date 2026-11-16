@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="../css/footer.css">
     <link rel="stylesheet" href="../css/detalheslocais.css">
+    <!-- Lotação do local (tarefa 183) -->
+    <link rel="stylesheet" href="../css/lotacaoLocal.css">
 </head>
 
 <body>
@@ -225,6 +227,18 @@
                             <span class="sidebar-price-value" id="sidebar-price-symbol">—</span>
                         </div>
 
+                        <!-- Lotação agora (tarefa 183): fica oculta até a API devolver dados válidos -->
+                        <div class="lotacao-local" id="lotacao-local" hidden>
+                            <div class="lotacao-local-topo">
+                                <span class="lotacao-local-rotulo"><i class="fas fa-users"></i> Lotação agora</span>
+                                <span class="lotacao-local-status" id="lotacao-local-status"></span>
+                            </div>
+                            <div class="lotacao-local-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Lotação do local">
+                                <div class="lotacao-local-preenchimento" id="lotacao-local-preenchimento"></div>
+                            </div>
+                            <p class="lotacao-local-detalhe" id="lotacao-local-detalhe"></p>
+                        </div>
+
                         <hr>
 
                         <!-- Contato -->
@@ -297,6 +311,21 @@
                                 <span class="contact-row-value" id="info-hours">—</span>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Painel do dono (tarefa 183): só aparece para quem é dono deste local -->
+                    <div class="info-card lotacao-gestao" id="lotacao-gestao" hidden>
+                        <h3>Lotação do seu local</h3>
+                        <p class="lotacao-gestao-ajuda" id="lotacao-gestao-ajuda"></p>
+                        <div class="lotacao-gestao-controle">
+                            <button type="button" id="lotacao-menos" aria-label="Diminuir uma pessoa">-</button>
+                            <input type="number" id="lotacao-valor" min="0" step="1" inputmode="numeric" aria-label="Pessoas no local agora" />
+                            <button type="button" id="lotacao-mais" aria-label="Aumentar uma pessoa">+</button>
+                        </div>
+                        <button type="button" class="btn-primary" id="lotacao-salvar">
+                            <i class="fas fa-check"></i> Salvar lotação
+                        </button>
+                        <p class="lotacao-gestao-msg" id="lotacao-gestao-msg" role="status"></p>
                     </div>
 
                 </div>
@@ -377,6 +406,8 @@
     <script src="../js/detalheslocais.js"></script>
     <script src="../js/detalhes-funcionalidades.js"></script>
     <script src="../js/denunciarLocal.js?v=2"></script>
+    <!-- Lotação do local (tarefa 183): barra pública + painel do dono -->
+    <script src="../js/lotacaoLocal.js"></script>
 
 </body>
 </html>

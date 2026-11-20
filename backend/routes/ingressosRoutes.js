@@ -28,7 +28,8 @@ eventosRouter.get("/:id", detalheEvento);
 
 // -- Router de INGRESSOS --
 const ingressosRouter = express.Router();
-ingressosRouter.post("/comprar",            comprarIngresso);
+// verificarToken: o usuário vem do token (não do corpo), o que protege o benefício de boas-vindas
+ingressosRouter.post("/comprar",            verificarToken, comprarIngresso);
 ingressosRouter.get("/usuario/:usuario_id", meusIngressos);
 ingressosRouter.get("/totais/:usuario_id",  totalIngressosPorUsuario);
 

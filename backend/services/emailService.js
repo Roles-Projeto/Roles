@@ -1,7 +1,7 @@
 "use strict";
 
-const nodemailer = require("nodemailer");
-const QRCode     = require("qrcode");
+const nodemailer  = require("nodemailer");
+const QRCode      = require("qrcode");
 const PDFDocument = require("pdfkit");
 
 const fs   = require("fs");
@@ -26,7 +26,7 @@ function cabecalho(titulo, subtitulo) {
     return `
     <tr>
       <td style="background:linear-gradient(135deg,#6c2bd9 0%,#9b59b6 100%);padding:40px;text-align:center;">
-         <img src="cid:logo_roles" alt="Rolês"style="width:60px;height:60px;border-radius:12px;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;" />
+         <img src="cid:logo_roles" alt="Rolês" style="width:60px;height:60px;border-radius:12px;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;" />
         <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:1px;">Rolês</h1>
         <p style="color:#f0e6ff;margin:8px 0 0;font-size:15px;">${subtitulo}</p>
       </td>
@@ -174,12 +174,12 @@ async function enviarEmailIngresso(dados) {
         subject: `Seu ingresso para ${nomeEvento} — Pedido #${pedido_id}`,
         html,
         attachments: [
-    {
-        filename: "logo.png",
-        path: LOGO_PATH,
-        cid: "logo_roles"
-    },
-],
+            {
+                filename: "logo.png",
+                path: LOGO_PATH,
+                cid: "logo_roles"
+            },
+        ],
     });
 
     console.log(`E-mail de ingresso enviado para ${emailCliente}`);
@@ -240,4 +240,69 @@ function gerarPdfIngresso(dados) {
     });
 }
 
-module.exports = { enviarEmailIngresso };
+// ════════════════════════════════════════
+// EMAIL DE CANDIDATURA (Trabalhe Conosco)
+// ════════════════════════════════════════
+
+// Os campos vêm de um formulário público: escapa antes de colocar no HTML
+function esc(valor) {
+    return String(valor ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+}
+
+// Remove quebras de linha para impedir injeção de cabeçalho no assunto
+function umaLinha(valor) {
+    return String(valor ?? "").replace(/[\r\n]+/g, " ").trim();
+}
+
+function formatarWhatsapp(numeros) {
+    const n = String(numeros || "");
+    if (n.length === 11) return `(${n.slice(0, 2)}) ${n.slice(2, 7)}-${n.slice(7)}`;
+    if (n.length === 10) return `(${n.slice(0, 2)}) ${n.slice(2, 6)}-${n.slice(6)}`;
+    return n;
+}
+
+async function enviarEmailCandidatura(dados, curriculo) {
+    const { nome, whatsapp, email, vaga, cidadeEstado } = dados;
+
+    const html = wrapper(`
+      ${cabecalho("Candidatura", "Nova candidatura recebida")}
+      <tr><td style="padding:32px 40px;">
+        <p style="margin:0 0 10px;font-size:14px;color:#555;"><strong>Nome:</strong> ${esc(nome)}</p>
+        <p style="margin:0 0 10px;font-size:14px;color:#555;"><strong>WhatsApp:</strong> ${esc(formatarWhatsapp(whatsapp))}</p>
+        <p style="margin:0 0 10px;font-size:14px;color:#555;"><strong>E-mail:</strong> ${esc(email || "não informado")}</p>
+        <p style="margin:0 0 10px;font-size:14px;color:#555;"><strong>Cidade/Estado:</strong> ${esc(cidadeEstado || "não informado")}</p>
+        <p style="margin:0 0 10px;font-size:14px;color:#555;"><strong>Vaga:</strong> ${esc(vaga)}</p>
+        <p style="margin:16px 0 0;font-size:13px;color:#888;font-style:italic;">
+          ${curriculo ? "Currículo em anexo." : "O candidato não anexou currículo."}
+        </p>
+      </td></tr>
+      ${rodape()}
+    `);
+
+    const mensagem = {
+        from:    `"Rolês - Trabalhe Conosco" <${process.env.EMAIL_USER}>`,
+        to:      process.env.RECRUTAMENTO_EMAIL || process.env.EMAIL_USER,
+        subject: `Nova candidatura: ${umaLinha(vaga)} - ${umaLinha(nome)}`,
+        html,
+        attachments: [
+            { filename: "logo.png", path: LOGO_PATH, cid: "logo_roles" }
+        ]
+    };
+
+    // Só permite "Responder" direto ao candidato se ele informou e-mail
+    if (email) mensagem.replyTo = email;
+
+    if (curriculo) {
+        mensagem.attachments.push({
+            filename: curriculo.nome,
+            content: curriculo.dados,
+            contentType: curriculo.tipo
+        });
+    }
+
+    await transporter.sendMail(mensagem);
+}
+
+module.exports = { enviarEmailIngresso, enviarEmailCandidatura };

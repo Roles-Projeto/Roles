@@ -224,4 +224,8 @@ const db = {
 
 db.transacao = transacao;
 
+db.query("SELECT 1")
+  .then(() => console.log("✅ Banco OK"))
+  .catch((err) => console.error("❌ Banco:", err.code, err.message));
+
 module.exports = db;

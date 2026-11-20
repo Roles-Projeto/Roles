@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trabalhe conosco — Rolês</title>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <link rel="stylesheet" href="/frontend/css/footer.css">
+    <link rel="stylesheet" href="/frontend/css/trabalheconosco.css">
+</head>
+
+<body>
+
+    <header>
+        <div id="header-container"></div>
+    </header>
+
+    <main class="tc-main">
+
+        <div class="tc-split">
+
+            <!-- ═══════════════════════════════════════
+                 LADO ESQUERDO — HERO
+            ═══════════════════════════════════════ -->
+
+            <div class="tc-hero">
+
+                <div class="orb orb-1"></div>
+                <div class="orb orb-2"></div>
+                <div class="orb orb-3"></div>
+
+                <div class="hero-content">
+
+                    <div class="hero-logo">Rolês</div>
+
+                    <h2 class="hero-headline">
+                        Faça parte do<br>
+                        <em>nosso time.</em>
+                    </h2>
+
+                    <p class="hero-sub">
+                        Ajude a conectar pessoas aos melhores lugares e eventos
+                        da cidade. Preencha o cadastro e nossa equipe entra em
+                        contato pelo WhatsApp.
+                    </p>
+
+                    <div class="hero-pills">
+                        <span class="hero-pill"><i class="fas fa-clock"></i> Leva 2 minutos</span>
+                        <span class="hero-pill"><i class="fas fa-file-lines"></i> Currículo opcional</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ═══════════════════════════════════════
+                 LADO DIREITO — CARD
+            ═══════════════════════════════════════ -->
+
+            <div class="tc-form-side">
+
+                <div class="tc-box">
+
+                    <!-- ───────── FORMULÁRIO ───────── -->
+
+                    <div id="tcFormContent">
+
+                        <div class="card-top">
+
+                            <div class="card-icon">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+
+                            <h1>Cadastre-se</h1>
+
+                            <p class="text-muted">
+                                Escolha a vaga e preencha nome e WhatsApp.
+                                O resto é opcional.
+                            </p>
+
+                        </div>
+
+                        <div id="notificacaoTc" class="notificacao" role="alert"></div>
+
+                        <form id="tc-form" novalidate>
+
+                            <!-- NOME -->
+                            <div class="field-group">
+                                <label for="tc-nome">
+                                    Nome completo <span class="req" aria-hidden="true">*</span>
+                                </label>
+                                <div class="input-wrap">
+                                    <i class="fas fa-user input-icon"></i>
+                                    <input
+                                        type="text"
+                                        id="tc-nome"
+                                        name="nome"
+                                        placeholder="Seu nome"
+                                        autocomplete="name"
+                                        maxlength="120"
+                                        required>
+                                </div>
+                            </div>
+
+                            <!-- WHATSAPP -->
+                            <div class="field-group">
+                                <label for="tc-whatsapp">
+                                    WhatsApp <span class="req" aria-hidden="true">*</span>
+                                </label>
+                                <div class="input-wrap">
+                                    <i class="fab fa-whatsapp input-icon"></i>
+                                    <input
+                                        type="tel"
+                                        id="tc-whatsapp"
+                                        name="whatsapp"
+                                        placeholder="(62) 99999-9999"
+                                        autocomplete="tel"
+                                        inputmode="numeric"
+                                        maxlength="15"
+                                        required>
+                                </div>
+                            </div>
+
+                            <!-- VAGA -->
+                            <div class="field-group">
+                                <label for="tc-vaga">
+                                    Vaga de interesse <span class="req" aria-hidden="true">*</span>
+                                </label>
+                                <div class="input-wrap select-wrap">
+                                    <i class="fas fa-briefcase input-icon"></i>
+                                    <select id="tc-vaga" name="vaga" required>
+                                        <option value="">Selecione uma vaga</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down select-arrow"></i>
+                                </div>
+                            </div>
+
+                            <!-- CIDADE + E-MAIL -->
+                            <div class="field-row">
+
+                                <div class="field-group">
+                                    <label for="tc-cidade">
+                                        Cidade/Estado <span class="opt">(opcional)</span>
+                                    </label>
+                                    <div class="input-wrap">
+                                        <i class="fas fa-location-dot input-icon"></i>
+                                        <input
+                                            type="text"
+                                            id="tc-cidade"
+                                            name="cidade_estado"
+                                            placeholder="Ex.: Goiânia - GO"
+                                            autocomplete="address-level2"
+                                            maxlength="80">
+                                    </div>
+                                </div>
+
+                                <div class="field-group">
+                                    <label for="tc-email">
+                                        E-mail <span class="opt">(opcional)</span>
+                                    </label>
+                                    <div class="input-wrap">
+                                        <i class="fas fa-envelope input-icon"></i>
+                                        <input
+                                            type="email"
+                                            id="tc-email"
+                                            name="email"
+                                            placeholder="voce@email.com"
+                                            autocomplete="email"
+                                            maxlength="120">
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- CURRÍCULO -->
+                            <div class="field-group">
+                                <label for="tc-curriculo">
+                                    Currículo <span class="opt">(opcional)</span>
+                                </label>
+
+                                <label class="dropzone" id="tcDropzone" for="tc-curriculo">
+                                    <i class="fas fa-cloud-arrow-up dropzone-icon"></i>
+                                    <span class="dropzone-text">
+                                        <strong id="tcArquivoNome">Anexar currículo</strong>
+                                        <small id="tcArquivoInfo">PDF ou imagem, até 5 MB</small>
+                                    </span>
+                                    <button
+                                        type="button"
+                                        id="tcArquivoRemover"
+                                        class="dropzone-remove"
+                                        aria-label="Remover arquivo"
+                                        hidden>
+                                        <i class="fas fa-xmark"></i>
+                                    </button>
+                                </label>
+
+                                <input
+                                    type="file"
+                                    id="tc-curriculo"
+                                    name="curriculo"
+                                    accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
+                                    class="visually-hidden">
+                            </div>
+
+                            <!-- Anti-spam (honeypot): usuários reais não veem nem preenchem -->
+                            <input
+                                type="text"
+                                name="website"
+                                id="tc-website"
+                                class="tc-hp"
+                                tabindex="-1"
+                                autocomplete="off"
+                                aria-hidden="true">
+
+                            <button type="submit" class="btn-entrar" id="tcSubmit">
+                                <span>Enviar candidatura</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+
+                            <p class="tc-privacy">
+                                Seus dados são usados só para o processo seletivo.
+                            </p>
+
+                        </form>
+                    </div>
+
+
+                    <!-- ───────── SUCESSO ───────── -->
+
+                    <div id="tcSuccess" class="tc-success" hidden>
+
+                        <div class="card-icon success-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+
+                        <h1>Candidatura enviada!</h1>
+
+                        <p class="text-muted">
+                            Recebemos seus dados. Nossa equipe vai entrar em
+                            contato pelo WhatsApp que você informou.
+                        </p>
+
+                        <a href="/frontend/index.html" class="btn-entrar tc-back-home">
+                            <span>Voltar para o início</span>
+                            <i class="fas fa-house"></i>
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- ═══════════════════════════════════════
+         SCRIPTS
+    ═══════════════════════════════════════ -->
+
+    <script src="/frontend/js/config.js"></script>
+
+    <script src="/frontend/js/footer.js" defer></script>
+
+    <script src="/frontend/js/loadHeader.js"></script>
+
+    <script src="/frontend/js/trabalheconosco.js"></script>
+
+</body>
+</html>

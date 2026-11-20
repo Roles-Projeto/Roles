@@ -503,6 +503,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 slug: "Show",
                 keywords: ["show", "shows", "shows e música", "musica", "música", "banda", "concert", "standup", "stand-up", "stand up", "comédia", "comedia", "comedy"]
             },
+                        {
+                name: "Esportes",
+                icon: "fas fa-futbol",
+                slug: "Esportes",
+                keywords: ["esporte", "esportes", "esportivo", "futebol", "jogo de futebol", "campeonato", "torneio", "corrida", "pelada", "basquete", "volei", "vôlei"]
+            },
             {
                 name: "Eventos",
                 icon: "fas fa-cocktail",

@@ -399,6 +399,13 @@
                       <span>Subtotal</span>
                       <span class="price" id="subtotal">R$ 0,00</span>
                     </div>
+
+                    <!-- Desconto de boas-vindas (aparece só quando a compra teve desconto) -->
+                    <div class="price-row" id="row-desconto" style="display: none">
+                      <span id="desconto-rotulo">Desconto de boas-vindas</span>
+                      <span class="price" id="desconto-pago">- R$ 0,00</span>
+                    </div>
+
                     <div class="price-row">
                       <span>Taxa de serviço</span>
                       <span class="price" id="taxa">R$ 0,00</span>
@@ -476,12 +483,35 @@
     <!-- Toast -->
     <div id="toast">Mensagem de confirmação</div>
 
-    <script src="/frontend/js/config.js"></script>
+   <script src="/frontend/js/config.js"></script>
+   <script src="/frontend/js/feedback.js"></script>
     <script src="/frontend/js/footer.js" defer></script>
     <script src="/frontend/js/loadHeader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script src="/frontend/js/Confirmacao.js"></script>
+
+    <!-- Linha de desconto: lê o que o FinalizarCompra.js guardou na compra -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        try {
+          var compra = JSON.parse(sessionStorage.getItem('compraConfirmada') || '{}');
+          var desconto = Number(compra.desconto) || 0;
+          if (desconto <= 0) return;
+
+          var linha = document.getElementById('row-desconto');
+          var valor = document.getElementById('desconto-pago');
+          if (!linha || !valor) return;
+
+          valor.textContent = '- ' + desconto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          if (compra.beneficio && compra.beneficio.percentual) {
+            document.getElementById('desconto-rotulo').textContent =
+              'Desconto de boas-vindas (' + Math.round(compra.beneficio.percentual * 100) + '% em 1 ingresso)';
+          }
+          linha.style.display = '';
+        } catch (_) { /* sem desconto para mostrar */ }
+      });
+    </script>
   </body>
 </html>

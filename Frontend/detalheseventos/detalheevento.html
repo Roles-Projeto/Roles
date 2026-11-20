@@ -14,6 +14,188 @@
     />
     <link rel="stylesheet" href="/frontend/css/footer.css" />
     <link rel="stylesheet" href="/frontend/css/detalheseventos.css" />
+    <!-- Barra de lotação do evento (tarefa 183) -->
+    <link rel="stylesheet" href="/frontend/css/lotacaoEvento.css" />
+
+    <!-- AJUSTE DE LAYOUT (desktop): ingressos, mapa, sobre e organizador empilhados
+         na coluna da esquerda; checkout fixo na direita. Elimina o espaço vazio.
+         Fica depois do CSS principal para sobrescrevê-lo. -->
+    <style id="ajuste-layout-evento">
+      /* ===== LAYOUT DA PÁGINA DO EVENTO =====
+         Celular: tudo empilhado (ingressos, mapa, checkout, sobre, organizador).
+         Desktop: coluna principal à esquerda + checkout fixo à direita. */
+      .ev-layout {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 32px 24px 72px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+      .ev-principal { display: contents; }
+
+      .ev-layout .ingressos-disponiveis,
+      .ev-layout .mapa-setores,
+      .ev-layout .sobre-evento,
+      .ev-layout .organizador,
+      .ev-layout .card-transparencia,
+      .ev-layout .compra-ingresso {
+        grid-column: auto !important;
+        grid-row: auto !important;
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0;
+        margin: 0 !important;
+        box-sizing: border-box;
+      }
+      .ev-layout .ingressos-disponiveis { border-right: 0 !important; padding-right: 0 !important; order: 1; }
+      .ev-layout .mapa-setores          { order: 2; }
+      .ev-layout .compra-ingresso       { border-left: 0 !important; order: 3; }
+      .ev-layout .sobre-evento          { order: 4; }
+      .ev-layout .organizador           { order: 5; }
+      .ev-layout .card-transparencia    { order: 6; }
+
+      @media (min-width: 992px) {
+        .ev-layout {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 410px;
+          column-gap: 40px;
+          align-items: start;
+        }
+        .ev-principal {
+          display: flex;
+          flex-direction: column;
+          gap: 32px;
+          grid-column: 1;
+          grid-row: 1;
+          min-width: 0;
+        }
+        .ev-layout .ingressos-disponiveis,
+        .ev-layout .mapa-setores,
+        .ev-layout .sobre-evento,
+        .ev-layout .organizador,
+        .ev-layout .card-transparencia { order: 0; }
+
+        .ev-layout .compra-ingresso {
+          grid-column: 2 !important;
+          grid-row: 1 !important;
+          order: 0;
+          position: sticky !important;
+          top: 90px;
+          align-self: start;
+        }
+      }
+
+
+      /* ===== TRANSPARÊNCIA TOTAL: cartão com ícone ===== */
+      .ev-layout .card-transparencia {
+        display: flex !important;
+        align-items: flex-start;
+        gap: 18px;
+        padding: 22px 26px !important;
+        background: #f6f1ff !important;
+        border: 1px solid #e4dcf7 !important;
+        border-radius: 16px !important;
+      }
+      .ev-layout .card-transparencia .transparencia-icone {
+        flex: 0 0 46px;
+        width: 46px;
+        height: 46px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #6c1dce;
+        color: #fff;
+        font-size: 19px;
+      }
+      .ev-layout .card-transparencia .transparencia-icone i { color: #fff; }
+      .ev-layout .card-transparencia .texto-transparencia { min-width: 0; }
+      .ev-layout .card-transparencia .titulo-transparencia {
+        margin: 0 0 6px;
+        font-size: 17px;
+        font-weight: 700;
+        color: #1a1530;
+      }
+      .ev-layout .card-transparencia .detalhe-taxa {
+        margin: 0;
+        font-size: 14.5px;
+        line-height: 1.65;
+        color: #5d5873;
+      }
+      .ev-layout .card-transparencia .destaque-taxa { color: #6c1dce; font-weight: 700; }
+
+      /* ===== CHECKOUT: cartão com fonte um pouco menor ===== */
+      .ev-layout .compra-ingresso .card-garantia-ingresso {
+        padding: 26px 26px 20px;
+        background: #fff;
+        border: 1px solid #ebe5f7;
+        border-radius: 22px;
+        box-shadow: 0 14px 40px rgba(60, 30, 120, 0.10);
+      }
+      .ev-layout .compra-ingresso .linha-detalhe { padding: 9px 0; }
+      .ev-layout .compra-ingresso .label-detalhe,
+      .ev-layout .compra-ingresso .valor-detalhe { font-size: 13.5px; }
+      .ev-layout .compra-ingresso .seletor-quantidade { padding: 12px 0 6px; }
+      .ev-layout .compra-ingresso .seletor-quantidade .label-valor { font-size: 14.5px; }
+      .ev-layout .compra-ingresso .controle-quantidade button {
+        width: 32px;
+        height: 32px;
+        font-size: 15px;
+      }
+      .ev-layout .compra-ingresso #qtd-valor { font-size: 16px; min-width: 26px; text-align: center; }
+      .ev-layout .compra-ingresso .resumo-valores { padding: 12px 0 4px; }
+      .ev-layout .compra-ingresso .linha-resumo { font-size: 13px; line-height: 1.5; padding: 4px 0; }
+      .ev-layout .compra-ingresso .detalhe-valor-total { padding: 14px 0 8px; }
+      .ev-layout .compra-ingresso .detalhe-valor-total .label-valor { font-size: 14.5px; }
+      .ev-layout .compra-ingresso .valor-ingresso { font-size: 30px; }
+      .ev-layout .compra-ingresso .botao-comprar {
+        padding: 15px 18px;
+        font-size: 15.5px;
+        border-radius: 14px;
+      }
+
+      /* Valores do resumo nunca quebram em duas linhas ("R$" / "150,00") */
+      .resumo-valores .linha-resumo span:last-child,
+      .detalhe-valor-total .valor-ingresso {
+        white-space: nowrap;
+      }
+
+      /* ===== RODAPÉ DO CHECKOUT: botão discreto de denúncia =====
+         Container próprio (não é mais ".beneficios-compra") para nenhum
+         outro script reescrever o conteúdo e fazer o botão sumir. */
+      .ev-layout .compra-ingresso .denuncia-rodape {
+        margin-top: 14px;
+        min-height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .link-denuncia {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 6px;
+        background: none;
+        border: 0;
+        font: inherit;
+        font-size: 11.5px;
+        font-weight: 500;
+        color: #a29db3;
+        cursor: pointer;
+        opacity: 0.85;
+        transition: color 0.15s ease, opacity 0.15s ease;
+      }
+      .link-denuncia i { font-size: 11px; }
+      .link-denuncia:hover,
+      .link-denuncia:focus-visible {
+        color: #6c1dce;
+        opacity: 1;
+        text-decoration: underline;
+        outline: none;
+      }
+    </style>
   </head>
   <body>
     <header><div id="header-container"></div></header>
@@ -71,13 +253,25 @@
         <button class="botao-comprar-topo" type="button">Comprar ingresso</button>
       </section>
 
+      <!-- LOTAÇÃO DO EVENTO (tarefa 183)
+           Fica oculta até o script lotacaoEvento.js receber os dados da API. -->
+      <section class="lotacao-evento" id="lotacao-evento" hidden>
+        <div class="lotacao-topo">
+          <span class="lotacao-rotulo"><i class="fa-solid fa-ticket"></i> Lotação do evento</span>
+          <span class="lotacao-status" id="lotacao-status"></span>
+        </div>
+        <div class="lotacao-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Lotação do evento">
+          <div class="lotacao-preenchimento" id="lotacao-preenchimento"></div>
+        </div>
+        <p class="lotacao-percentual" id="lotacao-percentual"></p>
+      </section>
+
       <!-- CONTEÚDO -->
-      <div class="conteudo-evento">
+      <div class="ev-layout">
 
-        <!-- Topo em 3 colunas: Ingressos | Mapa | Pagamento -->
-        <div class="ingressos-e-mapa">
-
-          <!-- Coluna 1: ingressos -->
+        <!-- COLUNA PRINCIPAL: ingressos, mapa, sobre, organizador e transparência -->
+        <div class="ev-principal">
+          <!-- Ingressos -->
           <section class="ingressos-disponiveis">
             <span class="rotulo-secao">Setores</span>
             <h3 class="titulo-ingressos">Ingressos Disponíveis</h3>
@@ -86,7 +280,7 @@
             </p>
           </section>
 
-          <!-- Coluna 2: mapa, legenda e local -->
+          <!-- Mapa, legenda e local -->
           <section class="card-informacoes mapa-setores">
             <span class="rotulo-secao">Local</span>
             <h2 class="titulo-secao">Mapa do Setor</h2>
@@ -108,128 +302,133 @@
             <div class="mapa-legenda-precos" id="mapa-legenda-precos"></div>
           </section>
 
-          <!-- Coluna 3: pagamento -->
-          <aside class="compra-ingresso">
-            <div class="card-garantia-ingresso">
-              <span class="rotulo-secao">Checkout</span>
-              <div class="detalhes-data-local">
-                <div class="linha-detalhe">
-                  <span class="label-detalhe"><i class="fa-regular fa-calendar"></i> Data</span>
-                  <span class="valor-detalhe data-resumo">--</span>
-                </div>
-                <div class="linha-detalhe">
-                  <span class="label-detalhe"><i class="fa-regular fa-clock"></i> Horário</span>
-                  <span class="valor-detalhe hora-resumo">--</span>
-                </div>
-                <div class="linha-detalhe">
-                  <span class="label-detalhe"><i class="fa-solid fa-location-dot"></i> Local</span>
-                  <span class="valor-detalhe local-resumo">--</span>
-                </div>
-                <div class="linha-detalhe">
-                  <span class="label-detalhe"><i class="fa-solid fa-ticket"></i> Ingresso</span>
-                  <span class="valor-detalhe ingresso-resumo">--</span>
+          <!-- Detalhes do evento -->
+          <section class="card-informacoes sobre-evento">
+            <span class="rotulo-secao">O Evento</span>
+            <h2 class="titulo-secao">Sobre o Evento</h2>
+            <p class="descricao-evento">Carregando descrição...</p>
+            <div class="informacoes-extras">
+              <div class="info-item local-evento">
+                <div class="info-icone-wrap"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="texto-info">
+                  <p class="nome-local">Carregando...</p>
+                  <p class="endereco-local">Carregando...</p>
                 </div>
               </div>
-
-              <div class="seletor-quantidade" id="seletor-quantidade" style="display: none">
-                <span class="label-valor">Quantidade</span>
-                <div class="controle-quantidade">
-                  <button type="button" id="qtd-menos" aria-label="Diminuir quantidade">-</button>
-                  <span id="qtd-valor">1</span>
-                  <button type="button" id="qtd-mais" aria-label="Aumentar quantidade">+</button>
+              <div class="info-item confirmados">
+                <div class="info-icone-wrap"><i class="fa-solid fa-users"></i></div>
+                <div class="texto-info">
+                  <span class="numero-confirmados">--</span>
+                  <span class="texto-confirmacao">confirmaram presença</span>
                 </div>
-              </div>
-              <p class="aviso-quantidade" id="aviso-quantidade"></p>
-
-              <div class="resumo-valores" id="resumo-valores" style="display: none">
-                <div class="linha-resumo">
-                  <span id="resumo-linha-ingresso">--</span>
-                  <span id="resumo-subtotal">R$ 0,00</span>
-                </div>
-
-                
-                <div class="linha-resumo">
-                  <span>Taxa de serviço (10%)</span>
-                  <span id="resumo-taxa">R$ 0,00</span>
-                </div>
-              </div>
-
-              <div class="detalhe-valor-total">
-                <span class="label-valor">Total</span>
-                <span class="valor-ingresso">R$ 0,00</span>
-              </div>
-
-              <button class="botao-comprar" type="button">Comprar Ingresso</button>
-
-              <div class="beneficios-compra">
-                <div class="beneficio-item"><i class="fa-solid fa-circle-check"></i> Confirmação imediata</div>
-                <div class="beneficio-item"><i class="fa-solid fa-circle-check"></i> Ingresso por email e app</div>
-                <div class="beneficio-item"><i class="fa-solid fa-circle-check"></i> Pagamento seguro</div>
               </div>
             </div>
-          </aside>
-        </div>
-        <!-- /ingressos-e-mapa -->
+          </section>
 
-        <!-- Detalhes do evento: Sobre e Organizador lado a lado no desktop -->
-        <div class="colunas-evento">
-          <div class="detalhes-evento">
-            <section class="card-informacoes sobre-evento">
-              <span class="rotulo-secao">O Evento</span>
-              <h2 class="titulo-secao">Sobre o Evento</h2>
-              <p class="descricao-evento">Carregando descrição...</p>
-              <div class="informacoes-extras">
-                <div class="info-item local-evento">
-                  <div class="info-icone-wrap"><i class="fa-solid fa-location-dot"></i></div>
-                  <div class="texto-info">
-                    <p class="nome-local">Carregando...</p>
-                    <p class="endereco-local">Carregando...</p>
-                  </div>
-                </div>
-                <div class="info-item confirmados">
-                  <div class="info-icone-wrap"><i class="fa-solid fa-users"></i></div>
-                  <div class="texto-info">
-                    <span class="numero-confirmados">--</span>
-                    <span class="texto-confirmacao">confirmaram presença</span>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section class="card-informacoes organizador">
-              <span class="rotulo-secao">Produção</span>
-              <h2 class="titulo-secao">Organizador</h2>
-              <div class="perfil-organizador">
-                <img src="/frontend/imagens/logo3.png" alt="Logo do Organizador" class="avatar-organizador" id="avatar-organizador" />
-                <div class="dados-organizador">
-                  <p class="nome-produtora" id="nome-produtora">
-                    Carregando...
-                    <span class="etiqueta-verificado"><i class="fa-solid fa-shield-halved"></i> Verificado</span>
-                  </p>
-                  <p class="eventos-organizados" id="eventos-organizados"></p>
-                </div>
-                <a href="/frontend/eventos/VerPerfil.html" class="botao-ver-perfil js-link-ver-perfil">
-                  Ver Perfil <i class="fa-solid fa-arrow-right"></i>
-                </a>
-              </div>
-            </section>
-
-            <div class="card-transparencia">
-              <div class="transparencia-icone"><i class="fa-solid fa-shield-halved"></i></div>
-              <div class="texto-transparencia">
-                <p class="titulo-transparencia">Transparência Total</p>
-                <p class="detalhe-taxa">
-                  Taxa de serviço de <span class="destaque-taxa">apenas 10%</span> será adicionada no checkout. Esta taxa cobre processamento de pagamento, emissão de ingresso digital e suporte ao cliente.
+          <section class="card-informacoes organizador">
+            <span class="rotulo-secao">Produção</span>
+            <h2 class="titulo-secao">Organizador</h2>
+            <div class="perfil-organizador">
+              <img src="/frontend/imagens/logo3.png" alt="Logo do Organizador" class="avatar-organizador" id="avatar-organizador" />
+              <div class="dados-organizador">
+                <p class="nome-produtora" id="nome-produtora">
+                  Carregando...
+                  <span class="etiqueta-verificado"><i class="fa-solid fa-shield-halved"></i> Verificado</span>
                 </p>
+                <p class="eventos-organizados" id="eventos-organizados"></p>
+              </div>
+              <a href="/frontend/eventos/VerPerfil.html" class="botao-ver-perfil js-link-ver-perfil">
+                Ver Perfil <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </section>
+
+          <div class="card-transparencia">
+            <div class="transparencia-icone"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="texto-transparencia">
+              <p class="titulo-transparencia">Transparência Total</p>
+              <p class="detalhe-taxa">
+                Taxa de serviço de <span class="destaque-taxa">apenas 10%</span> será adicionada no checkout. Esta taxa cobre processamento de pagamento, emissão de ingresso digital e suporte ao cliente.
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- /ev-principal -->
+
+        <!-- COLUNA DA DIREITA: checkout (fixo na rolagem no desktop) -->
+        <aside class="compra-ingresso">
+          <div class="card-garantia-ingresso">
+            <span class="rotulo-secao">Checkout</span>
+            <div class="detalhes-data-local">
+              <div class="linha-detalhe">
+                <span class="label-detalhe"><i class="fa-regular fa-calendar"></i> Data</span>
+                <span class="valor-detalhe data-resumo">--</span>
+              </div>
+              <div class="linha-detalhe">
+                <span class="label-detalhe"><i class="fa-regular fa-clock"></i> Horário</span>
+                <span class="valor-detalhe hora-resumo">--</span>
+              </div>
+              <div class="linha-detalhe">
+                <span class="label-detalhe"><i class="fa-solid fa-location-dot"></i> Local</span>
+                <span class="valor-detalhe local-resumo">--</span>
+              </div>
+              <div class="linha-detalhe">
+                <span class="label-detalhe"><i class="fa-solid fa-ticket"></i> Ingresso</span>
+                <span class="valor-detalhe ingresso-resumo">--</span>
               </div>
             </div>
 
+            <div class="seletor-quantidade" id="seletor-quantidade" style="display: none">
+              <span class="label-valor">Quantidade</span>
+              <div class="controle-quantidade">
+                <button type="button" id="qtd-menos" aria-label="Diminuir quantidade">-</button>
+                <span id="qtd-valor">1</span>
+                <button type="button" id="qtd-mais" aria-label="Aumentar quantidade">+</button>
+              </div>
+            </div>
+            <p class="aviso-quantidade" id="aviso-quantidade"></p>
+
+            <div class="resumo-valores" id="resumo-valores" style="display: none">
+              <div class="linha-resumo">
+                <span id="resumo-linha-ingresso">--</span>
+                <span id="resumo-subtotal">R$ 0,00</span>
+              </div>
+
+              <!-- Desconto de boas-vindas (aparece só quando o usuário tem direito) -->
+              <div class="linha-resumo" id="linha-desconto" style="display: none">
+                <span id="resumo-desconto-rotulo">Desconto de boas-vindas</span>
+                <span id="resumo-desconto">- R$ 0,00</span>
+              </div>
+
+              <div class="linha-resumo">
+                <span id="resumo-taxa-rotulo">Taxa de serviço (10%)</span>
+                <span id="resumo-taxa">R$ 0,00</span>
+              </div>
+            </div>
+
+            <div class="detalhe-valor-total">
+              <span class="label-valor">Total</span>
+              <span class="valor-ingresso">R$ 0,00</span>
+            </div>
+
+            <button class="botao-comprar" type="button">Comprar Ingresso</button>
+
+            <!-- Rodapé do checkout: botão discreto de denúncia -->
+            <div class="denuncia-rodape">
+              <button
+                type="button"
+                class="link-denuncia"
+                id="btn-denunciar-evento"
+                aria-label="Denunciar este evento"
+              >
+                <i class="fa-regular fa-flag"></i> Denunciar evento
+              </button>
+            </div>
           </div>
-          <!-- /detalhes-evento -->
-        </div>
-        <!-- /colunas-evento -->
+        </aside>
+
       </div>
-      <!-- /conteudo-evento -->
+      <!-- /ev-layout -->
 
       <div class="barra-compra-mobile">
         <div class="barra-compra-info">
@@ -244,9 +443,16 @@
 
     <!-- Scripts — apenas uma vez, ordem correta -->
     <script src="/frontend/js/config.js"></script>
+    <!-- Barra de lotação (tarefa 183): precisa do config.js carregado antes -->
+    <script src="/frontend/js/lotacaoEvento.js"></script>
+    <script src="/frontend/js/filaEspera.js"></script>
+    <script src="/frontend/js/feedback.js"></script>
     <script src="/frontend/js/footer.js" defer></script>
     <script src="/frontend/js/loadHeader.js"></script>
+    <script src="/frontend/js/beneficios.js"></script>
     <script src="/frontend/js/detalhesEventos.js"></script>
     <script src="/frontend/js/favoritoCompartilhar.js"></script>
+    <!-- Denúncia de evento (modal + envio para POST /denuncias) -->
+    <script src="/frontend/js/denunciarEvento.js?v=4"></script>
   </body>
 </html>

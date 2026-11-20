@@ -1,21 +1,30 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db/db_config");
-const { verificarToken } = require("../middleware/auth");
+const { verificarToken, autenticacaoOpcional } = require("../middleware/auth");
 
 // ── Upload de imagens (Supabase Storage) ──
-const { usarSupabase, criarStorage, uploadParaSupabase } = require("../utils/supabaseUpload");
+const { usarSupabase, criarUpload, uploadParaSupabase } = require("../utils/supabaseUpload");
 
 const BUCKET_ESTABELECIMENTOS = "imagens-estabelecimentos";
-const upload = multerInstance();
+// criarUpload já vem com o filtro de tipo (só imagens) e o limite de
+// tamanho (5 MB) configurados — ver utils/supabaseUpload.js.
+const upload = criarUpload("uploads-estabelecimentos");
 
-function multerInstance() {
-  const multer = require("multer");
-  return multer({ storage: criarStorage("uploads-estabelecimentos") });
-}
-
-// Rota de upload — devolve a URL pra ser usada em img_logo, img_capa ou fotos_galeria
-router.post("/upload-imagem", upload.single("imagem"), async (req, res) => {
+// Rota de upload — devolve a URL pra ser usada em img_logo, img_capa ou fotos_galeria.
+// Exige login (achado do teste de segurança de outubro/2026: sem isso, qualquer
+// pessoa, sem conta, conseguia enviar arquivos pro servidor). O multer roda dentro
+// de um wrapper pra que um arquivo recusado (tipo errado ou maior que 5 MB) vire
+// uma resposta JSON normal, em vez de um erro 500 sem tratamento.
+router.post("/upload-imagem", verificarToken, (req, res, next) => {
+  upload.single("imagem")(req, res, (err) => {
+    if (err) {
+      const status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+      return res.status(status).json({ erro: err.message || "Erro ao processar o arquivo enviado." });
+    }
+    next();
+  });
+}, async (req, res) => {
   if (!req.file) return res.status(400).json({ erro: "Nenhuma imagem enviada" });
 
   // Modo local: multer já salvou o arquivo em disco, só devolve o caminho relativo.
@@ -36,6 +45,15 @@ function parseRow(row) {
   if (!row) return row;
   try { row.fotos_galeria = JSON.parse(row.fotos_galeria || "[]"); } catch { row.fotos_galeria = []; }
   try { row.pratos = JSON.parse(row.pratos || "[]"); } catch { row.pratos = []; }
+  return row;
+}
+
+// Remove, de uma linha já carregada, os campos que só o dono pode ver.
+// Usada quando quem pediu não é dono do estabelecimento.
+function removerCamposSensiveis(row) {
+  delete row.cnpj;
+  delete row.responsavel;
+  delete row.usuario_id;
   return row;
 }
 
@@ -145,12 +163,29 @@ router.get("/meus", verificarToken, async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+// Busca por id — pública, mas agora respeita a visibilidade e esconde
+// campos sensíveis de quem não é o dono (achado do teste de segurança de
+// outubro/2026: a rota devolvia estabelecimentos privados, com CNPJ e
+// responsável, pra qualquer visitante sem login). autenticacaoOpcional
+// não bloqueia quem não está logado, só identifica quem está.
+router.get("/:id", autenticacaoOpcional, async (req, res) => {
   try {
     const rows = await db.query("SELECT * FROM estabelecimentos WHERE id = ?", [req.params.id]);
     if (!rows || rows.length === 0)
       return res.status(404).json({ erro: "Estabelecimento não encontrado." });
-    res.json(parseRow(rows[0]));
+
+    const row = parseRow(rows[0]);
+    const souDono = req.usuario && String(req.usuario.id) === String(row.usuario_id);
+
+    if (!souDono) {
+      // Privado e não é o dono: nem confirma que existe.
+      if (row.visibilidade !== "publico") {
+        return res.status(404).json({ erro: "Estabelecimento não encontrado." });
+      }
+      removerCamposSensiveis(row);
+    }
+
+    res.json(row);
   } catch (err) {
     console.error("Erro ao buscar estabelecimento:", err);
     res.status(500).json({ erro: "Erro interno ao buscar estabelecimento." });

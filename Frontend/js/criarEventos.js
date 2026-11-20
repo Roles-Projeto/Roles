@@ -218,10 +218,20 @@ cancelarBtn.addEventListener("click", () => {
     modal.style.display = "none";
     stepNavigation.style.display = "flex";
 });
+
+// Envia um arquivo pra rota de upload de eventos. A rota agora exige login
+// (achado do teste de segurança de outubro/2026), então o token do usuário
+// logado precisa ir no cabeçalho Authorization — sem ele, o upload passa a
+// voltar 401.
 async function uploadImagem(file) {
     const formData = new FormData();
     formData.append("imagem", file);
-    const res = await fetch(`${API_BASE}/eventos/upload-imagem`, { method: "POST", body: formData });
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_BASE}/eventos/upload-imagem`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: formData
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.erro ? `${data.erro} ${data.detalhes || ""}` : `Erro ${res.status} ao enviar imagem.`);
     if (!data.url) throw new Error("O upload não retornou uma URL válida.");
@@ -245,7 +255,12 @@ confirmarBtn.addEventListener("click", async () => {
         try {
             const formData = new FormData();
             formData.append("imagem", imagemEvento);
-            const uploadRes = await fetch(`${API_BASE}/eventos/upload-imagem`, { method: "POST", body: formData });
+            const tokenUpload = localStorage.getItem("token");
+            const uploadRes = await fetch(`${API_BASE}/eventos/upload-imagem`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${tokenUpload}` },
+                body: formData
+            });
             const uploadData = await uploadRes.json();
 
             if (!uploadRes.ok) {

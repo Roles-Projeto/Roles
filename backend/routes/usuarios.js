@@ -201,3 +201,7 @@ console.log(
 );
 
 module.exports = router;
+
+const googleAuthController = require("../controllers/Googleauthcontroller");
+
+router.post("/google", googleAuthController.loginGoogle);

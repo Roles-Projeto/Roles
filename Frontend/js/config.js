@@ -15,9 +15,12 @@
     window.location.hostname === "127.0.0.1";
 
   // Troque pela URL real do seu projeto no Render
-  const RENDER_URL = "https://projeto-integrador-roles.onrender.com";
+  const RENDER_URL = "https://projeto-integrador-roles-271b.onrender.com";
 
   window.API_BASE = isLocal ? "http://localhost:3000" : RENDER_URL;
 
   console.log("🔧 API_BASE: " + window.API_BASE);
 })();
+
+
+window.GOOGLE_CLIENT_ID ="35611681280-a0qsif5rr4ujcsof2l334slr2d5cg9v9.apps.googleusercontent.com"

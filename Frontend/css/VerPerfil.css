@@ -1,3 +1,10 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Serif+Display:ital@0;1&display=swap');
 
 :root {
@@ -20,7 +27,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   background: var(--bg);
   color: var(--text-dark);
   font-size: 14px;
@@ -110,7 +117,7 @@ body {
   margin-bottom: 5px;
 }
 .nome-row h1 {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', sans-serif;
   font-size: 22px; font-weight: 400;
   color: var(--text-dark);
   letter-spacing: -0.3px;
@@ -152,7 +159,7 @@ body {
   padding: 10px 20px; border-radius: 99px;
   border: 1.5px solid var(--p200);
   background: var(--p50); color: var(--p700);
-  font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 600;
+  font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 600;
   cursor: pointer; transition: all 0.2s;
 }
 .btn-mensagem:hover { background: var(--p100); border-color: var(--p600); }
@@ -161,7 +168,7 @@ body {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 10px 24px; border-radius: 99px; border: none;
   background: linear-gradient(135deg, var(--p800), var(--p500));
-  color: #fff; font-family: 'DM Sans', sans-serif;
+  color: #fff; font-family: 'Inter', sans-serif;
   font-size: 13.5px; font-weight: 700;
   cursor: pointer; transition: all 0.2s;
   box-shadow: 0 4px 16px rgba(91,33,182,0.32);
@@ -193,7 +200,7 @@ body {
   display: inline-flex; align-items: center; gap: 7px;
   background: none; border: none;
   padding: 11px 18px;
-  font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 600;
+  font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 600;
   color: var(--text-light); cursor: pointer;
   border-bottom: 2.5px solid transparent; margin-bottom: -2px;
   transition: all 0.2s;
@@ -251,7 +258,7 @@ body {
   background: linear-gradient(135deg, var(--p800), var(--p500));
   color: #fff; border: none; padding: 9px 16px;
   border-radius: var(--radius-sm); cursor: pointer;
-  font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 700;
+  font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700;
   box-shadow: 0 3px 12px rgba(91,33,182,0.28); transition: all 0.2s;
   white-space: nowrap; flex-shrink: 0;
 }
@@ -347,7 +354,7 @@ body {
 .input-avaliacao {
   width: 100%; padding: 10px 14px; margin-bottom: 10px;
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: 14px;
+  font-family: 'Inter', sans-serif; font-size: 14px;
   color: var(--text-dark); background: #fdfcff; outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -356,7 +363,7 @@ body {
 .textarea-avaliacao {
   width: 100%; padding: 10px 14px; margin-bottom: 14px;
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: 14px;
+  font-family: 'Inter', sans-serif; font-size: 14px;
   color: var(--text-dark); background: #fdfcff; outline: none;
   resize: vertical; transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -367,7 +374,7 @@ body {
   background: linear-gradient(135deg, var(--p800), var(--p500));
   color: #fff; border: none; padding: 11px 24px;
   border-radius: var(--radius-sm); cursor: pointer;
-  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+  font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700;
   box-shadow: 0 4px 16px rgba(91,33,182,0.30); transition: all 0.2s;
 }
 .btn-enviar-avaliacao:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(91,33,182,0.42); }
@@ -433,7 +440,7 @@ body {
 .share-btn {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 9px 16px; border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
   cursor: pointer; transition: all 0.2s; border: 1.5px solid;
 }
 .share-btn.whatsapp {
@@ -449,16 +456,57 @@ body {
 @media (max-width: 900px) {
   .grade-principal { flex-direction: column; }
   .coluna-sidebar { width: 100%; }
-  .perfil-header { flex-direction: column; gap: 18px; }
+  .perfil-header { flex-direction: column; gap: 18px; margin-top: -40px; }
   .perfil-header-actions { width: 100%; justify-content: flex-start; }
   .avaliacoes-resumo { flex-direction: column; align-items: flex-start; }
+  .perfil-banner { height: 180px; }
 }
+
 @media (max-width: 600px) {
-  .abas-nav { overflow-x: auto; gap: 0; }
-  .aba { padding: 10px 12px; font-size: 12px; }
-  .evento-proximo-card { flex-direction: column; }
+  .container { padding: 0 14px; }
+
+  .abas-nav { overflow-x: auto; gap: 0; -webkit-overflow-scrolling: touch; }
+  .aba { padding: 10px 12px; font-size: 12px; white-space: nowrap; }
+
+  .evento-proximo-card { flex-direction: column; align-items: stretch; }
   .evento-proximo-card img { width: 100%; height: 160px; }
   .btn-ver-detalhes { width: 100%; justify-content: center; }
+
   .perfil-header { padding: 20px; }
   .perfil-header-left { flex-direction: column; }
+  .avatar-wrap { align-self: center; }
+  .nome-row { justify-content: center; text-align: center; }
+  .perfil-desc { text-align: center; max-width: none; }
+  .stats-row { justify-content: center; }
+
+  .perfil-header-actions { flex-direction: column; }
+  .btn-mensagem, .btn-seguir { width: 100%; justify-content: center; }
+
+  .avaliacoes-resumo { padding: 18px; }
+  .nota-grande { align-self: center; }
+
+  .share-btns { flex-direction: column; }
+  .share-btn { width: 100%; justify-content: center; }
+
+  .evento-passado-card { flex-wrap: wrap; }
+  .ep-nota { margin-left: 54px; }
+}
+
+@media (max-width: 420px) {
+  .perfil-banner { height: 150px; }
+  .btn-voltar { top: 14px; left: 14px; padding: 7px 14px; font-size: 12px; }
+
+  .perfil-header { margin-top: -32px; padding: 16px; }
+  .avatar { width: 72px; height: 72px; }
+  .nome-row h1 { font-size: 18px; }
+  .stat-chip { font-size: 12px; padding: 5px 10px; }
+
+  .nota-num { font-size: 36px; }
+  .estrelas-grandes { font-size: 16px; }
+
+  .form-avaliacao { padding: 16px; }
+  .star-picker i { font-size: 22px; }
+
+  .ep-preco { font-size: 14px; }
+  .ep-icone { width: 36px; height: 36px; font-size: 13px; }
 }

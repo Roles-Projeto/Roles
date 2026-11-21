@@ -30,6 +30,8 @@ async function contar(sql) {
 }
 
 // GET /publico/estatisticas
+// Os números públicos contam só estabelecimentos e eventos APROVADOS por um
+// admin (status_aprovacao = 'aprovado'); os pendentes e bloqueados ficam de fora.
 exports.estatisticas = async (req, res) => {
   try {
     if (cacheStats.dados && cacheStats.ate > Date.now()) {
@@ -40,11 +42,12 @@ exports.estatisticas = async (req, res) => {
     const [usuarios, estabelecimentos, eventosMes, avaliacao] = await Promise.all([
       // Se existir coluna de status (ex.: ativo = TRUE), acrescente o WHERE aqui.
       seguro("usuarios", () => contar("SELECT COUNT(*) AS total FROM usuarios")),
-      seguro("estabelecimentos", () => contar("SELECT COUNT(*) AS total FROM estabelecimentos")),
+      seguro("estabelecimentos", () => contar("SELECT COUNT(*) AS total FROM estabelecimentos WHERE status_aprovacao = 'aprovado'")),
       seguro("eventos_mes", () =>
         contar(`SELECT COUNT(*) AS total FROM eventos
                 WHERE data_inicio >= date_trunc('month', NOW())
-                  AND data_inicio <  date_trunc('month', NOW()) + INTERVAL '1 month'`)
+                  AND data_inicio <  date_trunc('month', NOW()) + INTERVAL '1 month'
+                  AND status_aprovacao = 'aprovado'`)
       ),
       seguro("avaliacao_media", async () => {
         const linhas = await db.query("SELECT AVG(nota) AS media, COUNT(*) AS total FROM avaliacoes");

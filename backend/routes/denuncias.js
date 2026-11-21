@@ -102,13 +102,14 @@ router.post("/", verificarToken, async (req, res) => {
 
     const tipo = String(req.body.tipo || "").toLowerCase();
     const alvoId = Number.parseInt(req.body.alvo_id, 10);
-    const motivo = String(req.body.motivo || "").trim().slice(0, 50);
+    const motivo = String(req.body.motivo || "").trim();
     const descricao = String(req.body.descricao || "").trim().slice(0, 500);
 
     const tabela = TABELA_DO_ALVO[tipo];
     if (!tabela) return res.status(400).json({ erro: "Tipo de denúncia inválido." });
     if (!Number.isInteger(alvoId) || alvoId <= 0) return res.status(400).json({ erro: "Item denunciado inválido." });
     if (!motivo) return res.status(400).json({ erro: "Informe o motivo da denúncia." });
+    if (!ROTULO_MOTIVO[motivo]) return res.status(400).json({ erro: "Motivo inválido." });
 
     // Confirma que o alvo existe e pega o nome direto do banco (não confia no que veio do front)
     const alvo = await db.query(`SELECT nome FROM ${tabela} WHERE id = ?`, [alvoId]);

@@ -35,12 +35,14 @@
     // =========================================================
     let termoAtual         = '';
     let categoriaAtual     = 'todos';
+    let cidadeAtual        = 'todas';   // valor normalizado (norm) da cidade
     let ordenacaoAtual     = 'padrao';
     let quantidadeVisiveis = 0;
     const CARDS_POR_PAGINA = 6;
 
     let todosCards     = [];
     let cardsFiltrados = [];
+    let cidadesDisponiveis = [];        // nomes originais das cidades
 
     // =========================================================
     // HERO
@@ -80,7 +82,20 @@
     // UTILITÁRIO
     // =========================================================
     function norm(s) {
-        return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    }
+
+    // =========================================================
+    // CIDADE DO ESTABELECIMENTO
+    // Prioridade: cidade extraída do endereço ("..., Aparecida de Goiânia - GO")
+    // -> campo cidade -> "Goiânia" (mesmo padrão usado no card)
+    // =========================================================
+    function obterCidade(estab) {
+        const endereco = (estab.endereco || '').trim();
+        const m = endereco.match(/([^,—–\-]+?)\s*-\s*[A-Za-z]{2}\s*$/);
+        if (m && m[1].trim()) return m[1].trim();
+        if (estab.cidade && String(estab.cidade).trim()) return String(estab.cidade).trim();
+        return 'Goiânia';
     }
 
     // =========================================================
@@ -125,6 +140,7 @@
         const card = document.createElement('div');
         card.className = 'card';
         card.setAttribute('data-categoria-card', estab.categoria_card || '');
+        card.setAttribute('data-cidade',         obterCidade(estab));
         card.setAttribute('data-estab-id',       estab.id);
         card.setAttribute('data-nota',            nota);
         card.setAttribute('data-avaliacoes',      avaliacoes);
@@ -153,38 +169,35 @@
         return card;
     }
 
-// =========================================================
-// ESTATÍSTICAS
-// =========================================================
-function atualizarEstatisticas(estabelecimentos) {
-    const elLocais     = document.getElementById('stat-locais');
-    const elCategorias = document.getElementById('stat-categorias');
-    const elAvaliacao  = document.getElementById('stat-avaliacao');
+    // =========================================================
+    // ESTATÍSTICAS
+    // =========================================================
+    function atualizarEstatisticas(estabelecimentos) {
+        const elLocais     = document.getElementById('stat-locais');
+        const elCategorias = document.getElementById('stat-categorias');
+        const elAvaliacao  = document.getElementById('stat-avaliacao');
 
-    // Total de locais
-    if (elLocais) elLocais.textContent = estabelecimentos.length;
+        if (elLocais) elLocais.textContent = estabelecimentos.length;
 
-    // Categorias distintas (mesmo campo usado nos filtros da página)
-    if (elCategorias) {
-        const categorias = new Set(
-            estabelecimentos
-                .map(e => norm(e.categoria_card))
-                .filter(Boolean)
-        );
-        elCategorias.textContent = categorias.size;
+        if (elCategorias) {
+            const categorias = new Set(
+                estabelecimentos
+                    .map(e => norm(e.categoria_card))
+                    .filter(Boolean)
+            );
+            elCategorias.textContent = categorias.size;
+        }
+
+        if (elAvaliacao) {
+            const notas = estabelecimentos
+                .map(e => parseFloat(e.nota))
+                .filter(n => n > 0);
+
+            elAvaliacao.textContent = notas.length > 0
+                ? (notas.reduce((soma, n) => soma + n, 0) / notas.length).toFixed(1)
+                : '—';
+        }
     }
-
-    // Média das notas (ignora locais sem nota)
-    if (elAvaliacao) {
-        const notas = estabelecimentos
-            .map(e => parseFloat(e.nota))
-            .filter(n => n > 0);
-
-        elAvaliacao.textContent = notas.length > 0
-            ? (notas.reduce((soma, n) => soma + n, 0) / notas.length).toFixed(1)
-            : '—';
-    }
-}
 
     // =========================================================
     // CARREGAR CARDS
@@ -195,12 +208,17 @@ function atualizarEstatisticas(estabelecimentos) {
 
         container.style.visibility = 'hidden';
         const estabelecimentos = await fetchEstabelecimentos();
-        atualizarEstatisticas(estabelecimentos); 
+        atualizarEstatisticas(estabelecimentos);
         container.querySelectorAll('.card').forEach(c => c.remove());
 
         if (estabelecimentos.length > 0) {
             estabelecimentos.forEach(estab => container.appendChild(criarCardDinamico(estab)));
         }
+
+        // Cidades distintas, para o dropdown de cidade
+        cidadesDisponiveis = [...new Set(
+            estabelecimentos.map(e => obterCidade(e)).filter(Boolean)
+        )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
         todosCards = Array.from(container.querySelectorAll('.card'));
         container.style.visibility = 'visible';
@@ -239,7 +257,8 @@ function atualizarEstatisticas(estabelecimentos) {
         const descricao = card.querySelector('.descricao')?.textContent || '';
         const tags      = card.querySelector('.tags')?.textContent      || '';
         const categoria = card.getAttribute('data-categoria-card')      || '';
-        return norm(`${nome} ${local} ${descricao} ${tags} ${categoria}`);
+        const cidade    = card.getAttribute('data-cidade')              || '';
+        return norm(`${nome} ${local} ${descricao} ${tags} ${categoria} ${cidade}`);
     }
 
     function aplicarFiltro() {
@@ -249,11 +268,19 @@ function atualizarEstatisticas(estabelecimentos) {
         const tNorm = norm(termoAtual);
         const cNorm = norm(categoriaAtual);
 
+        // Se o texto digitado for exatamente o nome de uma cidade, filtra só por ela
+        // (evita que "Goiânia" traga também "Aparecida de Goiânia")
+        const buscaEhCidade = tNorm !== '' && cidadesDisponiveis.some(c => norm(c) === tNorm);
+
         cardsFiltrados = todosCards.filter(card => {
             const texto   = textoDoCard(card);
             const catCard = norm(card.getAttribute('data-categoria-card') || '');
-            return (tNorm === '' || texto.includes(tNorm)) &&
-                   (cNorm === 'todos' || catCard === cNorm);
+            const cidCard = norm(card.getAttribute('data-cidade') || '');
+            const passaTexto = tNorm === '' ||
+                (buscaEhCidade ? cidCard === tNorm : texto.includes(tNorm));
+            return passaTexto &&
+                   (cNorm === 'todos' || catCard === cNorm) &&
+                   (cidadeAtual === 'todas' || cidCard === cidadeAtual);
         });
 
         if (ordenacaoAtual === 'melhor-avaliados') {
@@ -331,7 +358,8 @@ function atualizarEstatisticas(estabelecimentos) {
                 box-shadow: 0 8px 28px rgba(60,30,140,0.14);
                 z-index: 999;
                 min-width: 200px;
-                overflow: hidden;
+                max-height: 320px;
+                overflow-y: auto;
                 font-family: 'DM Sans', sans-serif;
             `;
 
@@ -374,6 +402,25 @@ function atualizarEstatisticas(estabelecimentos) {
     }
 
     // =========================================================
+    // BOTÃO DE CIDADE
+    // Usa o 3º .botao-dropdown1 se existir no HTML; se não existir,
+    // clona o botão de ordenação e insere ao lado dele.
+    // =========================================================
+    function obterBotaoCidade() {
+        let botoes = document.querySelectorAll('.botao-dropdown1');
+        if (botoes[2]) return botoes[2];
+
+        const modelo = botoes[1] || botoes[0];
+        if (!modelo) return null;
+
+        const novo = modelo.cloneNode(true);
+        novo.id = 'btnDropdownCidadeLocais';
+        novo.childNodes[0].textContent = 'Todas as cidades ';
+        modelo.after(novo);
+        return novo;
+    }
+
+    // =========================================================
     // INICIALIZAR FILTROS
     // =========================================================
     function inicializarFiltros() {
@@ -398,7 +445,7 @@ function atualizarEstatisticas(estabelecimentos) {
             });
         });
 
-        // Dropdowns
+        // Dropdowns (captura os dois originais ANTES de criar o de cidade)
         const botoesDropdown = document.querySelectorAll('.botao-dropdown1');
         const botaoCategoria = botoesDropdown[0];
         const botaoOrdenacao = botoesDropdown[1];
@@ -430,6 +477,18 @@ function atualizarEstatisticas(estabelecimentos) {
                 { label: 'Mais avaliados',   valor: 'mais-avaliados'   },
             ], (item) => {
                 ordenacaoAtual = item.valor;
+                aplicarFiltro();
+            });
+        }
+
+        // Dropdown de cidade
+        const botaoCidade = obterBotaoCidade();
+        if (botaoCidade) {
+            criarDropdown(botaoCidade, [
+                { label: 'Todas as cidades', valor: 'todas' },
+                ...cidadesDisponiveis.map(c => ({ label: c, valor: norm(c) })),
+            ], (item) => {
+                cidadeAtual = item.valor;
                 aplicarFiltro();
             });
         }

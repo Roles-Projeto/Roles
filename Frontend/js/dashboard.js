@@ -68,6 +68,7 @@ async function carregarDashboard() {
     renderizarProximosEventos(_eventosReais, vendidosPorEvento, _ingressosPorEventoReais);
     renderizarReceitaPorLocal(_eventosReais, vendasAprovadas);
     renderizarNotificacoesReais(_vendasReais);
+    if (typeof renderAgenda === 'function') renderAgenda();
 
     if (!_dashboardVazio) criarGraficos();
 
@@ -556,6 +557,8 @@ function showSection(sectionId, btn) {
       if (m && m[1] === sectionId) t.classList.add('active');
     });
   }
+
+  if (sectionId === 'agenda' && typeof renderAgenda === 'function') renderAgenda();
 
   if (sectionId === 'dashboard') {
     if (_dashboardVazio) {

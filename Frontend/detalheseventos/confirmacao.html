@@ -2,6 +2,18 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <!-- TEMA CLARO/ESCURO: aplica o tema salvo antes de pintar (evita flash branco) -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('roles_tema') === 'dark' ? 'dark' : 'light'
+            );
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/frontend/css/tema.css">
+    <script src="/frontend/js/tema.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Compra Confirmada | Rolês</title>
 
@@ -36,7 +48,7 @@
       .gx-ticket { position: relative; display: flex; min-height: 240px; background: #2a0b5e; border-radius: 20px; overflow: hidden; margin-bottom: 18px; }
       .gx-deco { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
       .gx-t-main { position: relative; flex: 1; min-width: 0; padding: 24px; display: flex; gap: 22px; align-items: center; justify-content: center; }
-      .gx-data { flex: 0 0 82px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 0; background: #fff; border-radius: 14px; text-align: center; }
+      .gx-data { flex: 0 0 82px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 0; background: var(--card); border-radius: 14px; text-align: center; }
       .gx-data .gx-mes { font-size: 13px; font-weight: 600; color: #6c1dce; }
       .gx-data .gx-dia { font-size: 36px; line-height: 1; font-weight: 700; color: #2a0b5e; }
       .gx-data .gx-semana { font-size: 13px; color: #5d5873; }
@@ -47,15 +59,15 @@
       .gx-t-meta i { margin-right: 5px; }
       .gx-t-meta .gx-sep { opacity: 0.5; }
       .gx-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-      .gx-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; line-height: 1; padding: 7px 12px; border-radius: 999px; background: #fff; color: #2a0b5e; }
+      .gx-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; line-height: 1; padding: 7px 12px; border-radius: 999px; background: var(--card); color: #2a0b5e; }
       .gx-chip-neutro { background: #4a1d94; color: #e7defa; font-weight: 500; }
       .gx-t-seam { position: relative; flex: 0 0 0; width: 0; border-left: 2px dashed #6c1dce; }
-      .gx-t-seam::before, .gx-t-seam::after { content: ""; position: absolute; left: -13px; width: 24px; height: 24px; border-radius: 50%; background: #f4f3f8; }
+      .gx-t-seam::before, .gx-t-seam::after { content: ""; position: absolute; left: -13px; width: 24px; height: 24px; border-radius: 50%; background: var(--bg-secundario); }
       .gx-t-seam::before { top: -12px; }
       .gx-t-seam::after { bottom: -12px; }
-      .gx-t-stub { position: relative; flex: 0 0 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 28px 16px; background: #fff; }
+      .gx-t-stub { position: relative; flex: 0 0 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 28px 16px; background: var(--card); }
       .gx-t-qr { width: 120px; height: 120px; display: block; }
-      .gx-t-lock { flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 120px; height: 120px; border-radius: 12px; background: #f4f1fc; color: #6c1dce; font-size: 12px; text-align: center; padding: 8px; }
+      .gx-t-lock { flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 120px; height: 120px; border-radius: 12px; background: var(--bg-secundario); color: #6c1dce; font-size: 12px; text-align: center; padding: 8px; }
       .gx-t-lock i { font-size: 30px; }
 
       /* Ingressos pagos/pendentes: cartão de pagamento em duas colunas, sem vazio */
@@ -87,12 +99,12 @@
 
       .gx-overlay { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(20, 16, 40, 0.86); }
       .gx-overlay.aberto { display: flex; }
-      .gx-modal { position: relative; width: 100%; max-width: 380px; padding: 28px 24px 24px; text-align: center; background: #ffffff; border-radius: 20px; }
+      .gx-modal { position: relative; width: 100%; max-width: 380px; padding: 28px 24px 24px; text-align: center; background: var(--card); border-radius: 20px; }
       .gx-modal h3 { margin: 0 0 4px; font-size: 17px; font-weight: 700; color: #1a1530; }
       .gx-modal p { margin: 0 0 18px; font-size: 13px; color: #7a7490; }
       .gx-qr-grande { display: block; width: min(76vw, 300px); height: auto; margin: 0 auto 16px; image-rendering: pixelated; }
       .gx-modal-dica { margin: 0; font-size: 12px; color: #7a7490; }
-      .gx-fechar { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border: none; border-radius: 50%; background: #f3f2f6; color: #5d5873; font-size: 15px; cursor: pointer; }
+      .gx-fechar { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border: none; border-radius: 50%; background: var(--bg-secundario); color: #5d5873; font-size: 15px; cursor: pointer; }
       .gx-fechar:hover, .gx-fechar:focus-visible { background: #e7e4ef; outline: none; }
 
       @media (max-width: 640px) {

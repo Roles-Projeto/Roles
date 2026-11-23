@@ -54,7 +54,7 @@ header {
     position: sticky;
     top: 0;
     z-index: 1000;
-    background-color: white;
+    background-color: var(--card);
     box-shadow: 0 1px 0 var(--gray-200);
 }
 
@@ -76,7 +76,7 @@ header {
 
 .form-section {
     flex: 2;
-    background: white;
+    background: var(--card);
     padding: 32px;
     border-radius: var(--card-radius);
     box-shadow: var(--card-shadow);
@@ -85,7 +85,7 @@ header {
 
 .summary-section {
     flex: 1;
-    background: white;
+    background: var(--card);
     padding: 24px;
     border-radius: var(--card-radius);
     box-shadow: var(--card-shadow);
@@ -177,7 +177,7 @@ header {
 .input-wrapper input:focus {
     outline: none;
     border-color: var(--primary);
-    background: white;
+    background: var(--card);
     box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
 }
 
@@ -272,12 +272,12 @@ header {
 }
 
 .payment-tab:hover:not(.active) {
-    background: white;
+    background: var(--card);
     color: var(--gray-700);
 }
 
 .payment-tab.active {
-    background: white;
+    background: var(--card);
     color: var(--primary);
     font-weight: 700;
     box-shadow: 0 1px 4px rgba(124,58,237,0.18), 0 0 0 1.5px var(--primary-light);
@@ -438,7 +438,7 @@ header {
 }
 
 .qrcode-box {
-    background: white;
+    background: var(--card);
     border: 2px solid var(--gray-200);
     border-radius: 14px;
     padding: 16px;
@@ -617,7 +617,7 @@ header {
 .boleto-detail-value { color: var(--gray-800); font-weight: 600; }
 
 .barcode-wrapper {
-    background: white;
+    background: var(--card);
     padding: 14px;
     display: flex;
     justify-content: center;
@@ -761,7 +761,7 @@ header {
     border: 1.5px solid var(--gray-200);
     border-radius: 8px;
     overflow: hidden;
-    background: white;
+    background: var(--card);
 }
 
 .quantity-input button {
@@ -786,7 +786,7 @@ header {
     border-left: 1.5px solid var(--gray-200);
     border-right: 1.5px solid var(--gray-200);
     padding: 5px 0;
-    background: white;
+    background: var(--card);
     font-size: 14px;
     font-weight: 600;
     color: var(--gray-800);

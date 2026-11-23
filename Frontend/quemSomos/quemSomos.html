@@ -2,6 +2,18 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <!-- TEMA CLARO/ESCURO: aplica o tema salvo antes de pintar (evita flash branco) -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('roles_tema') === 'dark' ? 'dark' : 'light'
+            );
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/frontend/css/tema.css">
+    <script src="/frontend/js/tema.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quem Somos | Rolês</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -174,7 +186,7 @@ button:focus-visible {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: #fff;
+    background: var(--card);
     color: var(--ink);
     border: 0;
     border-radius: 99px;
@@ -214,7 +226,7 @@ button:focus-visible {
     flex-shrink: 0;
 }
 
-.qs-pill--a { top: 0;     left: 0;     background: #fff;          color: var(--ink); transform: rotate(-4deg); }
+.qs-pill--a { top: 0;     left: 0;     background: var(--card);          color: var(--ink); transform: rotate(-4deg); }
 .qs-pill--a .qs-pill-icon { background: var(--violet-pale); color: var(--violet); }
 
 .qs-pill--b { top: 112px; right: 0;    background: var(--sun);    color: var(--ink); transform: rotate(3deg); }

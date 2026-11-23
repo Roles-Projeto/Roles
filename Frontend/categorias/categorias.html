@@ -3,6 +3,18 @@
 
 <head>
     <meta charset="UTF-8" />
+    <!-- TEMA CLARO/ESCURO: aplica o tema salvo antes de pintar (evita flash branco) -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('roles_tema') === 'dark' ? 'dark' : 'light'
+            );
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/frontend/css/tema.css">
+    <script src="/frontend/js/tema.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rolês - Categoria</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">

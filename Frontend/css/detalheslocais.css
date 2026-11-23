@@ -966,7 +966,7 @@ body.denuncia-aberta { overflow: hidden; }
   margin-top: 12px;
   padding: 10px 14px;
   border-radius: var(--radius-sm);
-  background: #fef2f2;
+  background: var(--bg-secundario);
   border: 1.5px solid #fecaca;
   color: #b91c1c;
   font-size: 12.5px;

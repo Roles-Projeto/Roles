@@ -2,6 +2,18 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <!-- TEMA CLARO/ESCURO: aplica o tema salvo antes de pintar (evita flash branco) -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('roles_tema') === 'dark' ? 'dark' : 'light'
+            );
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/frontend/css/tema.css">
+    <script src="/frontend/js/tema.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cadastro enviado para aprovação | Rolês</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -9,7 +21,7 @@
     <link rel="stylesheet" href="/frontend/css/header.css">
     <style>
         .ag { --roxo:#6c2bd9; --roxo-escuro:#4b1aa6; --roxo-claro:#f3eefe; --texto:#14121f; --suave:#5d5873; --borda:#e5e1f0; --amb:#f59e0b; --amb-bg:#fef3c7; --amb-txt:#92400e;
-              background:#f7f5fd; color:var(--texto); padding:40px 20px 56px; line-height:1.5; }
+              background:var(--bg-secundario); color:var(--texto); padding:40px 20px 56px; line-height:1.5; }
         .ag * { box-sizing:border-box; }
         .ag-col { max-width:520px; margin:0 auto; text-align:center; }
         .ag-icone { width:52px; height:52px; border-radius:50%; background:var(--amb-bg); color:var(--amb-txt); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:22px; }
@@ -18,7 +30,7 @@
 
         .ag-passos { display:flex; justify-content:center; align-items:flex-start; margin:24px 0; }
         .ag-passo { width:96px; }
-        .ag-bola { width:28px; height:28px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; background:#fff; border:2px solid var(--borda); color:var(--suave); }
+        .ag-bola { width:28px; height:28px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; background:var(--card); border:2px solid var(--borda); color:var(--suave); }
         .ag-passo.ok .ag-bola { background:var(--roxo); border-color:var(--roxo); color:#fff; }
         .ag-passo.agora .ag-bola { background:var(--amb-bg); border-color:var(--amb); color:var(--amb-txt); }
         .ag-passo p { margin:6px 0 0; font-size:13px; color:var(--suave); }
@@ -26,7 +38,7 @@
         .ag-linha { flex:1; max-width:52px; height:2px; margin-top:13px; background:var(--borda); }
         .ag-linha.ok { background:var(--roxo); }
 
-        .ag-cartao { background:#fff; border:1px solid var(--borda); border-radius:14px; padding:16px; text-align:left; }
+        .ag-cartao { background:var(--card); border:1px solid var(--borda); border-radius:14px; padding:16px; text-align:left; }
         .ag-evento { display:flex; gap:14px; align-items:center; margin-bottom:12px; border-color:#cfc6e8; }
         .ag-img { flex:none; width:80px; height:80px; border-radius:10px; background:var(--roxo-claro); color:var(--roxo); display:flex; align-items:center; justify-content:center; font-size:26px; overflow:hidden; }
         .ag-img img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -46,7 +58,7 @@
         .ag-btn { display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border-radius:10px; font-size:15px; font-weight:700; text-decoration:none; border:2px solid var(--roxo); cursor:pointer; transition:background-color .15s; }
         .ag-btn.prim { background:var(--roxo); color:#fff; }
         .ag-btn.prim:hover { background:var(--roxo-escuro); border-color:var(--roxo-escuro); }
-        .ag-btn.sec { background:#fff; color:var(--roxo); }
+        .ag-btn.sec { background:var(--card); color:var(--roxo); }
         .ag-btn.sec:hover { background:var(--roxo-claro); }
         .ag-btn:focus-visible, .ag-ajuda a:focus-visible { outline:3px solid #b79af0; outline-offset:2px; }
         .ag-ajuda { margin:18px 0 0; font-size:14px; color:var(--suave); }

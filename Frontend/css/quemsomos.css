@@ -2,7 +2,7 @@
 :root{--ink:#1a0533;--brand:#6c1dce;--pale:#f6f0ff;--sun:#ffc800;--body:#4a3f6b;--muted:#7d6a9c;--line:#e6e1f2;--font:'Bricolage Grotesque',system-ui,sans-serif;--gut:max(24px,calc(50% - 520px))}
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#fafafa;color:var(--ink);-webkit-font-smoothing:antialiased}
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--bg-secundario);color:var(--ink);-webkit-font-smoothing:antialiased}
 h1,h2,h3,p,ul{margin:0}
 a:focus-visible,button:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
 
@@ -11,7 +11,7 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--sun);outline-offset
 .terms-banner h1{font-family:var(--font);font-size:clamp(34px,5vw,56px);font-weight:800;letter-spacing:-.045em;line-height:1.02;margin-bottom:12px}
 .terms-banner>p{font-size:16px;color:rgba(255,255,255,.7);max-width:560px;line-height:1.65;margin-bottom:36px}
 .back-button-wrapper{position:absolute;top:28px;left:var(--gut)}
-.back-btn{display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--ink);border:0;border-radius:99px;padding:9px 18px 9px 12px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:transform .2s}
+.back-btn{display:inline-flex;align-items:center;gap:8px;background:var(--card);color:var(--ink);border:0;border-radius:99px;padding:9px 18px 9px 12px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:transform .2s}
 .back-btn:hover{transform:translateX(-2px)}
 .tabs-bar{display:flex;gap:4px;overflow-x:auto}
 .tab-btn{position:relative;background:none;border:0;color:rgba(255,255,255,.55);font-family:var(--font);font-size:15px;font-weight:700;padding:14px 20px;cursor:pointer;white-space:nowrap;transition:color .2s}
@@ -53,21 +53,21 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--sun);outline-offset
 .highlight-box{padding:18px 20px;margin:6px 0 14px;background:var(--pale);border-left:4px solid var(--brand);border-radius:12px}
 .highlight-box p:last-child{margin-bottom:0}
 .fee-box{background:#fff8ec;border-left-color:#f59e0b}
-.prohibitions-box{background:#fff5f5;border-left-color:#dc3545}
-.cancel-box{background:#f0f7ff;border-left-color:#0d6efd}
+.prohibitions-box{background:var(--bg-secundario);border-left-color:#dc3545}
+.cancel-box{background:var(--bg-secundario);border-left-color:#0d6efd}
 
 /* serviços e meia-entrada */
 .services-container,.benefit-grid,.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
 .service-box{padding:20px;border-radius:14px}
-.discovery-box{background:#f0f7ff}
-.sales-box{background:#f0fff5}
+.discovery-box{background:var(--bg-secundario)}
+.sales-box{background:var(--bg-secundario)}
 .service-title{font-family:var(--font);font-size:16px;font-weight:800;margin-bottom:8px}
 .service-box .simple-list{margin:0}
-.benefit-item{display:flex;gap:14px;align-items:flex-start;padding:16px;background:#fff;border:1px solid var(--line);border-radius:14px}
+.benefit-item{display:flex;gap:14px;align-items:flex-start;padding:16px;background:var(--card);border:1px solid var(--line);border-radius:14px}
 .benefit-icon{width:44px;height:44px;border-radius:12px;background:var(--ink);color:var(--sun);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--font);font-size:14px;font-weight:800}
 .benefit-label{font-family:var(--font);font-size:15px;font-weight:700;margin-bottom:2px}
 .benefit-desc{font-size:13px;color:var(--muted);line-height:1.5}
-.privacy-highlight{padding:20px;margin-top:14px;background:#faf4ff;border-left:4px solid #9c21b0;border-radius:12px}
+.privacy-highlight{padding:20px;margin-top:14px;background:var(--bg-secundario);border-left:4px solid #9c21b0;border-radius:12px}
 .privacy-highlight p{margin:0;font-size:15px;line-height:1.65;color:var(--body)}
 
 /* contato */

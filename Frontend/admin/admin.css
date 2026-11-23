@@ -144,7 +144,7 @@
     .fld { margin-bottom: 14px; }
     .fld label { display: block; font-family: "JetBrains Mono", monospace; font-size: 8px; color: var(--text-3); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 7px; }
     .fld input { width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border-md); border-radius: 8px; color: var(--text); font-family: "Inter", sans-serif; font-size: 13px; outline: none; transition: all 0.12s; }
-    .fld input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109,40,217,0.1); background: #fff; }
+    .fld input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109,40,217,0.1); background: var(--card); }
     .fld input::placeholder { color: var(--text-4); }
     .btn-enter { width: 100%; padding: 11px; background: linear-gradient(135deg, #7c3aed, #6d28d9); border: none; border-radius: 8px; color: #fff; font-family: "Inter", sans-serif; font-size: 13.5px; font-weight: 700; cursor: pointer; margin-top: 6px; transition: all 0.12s; box-shadow: 0 2px 12px rgba(109,40,217,0.3); }
     .btn-enter:hover { background: linear-gradient(135deg, #8b5cf6, #7c3aed); box-shadow: 0 4px 24px rgba(109,40,217,0.4); transform: translateY(-1px); }
@@ -163,7 +163,7 @@
     .mf { margin-bottom: 13px; }
     .mf label { display: block; font-family: "JetBrains Mono", monospace; font-size: 8px; color: var(--text-3); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
     .mf input, .mf select, .mf textarea { width: 100%; padding: 8px 11px; background: var(--bg); border: 1px solid var(--border-md); border-radius: 6px; color: var(--text); font-family: "Inter", sans-serif; font-size: 12.5px; outline: none; transition: all 0.12s; appearance: none; }
-    .mf input:focus, .mf select:focus, .mf textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109,40,217,0.08); background: #fff; }
+    .mf input:focus, .mf select:focus, .mf textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109,40,217,0.08); background: var(--card); }
     .mf select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 16 16' fill='none' stroke='%23aaa' stroke-width='1.5'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
     .mf textarea { resize: vertical; min-height: 80px; line-height: 1.55; }
     .mr { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -255,7 +255,7 @@
     .mmsg-divider { height: 1px; background: var(--border); margin: 16px 0; }
     .mmsg-reply-lbl { font-family: "JetBrains Mono", monospace; font-size: 8px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
     .mmsg-reply-area { width: 100%; padding: 10px 13px; background: var(--bg); border: 1px solid var(--border-md); border-radius: 8px; color: var(--text); font-family: "Inter", sans-serif; font-size: 12.5px; outline: none; transition: all 0.12s; resize: vertical; min-height: 120px; line-height: 1.6; }
-    .mmsg-reply-area:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109,40,217,0.08); background: #fff; }
+    .mmsg-reply-area:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109,40,217,0.08); background: var(--card); }
     .mmsg-reply-hint { font-size: 11.5px; color: var(--text-3); margin-top: 8px; display: flex; align-items: center; gap: 5px; }
     .mmsg-reply-responded { background: var(--green-bg); border: 1px solid var(--green-border); border-radius: 8px; padding: 13px 16px; font-size: 12.5px; color: var(--green); line-height: 1.65; white-space: pre-wrap; }
     .mmsg-ft { display: flex; align-items: center; justify-content: flex-end; gap: 7px; padding: 12px 20px; border-top: 1px solid var(--border); position: sticky; bottom: 0; background: var(--surface); }
@@ -400,7 +400,7 @@
     .ct-hero { background: var(--grad); border-radius: 22px; padding: 26px; color: #fff; }
     .ct-hero h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; }
     .ct-hero p { opacity: 0.9; margin: 6px 0 18px; font-size: 14px; }
-    .ct-hero-btn { background: #fff; color: #7c3aed; font-weight: 700; font-family: inherit; font-size: 13px; border: 0; padding: 10px 18px; border-radius: 12px; cursor: pointer; }
+    .ct-hero-btn { background: var(--card); color: #7c3aed; font-weight: 700; font-family: inherit; font-size: 13px; border: 0; padding: 10px 18px; border-radius: 12px; cursor: pointer; }
     .ct-hero-btn:hover { background: #f1ecff; }
     .ct-ringcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; display: flex; align-items: center; gap: 18px; }
     .ct-ring { width: 96px; height: 96px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: conic-gradient(#7c3aed 0 0%, var(--border-md) 0); position: relative; }
@@ -513,7 +513,7 @@
     .tg { position: relative; display: inline-block; width: 38px; height: 22px; }
     .tg input { opacity: 0; width: 0; height: 0; position: absolute; }
     .tg i { position: absolute; inset: 0; background: var(--border-strong); border-radius: 20px; cursor: pointer; transition: background 0.15s; }
-    .tg i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform 0.15s; }
+    .tg i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: var(--card); border-radius: 50%; transition: transform 0.15s; }
     .tg input:checked + i { background: var(--accent); }
     .tg input:checked + i::after { transform: translateX(16px); }
     .cf-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; border-top: 1px solid var(--border); }

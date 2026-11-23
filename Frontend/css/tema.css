@@ -1,150 +1,174 @@
 /* ==========================================================
-   MODO ESCURO — HOME (index.html)
-   Local: frontend/css/tema-home.css
-   Linkar DEPOIS do style.css (precisa vir por último).
-   Deixa TODAS as seções escuras, textos brancos e imagens
-   em destaque. Só vale quando <html data-theme="dark">.
+   TEMA GLOBAL (CLARO / ESCURO) — Rolês
+   Local sugerido: frontend/css/tema.css
+   Linkar em TODAS as páginas, DEPOIS do header.css e ANTES
+   (ou depois) do CSS da própria página.
+   O data-theme="dark" é aplicado no <html> pelo tema.js.
 ========================================================== */
 
+:root {
+    --bg: #ffffff;
+    --bg-secundario: #f7f7fb;
+    --card: #ffffff;
+    --card-hover: #f5f5f5;
+    --input-bg: #f3f3f3;
+
+    --texto: #1a1a1a;
+    --texto-medio: #4b5563;
+    --texto-suave: #666666;
+    --placeholder: #aaaaaa;
+
+    --borda: #e5e5e5;
+    --borda-suave: #f0f0f0;
+
+    --roxo: #6C1DCE;
+    --roxo-claro: #f0ebff;
+
+    --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
+    --sombra-forte: 0 8px 28px rgba(0, 0, 0, 0.18);
+    --overlay: rgba(0, 0, 0, 0.45);
+}
+
+/* Valores escuros já com bom contraste (mesmos da Home) */
 :root[data-theme="dark"] {
-    /* cores mais contrastadas que as do tema.css */
+    color-scheme: dark;
+
     --bg: #0d0b13;
     --bg-secundario: #13101c;
     --card: #1c1829;
     --card-hover: #262040;
+    --input-bg: #26213a;
+
     --texto: #ffffff;
     --texto-medio: #e4e0f0;
     --texto-suave: #b4adc9;
+    --placeholder: #7d7694;
+
     --borda: #3a3355;
+    --borda-suave: #2e2944;
+
+    --roxo: #b68cff;
+    --roxo-claro: #2d2347;
+
+    --sombra: 0 2px 12px rgba(0, 0, 0, 0.5);
+    --sombra-forte: 0 8px 28px rgba(0, 0, 0, 0.6);
+    --overlay: rgba(0, 0, 0, 0.7);
 }
 
-/* ---------- Fundo da página inteira ---------- */
-:root[data-theme="dark"] html,
-:root[data-theme="dark"] body,
-:root[data-theme="dark"] main {
-    background: var(--bg) !important;
+/* ---------- Base ---------- */
+html { background: var(--bg); }
+
+body {
+    background: var(--bg);
+    color: var(--texto);
+    transition: background 0.2s, color 0.2s;
+}
+
+/* ---------- Texto ---------- */
+:root[data-theme="dark"] h1,
+:root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3,
+:root[data-theme="dark"] h4,
+:root[data-theme="dark"] h5,
+:root[data-theme="dark"] h6 {
     color: var(--texto);
 }
 
-/* ---------- Seções (cada uma com um tom, para ficar harmônico) ---------- */
-:root[data-theme="dark"] .section-categorias,
-:root[data-theme="dark"] .section-eventos {
-    background: var(--bg) !important;
-}
-
-:root[data-theme="dark"] .section-populares,
-:root[data-theme="dark"] .faq {
-    background: var(--bg-secundario) !important;
-}
-
-/* Hero (mantém o gradiente roxo, só escurece) */
-:root[data-theme="dark"] .hero-section {
-    background: linear-gradient(180deg, #14091f 0%, #0d0b13 100%) !important;
-}
-
-/* ---------- Títulos e textos das seções: branco ---------- */
-:root[data-theme="dark"] main h1,
-:root[data-theme="dark"] main h2,
-:root[data-theme="dark"] main h3,
-:root[data-theme="dark"] .section-title,
-:root[data-theme="dark"] .faq-header h2 {
-    color: #ffffff !important;
-}
-
-:root[data-theme="dark"] main p,
-:root[data-theme="dark"] main span,
-:root[data-theme="dark"] main li,
-:root[data-theme="dark"] .section-subtitle,
-:root[data-theme="dark"] .faq-header p {
+:root[data-theme="dark"] p,
+:root[data-theme="dark"] li,
+:root[data-theme="dark"] label,
+:root[data-theme="dark"] td,
+:root[data-theme="dark"] th {
     color: var(--texto-medio);
 }
 
-/* ---------- Cards (categorias, locais, eventos) ---------- */
-:root[data-theme="dark"] main [class*="card"] {
-    background: var(--card) !important;
-    border-color: var(--borda) !important;
-    color: var(--texto);
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
-}
-
-:root[data-theme="dark"] main [class*="card"]:hover {
-    background: var(--card-hover) !important;
-    border-color: var(--roxo) !important;
-}
-
-:root[data-theme="dark"] main [class*="card"] h3,
-:root[data-theme="dark"] main [class*="card"] h4,
-:root[data-theme="dark"] main [class*="card"] strong {
-    color: #ffffff !important;
-}
-
-:root[data-theme="dark"] main [class*="card"] p,
-:root[data-theme="dark"] main [class*="card"] span {
+:root[data-theme="dark"] small,
+:root[data-theme="dark"] .texto-suave {
     color: var(--texto-suave);
 }
 
-/* ícone redondo das categorias */
-:root[data-theme="dark"] .card-categoria .icon {
-    background: var(--roxo-claro) !important;
-}
-:root[data-theme="dark"] .card-categoria .icon i {
-    color: var(--roxo) !important;
+:root[data-theme="dark"] a { color: var(--roxo); }
+
+/* ---------- Formulários ---------- */
+:root[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea {
+    background-color: var(--input-bg);
+    color: var(--texto);
+    border-color: var(--borda);
 }
 
-/* ---------- Imagens em DESTAQUE (sem escurecer) ---------- */
-:root[data-theme="dark"] main img:not(.avatar-img):not([src*="logo"]) {
-    filter: none !important;
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+    color: var(--placeholder);
 }
 
-:root[data-theme="dark"] main [class*="card"] img {
-    box-shadow: 0 0 0 1px var(--borda);
+:root[data-theme="dark"] input:focus,
+:root[data-theme="dark"] select:focus,
+:root[data-theme="dark"] textarea:focus {
+    border-color: var(--roxo);
+    outline-color: var(--roxo);
 }
 
-/* ---------- Setas / botões dos carrosséis ---------- */
-:root[data-theme="dark"] .carousel-btn,
-:root[data-theme="dark"] .cat-btn,
-:root[data-theme="dark"] .scroll-btn {
-    background: var(--card) !important;
-    color: var(--roxo) !important;
-    border: 1px solid var(--borda);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
-}
-:root[data-theme="dark"] .carousel-btn:hover,
-:root[data-theme="dark"] .cat-btn:hover,
-:root[data-theme="dark"] .scroll-btn:hover {
-    background: var(--roxo) !important;
-    color: #ffffff !important;
+:root[data-theme="dark"] option {
+    background: var(--card);
+    color: var(--texto);
 }
 
-/* ---------- FAQ ---------- */
-:root[data-theme="dark"] .faq-item {
-    background: var(--card) !important;
-    border-color: var(--borda) !important;
+/* Evita fundo azul/amarelo do autofill do navegador */
+:root[data-theme="dark"] input:-webkit-autofill,
+:root[data-theme="dark"] input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--input-bg) inset;
+    -webkit-text-fill-color: var(--texto);
+    caret-color: var(--texto);
 }
-:root[data-theme="dark"] .faq-question {
-    background: transparent !important;
-    color: #ffffff !important;
-}
-:root[data-theme="dark"] .faq-answer,
-:root[data-theme="dark"] .faq-answer p {
-    background: transparent !important;
-    color: var(--texto-medio) !important;
-}
-:root[data-theme="dark"] .faq-arrow { color: var(--roxo) !important; }
-:root[data-theme="dark"] .faq-contact p { color: var(--texto-medio) !important; }
 
-/* ---------- Modal de login ---------- */
-:root[data-theme="dark"] .login-modal-content {
-    background: var(--card) !important;
-    border: 1px solid var(--borda);
-}
-:root[data-theme="dark"] .close-login { color: #ffffff !important; }
+/* ---------- Tabelas ---------- */
+:root[data-theme="dark"] table { color: var(--texto-medio); }
+:root[data-theme="dark"] th { background: var(--bg-secundario); }
+:root[data-theme="dark"] th,
+:root[data-theme="dark"] td { border-color: var(--borda); }
 
-/* ---------- Rodapé ---------- */
-:root[data-theme="dark"] footer,
-:root[data-theme="dark"] #footer-container {
-    background: #08060d !important;
-    color: var(--texto-medio);
+/* ---------- Divisores ---------- */
+:root[data-theme="dark"] hr { border-color: var(--borda); }
+
+/* ---------- Classes comuns (ajuste os nomes para os do seu projeto) ----------
+   Se as classes da sua página forem outras, troque aqui ou, melhor,
+   use as variáveis (var(--card), var(--texto)...) direto no CSS dela. */
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .card-evento,
+:root[data-theme="dark"] .event-card,
+:root[data-theme="dark"] .modal,
+:root[data-theme="dark"] .modal-content,
+:root[data-theme="dark"] .box,
+:root[data-theme="dark"] .painel {
+    background: var(--card);
+    color: var(--texto);
+    border-color: var(--borda);
 }
-:root[data-theme="dark"] footer a { color: var(--texto-medio); }
-:root[data-theme="dark"] footer a:hover { color: var(--roxo); }
+
+:root[data-theme="dark"] .modal-overlay,
+:root[data-theme="dark"] .modal-backdrop {
+    background: var(--overlay);
+}
+
+/* ---------- Imagens ---------- */
+/* Suaviza fotos no escuro (opcional: apague se não gostar) */
+:root[data-theme="dark"] img:not(.avatar-img):not([src*="logo"]) {
+    filter: brightness(0.92);
+}
+
+/* ---------- Scrollbar ---------- */
+:root[data-theme="dark"] ::-webkit-scrollbar { width: 10px; height: 10px; }
+:root[data-theme="dark"] ::-webkit-scrollbar-track { background: var(--bg); }
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: var(--borda);
+    border-radius: 8px;
+}
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: var(--texto-suave); }
+
+/* ---------- Seleção de texto ---------- */
+:root[data-theme="dark"] ::selection {
+    background: var(--roxo-claro);
+    color: var(--texto);
+}

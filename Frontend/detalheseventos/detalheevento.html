@@ -2,6 +2,18 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <!-- TEMA CLARO/ESCURO: aplica o tema salvo antes de pintar (evita flash branco) -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('roles_tema') === 'dark' ? 'dark' : 'light'
+            );
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/frontend/css/tema.css">
+    <script src="/frontend/js/tema.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Detalhes do Evento | Rolês</title>
     <link
@@ -94,7 +106,7 @@
         align-items: flex-start;
         gap: 18px;
         padding: 22px 26px !important;
-        background: #f6f1ff !important;
+        background: var(--bg-secundario) !important;
         border: 1px solid #e4dcf7 !important;
         border-radius: 16px !important;
       }
@@ -129,7 +141,7 @@
       /* ===== CHECKOUT: cartão com fonte um pouco menor ===== */
       .ev-layout .compra-ingresso .card-garantia-ingresso {
         padding: 26px 26px 20px;
-        background: #fff;
+        background: var(--card);
         border: 1px solid #ebe5f7;
         border-radius: 22px;
         box-shadow: 0 14px 40px rgba(60, 30, 120, 0.10);

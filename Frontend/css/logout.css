@@ -23,7 +23,7 @@ body {
 
 .search {
   padding: 6px 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--borda);
   border-radius: 6px;
 }
 
@@ -49,15 +49,15 @@ body {
 
 .login-box {
   text-align: center;
-  border: 1px solid #ddd;
+  border: 1px solid var(--borda);
   padding: 30px;
   border-radius: 8px;
-  background: #fff;
+  background: var(--card);
 }
 
 .login-box p {
   margin-bottom: 15px;
-  color: #555;
+  color: var(--texto-medio);
 }
 
 

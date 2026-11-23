@@ -7,7 +7,6 @@ const connection = require("../db/db_config");
 const nodemailer = require("nodemailer");
 const jwt        = require("jsonwebtoken");
 
-// ── Cole aqui o base64 completo que você gerou com o PowerShell ──
 const fs   = require("fs");
 const path = require("path");
 
@@ -100,6 +99,20 @@ function pegarIdDoTokenReq(req) {
     } catch (err) {
         return null;
     }
+}
+
+// Quem está agindo: o token vale sempre que existir.
+// TRANSITÓRIO: se não houver token, cai no id enviado no body para o site
+// não quebrar. Quando o perfil.js mandar o token em todas as chamadas,
+// troque por: const id = pegarIdDoTokenReq(req); if (!id) return 401.
+function idDeQuemAge(req, idDoBody) {
+    const doToken = pegarIdDoTokenReq(req);
+    if (doToken) {
+        // Token presente mas body fala de OUTRA pessoa: nega.
+        if (idDoBody && String(idDoBody) !== String(doToken)) return { erro: 403 };
+        return { id: doToken };
+    }
+    return { id: idDoBody || null };
 }
 
 async function enviarEmailCodigo(email, codigo) {
@@ -385,24 +398,48 @@ async function verificarSeguindo(req, res) {
 
 /* ════════════════════════════════════════
    ATUALIZAR USUÁRIO (perfil)
+   PUT /usuarios/perfil
+   - o dono do perfil vem do token (se houver)
+   - CPF é salvo só com números (igual ao cadastro)
 ════════════════════════════════════════ */
 async function atualizarUsuario(req, res) {
-    const { id, nome_completo, sobrenome, email, telefone,
+    const { id: idBody, nome_completo, sobrenome, email, telefone,
             foto_perfil, cpf, nascimento, sexo } = req.body;
 
+    const quem = idDeQuemAge(req, idBody);
+    if (quem.erro) return res.status(403).json({ erro: "Você só pode alterar o seu próprio perfil." });
+    const id = quem.id;
     if (!id) return res.status(400).json({ erro: "ID do usuario e obrigatorio." });
 
+    // CPF: guarda só os dígitos, como no cadastro
+    const cpfLimpo = cpf ? String(cpf).replace(/\D/g, "") : null;
+    if (cpfLimpo && cpfLimpo.length !== 11) {
+        return res.status(400).json({ erro: "CPF inválido. Informe os 11 dígitos." });
+    }
+
     try {
+        // Outro usuário já usa esse CPF?
+        if (cpfLimpo) {
+            const dup = await connection.query(
+                "SELECT id FROM usuarios WHERE cpf = ? AND id <> ?",
+                [cpfLimpo, id]
+            );
+            if (dup && dup.length > 0) {
+                return res.status(409).json({ erro: "Este CPF já está cadastrado em outra conta." });
+            }
+        }
+
         await connection.query(
             `UPDATE usuarios
              SET nome_completo = ?, sobrenome = ?, email = ?, telefone = ?,
                  foto_perfil = ?, cpf = ?, nascimento = ?, sexo = ?
              WHERE id = ?`,
             [nome_completo, sobrenome || null, email, telefone || null,
-             foto_perfil || null, cpf || null, nascimento || null, sexo || null, id]
+             foto_perfil || null, cpfLimpo, nascimento || null, sexo || null, id]
         );
         res.json({ mensagem: "Usuario atualizado com sucesso!" });
     } catch (err) {
+        console.error("❌ ERRO atualizarUsuario:", err.message);
         res.status(500).json({ erro: "Erro ao atualizar usuario.", detalhes: err.message });
     }
 }
@@ -560,9 +597,15 @@ async function redefinirSenha(req, res) {
 
 /* ════════════════════════════════════════
    ALTERAR SENHA
+   (exige a senha atual; o id vem do token quando existir)
 ════════════════════════════════════════ */
 async function alterarSenha(req, res) {
-    const { id, senhaAtual, novaSenha } = req.body;
+    const { id: idBody, senhaAtual, novaSenha } = req.body;
+
+    const quem = idDeQuemAge(req, idBody);
+    if (quem.erro) return res.status(403).json({ erro: "Você só pode alterar a sua própria senha." });
+    const id = quem.id;
+
     if (!id || !senhaAtual || !novaSenha) {
         return res.status(400).json({ erro: "Preencha todos os campos." });
     }
@@ -586,6 +629,7 @@ async function alterarSenha(req, res) {
         res.json({ mensagem: "Senha alterada com sucesso!" });
 
     } catch (err) {
+        console.error("❌ ERRO alterarSenha:", err.message);
         res.status(500).json({ erro: "Erro ao atualizar senha", detalhes: err.message });
     }
 }
@@ -594,7 +638,12 @@ async function alterarSenha(req, res) {
    TOGGLE ALERTA DISPOSITIVO
 ════════════════════════════════════════ */
 async function toggleAlertaDispositivo(req, res) {
-    const { id, alerta } = req.body;
+    const { id: idBody, alerta } = req.body;
+
+    const quem = idDeQuemAge(req, idBody);
+    if (quem.erro) return res.status(403).json({ erro: "Você só pode alterar as suas preferências." });
+    const id = quem.id;
+
     if (!id) return res.status(400).json({ erro: "ID obrigatorio." });
     try {
         await connection.query(
@@ -603,6 +652,7 @@ async function toggleAlertaDispositivo(req, res) {
         );
         res.json({ mensagem: "Preferencia atualizada." });
     } catch (err) {
+        console.error("❌ ERRO toggleAlertaDispositivo:", err.message);
         res.status(500).json({ erro: "Erro ao atualizar.", detalhes: err.message });
     }
 }

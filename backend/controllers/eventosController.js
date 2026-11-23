@@ -6,6 +6,7 @@ const supabase = require('../db/supabaseClient');
 const { analisarImagemPorUrl, analisarTexto } = require('../services/sightengineService');
 const { classificarImagem, classificarTexto } = require('../services/moderacaoService');
 const { gerarAssentosParaIngresso } = require('./assentosController');
+const { STATUS_APROVACAO, statusInicial } = require('../utils/aprovacao');
 
 // ── Alternância de armazenamento de imagem ──
 // USE_SUPABASE_STORAGE=true  -> memoryStorage + Supabase Storage (usar em produção)
@@ -113,13 +114,13 @@ async function moderarEvento(imagemUrl, nome, descricao) {
   const [resultadoImagem, resultadoTexto] = await Promise.all([
     imagemUrl
       ? analisarImagemPorUrl(imagemUrl).catch((e) => {
-          console.error('⚠️  Falha ao moderar imagem do evento:', e.message);
+          console.error('Falha ao moderar imagem do evento:', e.message);
           return null;
         })
       : Promise.resolve(null),
     textoParaAnalise
       ? analisarTexto(textoParaAnalise).catch((e) => {
-          console.error('⚠️  Falha ao moderar texto do evento:', e.message);
+          console.error('Falha ao moderar texto do evento:', e.message);
           return null;
         })
       : Promise.resolve(null),
@@ -135,7 +136,7 @@ async function moderarEvento(imagemUrl, nome, descricao) {
       ? 'REVISAO'
       : 'APROVADA';
 
-  console.log(`🛡️  [MODERAÇÃO] imagem=${decisaoImagem} texto=${decisaoTexto} final=${decisaoFinal}`);
+  console.log(`[MODERAÇÃO] imagem=${decisaoImagem} texto=${decisaoTexto} final=${decisaoFinal}`);
 
   return { decisaoFinal, decisaoImagem, decisaoTexto };
 }
@@ -146,6 +147,10 @@ async function moderarEvento(imagemUrl, nome, descricao) {
 // que precisa estar na rota — ver routes/eventos.js) e salva
 // o usuario_id de quem criou. Roda a moderação (Sightengine) na
 // imagem e no texto antes de gravar; se for reprovado, não salva.
+//
+// Aprovação (sprint "Aprovação de organizador"): o evento nasce com
+// status_aprovacao = 'pendente' e só aparece nas listagens públicas
+// depois que um admin aprovar. Se quem cria é admin, já nasce aprovado.
 // =====================================================
 exports.criarEvento = async (req, res) => {
   try {
@@ -163,6 +168,11 @@ exports.criarEvento = async (req, res) => {
 
     const mapa = normalizarMapa(tipo_mapa, mapa_config);
 
+    // Status inicial vem do papel de quem está criando (nunca do body).
+    const statusAprovacao = statusInicial(req.usuario);
+    const ficaPendente = statusAprovacao === STATUS_APROVACAO.PENDENTE;
+    const complementoPendente = " Ele ficará visível no site depois que um administrador aprovar.";
+
     // ── MODERAÇÃO (Sightengine) — roda antes de salvar o evento ──
     try {
       const { decisaoFinal, decisaoImagem, decisaoTexto } = await moderarEvento(imagem, nome, descricao);
@@ -175,27 +185,32 @@ exports.criarEvento = async (req, res) => {
         });
       }
     } catch (erroModeracao) {
-      console.error('⚠️  Erro inesperado na moderação do evento:', erroModeracao.message);
+      console.error('Erro inesperado na moderação do evento:', erroModeracao.message);
       // segue o fluxo normal (fail-open) em caso de erro inesperado na moderação
     }
 
     const sql = `INSERT INTO eventos
         (usuario_id, nome, assunto, categoria, imagem, data_inicio, data_fim,
          descricao, local_nome, cep, rua, cidade, estado, nome_produtor,
-         tipo_mapa, mapa_config)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+         tipo_mapa, mapa_config, status_aprovacao)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const valores = [
       usuarioId, nome, assunto || null, categoria || null, imagem || null, data_inicio, data_fim,
       descricao || null, local_nome || null, cep || null, rua || null, cidade || null, estado || null, nome_produtor || null,
       mapa.tipo_mapa, mapa.mapa_config ? JSON.stringify(mapa.mapa_config) : null,
+      statusAprovacao,
     ];
 
     const result = await db.query(sql, valores);
     const eventoId = result.insertId;
 
     if (!ingressos || ingressos.length === 0) {
-      return res.status(201).json({ mensagem: "Evento criado com sucesso!", eventoId });
+      return res.status(201).json({
+        mensagem: "Evento criado com sucesso!" + (ficaPendente ? complementoPendente : ""),
+        eventoId,
+        status_aprovacao: statusAprovacao,
+      });
     }
 
     // Ingressos "livres" (padrão, por quantidade) e "numerados" (por assento)
@@ -241,7 +256,11 @@ exports.criarEvento = async (req, res) => {
         }
       });
 
-      res.status(201).json({ mensagem: "Evento e ingressos criados com sucesso!", eventoId });
+      res.status(201).json({
+        mensagem: "Evento e ingressos criados com sucesso!" + (ficaPendente ? complementoPendente : ""),
+        eventoId,
+        status_aprovacao: statusAprovacao,
+      });
     } catch (errIng) {
       console.error("Erro ao salvar ingressos:", errIng);
       res.status(500).json({ erro: "Evento salvo, mas houve um erro ao salvar os ingressos. Edite o evento para adicioná-los novamente." });
@@ -258,19 +277,28 @@ exports.criarEvento = async (req, res) => {
 // Dois modos, dependendo se vem ?criador_id= na URL:
 //
 // - SEM criador_id (listagem pública, ex: página de eventos do site):
-//   só eventos futuros, de todo mundo.
+//   só eventos futuros E aprovados, de todo mundo.
 //
 // - COM criador_id (usado pelo Dashboard):
-//   traz TODOS os eventos daquele usuário (passados e futuros),
-//   já que o dono precisa ver o histórico completo.
+//   traz TODOS os eventos daquele usuário (passados e futuros), e,
+//   se quem está pedindo é o próprio dono (logado), inclui também os
+//   pendentes e bloqueados. Pra qualquer outra pessoa, só os aprovados.
+//   (Precisa de autenticacaoOpcional na rota GET / pra req.usuario existir.)
 // =====================================================
 exports.listarEventos = async (req, res) => {
   try {
     const { criador_id } = req.query;
 
-    const filtroWhere = criador_id
-      ? "WHERE e.usuario_id = ?"
-      : "WHERE e.data_inicio >= NOW()";
+    const souDono = criador_id && req.usuario && String(req.usuario.id) === String(criador_id);
+
+    let filtroWhere;
+    if (criador_id) {
+      filtroWhere = souDono
+        ? "WHERE e.usuario_id = ?"
+        : "WHERE e.usuario_id = ? AND e.status_aprovacao = 'aprovado'";
+    } else {
+      filtroWhere = "WHERE e.data_inicio >= NOW() AND e.status_aprovacao = 'aprovado'";
+    }
 
     const sql = `
       SELECT e.*, MIN(i.valor) AS preco_minimo,
@@ -313,6 +341,10 @@ function getStatusVenda(tipo, disponiveis, agora = new Date()) {
 // O evento volta com tipo_mapa e mapa_config (colunas nativas da
 // tabela eventos, já inclusas no "SELECT *" — nada extra a fazer aqui
 // além de garantir que mapa_config não quebre o front se vier null).
+//
+// Evento que não está aprovado só pode ser visto pelo próprio dono;
+// pra qualquer outra pessoa responde 404, como se não existisse.
+// (Precisa de autenticacaoOpcional na rota GET /:id pra req.usuario existir.)
 // =====================================================
 exports.buscarEvento = async (req, res) => {
   try {
@@ -323,6 +355,11 @@ exports.buscarEvento = async (req, res) => {
       return res.status(404).json({ erro: "Evento não encontrado." });
     }
     const evento = eventos[0];
+
+    const souDono = req.usuario && String(req.usuario.id) === String(evento.usuario_id);
+    if (evento.status_aprovacao !== STATUS_APROVACAO.APROVADO && !souDono) {
+      return res.status(404).json({ erro: "Evento não encontrado." });
+    }
 
     const ingressosDb = await db.query(`
       SELECT i.*,
@@ -360,6 +397,7 @@ exports.buscarEvento = async (req, res) => {
 // =====================================================
 // EDITAR EVENTO
 // Exige login e checa se o evento pertence ao usuário logado.
+// Não mexe em status_aprovacao: quem decide isso é só o admin.
 // =====================================================
 exports.editarEvento = async (req, res) => {
   try {

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cadastro enviado para aprovação | Rolês</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/frontend/css/footer.css">
+    <link rel="stylesheet" href="/frontend/css/header.css">
+    <style>
+        .ag { --roxo:#6c2bd9; --roxo-escuro:#4b1aa6; --roxo-claro:#f3eefe; --texto:#14121f; --suave:#5d5873; --borda:#e5e1f0; --amb:#f59e0b; --amb-bg:#fef3c7; --amb-txt:#92400e;
+              background:#f7f5fd; color:var(--texto); padding:40px 20px 56px; line-height:1.5; }
+        .ag * { box-sizing:border-box; }
+        .ag-col { max-width:520px; margin:0 auto; text-align:center; }
+        .ag-icone { width:52px; height:52px; border-radius:50%; background:var(--amb-bg); color:var(--amb-txt); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:22px; }
+        .ag-titulo { margin:0 0 6px; font-size:26px; line-height:1.2; font-weight:700; }
+        .ag-sub { margin:0; color:var(--suave); font-size:15px; }
+
+        .ag-passos { display:flex; justify-content:center; align-items:flex-start; margin:24px 0; }
+        .ag-passo { width:96px; }
+        .ag-bola { width:28px; height:28px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; background:#fff; border:2px solid var(--borda); color:var(--suave); }
+        .ag-passo.ok .ag-bola { background:var(--roxo); border-color:var(--roxo); color:#fff; }
+        .ag-passo.agora .ag-bola { background:var(--amb-bg); border-color:var(--amb); color:var(--amb-txt); }
+        .ag-passo p { margin:6px 0 0; font-size:13px; color:var(--suave); }
+        .ag-passo.agora p { color:var(--texto); font-weight:600; }
+        .ag-linha { flex:1; max-width:52px; height:2px; margin-top:13px; background:var(--borda); }
+        .ag-linha.ok { background:var(--roxo); }
+
+        .ag-cartao { background:#fff; border:1px solid var(--borda); border-radius:14px; padding:16px; text-align:left; }
+        .ag-evento { display:flex; gap:14px; align-items:center; margin-bottom:12px; border-color:#cfc6e8; }
+        .ag-img { flex:none; width:80px; height:80px; border-radius:10px; background:var(--roxo-claro); color:var(--roxo); display:flex; align-items:center; justify-content:center; font-size:26px; overflow:hidden; }
+        .ag-img img { width:100%; height:100%; object-fit:cover; display:block; }
+        .ag-info { min-width:0; }
+        .ag-tipo { margin:0; font-size:12px; color:var(--suave); }
+        .ag-nome { margin:0 0 4px; font-size:19px; font-weight:700; line-height:1.25; word-break:break-word; }
+        .ag-meta { margin:0; font-size:14px; font-weight:600; color:var(--texto); }
+        .ag-meta i { color:var(--roxo); width:18px; text-align:center; margin-right:4px; }
+
+        .ag-enq { margin-bottom:20px; }
+        .ag-enq h2 { margin:0 0 8px; font-size:14px; font-weight:700; }
+        .ag-enq p { margin:0 0 6px; font-size:13.5px; color:var(--suave); }
+        .ag-enq p:last-child { margin-bottom:0; }
+        .ag-enq i { color:var(--roxo); width:18px; text-align:center; margin-right:4px; }
+
+        .ag-acoes { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+        .ag-btn { display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border-radius:10px; font-size:15px; font-weight:700; text-decoration:none; border:2px solid var(--roxo); cursor:pointer; transition:background-color .15s; }
+        .ag-btn.prim { background:var(--roxo); color:#fff; }
+        .ag-btn.prim:hover { background:var(--roxo-escuro); border-color:var(--roxo-escuro); }
+        .ag-btn.sec { background:#fff; color:var(--roxo); }
+        .ag-btn.sec:hover { background:var(--roxo-claro); }
+        .ag-btn:focus-visible, .ag-ajuda a:focus-visible { outline:3px solid #b79af0; outline-offset:2px; }
+        .ag-ajuda { margin:18px 0 0; font-size:14px; color:var(--suave); }
+        .ag-ajuda a { color:var(--roxo); font-weight:600; }
+        [hidden] { display:none !important; }
+
+        @media (max-width:480px) {
+            .ag { padding:28px 16px 40px; }
+            .ag-titulo { font-size:22px; }
+            .ag-passo { width:80px; }
+            .ag-img { width:64px; height:64px; }
+            .ag-btn { width:100%; justify-content:center; }
+        }
+    </style>
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <main class="ag">
+        <div class="ag-col">
+            <div class="ag-icone"><i class="fa-regular fa-clock" aria-hidden="true"></i></div>
+            <h1 class="ag-titulo" id="titulo">Seu cadastro está em análise</h1>
+            <p class="ag-sub" id="intro"></p>
+
+            <div class="ag-passos" aria-label="Etapas do cadastro">
+                <div class="ag-passo ok"><div class="ag-bola">✓</div><p>Recebido</p></div>
+                <div class="ag-linha ok"></div>
+                <div class="ag-passo agora"><div class="ag-bola">2</div><p>Em análise</p></div>
+                <div class="ag-linha"></div>
+                <div class="ag-passo"><div class="ag-bola">3</div><p>Publicado</p></div>
+            </div>
+
+            <section class="ag-cartao ag-evento" aria-label="Resumo do cadastro">
+                <div class="ag-img" id="ag-img"><i class="fa-regular fa-image" aria-hidden="true"></i></div>
+                <div class="ag-info">
+                    <p class="ag-tipo" id="ag-tipo">Evento</p>
+                    <p class="ag-nome" id="nome-cadastro"></p>
+                    <p class="ag-meta" id="ag-data" hidden><i class="fa-regular fa-calendar" aria-hidden="true"></i><span></span></p>
+                    <p class="ag-meta" id="ag-local" hidden><i class="fa-solid fa-location-dot" aria-hidden="true"></i><span></span></p>
+                </div>
+            </section>
+
+            <section class="ag-cartao ag-enq">
+                <h2>Enquanto isso</h2>
+                <div id="avisos"></div>
+            </section>
+
+            <div class="ag-acoes">
+                <a class="ag-btn prim" id="btn-editar" href="#" hidden><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>Editar evento</a>
+                <a class="ag-btn sec" id="btn-painel" href="#">Ir para o meu painel</a>
+            </div>
+            <p class="ag-ajuda">Ficou com dúvida? <a href="/frontend/contato/contato.html">Fale com a gente</a></p>
+        </div>
+    </main>
+
+    <footer>
+        <div id="footer-container"></div>
+    </footer>
+
+    <script src="/frontend/js/config.js"></script>
+    <script src="/frontend/js/footer.js" defer></script>
+    <script src="/frontend/js/loadHeader.js"></script>
+
+    <script>
+        // Caminho do painel do organizador.
+        var URL_PAINEL = "../dashboard/dashboard.html";
+        // Caminho da edição de evento. Use {id} onde entra o id do evento.
+        // Enquanto estiver vazio, o botão "Editar evento" leva para o painel.
+        // Exemplo: "../criareventos/criareventos.html?editar={id}"
+        var URL_EDITAR = "";
+
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            var tipo = params.get("tipo") === "estabelecimento" ? "estabelecimento" : "evento";
+            var nome = (params.get("nome") || "").slice(0, 120);
+
+            // Dados guardados por criarEventos.js. Só vale se for do mesmo evento da URL.
+            var d = null;
+            try {
+                var bruto = sessionStorage.getItem("eventoEnviado");
+                if (bruto && tipo === "evento") {
+                    var o = JSON.parse(bruto);
+                    if (o && String(o.nome || "").slice(0, 120) === nome) d = o;
+                }
+            } catch (e) {}
+
+            var textos = {
+                evento: {
+                    rotulo: "Evento", padrao: "Seu evento",
+                    titulo: "Seu evento está em análise",
+                    intro: "Avisamos quando um administrador terminar a revisão.",
+                    avisos: [
+                        ["fa-regular fa-eye-slash", "O evento não aparece nas buscas"],
+                        ["fa-solid fa-ticket", "A venda de ingressos começa após a aprovação"],
+                        ["fa-regular fa-pen-to-square", "Você pode corrigir qualquer informação com o botão abaixo"]
+                    ]
+                },
+                estabelecimento: {
+                    rotulo: "Estabelecimento", padrao: "Seu estabelecimento",
+                    titulo: "Seu estabelecimento está em análise",
+                    intro: "Avisamos quando um administrador terminar a revisão.",
+                    avisos: [
+                        ["fa-regular fa-eye-slash", "O estabelecimento não aparece na página de locais nem nas buscas"],
+                        ["fa-regular fa-circle-check", "Se for aprovado, ele aparece sozinho no site"]
+                    ]
+                }
+            };
+            var t = textos[tipo];
+
+            // textContent em tudo: nada que vem da URL ou do navegador é tratado como HTML.
+            document.getElementById("titulo").textContent = t.titulo;
+            document.getElementById("intro").textContent = t.intro;
+            document.getElementById("ag-tipo").textContent = t.rotulo;
+            document.getElementById("nome-cadastro").textContent = nome || t.padrao;
+
+            var lista = document.getElementById("avisos");
+            t.avisos.forEach(function (a) {
+                var p = document.createElement("p");
+                var i = document.createElement("i");
+                i.className = a[0]; i.setAttribute("aria-hidden", "true");
+                p.appendChild(i);
+                p.appendChild(document.createTextNode(a[1]));
+                lista.appendChild(p);
+            });
+
+            function partes(s) {
+                var m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(s || "");
+                if (!m) return null;
+                return { dia: m[3] + "/" + m[2] + "/" + m[1], hora: m[4] + (m[5] === "00" ? "h" : "h" + m[5]), chave: m[1] + m[2] + m[3] };
+            }
+
+            if (d) {
+                var ini = partes(d.data_inicio), fim = partes(d.data_fim);
+                if (ini) {
+                    var txt = ini.dia + ", " + ini.hora;
+                    if (fim) txt = fim.chave === ini.chave
+                        ? ini.dia + ", das " + ini.hora + " às " + fim.hora
+                        : ini.dia + " " + ini.hora + " até " + fim.dia + " " + fim.hora;
+                    var elData = document.getElementById("ag-data");
+                    elData.querySelector("span").textContent = txt;
+                    elData.hidden = false;
+                }
+                var local = [d.local_nome, [d.cidade, d.estado].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
+                if (local) {
+                    var elLocal = document.getElementById("ag-local");
+                    elLocal.querySelector("span").textContent = local;
+                    elLocal.hidden = false;
+                }
+                var base = window.API_BASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "http://localhost:3000" : location.origin);
+                var src = null, im = d.imagem;
+                if (typeof im === "string") {
+                    if (im.indexOf("https://") === 0) src = im;
+                    else if (im.charAt(0) === "/" && im.charAt(1) !== "/") src = base + im;
+                }
+                if (src) {
+                    var img = document.createElement("img");
+                    img.alt = "";
+                    img.onerror = function () { img.remove(); document.getElementById("ag-img").innerHTML = '<i class="fa-regular fa-image" aria-hidden="true"></i>'; };
+                    img.src = src;
+                    var box = document.getElementById("ag-img");
+                    box.textContent = "";
+                    box.appendChild(img);
+                }
+            }
+
+            // Botão "Editar evento": vai para a página de edição quando URL_EDITAR e o id
+            // existem; senão leva ao painel, para não ficar sem destino.
+            if (tipo === "evento") {
+                var be = document.getElementById("btn-editar");
+                var destino = URL_PAINEL;
+                if (URL_EDITAR && d && d.id) destino = URL_EDITAR.replace("{id}", encodeURIComponent(d.id));
+                be.setAttribute("href", destino);
+                be.hidden = false;
+            }
+
+            document.getElementById("btn-painel").setAttribute("href", URL_PAINEL);
+        })();
+    </script>
+</body>
+</html>

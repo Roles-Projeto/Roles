@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db/db_config");
 const { verificarToken, autenticacaoOpcional } = require("../middleware/auth");
+const { STATUS_APROVACAO, statusInicial } = require("../utils/aprovacao");
 
 // ── Upload de imagens (Supabase Storage) ──
 const { usarSupabase, criarUpload, uploadParaSupabase } = require("../utils/supabaseUpload");
@@ -67,6 +68,7 @@ function urlImagem(req, id, tipo, versao) {
 // Lista pública — as imagens guardadas dentro do banco (data:...base64) NAO vão
 // mais no JSON da lista (pesavam MB por chamada). No lugar vai uma URL curta.
 // Imagens que já são URL ou caminho continuam iguais.
+// Só entram na lista os estabelecimentos públicos E aprovados por um admin.
 router.get("/", async (req, res) => {
   try {
     const rows = await db.query(`
@@ -81,7 +83,7 @@ router.get("/", async (req, res) => {
              LENGTH(img_capa) AS capa_tam,
              nota, avaliacoes, categoria_card, visibilidade
       FROM estabelecimentos
-      WHERE visibilidade = ?
+      WHERE visibilidade = ? AND status_aprovacao = 'aprovado'
       ORDER BY criado_em DESC`, ["publico"]);
 
     for (const r of rows) {
@@ -100,8 +102,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Serve o logo ou a capa de um estabelecimento público como imagem de verdade,
-// com cache no navegador. Só busca no banco a coluna da imagem pedida.
+// Serve o logo ou a capa de um estabelecimento público e aprovado como imagem
+// de verdade, com cache no navegador. Só busca no banco a coluna da imagem pedida.
 router.get("/:id/imagem/:tipo", async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -109,9 +111,9 @@ router.get("/:id/imagem/:tipo", async (req, res) => {
 
     let rows;
     if (req.params.tipo === "logo") {
-      rows = await db.query("SELECT img_logo AS imagem FROM estabelecimentos WHERE id = ? AND visibilidade = ?", [id, "publico"]);
+      rows = await db.query("SELECT img_logo AS imagem FROM estabelecimentos WHERE id = ? AND visibilidade = ? AND status_aprovacao = 'aprovado'", [id, "publico"]);
     } else if (req.params.tipo === "capa") {
-      rows = await db.query("SELECT img_capa AS imagem FROM estabelecimentos WHERE id = ? AND visibilidade = ?", [id, "publico"]);
+      rows = await db.query("SELECT img_capa AS imagem FROM estabelecimentos WHERE id = ? AND visibilidade = ? AND status_aprovacao = 'aprovado'", [id, "publico"]);
     } else {
       return res.status(404).end();
     }
@@ -148,7 +150,9 @@ router.get("/:id/imagem/:tipo", async (req, res) => {
   }
 });
 
-// Estabelecimentos do usuário logado (pro Dashboard)
+// Estabelecimentos do usuário logado (pro Dashboard).
+// Devolve todos os do dono, inclusive pendentes e bloqueados — o campo
+// status_aprovacao vem junto no SELECT * pro Dashboard poder mostrar o estado.
 router.get("/meus", verificarToken, async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
@@ -168,6 +172,7 @@ router.get("/meus", verificarToken, async (req, res) => {
 // outubro/2026: a rota devolvia estabelecimentos privados, com CNPJ e
 // responsável, pra qualquer visitante sem login). autenticacaoOpcional
 // não bloqueia quem não está logado, só identifica quem está.
+// Estabelecimento que ainda não foi aprovado também só aparece pro dono.
 router.get("/:id", autenticacaoOpcional, async (req, res) => {
   try {
     const rows = await db.query("SELECT * FROM estabelecimentos WHERE id = ?", [req.params.id]);
@@ -178,8 +183,8 @@ router.get("/:id", autenticacaoOpcional, async (req, res) => {
     const souDono = req.usuario && String(req.usuario.id) === String(row.usuario_id);
 
     if (!souDono) {
-      // Privado e não é o dono: nem confirma que existe.
-      if (row.visibilidade !== "publico") {
+      // Privado ou não aprovado, e não é o dono: nem confirma que existe.
+      if (row.visibilidade !== "publico" || row.status_aprovacao !== STATUS_APROVACAO.APROVADO) {
         return res.status(404).json({ erro: "Estabelecimento não encontrado." });
       }
       removerCamposSensiveis(row);
@@ -192,10 +197,13 @@ router.get("/:id", autenticacaoOpcional, async (req, res) => {
   }
 });
 
-// Cadastro exige token e salva usuario_id
+// Cadastro exige token e salva usuario_id.
+// O estabelecimento nasce com status_aprovacao = 'pendente' (ou 'aprovado' se
+// quem cadastra é admin). O status nunca vem do body, só do papel de quem cadastra.
 router.post("/", verificarToken, async (req, res) => {
   try {
     const usuarioId = req.usuario.id; // vem do token, não do body
+    const statusAprovacao = statusInicial(req.usuario);
 
     const {
       nome, tipo, especialidade, faixa_preco, capacidade, descricao,
@@ -213,8 +221,8 @@ router.post("/", verificarToken, async (req, res) => {
          local_nome, cep, rua, numero, complemento, bairro, cidade, estado,
          endereco, telefone, website, responsavel, cnpj,
          visibilidade, horario, comodidades, img_logo, img_capa,
-         categoria_card, fotos_galeria, pratos)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
+         categoria_card, fotos_galeria, pratos, status_aprovacao)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
             usuarioId, nome, tipo ?? null, especialidade ?? null, faixa_preco ?? null,
       capacidade !== undefined && capacidade !== null && capacidade !== "" ? Number(capacidade) : null,
       descricao ?? null, local_nome ?? null, cep ?? null, rua ?? null, numero ?? null,
@@ -222,17 +230,23 @@ router.post("/", verificarToken, async (req, res) => {
       endereco ?? null, telefone ?? null, website ?? null, responsavel ?? null, cnpj ?? null,
       visibilidade || "publico", horario || "", comodidades ?? null,
       img_logo ?? null, img_capa ?? null, categoria_card ?? null,
-      JSON.stringify(fotos_galeria || []), JSON.stringify(pratos || [])
+      JSON.stringify(fotos_galeria || []), JSON.stringify(pratos || []),
+      statusAprovacao
     ]);
 
-    res.status(201).json({ mensagem: "Estabelecimento cadastrado com sucesso!", id: result.insertId });
+    const mensagem = statusAprovacao === STATUS_APROVACAO.PENDENTE
+      ? "Estabelecimento cadastrado com sucesso! Ele ficará visível no site depois que um administrador aprovar."
+      : "Estabelecimento cadastrado com sucesso!";
+
+    res.status(201).json({ mensagem, id: result.insertId, status_aprovacao: statusAprovacao });
   } catch (err) {
     console.error("Erro ao cadastrar estabelecimento:", err);
     res.status(500).json({ erro: "Erro interno ao cadastrar estabelecimento." });
   }
 });
 
-// Edição — exige token e checa se o estabelecimento é do usuário logado
+// Edição — exige token e checa se o estabelecimento é do usuário logado.
+// Não mexe em status_aprovacao: quem decide isso é só o admin.
 router.put("/:id", verificarToken, async (req, res) => {
   try {
     const { id } = req.params;

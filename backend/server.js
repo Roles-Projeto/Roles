@@ -169,7 +169,9 @@ app.use("/eventos",          eventosRoutes);
 app.use("/estabelecimentos", estabelecimentosRoutes);
 app.use("/contato",          contatoRoutes);
 app.use("/avaliacoes",       avaliacoesRoutes);
-app.use("/admin",            adminRoutes);
+  const { rotas: adminAcessoRotas, autorizar: adminAutorizar } = require("./routes/adminAcesso");
+const adminArquivoRoutes = require("./routes/adminArquivo");
+app.use("/admin", adminAcessoRotas, adminAutorizar, adminArquivoRoutes, adminRoutes);
 app.use("/ingressos",        ingressosRouter);
 app.use("/pedidos",          pedidosRouter);
 

@@ -1,0 +1,150 @@
+/* ==========================================================
+   MODO ESCURO — HOME (index.html)
+   Local: frontend/css/tema-home.css
+   Linkar DEPOIS do style.css (precisa vir por último).
+   Deixa TODAS as seções escuras, textos brancos e imagens
+   em destaque. Só vale quando <html data-theme="dark">.
+========================================================== */
+
+:root[data-theme="dark"] {
+    /* cores mais contrastadas que as do tema.css */
+    --bg: #0d0b13;
+    --bg-secundario: #13101c;
+    --card: #1c1829;
+    --card-hover: #262040;
+    --texto: #ffffff;
+    --texto-medio: #e4e0f0;
+    --texto-suave: #b4adc9;
+    --borda: #3a3355;
+}
+
+/* ---------- Fundo da página inteira ---------- */
+:root[data-theme="dark"] html,
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] main {
+    background: var(--bg) !important;
+    color: var(--texto);
+}
+
+/* ---------- Seções (cada uma com um tom, para ficar harmônico) ---------- */
+:root[data-theme="dark"] .section-categorias,
+:root[data-theme="dark"] .section-eventos {
+    background: var(--bg) !important;
+}
+
+:root[data-theme="dark"] .section-populares,
+:root[data-theme="dark"] .faq {
+    background: var(--bg-secundario) !important;
+}
+
+/* Hero (mantém o gradiente roxo, só escurece) */
+:root[data-theme="dark"] .hero-section {
+    background: linear-gradient(180deg, #14091f 0%, #0d0b13 100%) !important;
+}
+
+/* ---------- Títulos e textos das seções: branco ---------- */
+:root[data-theme="dark"] main h1,
+:root[data-theme="dark"] main h2,
+:root[data-theme="dark"] main h3,
+:root[data-theme="dark"] .section-title,
+:root[data-theme="dark"] .faq-header h2 {
+    color: #ffffff !important;
+}
+
+:root[data-theme="dark"] main p,
+:root[data-theme="dark"] main span,
+:root[data-theme="dark"] main li,
+:root[data-theme="dark"] .section-subtitle,
+:root[data-theme="dark"] .faq-header p {
+    color: var(--texto-medio);
+}
+
+/* ---------- Cards (categorias, locais, eventos) ---------- */
+:root[data-theme="dark"] main [class*="card"] {
+    background: var(--card) !important;
+    border-color: var(--borda) !important;
+    color: var(--texto);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
+}
+
+:root[data-theme="dark"] main [class*="card"]:hover {
+    background: var(--card-hover) !important;
+    border-color: var(--roxo) !important;
+}
+
+:root[data-theme="dark"] main [class*="card"] h3,
+:root[data-theme="dark"] main [class*="card"] h4,
+:root[data-theme="dark"] main [class*="card"] strong {
+    color: #ffffff !important;
+}
+
+:root[data-theme="dark"] main [class*="card"] p,
+:root[data-theme="dark"] main [class*="card"] span {
+    color: var(--texto-suave);
+}
+
+/* ícone redondo das categorias */
+:root[data-theme="dark"] .card-categoria .icon {
+    background: var(--roxo-claro) !important;
+}
+:root[data-theme="dark"] .card-categoria .icon i {
+    color: var(--roxo) !important;
+}
+
+/* ---------- Imagens em DESTAQUE (sem escurecer) ---------- */
+:root[data-theme="dark"] main img:not(.avatar-img):not([src*="logo"]) {
+    filter: none !important;
+}
+
+:root[data-theme="dark"] main [class*="card"] img {
+    box-shadow: 0 0 0 1px var(--borda);
+}
+
+/* ---------- Setas / botões dos carrosséis ---------- */
+:root[data-theme="dark"] .carousel-btn,
+:root[data-theme="dark"] .cat-btn,
+:root[data-theme="dark"] .scroll-btn {
+    background: var(--card) !important;
+    color: var(--roxo) !important;
+    border: 1px solid var(--borda);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .carousel-btn:hover,
+:root[data-theme="dark"] .cat-btn:hover,
+:root[data-theme="dark"] .scroll-btn:hover {
+    background: var(--roxo) !important;
+    color: #ffffff !important;
+}
+
+/* ---------- FAQ ---------- */
+:root[data-theme="dark"] .faq-item {
+    background: var(--card) !important;
+    border-color: var(--borda) !important;
+}
+:root[data-theme="dark"] .faq-question {
+    background: transparent !important;
+    color: #ffffff !important;
+}
+:root[data-theme="dark"] .faq-answer,
+:root[data-theme="dark"] .faq-answer p {
+    background: transparent !important;
+    color: var(--texto-medio) !important;
+}
+:root[data-theme="dark"] .faq-arrow { color: var(--roxo) !important; }
+:root[data-theme="dark"] .faq-contact p { color: var(--texto-medio) !important; }
+
+/* ---------- Modal de login ---------- */
+:root[data-theme="dark"] .login-modal-content {
+    background: var(--card) !important;
+    border: 1px solid var(--borda);
+}
+:root[data-theme="dark"] .close-login { color: #ffffff !important; }
+
+/* ---------- Rodapé ---------- */
+:root[data-theme="dark"] footer,
+:root[data-theme="dark"] #footer-container {
+    background: #08060d !important;
+    color: var(--texto-medio);
+}
+:root[data-theme="dark"] footer a { color: var(--texto-medio); }
+:root[data-theme="dark"] footer a:hover { color: var(--roxo); }

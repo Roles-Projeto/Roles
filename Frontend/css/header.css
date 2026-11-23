@@ -14,10 +14,13 @@ header { margin: 0; padding: 0; z-index: 100; }
 
 /* ==================================================
    HEADER FIXO NO TOPO (todas as páginas)
-   Fica no #header-container (filho direto do body),
-   e não no <header>, que só tem a altura do menu.
+   O sticky vai no elemento cujo pai é o body:
+   - o <header> que envolve o #header-container, ou
+   - o próprio #header-container, se estiver direto no body.
+   O segundo <header class="main-header"> (criar evento) não entra.
 ================================================== */
-#header-container {
+body > #header-container,
+body > header:has(> #header-container) {
     position: sticky;
     top: 0;
     z-index: 1000;

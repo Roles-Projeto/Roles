@@ -5,6 +5,92 @@ h1, h2, h3, h4,
 }
 
 /* ==================================================
+   TEMA (CLARO / ESCURO)
+   O tema escuro é ativado quando o <html> recebe
+   data-theme="dark" (feito pelo tema.js).
+   Cada cor do header vem destas variáveis.
+================================================== */
+:root {
+    --hd-bg: #ffffff;
+    --hd-bg-pop: #ffffff;
+    --hd-input-bg: #f3f3f3;
+    --hd-input-bg-2: #f5f5f5;
+    --hd-hover: #f5f5f5;
+    --hd-hover-btn: #ebebeb;
+
+    --hd-texto: #333333;
+    --hd-texto-forte: #1a1a1a;
+    --hd-texto-medio: #4b5563;
+    --hd-texto-suave: #888888;
+    --hd-placeholder: #aaaaaa;
+
+    --hd-borda: #ececec;
+    --hd-linha: rgba(0, 0, 0, 0.05);
+    --hd-linha-suave: #f0f0f0;
+    --hd-divisor: #cccccc;
+
+    --hd-roxo: #6C1DCE;
+    --hd-roxo-claro: #f0ebff;
+    --hd-hover-roxo: #f7f4ff;
+    --hd-foco: rgba(108, 29, 206, 0.27);
+
+    --hd-indigo: #4f46e5;
+    --hd-indigo-forte: #3730a3;
+    --hd-indigo-suave: #a5b4fc;
+    --hd-indigo-hover-bg: #ede9fe;
+
+    --hd-login-bg: #000000;
+    --hd-login-texto: #ffffff;
+    --hd-login-hover: #333333;
+
+    --hd-logo-ini: #131314;
+    --hd-barra: linear-gradient(to right, #131314 0%, #e9e5f5 50%, #6C1DCE 100%);
+    --hd-sombra-pop: 0 4px 24px rgba(0, 0, 0, 0.13), 0 1px 4px rgba(0, 0, 0, 0.08);
+    --hd-sombra-menu: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --hd-bg: #17141f;
+    --hd-bg-pop: #1f1b2b;
+    --hd-input-bg: #26213a;
+    --hd-input-bg-2: #26213a;
+    --hd-hover: #2a2540;
+    --hd-hover-btn: #332d4d;
+
+    --hd-texto: #e4e0f0;
+    --hd-texto-forte: #f5f3fb;
+    --hd-texto-medio: #c3bdd6;
+    --hd-texto-suave: #9a93b0;
+    --hd-placeholder: #7d7694;
+
+    --hd-borda: #332d4a;
+    --hd-linha: rgba(255, 255, 255, 0.07);
+    --hd-linha-suave: #2e2944;
+    --hd-divisor: #453e60;
+
+    --hd-roxo: #b68cff;
+    --hd-roxo-claro: #2d2347;
+    --hd-hover-roxo: #2a2142;
+    --hd-foco: rgba(182, 140, 255, 0.35);
+
+    --hd-indigo: #a5b4fc;
+    --hd-indigo-forte: #c7d2fe;
+    --hd-indigo-suave: #818cf8;
+    --hd-indigo-hover-bg: rgba(129, 140, 248, 0.14);
+
+    --hd-login-bg: #f5f3fb;
+    --hd-login-texto: #17141f;
+    --hd-login-hover: #d9d3ee;
+
+    --hd-logo-ini: #e9e5f5;
+    --hd-barra: linear-gradient(to right, #26213a 0%, #4a3a78 50%, #8f4de8 100%);
+    --hd-sombra-pop: 0 8px 28px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(0, 0, 0, 0.4);
+    --hd-sombra-menu: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+/* ==================================================
    RESET E BASE
 ================================================== */
 .header-main * { box-sizing: border-box; }
@@ -38,12 +124,18 @@ body > header:has(> #header-container) {
     display: flex;
     align-items: center;
     padding: 0 20px;
-    background: #fff;
-    box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+    background: var(--hd-bg);
+    box-shadow: 0 1px 0 var(--hd-linha);
     position: relative;
     z-index: 1000;
 }
 
+
+/* O botão "Acessibilidade" (acessibilidade.js) usa color: inherit, então herda daqui.
+   Sem isto, no tema escuro o texto dele ficaria preto sobre fundo escuro. */
+:root[data-theme="dark"] .header-main .navbar {
+    color: var(--hd-texto);
+}
 
 /* ==================================================
    LOGO
@@ -52,10 +144,16 @@ body > header:has(> #header-container) {
     font-size: 2.1em;
     font-weight: 700;
     text-decoration: none;
-    background: linear-gradient(to right, #131314, #6C1DCE);
+    background: linear-gradient(to right, var(--hd-logo-ini), #6C1DCE);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-right: 20px;
+}
+
+:root[data-theme="dark"] .header-main .logo a {
+    background: linear-gradient(to right, var(--hd-logo-ini), #b68cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 /* ==================================================
@@ -64,7 +162,7 @@ body > header:has(> #header-container) {
 .header-main .search-bar {
     display: flex;
     align-items: center;
-    background: #f3f3f3;
+    background: var(--hd-input-bg);
     border-radius: 50px;
     height: 3em;
     width: 600px;
@@ -73,9 +171,9 @@ body > header:has(> #header-container) {
 }
 
 .header-main .search-bar:focus-within {
-    box-shadow: 0 0 0 2px #6C1DCE44;
-    background: #fff;
-    border: 1.5px solid #6C1DCE55;
+    box-shadow: 0 0 0 2px var(--hd-foco);
+    background: var(--hd-bg);
+    border: 1.5px solid var(--hd-foco);
 }
 
 .header-main .search-bar input {
@@ -86,12 +184,12 @@ body > header:has(> #header-container) {
     flex: 1;
     font-size: 14px;
     font-family: 'Inter', sans-serif;
-    color: #1a1a1a;
+    color: var(--hd-texto-forte);
 }
 
-.header-main .search-bar input::placeholder { color: #aaa; }
+.header-main .search-bar input::placeholder { color: var(--hd-placeholder); }
 
-.header-main .divider { width: 1px; height: 25px; background: #ccc; flex-shrink: 0; }
+.header-main .divider { width: 1px; height: 25px; background: var(--hd-divisor); flex-shrink: 0; }
 
 .header-main .search-btn {
     background: transparent;
@@ -107,8 +205,11 @@ body > header:has(> #header-container) {
     flex-shrink: 0;
     transition: background 0.15s;
 }
-.header-main .search-btn:hover { background: #ebebeb; }
+.header-main .search-btn:hover { background: var(--hd-hover-btn); }
 .header-main .search-btn img { width: 18px; height: 18px; }
+
+/* a lupa é um PNG escuro; no tema escuro ela é invertida pra ficar clara */
+:root[data-theme="dark"] .header-main .search-btn img { filter: invert(1) brightness(1.1); }
 
 /* ==================================================
    CITY BUTTON
@@ -126,9 +227,9 @@ body > header:has(> #header-container) {
     font-size: 13px;
     font-family: 'Inter', sans-serif;
     white-space: nowrap;
-    color: #333;
+    color: var(--hd-texto);
 }
-.header-main .city-btn i { color: #6C1DCE; }
+.header-main .city-btn i { color: var(--hd-roxo); }
 
 /* ==================================================
    DROPDOWN DE BUSCA
@@ -139,10 +240,10 @@ body > header:has(> #header-container) {
     left: 0;
     width: 100%;
     min-width: 360px;
-    background: #fff;
+    background: var(--hd-bg-pop);
     border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.13), 0 1px 4px rgba(0,0,0,0.08);
-    border: 1px solid #ececec;
+    box-shadow: var(--hd-sombra-pop);
+    border: 1px solid var(--hd-borda);
     z-index: 99999;
     overflow: hidden;
     opacity: 0;
@@ -167,7 +268,7 @@ body > header:has(> #header-container) {
 .sug-section-title span {
     font-size: 11px;
     font-weight: 600;
-    color: #888;
+    color: var(--hd-texto-suave);
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -187,7 +288,7 @@ body > header:has(> #header-container) {
     transition: background 0.12s;
     gap: 10px;
 }
-.sug-item:hover { background: #f7f4ff; }
+.sug-item:hover { background: var(--hd-hover-roxo); }
 
 .sug-left {
     display: flex;
@@ -199,7 +300,7 @@ body > header:has(> #header-container) {
 
 .sug-icon-recente {
     font-size: 14px;
-    color: #aaa;
+    color: var(--hd-placeholder);
     width: 16px;
     text-align: center;
     flex-shrink: 0;
@@ -207,7 +308,7 @@ body > header:has(> #header-container) {
 
 .sug-texto {
     font-size: 14px;
-    color: #222;
+    color: var(--hd-texto-forte);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -217,7 +318,7 @@ body > header:has(> #header-container) {
     background: none;
     border: none;
     cursor: pointer;
-    color: #bbb;
+    color: var(--hd-placeholder);
     font-size: 13px;
     padding: 4px 6px;
     border-radius: 50%;
@@ -227,20 +328,20 @@ body > header:has(> #header-container) {
     transition: background 0.12s, color 0.12s;
     flex-shrink: 0;
 }
-.sug-remover:hover { background: #f0ebff; color: #6C1DCE; }
+.sug-remover:hover { background: var(--hd-roxo-claro); color: var(--hd-roxo); }
 
 .sug-icon-evento {
     width: 34px;
     height: 34px;
     min-width: 34px;
-    background: #f0ebff;
+    background: var(--hd-roxo-claro);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
-.sug-icon-evento i { color: #6C1DCE; font-size: 13px; }
+.sug-icon-evento i { color: var(--hd-roxo); font-size: 13px; }
 
 .sug-info {
     display: flex;
@@ -253,7 +354,7 @@ body > header:has(> #header-container) {
 .sug-nome {
     font-size: 13px;
     font-weight: 500;
-    color: #1a1a1a;
+    color: var(--hd-texto-forte);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -261,13 +362,13 @@ body > header:has(> #header-container) {
 
 .sug-nome mark {
     background: none;
-    color: #6C1DCE;
+    color: var(--hd-roxo);
     font-weight: 700;
 }
 
 .sug-meta {
     font-size: 11px;
-    color: #999;
+    color: var(--hd-texto-suave);
     display: flex;
     align-items: center;
     gap: 5px;
@@ -275,11 +376,11 @@ body > header:has(> #header-container) {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.sug-meta i { font-size: 10px; color: #6C1DCE; }
+.sug-meta i { font-size: 10px; color: var(--hd-roxo); }
 
 .sug-badge {
-    background: #f0ebff;
-    color: #6C1DCE;
+    background: var(--hd-roxo-claro);
+    color: var(--hd-roxo);
     padding: 1px 7px;
     border-radius: 20px;
     font-size: 10px;
@@ -288,28 +389,28 @@ body > header:has(> #header-container) {
 
 .sug-completar {
     font-size: 12px;
-    color: #ccc;
+    color: var(--hd-placeholder);
     flex-shrink: 0;
     padding: 6px;
     border-radius: 50%;
     transition: background 0.12s, color 0.12s;
 }
-.sug-item:hover .sug-completar { color: #6C1DCE; background: #f0ebff; }
+.sug-item:hover .sug-completar { color: var(--hd-roxo); background: var(--hd-roxo-claro); }
 
 .sug-rodape {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 10px 16px 12px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--hd-linha-suave);
     cursor: pointer;
     font-size: 13px;
-    color: #444;
+    color: var(--hd-texto);
     transition: background 0.12s;
 }
-.sug-rodape:hover { background: #f7f4ff; }
-.sug-rodape i { color: #6C1DCE; font-size: 13px; }
-.sug-rodape strong { color: #1a1a1a; }
+.sug-rodape:hover { background: var(--hd-hover-roxo); }
+.sug-rodape i { color: var(--hd-roxo); font-size: 13px; }
+.sug-rodape strong { color: var(--hd-texto-forte); }
 
 /* ==================================================
    DROPDOWN — BOTÃO VER MAIS
@@ -320,7 +421,7 @@ body > header:has(> #header-container) {
     align-items: center;
     gap: 10px;
     padding: 10px 16px 12px 20px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--hd-linha-suave);
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
@@ -329,7 +430,7 @@ body > header:has(> #header-container) {
 }
 
 .sug-ver-mais i:first-child {
-    color: #4f46e5;
+    color: var(--hd-indigo);
     font-size: 13px;
     width: 16px;
     text-align: center;
@@ -340,7 +441,7 @@ body > header:has(> #header-container) {
 
 .sug-ver-mais span {
     flex: 1;
-    color: #4f46e5;
+    color: var(--hd-indigo);
     font-weight: 400;
     font-family: 'Inter', 'Poppins', sans-serif;
     letter-spacing: 0.01em;
@@ -348,35 +449,35 @@ body > header:has(> #header-container) {
 }
 
 .sug-ver-mais span strong {
-    color: #3730a3;
+    color: var(--hd-indigo-forte);
     font-weight: 600;
 }
 
 .sug-chevron {
     font-size: 11px;
-    color: #a5b4fc;
+    color: var(--hd-indigo-suave);
     transition: transform 0.15s ease, color 0.15s ease;
 }
 
 /* ✅ HOVER — seletor visual completo */
 .sug-ver-mais:hover {
-    background: #ede9fe;
-    border-left: 3px solid #4f46e5;
+    background: var(--hd-indigo-hover-bg);
+    border-left: 3px solid var(--hd-indigo);
     padding-left: 17px;
 }
 
 .sug-ver-mais:hover i:first-child {
-    color: #3730a3;
+    color: var(--hd-indigo-forte);
     transform: scale(1.15);
 }
 
 .sug-ver-mais:hover span {
-    color: #3730a3;
+    color: var(--hd-indigo-forte);
     font-weight: 500;
 }
 
 .sug-ver-mais:hover .sug-chevron {
-    color: #4f46e5;
+    color: var(--hd-indigo);
     transform: translateX(3px);
 }
 
@@ -400,13 +501,45 @@ body > header:has(> #header-container) {
     border: none;
     font-size: 14px;
     font-weight: 500;
-    color: #4b5563;
+    color: var(--hd-texto-medio);
     cursor: pointer;
     font-family: 'Inter', sans-serif;
     transition: color 0.2s;
     text-decoration: none;
 }
-.header-main .action-btn:hover { color: #6C1DCE; }
+.header-main .action-btn:hover { color: var(--hd-roxo); }
+
+/* ==================================================
+   BOTÃO DE ALTERNAR TEMA (claro / escuro)
+   Mostra a lua no tema claro e o sol no tema escuro.
+================================================== */
+.header-main .theme-toggle-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--hd-texto-medio);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
+}
+.header-main .theme-toggle-btn:hover {
+    background: var(--hd-roxo-claro);
+    color: var(--hd-roxo);
+}
+.header-main .theme-toggle-btn:focus-visible {
+    outline: 2px solid var(--hd-roxo);
+    outline-offset: 2px;
+}
+
+.header-main .theme-toggle-btn .icone-sol { display: none; }
+:root[data-theme="dark"] .header-main .theme-toggle-btn .icone-lua { display: none; }
+:root[data-theme="dark"] .header-main .theme-toggle-btn .icone-sol { display: inline-block; }
 
 /* ==================================================
    LOGIN
@@ -414,15 +547,15 @@ body > header:has(> #header-container) {
 .header-main .user-action-btns { display: flex; align-items: center; }
 
 .header-main .login {
-    background: #000;
-    color: #fff;
+    background: var(--hd-login-bg);
+    color: var(--hd-login-texto);
     padding: 8px 15px;
     border-radius: 6px;
     text-decoration: none;
     font-size: 12px;
     transition: background 0.2s;
 }
-.header-main .login:hover { background: #333; }
+.header-main .login:hover { background: var(--hd-login-hover); }
 
 /* ==================================================
    HAMBURGER
@@ -432,9 +565,10 @@ body > header:has(> #header-container) {
     border: none;
     cursor: pointer;
     font-size: 1.5em;
-    color: #6C1DCE;
+    color: var(--hd-roxo);
     display: flex;
     align-items: center;
+    padding: 0;
 }
 
 /* ==================================================
@@ -447,8 +581,8 @@ body > header:has(> #header-container) {
     height: 40px;
     border-radius: 50%;
     overflow: hidden;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 2px #6C1DCE;
+    border: 2px solid var(--hd-bg);
+    box-shadow: 0 0 0 2px var(--hd-roxo);
     flex-shrink: 0;
 }
 
@@ -467,14 +601,17 @@ body > header:has(> #header-container) {
     top: 45px;
     right: 0;
     min-width: 260px;
-    background: #fff;
+    background: var(--hd-bg-pop);
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: var(--hd-sombra-menu);
     z-index: 2000;
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
     transition: 0.2s;
+}
+:root[data-theme="dark"] .header-main .dropdown-menu {
+    border: 1px solid var(--hd-borda);
 }
 .header-main .user-profile-container.active .dropdown-menu {
     opacity: 1;
@@ -489,22 +626,34 @@ body > header:has(> #header-container) {
     padding: 12px 15px;
 }
 .header-main .user-info img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-.header-main .user-info strong { font-size: 14px; color: #333; display: block; }
-.user-info span { font-size: 10px; color: #888; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+.header-main .user-info strong { font-size: 14px; color: var(--hd-texto); display: block; }
+.user-info span { font-size: 10px; color: var(--hd-texto-suave); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
 
-.header-main .dropdown-menu hr { border: none; border-top: 1px solid #eee; margin: 5px 0; }
+.header-main .dropdown-menu hr { border: none; border-top: 1px solid var(--hd-linha-suave); margin: 5px 0; }
 
 .header-main .dropdown-item {
     display: flex;
     align-items: center;
     padding: 10px 15px;
     text-decoration: none;
-    color: #333;
+    color: var(--hd-texto);
     font-size: 12px;
     transition: background 0.15s;
 }
-.header-main .dropdown-item i { margin-right: 8px; color: #6C1DCE; }
-.header-main .dropdown-item:hover { background: #f5f5f5; }
+.header-main .dropdown-item i { margin-right: 8px; color: var(--hd-roxo); }
+.header-main .dropdown-item:hover { background: var(--hd-hover); }
+
+/* Botão "Painel Admin" (criado pelo loadHeader.js com cores fixas no estilo inline).
+   No tema escuro as cores são trocadas aqui; o !important é necessário por causa do inline. */
+:root[data-theme="dark"] #admin-panel-btn {
+    background: #2d2347 !important;
+    color: #d2b8ff !important;
+    border-top-color: #3d3060 !important;
+    border-bottom-color: #3d3060 !important;
+}
+:root[data-theme="dark"] #admin-panel-btn:hover {
+    background: #382c59 !important;
+}
 
 /* ==================================================
    OVERLAY E CARD DE CIDADE
@@ -523,40 +672,50 @@ body > header:has(> #header-container) {
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
     width: 420px;
-    background: white;
+    background: var(--hd-bg-pop);
+    color: var(--hd-texto);
     border-radius: 14px;
     padding: 20px;
     display: none;
     z-index: 999999;
 }
 
+:root[data-theme="dark"] .city-card {
+    border: 1px solid var(--hd-borda);
+    box-shadow: var(--hd-sombra-pop);
+}
+
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.card-header h3 { margin: 0; font-size: 18px; }
+.card-header h3 { margin: 0; font-size: 18px; color: var(--hd-texto-forte); }
 .card-header span { font-size: 22px; cursor: pointer; }
 
 .search-box {
     display: flex; align-items: center;
-    background: #f5f5f5; padding: 10px;
+    background: var(--hd-input-bg-2); padding: 10px;
     border-radius: 8px; margin-bottom: 15px;
 }
-.search-box i { color: #999; margin-right: 8px; }
-.search-box input { border: none; background: transparent; outline: none; width: 100%; font-family: 'Inter', sans-serif; }
+.search-box i { color: var(--hd-texto-suave); margin-right: 8px; }
+.search-box input {
+    border: none; background: transparent; outline: none; width: 100%;
+    font-family: 'Inter', sans-serif; color: var(--hd-texto-forte);
+}
+.search-box input::placeholder { color: var(--hd-placeholder); }
 
 .use-location {
     display: flex; align-items: center; gap: 10px;
     padding: 12px; border-radius: 8px; cursor: pointer;
     margin-bottom: 15px; transition: background 0.2s;
 }
-.use-location:hover { background: #f0f0f0; }
-.use-location i { color: #6C1DCE; font-size: 18px; }
+.use-location:hover { background: var(--hd-hover); }
+.use-location i { color: var(--hd-roxo); font-size: 18px; }
 
 .city-list { list-style: none; padding: 0; max-height: 260px; overflow-y: auto; }
 .city-list li {
     display: flex; align-items: center; gap: 10px;
     padding: 12px; cursor: pointer; border-radius: 8px; transition: background 0.2s;
 }
-.city-list li:hover { background: #f5f5f5; }
-.city-list i { color: #6C1DCE; }
+.city-list li:hover { background: var(--hd-hover); }
+.city-list i { color: var(--hd-roxo); }
 
 /* ==================================================
    BARRA GRADIENTE
@@ -564,7 +723,7 @@ body > header:has(> #header-container) {
 .bottom-gradient-bar {
     height: 5px;
     width: 100%;
-    background: linear-gradient(to right, #131314 0%, #e9e5f5 50%, #6C1DCE 100%);
+    background: var(--hd-barra);
 }
 
 /* ==================================================
@@ -617,29 +776,29 @@ body > header:has(> #header-container) {
         height: 36px;
         border-radius: 50%;
         border: none;
-        background: #f3f3f3;
+        background: var(--hd-input-bg);
         cursor: pointer;
         transition: background 0.2s;
         flex-shrink: 0;
     }
     .header-main .search-toggle-btn:hover,
     .header-main .search-toggle-btn.active {
-        background: #f0ebff;
+        background: var(--hd-roxo-claro);
     }
     .header-main .search-toggle-btn i {
-        color: #555;
+        color: var(--hd-texto-medio);
         font-size: 15px;
     }
     .header-main .search-toggle-btn.active i {
-        color: #6C1DCE;
+        color: var(--hd-roxo);
     }
 
     .header-main .search-bar-mobile {
         display: flex;
         align-items: center;
         gap: 8px;
-        background: #fff;
-        border-bottom: 1px solid #eee;
+        background: var(--hd-bg);
+        border-bottom: 1px solid var(--hd-linha-suave);
         overflow: hidden;
         max-height: 0;
         padding: 0 16px;
@@ -654,7 +813,8 @@ body > header:has(> #header-container) {
     .header-main .search-bar-mobile input {
         flex: 1;
         border: none;
-        background: #f3f3f3;
+        background: var(--hd-input-bg);
+        color: var(--hd-texto-forte);
         border-radius: 20px;
         padding: 8px 14px;
         font-size: 13px;
@@ -662,14 +822,15 @@ body > header:has(> #header-container) {
         outline: none;
         transition: background 0.2s, box-shadow 0.2s;
     }
+    .header-main .search-bar-mobile input::placeholder { color: var(--hd-placeholder); }
     .header-main .search-bar-mobile input:focus {
-        background: #fff;
-        box-shadow: 0 0 0 2px #6C1DCE44;
+        background: var(--hd-bg);
+        box-shadow: 0 0 0 2px var(--hd-foco);
     }
 
     .header-main .search-bar-mobile .city-tag-mobile {
-        background: #f0ebff;
-        color: #6C1DCE;
+        background: var(--hd-roxo-claro);
+        color: var(--hd-roxo);
         font-size: 11px;
         font-weight: 600;
         padding: 5px 10px;

@@ -21,7 +21,7 @@ h1, h2, h3, h4,
     border: 1px solid #e8e8e8;
     border-radius: 12px;
     overflow: hidden;
-    background: #fff;
+    background: var(--card);
     margin-bottom: 12px;
     transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
@@ -81,8 +81,8 @@ h1, h2, h3, h4,
     font-weight: 700;
     padding: 3px 10px;
     border-radius: 20px;
-    background: #f0f0f0;
-    color: #555;
+    background: var(--bg-secundario);
+    color: var(--texto-medio);
     white-space: nowrap;
     flex-shrink: 0;
     letter-spacing: 0.04em;
@@ -124,7 +124,7 @@ h1, h2, h3, h4,
 
 .tc-hoje     { background: #fff3e0; color: #e65100; }
 .tc-proximo  { background: #e8f5e9; color: #2e7d32; }
-.tc-passado  { background: #f5f5f5; color: #757575; }
+.tc-passado  { background: var(--bg-secundario); color: #757575; }
 .tc-pendente { background: #fff8e1; color: #f57f17; }
 
 /* Botões de ação */
@@ -139,22 +139,22 @@ h1, h2, h3, h4,
 .tc-stub {
     width: 84px;
     flex-shrink: 0;
-    border-left: 1.5px dashed #e0e0e0;
+    border-left: 1.5px dashed var(--borda);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 12px 8px;
     gap: 6px;
-    background: #fafafa;
+    background: var(--bg-secundario);
 }
 
 .tc-qr {
     width: 48px;
     height: 48px;
     border-radius: 8px;
-    background: #f0f0f0;
-    border: 1px solid #e0e0e0;
+    background: var(--bg-secundario);
+    border: 1px solid var(--borda);
     display: flex;
     align-items: center;
     justify-content: center;

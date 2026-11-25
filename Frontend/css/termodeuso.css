@@ -9,8 +9,8 @@ body {
     font-family: 'Inter', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f4f5f7;
-    color: #333;
+    background-color: var(--bg-secundario);
+    color: var(--texto);
 }
 
 /* ── Banner ── */
@@ -183,7 +183,7 @@ body {
     font-size: 14px;
     line-height: 1.6;
     margin: 0;
-    color: #444;
+    color: var(--texto-medio);
 }
 
 .policy-alert {
@@ -200,7 +200,7 @@ body {
 .terms-section {
     margin-bottom: 14px;
     padding: 28px 30px 22px;
-    background-color: #fff;
+    background-color: var(--card);
     border-radius: 12px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
     border: 1px solid #e8e8ee;
@@ -214,7 +214,7 @@ body {
 .terms-section h2 {
     font-size: 15px;
     font-weight: 700;
-    color: #1a1a2e;
+    color: var(--texto);
     margin-bottom: 14px;
     padding-left: 30px;
     position: relative;
@@ -253,7 +253,7 @@ body {
     font-size: 14px;
     line-height: 1.7;
     margin-bottom: 14px;
-    color: #555;
+    color: var(--texto-medio);
 }
 
 /* ── Subseções ── */
@@ -262,7 +262,7 @@ body {
     font-weight: 700;
     margin-top: 22px;
     margin-bottom: 10px;
-    color: #1a1a2e;
+    color: var(--texto);
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
@@ -270,7 +270,7 @@ body {
 .subsection-divider {
     border: 0;
     height: 1px;
-    background-color: #f0f0f5;
+    background-color: var(--bg-secundario);
     margin: 18px 0;
 }
 
@@ -278,14 +278,14 @@ body {
     font-size: 13px;
     font-weight: 600;
     margin-bottom: 6px;
-    color: #333;
+    color: var(--texto);
 }
 
 .sub-section-description {
     font-size: 14px;
     margin-top: 14px;
     margin-bottom: 8px;
-    color: #555;
+    color: var(--texto-medio);
 }
 
 /* ── Listas ── */
@@ -301,7 +301,7 @@ body {
     position: relative;
     padding-left: 18px;
     margin-bottom: 3px;
-    color: #555;
+    color: var(--texto-medio);
 }
 
 .bullet-list li::before {
@@ -349,7 +349,7 @@ body {
     position: relative;
     padding-left: 20px;
     margin-bottom: 4px;
-    color: #555;
+    color: var(--texto-medio);
 }
 
 .purchase-confirmation-list li::before {
@@ -366,7 +366,7 @@ body {
 .highlight-box {
     padding: 16px 20px;
     border-radius: 8px;
-    background-color: #f8f9ff;
+    background-color: var(--bg-secundario);
     border: 1px solid #e4e8ff;
     margin-top: 4px;
 }
@@ -375,12 +375,12 @@ body {
     font-size: 14px;
     line-height: 1.6;
     margin-bottom: 6px;
-    color: #444;
+    color: var(--texto-medio);
 }
 
 .small-text {
     font-size: 12px;
-    color: #888;
+    color: var(--texto-suave);
     margin: 0;
 }
 
@@ -398,22 +398,22 @@ body {
 }
 
 .prohibitions-box {
-    background-color: #fff5f5;
+    background-color: var(--bg-secundario);
     border-color: #ffd5d5;
 }
 
 .disclaimer-box {
-    background-color: #faf4ff;
+    background-color: var(--bg-secundario);
     border-color: #e8d0ff;
 }
 
 .security-box {
-    background-color: #f0faf0;
+    background-color: var(--bg-secundario);
     border-color: #c8efc8;
 }
 
 .organizer-cancellation-box {
-    background-color: #f0f7ff;
+    background-color: var(--bg-secundario);
     border-color: #cce1ff;
 }
 
@@ -431,12 +431,12 @@ body {
 }
 
 .discovery-box {
-    background-color: #f0f7ff;
+    background-color: var(--bg-secundario);
     border: 1px solid #cce1ff;
 }
 
 .sales-box {
-    background-color: #f0fff5;
+    background-color: var(--bg-secundario);
     border: 1px solid #c8f0d8;
 }
 
@@ -444,7 +444,7 @@ body {
     font-weight: 700;
     font-size: 12px;
     margin: 0 0 10px;
-    color: #1a1a2e;
+    color: var(--texto);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -460,7 +460,7 @@ body {
     line-height: 1.9;
     position: relative;
     padding-left: 14px;
-    color: #555;
+    color: var(--texto-medio);
 }
 
 .service-box li::before {
@@ -482,7 +482,7 @@ body {
 
 .contact-box {
     padding: 16px;
-    background-color: #f8f9ff;
+    background-color: var(--bg-secundario);
     border-radius: 10px;
     border: 1px solid #e4e8ff;
 }
@@ -499,7 +499,7 @@ body {
 .contact-email {
     font-size: 13px;
     margin: 0;
-    color: #555;
+    color: var(--texto-medio);
 }
 
 .contact-email a {
@@ -534,7 +534,7 @@ body {
 }
 
 .benefit-item {
-    background: #fff;
+    background: var(--card);
     border: 1px solid #e4e8ff;
     border-radius: 10px;
     padding: 14px 16px;
@@ -560,13 +560,13 @@ body {
 .benefit-label {
     font-size: 13px;
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--texto);
     margin: 0 0 2px;
 }
 
 .benefit-desc {
     font-size: 12px;
-    color: #888;
+    color: var(--texto-suave);
     margin: 0;
     line-height: 1.4;
 }
@@ -593,7 +593,7 @@ body {
 .privacy-highlight p {
     margin: 0;
     font-size: 14px;
-    color: #444;
+    color: var(--texto-medio);
     line-height: 1.6;
 }
 

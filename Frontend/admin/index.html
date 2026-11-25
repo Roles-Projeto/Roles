@@ -2,517 +2,253 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <!-- TEMA CLARO/ESCURO: aplica o tema salvo antes de pintar (evita flash branco) -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('roles_tema') === 'dark' ? 'dark' : 'light'
+            );
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/frontend/css/tema.css">
+    <script src="/frontend/js/tema.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rolês Admin</title>
+    <script>
+      try {
+        document.documentElement.dataset.theme =
+          localStorage.getItem("admin_theme") || "light";
+      } catch (e) {
+        document.documentElement.dataset.theme = "light";
+      }
+    </script>
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="admin.css" />
+    <link rel="stylesheet" href="admin-tema2.css">
   </head>
   <body>
-    <!-- Overlay da sidebar (mobile) -->
     <div class="sb-overlay" id="sb-overlay" onclick="closeSb()"></div>
 
+    <!-- LOGIN -->
     <div id="login">
       <div class="login-bg"></div>
       <div class="login-glow"></div>
       <div class="login-split">
         <div class="login-left">
-          <div class="login-logo-left">
-            <span class="login-brand">Rolês</span>
-          </div>
+          <div class="login-logo-left"><span class="login-brand">Rolês</span></div>
           <div class="login-tagline">Painel Admin</div>
           <div class="login-headline">Gestão completa<br />da plataforma.</div>
-          <div class="login-sub">
-            Acesso restrito a administradores autorizados do sistema Rolês.
-          </div>
+          <div class="login-sub">Acesso restrito a administradores autorizados do sistema Rolês.</div>
         </div>
         <div class="login-right">
           <div class="login-box">
-            <div class="login-logo">
-              <span class="login-brand-sm">Rolês</span>
-            </div>
+            <div class="login-logo"><span class="login-brand-sm">Rolês</span></div>
             <h2>Bem-vindo de volta</h2>
             <p>Acesso restrito a administradores.</p>
             <div class="fld">
-              <label>Email</label
-              ><input
-                type="email"
-                id="li-email"
-                placeholder="admin@email.com"
-                autocomplete="email"
-              />
+              <label>Email</label><input type="email" id="li-email" placeholder="admin@email.com" autocomplete="email" />
             </div>
             <div class="fld">
-              <label>Senha</label
-              ><input
-                type="password"
-                id="li-senha"
-                placeholder="••••••••"
-                autocomplete="current-password"
-              />
+              <label>Senha</label><input type="password" id="li-senha" placeholder="••••••••" autocomplete="current-password" />
             </div>
-            <button class="btn-enter" onclick="doLogin()">
-              Entrar no painel
-            </button>
-            <div class="login-err" id="li-err">
-              Credenciais inválidas ou sem permissão.
-            </div>
+            <button class="btn-enter" onclick="doLogin()">Entrar no painel</button>
+            <div class="login-err" id="li-err">Credenciais inválidas ou sem permissão.</div>
             <a class="login-back" href="/frontend/index.html"
-              ><svg
-                width="11"
-                height="11"
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-              >
-                <path d="M10 3L5 8l5 5" /></svg
-              >Voltar ao site</a
+              ><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5" /></svg>Voltar ao site</a
             >
           </div>
         </div>
       </div>
     </div>
 
+    <!-- MENU LATERAL -->
     <aside class="sb" id="sb" style="display: none">
       <div class="sb-logo">
         <span class="sb-logo-name">Rolês</span>
         <span class="sb-logo-tag">admin</span>
       </div>
-      <nav class="sb-nav">
-        <div class="sb-section">Geral</div>
-        <div class="sb-item on" onclick="go('dashboard', this)">
-          <svg
-            class="sb-ico"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.4"
-          >
-            <rect x="1" y="1" width="6" height="6" rx="1.5" />
-            <rect x="9" y="1" width="6" height="6" rx="1.5" />
-            <rect x="1" y="9" width="6" height="6" rx="1.5" />
-            <rect x="9" y="9" width="6" height="6" rx="1.5" />
-          </svg>
-          Dashboard
-        </div>
-        <div class="sb-section" style="margin-top: 6px">Gerenciar</div>
-        <div class="sb-item" onclick="go('usuarios', this)">
-          <svg
-            class="sb-ico"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.4"
-          >
-            <circle cx="8" cy="5" r="3" />
-            <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" />
-          </svg>
-          Usuários<span class="sb-badge" id="nb-u">—</span>
-        </div>
-        <div class="sb-item" onclick="go('estabelecimentos', this)">
-          <svg
-            class="sb-ico"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.4"
-          >
-            <path d="M2 6l6-4 6 4v8a1 1 0 01-1 1H3a1 1 0 01-1-1V6z" />
-            <path d="M6 15V9h4v6" />
-          </svg>
-          Estabelecimentos<span class="sb-badge" id="nb-e">—</span>
-        </div>
-        <div class="sb-item" onclick="go('eventos', this)">
-          <svg
-            class="sb-ico"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.4"
-          >
-            <rect x="1" y="3" width="14" height="12" rx="2" />
-            <path d="M5 1v4M11 1v4M1 7h14" />
-          </svg>
-          Eventos<span class="sb-badge" id="nb-ev">—</span>
-        </div>
-        <div class="sb-item" onclick="go('avaliacoes', this)">
-          <svg
-            class="sb-ico"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.4"
-          >
-            <path
-              d="M8 1l2 4.5h4.5l-3.6 2.6 1.4 4.4L8 10.1l-4.3 2.4 1.4-4.4L1.5 5.5H6z"
-            />
-          </svg>
-          Avaliações<span class="sb-badge" id="nb-av">—</span>
-        </div>
-        <div class="sb-item" onclick="go('ingressos', this)">
-          <svg
-            class="sb-ico"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.4"
-          >
-            <path
-              d="M1 5a1 1 0 011-1h12a1 1 0 011 1v1.5a1.5 1.5 0 000 3V11a1 1 0 01-1 1H2a1 1 0 01-1-1V9.5a1.5 1.5 0 000-3V5z"
-            />
-            <path d="M6 1v14" stroke-dasharray="2 2" />
-          </svg>
-          Ingressos<span class="sb-badge" id="nb-i">—</span>
-        </div>
-        <div class="sb-item" onclick="go('pedidos', this)">
-          <svg
-            class="sb-ico"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.4"
-          >
-            <path d="M2 3h2l1.2 6h6.8l1.5-4H5.5" />
-            <circle cx="6" cy="13" r="1" />
-            <circle cx="12" cy="13" r="1" />
-          </svg>
-          Pedidos
-        </div>
-        <div class="sb-item" onclick="go('mensagens', this)">
-          <svg
-            class="sb-ico"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.4"
-          >
-            <path
-              d="M14 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3l3 3 3-3h3a1 1 0 001-1V3a1 1 0 00-1-1z"
-            />
-          </svg>
-          Mensagens<span class="sb-badge novo" id="nb-msg">—</span>
-        </div>
-      </nav>
       <div class="sb-foot">
+        <button class="sb-theme" id="sb-theme" type="button" title="Alternar tema claro/escuro" aria-label="Alternar tema claro/escuro"></button>
         <div class="sb-user">
           <div class="sb-avatar" id="sb-av">—</div>
           <div style="min-width: 0; flex: 1">
             <div class="sb-uname" id="sb-name">—</div>
-            <div class="sb-urole">ADMIN</div>
+            <div class="sb-urole" id="sb-role">ADMIN</div>
           </div>
         </div>
-        <a class="sb-back" href="/frontend/index.html"
-          ><svg
-            width="11"
-            height="11"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-          >
-            <path d="M10 3L5 8l5 5" /></svg
-          >Voltar ao site</a
+        <a class="sb-back" href="/frontend/index.html" title="Voltar ao site"
+          ><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5" /></svg>Voltar ao site</a
         >
-        <button class="sb-logout" onclick="logout()">
-          <svg
-            width="11"
-            height="11"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-          >
-            <path
-              d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3M11 11l3-3-3-3M14 8H6"
-            />
-          </svg>
+        <button class="sb-logout" onclick="logout()" title="Sair da conta">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3M11 11l3-3-3-3M14 8H6" /></svg>
           Sair da conta
         </button>
       </div>
+      <nav class="sb-nav">
+        <div class="sb-section">Principal</div>
+        <div class="sb-item on" data-page="dashboard" onclick="go('dashboard', this)">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="6" height="6" rx="1.5" /><rect x="9" y="1" width="6" height="6" rx="1.5" /><rect x="1" y="9" width="6" height="6" rx="1.5" /><rect x="9" y="9" width="6" height="6" rx="1.5" /></svg>
+          Visão geral
+        </div>
+        <div class="sb-item" data-page="tarefas" onclick="go('tarefas', this)">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 4h10M3 8h10M3 12h6" /></svg>
+          Minhas tarefas<span class="sb-badge" id="nb-tk">—</span>
+        </div>
+        <div class="sb-item" data-page="fila" onclick="go('fila', this)">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6" /><path d="M8 4.5V8l2.2 1.5" /></svg>
+          Fila de aprovação<span class="sb-badge" id="nb-fila">—</span>
+        </div>
+
+        <div class="sb-section">Gestão</div>
+        <div class="sb-item" data-page="usuarios" data-mod="usuarios" onclick="go('usuarios', this)">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="5" r="3" /><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" /></svg>
+          Usuários<span class="sb-badge" id="nb-u">—</span>
+        </div>
+        <div class="sb-item" data-page="estabelecimentos" data-mod="estabelecimentos" onclick="go('estabelecimentos', this)">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6l6-4 6 4v8a1 1 0 01-1 1H3a1 1 0 01-1-1V6z" /><path d="M6 15V9h4v6" /></svg>
+          Locais<span class="sb-badge" id="nb-e">—</span>
+        </div>
+        <div class="sb-item" data-page="eventos" data-mod="eventos" onclick="go('eventos', this)">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="3" width="14" height="12" rx="2" /><path d="M5 1v4M11 1v4M1 7h14" /></svg>
+          Eventos<span class="sb-badge" id="nb-ev">—</span>
+        </div>
+        <div class="sb-item" data-page="avaliacoes" data-mod="avaliacoes" onclick="go('avaliacoes', this)">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1l2 4.5h4.5l-3.6 2.6 1.4 4.4L8 10.1l-4.3 2.4 1.4-4.4L1.5 5.5H6z" /></svg>
+          Avaliações<span class="sb-badge" id="nb-av">—</span>
+        </div>
+        <div class="sb-item" data-page="ingressos" data-mod="ingressos" onclick="go('ingressos', this)">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 5a1 1 0 011-1h12a1 1 0 011 1v1.5a1.5 1.5 0 000 3V11a1 1 0 01-1 1H2a1 1 0 01-1-1V9.5a1.5 1.5 0 000-3V5z" /><path d="M6 1v14" stroke-dasharray="2 2" /></svg>
+          Ingressos<span class="sb-badge" id="nb-i">—</span>
+        </div>
+        <div class="sb-item" data-page="pedidos" data-mod="pedidos" onclick="go('pedidos', this)">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 3h2l1.2 6h6.8l1.5-4H5.5" /><circle cx="6" cy="13" r="1" /><circle cx="12" cy="13" r="1" /></svg>
+          Pedidos
+        </div>
+        <div class="sb-item" data-page="mensagens" data-mod="mensagens" onclick="go('mensagens', this)">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M14 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3l3 3 3-3h3a1 1 0 001-1V3a1 1 0 00-1-1z" /></svg>
+          Mensagens<span class="sb-badge novo" id="nb-msg">—</span>
+        </div>
+
+        <div class="sb-section">Moderação</div>
+        <div class="sb-item" data-page="denuncias" onclick="go('denuncias', this)">
+  <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 14V2M3 3h9l-2 3 2 3H3" /></svg>
+  Denúncias<span class="sb-badge novo" id="nb-den">—</span>
+</div>
+
+        <div class="sb-section">Administração</div>
+        <div class="sb-item soon" title="Em breve">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6" cy="5" r="2.5" /><circle cx="11.5" cy="6" r="2" /><path d="M1.5 14c0-3 2-5 4.5-5s4.5 2 4.5 5M11 10c2 0 3.5 1.5 3.5 4" /></svg>
+          Equipe<span class="sb-soon">em breve</span>
+        </div>
+        <div class="sb-item soon" title="Em breve">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1l6 2v5c0 3.5-2.5 6-6 7-3.5-1-6-3.5-6-7V3z" /></svg>
+          Central Master<span class="sb-soon">em breve</span>
+        </div>
+        <div class="sb-item soon" title="Em breve">
+          <svg class="sb-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2h10v12H3zM6 6h4M6 9h4" /></svg>
+          Auditoria<span class="sb-soon">em breve</span>
+        </div>
+      </nav>
     </aside>
 
     <div class="main" id="main" style="display: none">
       <header class="topbar">
         <div class="tb-path">
-          <!-- Botão hamburguer (mobile) -->
-          <button
-            class="sb-toggle"
-            id="sb-toggle"
-            onclick="toggleSb()"
-            aria-label="Menu"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-            >
-              <path d="M1 3h14M1 8h14M1 13h14" />
-            </svg>
+          <button class="sb-toggle" id="sb-toggle" onclick="toggleSb()" aria-label="Menu">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h14M1 8h14M1 13h14" /></svg>
           </button>
-          <span class="tb-root">ROLÊS</span><span class="tb-sep">/</span>
-          <span class="tb-page" id="tb-title">Dashboard</span>
+          <span class="tb-root">Painel admin</span><span class="tb-sep">/</span>
+          <span class="tb-page" id="tb-title">Visão geral</span>
         </div>
         <div class="tb-right">
-          <div class="tb-status">
-            <div class="tb-dot"></div>
-            <span class="tb-status-txt">ONLINE</span>
-          </div>
-          <button class="tb-btn" onclick="reload()">
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-            >
-              <path d="M2 8a6 6 0 1010.5-4M2 4v4h4" />
-            </svg>
+          <div class="tb-status"><div class="tb-dot"></div><span class="tb-status-txt">ONLINE</span></div>
+          <button class="tb-btn" onclick="reload()" title="Recarregar" aria-label="Recarregar">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 1010.5-4M2 4v4h4" /></svg>
           </button>
         </div>
       </header>
       <div class="content">
-        <!-- DASHBOARD -->
+        <!-- VISÃO GERAL (Central de trabalho) -->
         <div class="page on" id="pg-dashboard">
           <div class="err-bar" id="err-dash"></div>
-          <div class="stats">
-            <div class="stat">
-              <div class="stat-row">
-                <span class="stat-lbl">Usuários</span>
-                <div class="stat-icon">
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                  >
-                    <circle cx="8" cy="5" r="3" />
-                    <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" />
-                  </svg>
-                </div>
-              </div>
-              <div class="stat-val" id="st-u">—</div>
-              <div class="stat-desc">cadastrados</div>
+
+          <div class="ct-top">
+            <div class="ct-hero">
+              <h2 id="ct-hello">Olá</h2>
+              <p id="ct-sub">Carregando suas tarefas…</p>
+              <button type="button" class="ct-hero-btn" onclick="goTo('tarefas')">Ver minhas tarefas</button>
             </div>
-            <div class="stat">
-              <div class="stat-row">
-                <span class="stat-lbl">Estabelecimentos</span>
-                <div class="stat-icon">
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                  >
-                    <path d="M2 6l6-4 6 4v8a1 1 0 01-1 1H3a1 1 0 01-1-1V6z" />
-                  </svg>
-                </div>
-              </div>
-              <div class="stat-val" id="st-e">—</div>
-              <div class="stat-desc">no sistema</div>
-            </div>
-            <div class="stat">
-              <div class="stat-row">
-                <span class="stat-lbl">Eventos</span>
-                <div class="stat-icon">
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                  >
-                    <rect x="1" y="3" width="14" height="12" rx="2" />
-                    <path d="M5 1v4M11 1v4M1 7h14" />
-                  </svg>
-                </div>
-              </div>
-              <div class="stat-val" id="st-ev">—</div>
-              <div class="stat-desc">agendados</div>
-            </div>
-            <div class="stat">
-              <div class="stat-row">
-                <span class="stat-lbl">Avaliações</span>
-                <div class="stat-icon">
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                  >
-                    <path
-                      d="M8 1l2 4.5h4.5l-3.6 2.6 1.4 4.4L8 10.1l-4.3 2.4 1.4-4.4L1.5 5.5H6z"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <div class="stat-val" id="st-av">—</div>
-              <div class="stat-desc">enviadas</div>
-            </div>
-            <div class="stat">
-              <div class="stat-row">
-                <span class="stat-lbl">Mensagens novas</span>
-                <div class="stat-icon">
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                  >
-                    <path
-                      d="M14 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3l3 3 3-3h3a1 1 0 001-1V3a1 1 0 00-1-1z"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <div class="stat-val" id="st-msg">—</div>
-              <div class="stat-desc">não lidas</div>
+            <div class="ct-ringcard">
+              <div class="ct-ring" id="ct-ring"><div id="ct-ring-pct">—</div></div>
+              <div><b>Taxa de aprovação</b><span id="ct-ring-sub">—</span></div>
             </div>
           </div>
-          <div class="dash-grid">
-            <div class="card">
-              <div class="card-head">
-                <div class="card-head-left">
-                  <span class="card-title">Últimos eventos</span
-                  ><span class="card-badge" id="dc-ev">—</span>
-                </div>
+
+          <div class="ct-kpis">
+            <button type="button" class="ct-kpi" onclick="goTo('fila')">
+              <span>Cadastros para aprovar</span><b id="ct-k1v">—</b><em id="ct-k1s">—</em>
+            </button>
+            <button type="button" class="ct-kpi" onclick="goTo('mensagens')">
+              <span>Mensagens sem resposta</span><b id="ct-k2v">—</b><em id="ct-k2s">—</em>
+            </button>
+            <button type="button" class="ct-kpi" onclick="goTo('usuarios')">
+              <span>Usuários sem verificar</span><b id="ct-k3v">—</b><em id="ct-k3s">—</em>
+            </button>
+            <button type="button" class="ct-kpi" onclick="goTo('eventos')">
+              <span>Eventos no ar</span><b id="ct-k4v">—</b><em id="ct-k4s">—</em>
+            </button>
+          </div>
+
+          <div class="ct-grid">
+            <div class="ct-card">
+              <div class="ct-card-hd">
+                <b>Minhas tarefas</b>
+                <a onclick="goTo('tarefas')">Ver todas</a>
               </div>
-              <div id="d-eventos">
-                <div class="loading">
-                  <div class="spin"></div>
-                  carregando...
-                </div>
-              </div>
+              <div id="ct-tasks"><div class="loading"><div class="spin"></div>carregando...</div></div>
             </div>
-            <div class="card">
-              <div class="card-head">
-                <div class="card-head-left">
-                  <span class="card-title">Últimas avaliações</span
-                  ><span class="card-badge" id="dc-av">—</span>
-                </div>
+            <div class="ct-side">
+              <div class="ct-card">
+                <div class="ct-card-hd"><b>Resumo do sistema</b></div>
+                <div id="ct-sum"></div>
               </div>
-              <div id="d-avals">
-                <div class="loading">
-                  <div class="spin"></div>
-                  carregando...
+              <div class="ct-card">
+                <div class="ct-card-hd"><b>Atalhos</b></div>
+                <div class="ct-links">
+                  <a onclick="goTo('fila')">Aprovar cadastros pendentes</a>
+                  <a onclick="goTo('mensagens')">Responder mensagens</a>
+                  <a onclick="goTo('eventos')">Ver eventos</a>
                 </div>
               </div>
             </div>
           </div>
-          <div class="dash-grid">
-            <div class="card">
-              <div class="card-head">
-                <div class="card-head-left">
-                  <span class="card-title">Últimas mensagens</span
-                  ><span class="card-badge" id="dc-msg">—</span>
-                </div>
-              </div>
-              <div id="d-msgs">
-                <div class="loading">
-                  <div class="spin"></div>
-                  carregando...
-                </div>
-              </div>
+        </div>
+
+        <!-- MINHAS TAREFAS -->
+        <div class="page" id="pg-tarefas">
+          <div class="ct-card">
+            <div class="tk-filters">
+              <button class="tk-chip on" data-f="todas" onclick="setTkFiltro(this)">Todas <i>0</i></button>
+              <button class="tk-chip" data-f="urgentes" onclick="setTkFiltro(this)">Urgentes <i>0</i></button>
+              <button class="tk-chip" data-f="hoje" onclick="setTkFiltro(this)">Hoje <i>0</i></button>
+              <button class="tk-chip" data-f="semana" onclick="setTkFiltro(this)">Semana <i>0</i></button>
+              <button class="tk-chip" data-f="cadastros" onclick="setTkFiltro(this)">Cadastros <i>0</i></button>
+              <button class="tk-chip" data-f="mensagens" onclick="setTkFiltro(this)">Mensagens <i>0</i></button>
             </div>
-            <div class="card">
-              <div class="card-head">
-                <span class="card-title">Acesso rápido</span>
-              </div>
-              <div class="qa-grid">
-                <button
-                  class="qa-btn"
-                  onclick="
-                    go('usuarios', document.querySelectorAll('.sb-item')[1])
-                  "
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                  >
-                    <circle cx="8" cy="5" r="3" />
-                    <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" /></svg
-                  >Usuários
-                </button>
-                <button
-                  class="qa-btn"
-                  onclick="
-                    go('eventos', document.querySelectorAll('.sb-item')[3])
-                  "
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                  >
-                    <rect x="1" y="3" width="14" height="12" rx="2" />
-                    <path d="M5 1v4M11 1v4M1 7h14" /></svg
-                  >Eventos
-                </button>
-                <button
-                  class="qa-btn"
-                  onclick="
-                    go(
-                      'estabelecimentos',
-                      document.querySelectorAll('.sb-item')[2],
-                    )
-                  "
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                  >
-                    <path
-                      d="M2 6l6-4 6 4v8a1 1 0 01-1 1H3a1 1 0 01-1-1V6z"
-                    /></svg
-                  >Estabelecimentos
-                </button>
-                <button
-                  class="qa-btn"
-                  onclick="
-                    go('mensagens', document.querySelectorAll('.sb-item')[6])
-                  "
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                  >
-                    <path
-                      d="M14 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3l3 3 3-3h3a1 1 0 001-1V3a1 1 0 00-1-1z"
-                    /></svg
-                  >Mensagens
-                </button>
-              </div>
-            </div>
+            <div id="tk-all"><div class="loading"><div class="spin"></div>carregando...</div></div>
+          </div>
+        </div>
+
+        <!-- FILA DE APROVAÇÃO -->
+        <div class="page" id="pg-fila">
+          <div class="ct-card">
+            <div class="ct-card-hd"><b>Cadastros esperando aprovação</b></div>
+            <div id="fq-all"><div class="loading"><div class="spin"></div>carregando...</div></div>
           </div>
         </div>
 
@@ -521,82 +257,34 @@
           <div class="err-bar" id="err-u"></div>
           <div class="card">
             <div class="card-head">
-              <div class="card-head-left">
-                <span class="card-title">Usuários</span
-                ><span class="card-badge" id="c-u">—</span>
-              </div>
+              <div class="card-head-left"><span class="card-title">Usuários</span><span class="card-badge" id="c-u">—</span></div>
             </div>
             <div class="tbar">
               <div class="srch">
-                <svg
-                  class="srch-ico"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                >
-                  <circle cx="6.5" cy="6.5" r="4.5" />
-                  <path d="M10 10l4 4" /></svg
-                ><input
-                  class="srch-inp"
-                  type="text"
-                  placeholder="Buscar por nome, email, ID…"
-                  id="s-u"
-                  oninput="filter('u')"
-                />
+                <svg class="srch-ico" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5" /><path d="M10 10l4 4" /></svg
+                ><input class="srch-inp" type="text" placeholder="Buscar por nome, email, ID…" id="s-u" oninput="filter('u')" />
               </div>
               <span class="filter-ct" id="fc-u"></span>
             </div>
-            <div id="tb-u">
-              <div class="loading">
-                <div class="spin"></div>
-                carregando...
-              </div>
-            </div>
+            <div id="tb-u"><div class="loading"><div class="spin"></div>carregando...</div></div>
           </div>
         </div>
 
-        <!-- ESTABELECIMENTOS -->
+        <!-- LOCAIS -->
         <div class="page" id="pg-estabelecimentos">
           <div class="err-bar" id="err-e"></div>
           <div class="card">
             <div class="card-head">
-              <div class="card-head-left">
-                <span class="card-title">Estabelecimentos</span
-                ><span class="card-badge" id="c-e">—</span>
-              </div>
+              <div class="card-head-left"><span class="card-title">Locais</span><span class="card-badge" id="c-e">—</span></div>
             </div>
             <div class="tbar">
               <div class="srch">
-                <svg
-                  class="srch-ico"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                >
-                  <circle cx="6.5" cy="6.5" r="4.5" />
-                  <path d="M10 10l4 4" /></svg
-                ><input
-                  class="srch-inp"
-                  type="text"
-                  placeholder="Buscar por nome, tipo, cidade…"
-                  id="s-e"
-                  oninput="filter('e')"
-                />
+                <svg class="srch-ico" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5" /><path d="M10 10l4 4" /></svg
+                ><input class="srch-inp" type="text" placeholder="Buscar por nome, tipo, cidade…" id="s-e" oninput="filter('e')" />
               </div>
               <span class="filter-ct" id="fc-e"></span>
             </div>
-            <div id="tb-e">
-              <div class="loading">
-                <div class="spin"></div>
-                carregando...
-              </div>
-            </div>
+            <div id="tb-e"><div class="loading"><div class="spin"></div>carregando...</div></div>
           </div>
         </div>
 
@@ -605,61 +293,26 @@
           <div class="err-bar" id="err-ev"></div>
           <div class="card">
             <div class="card-head">
-              <div class="card-head-left">
-                <span class="card-title">Eventos</span
-                ><span class="card-badge" id="c-ev">—</span>
-              </div>
+              <div class="card-head-left"><span class="card-title">Eventos</span><span class="card-badge" id="c-ev">—</span></div>
             </div>
             <div class="tbar">
               <div class="srch">
-                <svg
-                  class="srch-ico"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                >
-                  <circle cx="6.5" cy="6.5" r="4.5" />
-                  <path d="M10 10l4 4" /></svg
-                ><input
-                  class="srch-inp"
-                  type="text"
-                  placeholder="Buscar por nome, local, data…"
-                  id="s-ev"
-                  oninput="filter('ev')"
-                />
+                <svg class="srch-ico" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5" /><path d="M10 10l4 4" /></svg
+                ><input class="srch-inp" type="text" placeholder="Buscar por nome, local, data…" id="s-ev" oninput="filter('ev')" />
               </div>
               <span class="filter-ct" id="fc-ev"></span>
             </div>
-            <div id="tb-ev">
-              <div class="loading">
-                <div class="spin"></div>
-                carregando...
-              </div>
-            </div>
+            <div id="tb-ev"><div class="loading"><div class="spin"></div>carregando...</div></div>
           </div>
         </div>
 
+        <!-- PEDIDOS -->
         <div class="page" id="pg-pedidos">
           <div class="card">
-            <div class="card-head">
-              <div class="card-title">Pedidos</div>
-            </div>
-
+            <div class="card-head"><div class="card-title">Pedidos</div></div>
             <div id="tb-pedidos">
               <table>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Usuário</th>
-                    <th>Evento</th>
-                    <th>Valor</th>
-                    <th>Data</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>ID</th><th>Usuário</th><th>Evento</th><th>Valor</th><th>Data</th><th>Ações</th></tr></thead>
                 <tbody id="pedidos-body"></tbody>
               </table>
             </div>
@@ -671,40 +324,16 @@
           <div class="err-bar" id="err-av"></div>
           <div class="card">
             <div class="card-head">
-              <div class="card-head-left">
-                <span class="card-title">Avaliações</span
-                ><span class="card-badge" id="c-av">—</span>
-              </div>
+              <div class="card-head-left"><span class="card-title">Avaliações</span><span class="card-badge" id="c-av">—</span></div>
             </div>
             <div class="tbar">
               <div class="srch">
-                <svg
-                  class="srch-ico"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                >
-                  <circle cx="6.5" cy="6.5" r="4.5" />
-                  <path d="M10 10l4 4" /></svg
-                ><input
-                  class="srch-inp"
-                  type="text"
-                  placeholder="Buscar por ID, estabelecimento, usuário…"
-                  id="s-av"
-                  oninput="filter('av')"
-                />
+                <svg class="srch-ico" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5" /><path d="M10 10l4 4" /></svg
+                ><input class="srch-inp" type="text" placeholder="Buscar por ID, estabelecimento, usuário…" id="s-av" oninput="filter('av')" />
               </div>
               <span class="filter-ct" id="fc-av"></span>
             </div>
-            <div id="tb-av">
-              <div class="loading">
-                <div class="spin"></div>
-                carregando...
-              </div>
-            </div>
+            <div id="tb-av"><div class="loading"><div class="spin"></div>carregando...</div></div>
           </div>
         </div>
 
@@ -713,40 +342,16 @@
           <div class="err-bar" id="err-i"></div>
           <div class="card">
             <div class="card-head">
-              <div class="card-head-left">
-                <span class="card-title">Ingressos</span
-                ><span class="card-badge" id="c-i">—</span>
-              </div>
+              <div class="card-head-left"><span class="card-title">Ingressos</span><span class="card-badge" id="c-i">—</span></div>
             </div>
             <div class="tbar">
               <div class="srch">
-                <svg
-                  class="srch-ico"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                >
-                  <circle cx="6.5" cy="6.5" r="4.5" />
-                  <path d="M10 10l4 4" /></svg
-                ><input
-                  class="srch-inp"
-                  type="text"
-                  placeholder="Buscar por código, evento, usuário…"
-                  id="s-i"
-                  oninput="filter('i')"
-                />
+                <svg class="srch-ico" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5" /><path d="M10 10l4 4" /></svg
+                ><input class="srch-inp" type="text" placeholder="Buscar por código, evento, usuário…" id="s-i" oninput="filter('i')" />
               </div>
               <span class="filter-ct" id="fc-i"></span>
             </div>
-            <div id="tb-i">
-              <div class="loading">
-                <div class="spin"></div>
-                carregando...
-              </div>
-            </div>
+            <div id="tb-i"><div class="loading"><div class="spin"></div>carregando...</div></div>
           </div>
         </div>
 
@@ -755,342 +360,133 @@
           <div class="err-bar" id="err-msg"></div>
           <div class="msg-page-header">
             <h2>Mensagens de Contato</h2>
-            <p>
-              Leia, responda e gerencie todas as mensagens recebidas pelo
-              formulário
-            </p>
+            <p>Leia, responda e gerencie todas as mensagens recebidas pelo formulário</p>
           </div>
           <div class="msg-stats">
-            <div class="msg-stat">
-              <div class="msg-stat-lbl">
-                <span
-                  class="msg-stat-lbl-dot"
-                  style="background: var(--text-3)"
-                ></span
-                >Total
-              </div>
-              <div class="msg-stat-val" id="mst-total">—</div>
-            </div>
-            <div class="msg-stat">
-              <div class="msg-stat-lbl">
-                <span
-                  class="msg-stat-lbl-dot"
-                  style="background: var(--accent)"
-                ></span
-                >Novas
-              </div>
-              <div
-                class="msg-stat-val"
-                id="mst-novas"
-                style="color: var(--accent)"
-              >
-                —
-              </div>
-            </div>
-            <div class="msg-stat">
-              <div class="msg-stat-lbl">
-                <span
-                  class="msg-stat-lbl-dot"
-                  style="background: var(--amber)"
-                ></span
-                >Lidas
-              </div>
-              <div
-                class="msg-stat-val"
-                id="mst-lidas"
-                style="color: var(--amber)"
-              >
-                —
-              </div>
-            </div>
-            <div class="msg-stat">
-              <div class="msg-stat-lbl">
-                <span
-                  class="msg-stat-lbl-dot"
-                  style="background: var(--green)"
-                ></span
-                >Respondidas
-              </div>
-              <div
-                class="msg-stat-val"
-                id="mst-resp"
-                style="color: var(--green)"
-              >
-                —
-              </div>
-            </div>
+            <div class="msg-stat"><div class="msg-stat-lbl"><span class="msg-stat-lbl-dot" style="background: var(--text-3)"></span>Total</div><div class="msg-stat-val" id="mst-total">—</div></div>
+            <div class="msg-stat"><div class="msg-stat-lbl"><span class="msg-stat-lbl-dot" style="background: var(--accent)"></span>Novas</div><div class="msg-stat-val" id="mst-novas" style="color: var(--accent)">—</div></div>
+            <div class="msg-stat"><div class="msg-stat-lbl"><span class="msg-stat-lbl-dot" style="background: var(--amber)"></span>Lidas</div><div class="msg-stat-val" id="mst-lidas" style="color: var(--amber)">—</div></div>
+            <div class="msg-stat"><div class="msg-stat-lbl"><span class="msg-stat-lbl-dot" style="background: var(--green)"></span>Respondidas</div><div class="msg-stat-val" id="mst-resp" style="color: var(--green)">—</div></div>
           </div>
           <div class="msg-toolbar">
             <div class="msg-srch">
-              <svg
-                class="msg-srch-ico"
-                width="12"
-                height="12"
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-              >
-                <circle cx="6.5" cy="6.5" r="4.5" />
-                <path d="M10 10l4 4" />
-              </svg>
-              <input
-                class="msg-srch-inp"
-                type="text"
-                placeholder="Buscar por nome, e-mail, assunto…"
-                id="s-msg"
-                oninput="renderMsg()"
-              />
+              <svg class="msg-srch-ico" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5" /><path d="M10 10l4 4" /></svg>
+              <input class="msg-srch-inp" type="text" placeholder="Buscar por nome, e-mail, assunto…" id="s-msg" oninput="renderMsg()" />
             </div>
             <div class="msg-filters">
-              <button
-                class="msg-filter-btn on"
-                data-status="all"
-                onclick="setMsgFilter(this)"
-              >
-                Todas
-              </button>
-              <button
-                class="msg-filter-btn"
-                data-status="novo"
-                onclick="setMsgFilter(this)"
-              >
-                <span class="fdot" style="background: var(--accent)"></span
-                >Novas
-              </button>
-              <button
-                class="msg-filter-btn"
-                data-status="lido"
-                onclick="setMsgFilter(this)"
-              >
-                <span class="fdot" style="background: var(--amber)"></span>Lidas
-              </button>
-              <button
-                class="msg-filter-btn"
-                data-status="respondido"
-                onclick="setMsgFilter(this)"
-              >
-                <span class="fdot" style="background: var(--green)"></span
-                >Respondidas
-              </button>
+              <button class="msg-filter-btn on" data-status="all" onclick="setMsgFilter(this)">Todas</button>
+              <button class="msg-filter-btn" data-status="novo" onclick="setMsgFilter(this)"><span class="fdot" style="background: var(--accent)"></span>Novas</button>
+              <button class="msg-filter-btn" data-status="lido" onclick="setMsgFilter(this)"><span class="fdot" style="background: var(--amber)"></span>Lidas</button>
+              <button class="msg-filter-btn" data-status="respondido" onclick="setMsgFilter(this)"><span class="fdot" style="background: var(--green)"></span>Respondidas</button>
             </div>
             <span class="filter-ct" id="fc-msg"></span>
           </div>
-          <div class="msg-list" id="tb-msg">
-            <div class="loading">
-              <div class="spin"></div>
-              carregando...
-            </div>
-          </div>
+          <div class="msg-list" id="tb-msg"><div class="loading"><div class="spin"></div>carregando...</div></div>
         </div>
       </div>
     </div>
 
-    <!-- MODAIS CRUD -->
+    <!-- MODAIS -->
     <div class="modal-wrap" id="mw-usuario">
       <div class="modal">
-        <div class="modal-hd">
-          <h2>Editar Usuário</h2>
-          <button class="modal-x" onclick="cm('usuario')">✕</button>
-        </div>
+        <div class="modal-hd"><h2>Editar Usuário</h2><button class="modal-x" onclick="cm('usuario')">✕</button></div>
         <div class="modal-bd">
           <input type="hidden" id="mu-id" />
           <div class="mr">
-            <div class="mf">
-              <label>Nome completo</label
-              ><input type="text" id="mu-nome" placeholder="João Silva" />
-            </div>
-            <div class="mf">
-              <label>Email</label
-              ><input type="email" id="mu-email" placeholder="joao@email.com" />
-            </div>
+            <div class="mf"><label>Nome completo</label><input type="text" id="mu-nome" placeholder="João Silva" /></div>
+            <div class="mf"><label>Email</label><input type="email" id="mu-email" placeholder="joao@email.com" /></div>
           </div>
           <div class="mr">
-            <div class="mf">
-              <label>Perfil</label
-              ><select id="mu-role">
-                <option value="user">user</option>
-                <option value="admin">admin</option>
-              </select>
-            </div>
-            <div class="mf">
-              <label>Verificado</label
-              ><select id="mu-ver">
-                <option value="true">Sim</option>
-                <option value="false">Não</option>
-              </select>
-            </div>
+            <div class="mf"><label>Perfil</label><select id="mu-role"><option value="user">user</option><option value="admin">admin</option></select></div>
+            <div class="mf"><label>Verificado</label><select id="mu-ver"><option value="true">Sim</option><option value="false">Não</option></select></div>
           </div>
         </div>
-        <div class="modal-ft">
-          <button class="btn-cancel" onclick="cm('usuario')">Cancelar</button
-          ><button class="btn-save" onclick="saveUser()">Salvar</button>
-        </div>
+        <div class="modal-ft"><button class="btn-cancel" onclick="cm('usuario')">Cancelar</button><button class="btn-save" onclick="saveUser()">Salvar</button></div>
       </div>
     </div>
 
     <div class="modal-wrap" id="mw-estab">
       <div class="modal">
-        <div class="modal-hd">
-          <h2>Editar Estabelecimento</h2>
-          <button class="modal-x" onclick="cm('estab')">✕</button>
-        </div>
+        <div class="modal-hd"><h2>Editar Local</h2><button class="modal-x" onclick="cm('estab')">✕</button></div>
         <div class="modal-bd">
           <input type="hidden" id="me-id" />
-          <div class="mf">
-            <label>Nome</label><input type="text" id="me-nome" />
-          </div>
+          <div class="mf"><label>Nome</label><input type="text" id="me-nome" /></div>
           <div class="mr">
-            <div class="mf">
-              <label>Tipo</label
-              ><input
-                type="text"
-                id="me-tipo"
-                placeholder="Bar, Restaurante…"
-              />
-            </div>
-            <div class="mf">
-              <label>Cidade</label><input type="text" id="me-cidade" />
-            </div>
+            <div class="mf"><label>Tipo</label><input type="text" id="me-tipo" placeholder="Bar, Restaurante…" /></div>
+            <div class="mf"><label>Cidade</label><input type="text" id="me-cidade" /></div>
           </div>
-          <div class="mf">
-            <label>Endereço</label><input type="text" id="me-end" />
-          </div>
-          <div class="mf">
-            <label>Descrição</label><textarea id="me-desc"></textarea>
-          </div>
+          <div class="mf"><label>Endereço</label><input type="text" id="me-end" /></div>
+          <div class="mf"><label>Descrição</label><textarea id="me-desc"></textarea></div>
         </div>
-        <div class="modal-ft">
-          <button class="btn-cancel" onclick="cm('estab')">Cancelar</button
-          ><button class="btn-save" onclick="saveEstab()">Salvar</button>
-        </div>
+        <div class="modal-ft"><button class="btn-cancel" onclick="cm('estab')">Cancelar</button><button class="btn-save" onclick="saveEstab()">Salvar</button></div>
       </div>
     </div>
 
     <div class="modal-wrap" id="mw-evento">
       <div class="modal">
-        <div class="modal-hd">
-          <h2>Editar Evento</h2>
-          <button class="modal-x" onclick="cm('evento')">✕</button>
-        </div>
+        <div class="modal-hd"><h2>Editar Evento</h2><button class="modal-x" onclick="cm('evento')">✕</button></div>
         <div class="modal-bd">
           <input type="hidden" id="mev-id" />
           <div class="ms-sec">
             <div class="ms-lbl">Informações básicas</div>
-            <div class="mf">
-              <label>Nome</label><input type="text" id="mev-nome" />
-            </div>
+            <div class="mf"><label>Nome</label><input type="text" id="mev-nome" /></div>
             <div class="mr">
-              <div class="mf">
-                <label>Assunto</label><input type="text" id="mev-assunto" />
-              </div>
-              <div class="mf">
-                <label>Categoria</label><input type="text" id="mev-cat" />
-              </div>
+              <div class="mf"><label>Assunto</label><input type="text" id="mev-assunto" /></div>
+              <div class="mf"><label>Categoria</label><input type="text" id="mev-cat" /></div>
             </div>
-            <div class="mf">
-              <label>Descrição</label><textarea id="mev-desc"></textarea>
-            </div>
-            <div class="mf">
-              <label>Produtor</label><input type="text" id="mev-prod" />
-            </div>
+            <div class="mf"><label>Descrição</label><textarea id="mev-desc"></textarea></div>
+            <div class="mf"><label>Produtor</label><input type="text" id="mev-prod" /></div>
           </div>
           <div class="ms-sec">
             <div class="ms-lbl">Data e horário</div>
             <div class="mr">
-              <div class="mf">
-                <label>Início</label><input type="date" id="mev-di" />
-              </div>
-              <div class="mf">
-                <label>Hora início</label><input type="time" id="mev-hi" />
-              </div>
+              <div class="mf"><label>Início</label><input type="date" id="mev-di" /></div>
+              <div class="mf"><label>Hora início</label><input type="time" id="mev-hi" /></div>
             </div>
             <div class="mr">
-              <div class="mf">
-                <label>Fim</label><input type="date" id="mev-df" />
-              </div>
-              <div class="mf">
-                <label>Hora fim</label><input type="time" id="mev-hf" />
-              </div>
+              <div class="mf"><label>Fim</label><input type="date" id="mev-df" /></div>
+              <div class="mf"><label>Hora fim</label><input type="time" id="mev-hf" /></div>
             </div>
           </div>
           <div class="ms-sec">
             <div class="ms-lbl">Local</div>
-            <div class="mf">
-              <label>Nome do local</label><input type="text" id="mev-local" />
+            <div class="mf"><label>Nome do local</label><input type="text" id="mev-local" /></div>
+            <div class="mr">
+              <div class="mf"><label>Cidade</label><input type="text" id="mev-cid" /></div>
+              <div class="mf"><label>Estado</label><input type="text" id="mev-est" /></div>
             </div>
             <div class="mr">
-              <div class="mf">
-                <label>Cidade</label><input type="text" id="mev-cid" />
-              </div>
-              <div class="mf">
-                <label>Estado</label><input type="text" id="mev-est" />
-              </div>
-            </div>
-            <div class="mr">
-              <div class="mf">
-                <label>CEP</label><input type="text" id="mev-cep" />
-              </div>
-              <div class="mf">
-                <label>Rua</label><input type="text" id="mev-rua" />
-              </div>
+              <div class="mf"><label>CEP</label><input type="text" id="mev-cep" /></div>
+              <div class="mf"><label>Rua</label><input type="text" id="mev-rua" /></div>
             </div>
           </div>
         </div>
-        <div class="modal-ft">
-          <button class="btn-cancel" onclick="cm('evento')">Cancelar</button
-          ><button class="btn-save" onclick="saveEvento()">Salvar</button>
-        </div>
+        <div class="modal-ft"><button class="btn-cancel" onclick="cm('evento')">Cancelar</button><button class="btn-save" onclick="saveEvento()">Salvar</button></div>
       </div>
     </div>
 
     <div class="modal-wrap" id="mw-ingresso">
       <div class="modal">
-        <div class="modal-hd">
-          <h2>Editar Ingresso</h2>
-          <button class="modal-x" onclick="cm('ingresso')">✕</button>
-        </div>
+        <div class="modal-hd"><h2>Editar Ingresso</h2><button class="modal-x" onclick="cm('ingresso')">✕</button></div>
         <div class="modal-bd">
           <input type="hidden" id="mi-id" />
-          <div class="mf">
-            <label>Título</label
-            ><input type="text" id="mi-titulo" placeholder="Ex: Ingresso VIP" />
-          </div>
+          <div class="mf"><label>Título</label><input type="text" id="mi-titulo" placeholder="Ex: Ingresso VIP" /></div>
           <div class="mr">
-            <div class="mf">
-              <label>Tipo</label
-              ><select id="mi-tipo">
-                <option value="gratuito">Gratuito</option>
-                <option value="pago">Pago</option>
-              </select>
-            </div>
-            <div class="mf">
-              <label>Valor (R$)</label
-              ><input type="number" id="mi-val" min="0" step="0.01" />
-            </div>
+            <div class="mf"><label>Tipo</label><select id="mi-tipo"><option value="gratuito">Gratuito</option><option value="pago">Pago</option></select></div>
+            <div class="mf"><label>Valor (R$)</label><input type="number" id="mi-val" min="0" step="0.01" /></div>
           </div>
-          <div class="mf">
-            <label>Quantidade total</label
-            ><input type="number" id="mi-qtd" min="1" />
-          </div>
+          <div class="mf"><label>Quantidade total</label><input type="number" id="mi-qtd" min="1" /></div>
         </div>
-        <div class="modal-ft">
-          <button class="btn-cancel" onclick="cm('ingresso')">Cancelar</button
-          ><button class="btn-save" onclick="saveIngresso()">Salvar</button>
-        </div>
+        <div class="modal-ft"><button class="btn-cancel" onclick="cm('ingresso')">Cancelar</button><button class="btn-save" onclick="saveIngresso()">Salvar</button></div>
       </div>
     </div>
 
-    <!-- MODAL MENSAGEM -->
     <div class="modal-wrap" id="mw-mensagem">
       <div class="mmsg-modal">
         <div class="mmsg-hd">
           <div class="mmsg-hd-left">
             <div class="mmsg-hd-avatar msg-av-0" id="mm-hd-avatar">—</div>
-            <div>
-              <h2 id="mm-titulo">Mensagem</h2>
-              <div class="mmsg-hd-sub" id="mm-hd-sub">—</div>
-            </div>
+            <div><h2 id="mm-titulo">Mensagem</h2><div class="mmsg-hd-sub" id="mm-hd-sub">—</div></div>
           </div>
           <button class="modal-x" onclick="cm('mensagem')">✕</button>
         </div>
@@ -1104,17 +500,7 @@
         <div class="mmsg-ft">
           <button class="btn-cancel" onclick="cm('mensagem')">Fechar</button>
           <button class="btn-save" id="mm-send-btn" onclick="enviarResposta()">
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.4"
-              style="margin-right: 4px"
-            >
-              <path d="M14 1L1 6l5 3 2 5 6-13z" />
-            </svg>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="margin-right: 4px"><path d="M14 1L1 6l5 3 2 5 6-13z" /></svg>
             Enviar resposta
           </button>
         </div>
@@ -1126,6 +512,26 @@
       <span id="toast-msg"></span>
     </div>
 
+    <!-- Tudo em um único arquivo -->
     <script src="../admin/admin.js"></script>
+    <script>
+      // Botão de tema claro/escuro (lembra a escolha)
+      (function () {
+        var SUN = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3" /><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M13 3l-1 1M4 12l-1 1" /></svg>';
+        var MOON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 016.5 2.5a5.5 5.5 0 107 7z" /></svg>';
+        var btn = document.getElementById("sb-theme");
+        var root = document.documentElement;
+        function aplicar(t) {
+          root.dataset.theme = t;
+          btn.innerHTML = t === "dark" ? SUN : MOON;
+        }
+        aplicar(root.dataset.theme === "dark" ? "dark" : "light");
+        btn.addEventListener("click", function () {
+          var t = root.dataset.theme === "dark" ? "light" : "dark";
+          aplicar(t);
+          try { localStorage.setItem("admin_theme", t); } catch (e) {}
+        });
+      })();
+    </script>
   </body>
 </html>

@@ -7,7 +7,7 @@
   margin: 24px auto 0;
   padding: 18px 22px 16px;
   box-sizing: border-box;
-  background: #f6f1ff;
+  background: var(--bg-secundario);
   border: 1px solid #e4dcf7;
   border-radius: 16px;
   --lotacao-cor: #6c1dce;

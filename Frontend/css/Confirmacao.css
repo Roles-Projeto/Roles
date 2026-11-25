@@ -43,7 +43,7 @@ body {
     flex-direction: column;
     min-height: 100vh;
     font-size: 13px;
-    color: #333;
+    color: var(--texto);
 }
 
 main {
@@ -69,7 +69,7 @@ main {
     padding: 8px 18px;
     border-radius: 99px;
     border: 1.5px solid var(--gray-200);
-    background: white;
+    background: var(--card);
     margin-bottom: 16px;
     transition: background-color 0.2s;
 }
@@ -102,7 +102,7 @@ main {
 
 .estado-erro-icon {
     width: 56px; height: 56px;
-    background: #fef2f2;
+    background: var(--bg-secundario);
     color: #dc2626;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -146,7 +146,7 @@ main {
    Cards genéricos + animação de entrada
 ============================================ */
 .card, .ticket, .clima-card, .confirmacao-header {
-    background-color: white;
+    background-color: var(--card);
     border-radius: var(--card-radius);
     box-shadow: 0 2px 12px rgba(124,58,237,0.07);
     opacity: 0;
@@ -208,7 +208,7 @@ main {
 
 .header-text { flex: 1; min-width: 200px; }
 .confirmacao-header h1 { font-size: 18px; color: var(--gray-900); margin: 0 0 2px; }
-.confirmacao-header .subtitle { color: #777; font-size: 13px; margin: 0; }
+.confirmacao-header .subtitle { color: var(--texto-suave); font-size: 13px; margin: 0; }
 
 .order-id {
     font-weight: 600;
@@ -263,7 +263,7 @@ main {
 .pendente-code-row code {
     flex: 1;
     min-width: 160px;
-    background: white;
+    background: var(--card);
     border: 1px solid var(--amber-border);
     border-radius: 8px;
     padding: 10px 12px;
@@ -344,14 +344,14 @@ main {
 .qr-img {
     width: 96px; height: 96px;
     border-radius: 6px;
-    background: white;
+    background: var(--card);
     border: 1px solid var(--p100);
     object-fit: contain;
 }
 .qr-placeholder {
     display: none;
     width: 96px; height: 96px;
-    background-color: white;
+    background-color: var(--card);
     border-radius: 6px;
     align-items: center;
     justify-content: center;
@@ -383,7 +383,7 @@ main {
 
 .event-info { flex-grow: 1; min-width: 0; }
 .event-info h4 { font-size: 16px; font-weight: 700; color: var(--gray-900); margin: 0 0 8px 0; }
-.event-meta p { font-size: 13px; color: #666; margin: 5px 0; }
+.event-meta p { font-size: 13px; color: var(--texto-suave); margin: 5px 0; }
 .event-meta i { width: 18px; color: var(--p600); }
 
 .benefits-list {
@@ -391,7 +391,7 @@ main {
     padding-left: 14px;
     margin: 14px 0 0 0;
     font-size: 12px;
-    color: #555;
+    color: var(--texto-medio);
     border-left: 3px solid var(--p100);
 }
 .benefits-list li { margin-bottom: 5px; }
@@ -415,7 +415,7 @@ main {
 .clima-icon {
     width: 42px; height: 42px;
     border-radius: 50%;
-    background: white;
+    background: var(--card);
     color: var(--sky);
     display: flex; align-items: center; justify-content: center;
     font-size: 18px;
@@ -434,7 +434,7 @@ main {
     justify-content: space-between;
     font-size: 13px;
     padding: 4px 0;
-    color: #555;
+    color: var(--texto-medio);
 }
 .price { font-variant-numeric: tabular-nums; }
 
@@ -448,7 +448,7 @@ main {
 }
 .total-row .price { color: var(--p600); }
 
-.pagamento-label { font-size: 12px; color: #999; margin-bottom: 18px; }
+.pagamento-label { font-size: 12px; color: var(--texto-suave); margin-bottom: 18px; }
 
 .email-notice {
     display: flex;
@@ -488,7 +488,7 @@ main {
 .actions-buttons.stacked .btn-action,
 .actions-buttons.stacked .btn-primary { width: 100%; }
 
-.btn-action { background-color: white; color: var(--gray-700); border-color: var(--gray-200); }
+.btn-action { background-color: var(--card); color: var(--gray-700); border-color: var(--gray-200); }
 .btn-action:hover { background-color: var(--gray-100); }
 
 .btn-action.is-disabled,
@@ -497,7 +497,7 @@ main {
     cursor: not-allowed;
     box-shadow: none;
 }
-.btn-action.is-disabled:hover { background-color: white; }
+.btn-action.is-disabled:hover { background-color: var(--card); }
 .btn-primary.is-disabled:hover { transform: none; box-shadow: none; }
 
 .btn-primary {
@@ -524,7 +524,7 @@ main {
 }
 .acoes-links a:hover { color: var(--p600); text-decoration: underline; }
 
-.important-info-list { list-style: none; padding: 0; font-size: 13px; color: #555; }
+.important-info-list { list-style: none; padding: 0; font-size: 13px; color: var(--texto-medio); }
 .important-info-list li { margin-bottom: 8px; padding-left: 18px; position: relative; }
 .important-info-list li::before {
     content: "•";

@@ -171,6 +171,15 @@ async function detalheEvento(req, res) {
 //  7. O uso é gravado em beneficios_usados na MESMA transação do pedido.
 //  8. Se duas compras tentarem usar o benefício ao mesmo tempo, o banco recusa
 //     a segunda (erro 23505) e ela volta como 409, sem pedido pela metade.
+// POST /ingressos/comprar  (exige verificarToken na rota)
+//
+//  - O usuário vem SEMPRE do token (req.usuario). O usuario_id do body é ignorado.
+//  - Cortesia: quando quem compra é o dono do evento.
+//  - quantidade validada (inteiro >= 1)
+//  - ingresso numerado exige assento_ids (mesma quantidade) e vende os assentos
+//    RESERVADOS por quem compra, na mesma transação do pedido
+//  - erros com status (400/409) lançados dentro da transação viram resposta HTTP
+//  - evento que ainda não foi aprovado por um admin não pode ter ingresso vendido
 // ====================================================================
 async function comprarIngresso(req, res) {
     const { evento_id, itens, forma_pagamento } = req.body;
@@ -179,7 +188,11 @@ async function comprarIngresso(req, res) {
     // POST /ingressos/comprar precisa ter o verificarToken).
     const usuario_id = req.usuario?.id ?? req.body.usuario_id;
 
-    if (!usuario_id || !evento_id || !itens?.length) {
+
+    if (!usuario_id) {
+        return res.status(401).json({ erro: "Sessão inválida. Entre novamente." });
+    }
+    if (!evento_id || !itens?.length) {
         return res.status(400).json({ erro: "Dados incompletos." });
     }
 
@@ -193,10 +206,13 @@ async function comprarIngresso(req, res) {
             return res.status(403).json({ erro: "Este evento ainda não foi aprovado para vendas." });
         }
 
+
         // Dono do evento comprando o próprio ingresso paga como qualquer cliente
         // (com taxa da plataforma). Para voltar a gerar cortesia automática para o
         // dono, troque DONO_GERA_CORTESIA para true no topo do arquivo.
         const ehCortesia = DONO_GERA_CORTESIA && String(evento.usuario_id) === String(usuario_id);
+
+
 
         let valor_total = 0;
         const detalhes  = [];
@@ -508,10 +524,16 @@ async function validarQRCode(req, res) {
 
 // ====================================================
 // DETALHE DO INGRESSO
+// Com verificarToken na rota, o dono vem do token. Sem ele (rota ainda aberta),
+// usa o usuario_id da query como antes, para o site não quebrar durante a migração.
 // ====================================================
 async function detalheIngresso(req, res) {
-    const { id }         = req.params;
-    const { usuario_id } = req.query;
+    const { id } = req.params;
+    const usuario_id = req.usuario?.id ?? req.query.usuario_id;
+
+    if (!usuario_id) {
+        return res.status(400).json({ erro: "usuario_id não informado." });
+    }
 
     try {
         const rows = await db.query(`

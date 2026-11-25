@@ -1,3 +1,11 @@
+// Carrega o tema claro/escuro em todas as páginas que usam o header
+(function () {
+    if (window.__rolesTemaIniciado) return;
+    const s = document.createElement('script');
+    s.src = '/frontend/js/tema.js';
+    document.head.appendChild(s);
+})();
+
 document.addEventListener("DOMContentLoaded", () => {
     fetch("/frontend/header/header.html")
         .then(response => response.text())
@@ -39,40 +47,80 @@ function initHeader() {
     // ----------------------------------------------------------
     // BOTÃO PAINEL ADMIN
     // ----------------------------------------------------------
-    function injetarBotaoAdmin() {
-        let role = localStorage.getItem('userRole');
-        if (!role) {
-            try {
-                const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
-                if (token) {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    role = payload.role;
-                }
-            } catch (e) { }
+   
+function obterRoleAdmin() {
+    const chaves = ["admin_token", "token"];
+
+    for (const chave of chaves) {
+        const token = localStorage.getItem(chave);
+        if (!token) continue;
+
+        try {
+            const payload = JSON.parse(
+                atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
+            );
+
+            if (payload.exp && payload.exp * 1000 <= Date.now()) {
+                continue;
+            }
+
+            if (["admin", "master"].includes(payload.role)) {
+                return payload.role;
+            }
+        } catch (e) {
+            // Token inválido: tenta a próxima chave.
         }
-        if (role !== 'admin') return;
-
-        const dropdownMenu = document.querySelector('.dropdown-menu');
-        if (!dropdownMenu || document.getElementById('admin-panel-btn')) return;
-
-        const adminLink = document.createElement('a');
-        adminLink.id = 'admin-panel-btn';
-        adminLink.href = '/frontend/admin/index.html';
-        adminLink.innerHTML = `<i class="fas fa-shield-halved"></i> Painel Admin`;
-        adminLink.style.cssText = `
-            display:flex;align-items:center;gap:8px;padding:9px 16px;
-            color:#6d28d9;font-weight:600;font-size:13.5px;text-decoration:none;
-            border-top:1px solid #ede9ff;border-bottom:1px solid #ede9ff;
-            background:#f5f0ff;transition:background 0.15s;
-        `;
-        adminLink.addEventListener('mouseenter', () => adminLink.style.background = '#ede9ff');
-        adminLink.addEventListener('mouseleave', () => adminLink.style.background = '#f5f0ff');
-
-        const logoutBtn = dropdownMenu.querySelector('.logout-btn');
-        logoutBtn
-            ? dropdownMenu.insertBefore(adminLink, logoutBtn)
-            : dropdownMenu.appendChild(adminLink);
     }
+
+    return null;
+}
+
+
+function injetarBotaoAdmin() {
+    const role = obterRoleAdmin();
+
+    if (!role) return;
+
+    const dropdownMenu = document.querySelector('.dropdown-menu');
+    if (!dropdownMenu || document.getElementById('admin-panel-btn')) return;
+
+    const adminLink = document.createElement('a');
+    adminLink.id = 'admin-panel-btn';
+    adminLink.href = '/frontend/admin/index.html';
+    adminLink.innerHTML = `<i class="fas fa-shield-halved"></i> Painel Admin`;
+
+    // Estilo visual original recuperado
+    adminLink.style.cssText = `
+        display:flex;
+        align-items:center;
+        gap:8px;
+        padding:9px 16px;
+        color:#6d28d9;
+        font-weight:600;
+        font-size:13.5px;
+        text-decoration:none;
+        border-top:1px solid #ede9ff;
+        border-bottom:1px solid #ede9ff;
+        background:#f5f0ff;
+        transition:background 0.15s;
+    `;
+
+    adminLink.addEventListener('mouseenter', () => {
+        adminLink.style.background = '#ede9ff';
+    });
+
+    adminLink.addEventListener('mouseleave', () => {
+        adminLink.style.background = '#f5f0ff';
+    });
+
+    const logoutBtn = dropdownMenu.querySelector('.logout-btn');
+
+    logoutBtn
+        ? dropdownMenu.insertBefore(adminLink, logoutBtn)
+        : dropdownMenu.appendChild(adminLink);
+}
+
+
 
     // ----------------------------------------------------------
     // ESTADO LOGADO / NÃO LOGADO
@@ -84,7 +132,9 @@ function initHeader() {
 
         if (!naoLogado || !logadoDiv) return;
 
-        if (logado) {
+        const adminLogado = Boolean(obterRoleAdmin());
+
+if (logado || adminLogado) {
             naoLogado.style.display = 'none';
             logadoDiv.style.display = 'flex';
             if (hamburgerBtn) hamburgerBtn.style.display = 'flex';

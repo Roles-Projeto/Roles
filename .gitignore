@@ -32,3 +32,5 @@ test3.txt
 
 # Docker volumes locais
 mysql_data/
+
+backup.sql

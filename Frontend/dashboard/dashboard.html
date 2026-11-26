@@ -2,6 +2,18 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <!-- TEMA CLARO/ESCURO: aplica o tema salvo antes de pintar (evita flash branco) -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('roles_tema') === 'dark' ? 'dark' : 'light'
+            );
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/frontend/css/tema.css">
+    <script src="/frontend/js/tema.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="/frontend/css/footer.css">
     <script src="/frontend/js/auth.js"></script>
@@ -12,6 +24,7 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="/frontend/css/dashboard.css" />
+    <link rel="stylesheet" href="/frontend/css/agenda.css" />
   </head>
   <body>
     <header>
@@ -158,6 +171,16 @@
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
             Eventos
+          </button>
+          <button class="dnav-tab" onclick="showSection('agenda', this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+              <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
+            </svg>
+            Agenda
           </button>
           <button class="dnav-tab" onclick="showSection('vendas', this)">
             <svg
@@ -487,6 +510,17 @@
           </div>
         </section>
 
+        <!-- ===== AGENDA ===== -->
+        <section id="agenda" class="dsection">
+          <div class="sec-header">
+            <div>
+              <h2>Agenda do organizador</h2>
+              <p>Veja suas datas, descubra os melhores dias para marcar e reavalie escolhas</p>
+            </div>
+          </div>
+          <div id="agendaRoot"></div>
+        </section>
+
         <!-- ===== VENDAS ===== -->
         <section id="vendas" class="dsection">
           <div class="sec-header">
@@ -583,10 +617,12 @@
       </div>
     </main>
 
-    <script src="/frontend/js/config.js"></script>
+       <script src="/frontend/js/config.js"></script>
+   <script src="/frontend/js/feedback.js"></script>
     <script src="/frontend/js/loadHeader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/frontend/js/dashboard.js"></script>
+    <script src="/frontend/js/agenda.js"></script>
     <script src="/frontend/js/footer.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>

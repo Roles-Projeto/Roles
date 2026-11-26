@@ -2,6 +2,18 @@
 <html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
+    <!-- TEMA CLARO/ESCURO: aplica o tema salvo antes de pintar (evita flash branco) -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('roles_tema') === 'dark' ? 'dark' : 'light'
+            );
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/frontend/css/tema.css">
+    <script src="/frontend/js/tema.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="/frontend/js/auth.js"></script>
     <script>
@@ -409,7 +421,8 @@
       </div>
     </main>
 
-    <script src="/frontend/js/config.js"></script>
+       <script src="/frontend/js/config.js"></script>
+   <script src="/frontend/js/feedback.js"></script>
     <script src="/frontend/js/footer.js" defer></script>
     <script src="/frontend/js/loadHeader.js"></script>
     <script src="/frontend/js/criarEventos.js"></script>

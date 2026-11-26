@@ -1,7 +1,10 @@
 "use strict";
 
+// PASSO A: só a compra exige login. As demais rotas ficam como antes
+// (o site ainda não manda token nelas). Depois do Passo B, use o
+// ingressosRoutes_passoC.js para proteger o resto.
+
 const express = require("express");
-// Use o MESMO require de verificarToken que o routes/eventos.js já usa
 const { verificarToken } = require("../middleware/auth");
 const {
     listarEventos,
@@ -28,19 +31,19 @@ eventosRouter.get("/:id", detalheEvento);
 
 // -- Router de INGRESSOS --
 const ingressosRouter = express.Router();
-ingressosRouter.post("/comprar",            comprarIngresso);
+
+ingressosRouter.post("/comprar",            verificarToken, comprarIngresso);
 ingressosRouter.get("/usuario/:usuario_id", meusIngressos);
 ingressosRouter.get("/totais/:usuario_id",  totalIngressosPorUsuario);
 
 // -- Tipos de ingresso (modal "Gerenciar ingressos" do dashboard) --
-// Criar/editar/excluir exigem login e checam se o evento é do usuário (no controller).
 ingressosRouter.get("/tipos/:evento_id",    listarTiposIngresso);
 ingressosRouter.post("/tipos",              verificarToken, criarTipoIngresso);
 ingressosRouter.put("/tipos/:id",           verificarToken, atualizarTipoIngresso);
 ingressosRouter.delete("/tipos/:id",        verificarToken, excluirTipoIngresso);
 
 ingressosRouter.get("/validar/:codigo_qr",  validarQRCode);
-ingressosRouter.get("/:id/download",        downloadIngressoPDF);  // ← antes de /:id
+ingressosRouter.get("/:id/download",        downloadIngressoPDF);  // antes de /:id
 ingressosRouter.get("/:id",                 detalheIngresso);
 
 // -- Router de PEDIDOS --

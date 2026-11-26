@@ -38,6 +38,8 @@ function labelPagamento(forma) {
 // ====================================================
 // GERAR PDF DO INGRESSO
 // GET /ingressos/:id/download?usuario_id=5
+// Só gera o PDF para pedido pago (aprovado) ou cortesia.
+// Pedido pendente, cancelado ou reembolsado não tem ingresso válido.
 // ====================================================
 async function downloadIngressoPDF(req, res) {
     const { id }         = req.params;
@@ -69,6 +71,14 @@ async function downloadIngressoPDF(req, res) {
 
         const d = rows[0];
         if (!d) return res.status(404).json({ erro: "Ingresso não encontrado." });
+
+        if (!["aprovado", "cortesia"].includes(d.status)) {
+            return res.status(403).json({
+                erro: d.status === "pendente"
+                    ? "O pagamento deste pedido ainda não foi confirmado."
+                    : "Este pedido foi cancelado ou reembolsado e o ingresso não é mais válido.",
+            });
+        }
 
         const qrData   = `ROLES-PEDIDO-${d.pedido_id}-USUARIO-${usuario_id}`;
         const qrBuffer = await QRCode.toBuffer(qrData, {
@@ -176,7 +186,7 @@ async function downloadIngressoPDF(req, res) {
         doc.end();
 
     } catch (err) {
-        console.error("❌ downloadIngressoPDF:", err);
+        console.error("downloadIngressoPDF:", err);
         if (!res.headersSent) {
             res.status(500).json({ erro: "Erro ao gerar PDF.", detalhe: err.message });
         }

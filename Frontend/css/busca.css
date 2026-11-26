@@ -17,7 +17,7 @@
 ================================================== */
 .busca-main {
     min-height: 80vh;
-    background: #f7f7f8;
+    background: var(--bg-secundario);
 }
 
 .busca-hero {
@@ -145,13 +145,13 @@
     gap: 12px;
     margin-bottom: 24px;
     padding-bottom: 14px;
-    border-bottom: 2px solid #ececec;
+    border-bottom: 2px solid var(--borda);
 }
 
 .busca-secao-header h2 {
     font-size: 20px;
     font-weight: 700;
-    color: #111;
+    color: var(--texto);
     margin: 0;
     display: flex;
     align-items: center;
@@ -165,8 +165,8 @@
 
 .busca-contagem {
     font-size: 12px;
-    color: #999;
-    background: #f0f0f0;
+    color: var(--texto-suave);
+    background: var(--bg-secundario);
     padding: 3px 10px;
     border-radius: 20px;
     font-weight: 500;
@@ -183,7 +183,7 @@
 
 .busca-grid .card-local,
 .busca-grid .card-evento {
-    background: #fff;
+    background: var(--card);
     border-radius: 16px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.07);
     overflow: hidden;
@@ -248,7 +248,7 @@
 .busca-grid .evento-content h3 {
     font-size: 17px;
     font-weight: 700;
-    color: #111;
+    color: var(--texto);
     margin: 0 0 10px;
     line-height: 1.3;
 }
@@ -256,7 +256,7 @@
 .busca-grid .local-meta,
 .busca-grid .evento-data-local {
     font-size: 13px;
-    color: #666;
+    color: var(--texto-suave);
     margin-bottom: 6px;
     display: flex;
     align-items: center;
@@ -265,7 +265,7 @@
 
 .busca-grid .evento-local {
     font-size: 13px;
-    color: #666;
+    color: var(--texto-suave);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -333,13 +333,13 @@
 .busca-vazio h2 {
     font-size: 20px;
     font-weight: 700;
-    color: #333;
+    color: var(--texto);
     margin: 0;
 }
 
 .busca-vazio p {
     font-size: 14px;
-    color: #888;
+    color: var(--texto-suave);
     margin: 0 0 20px;
 }
 
@@ -373,14 +373,14 @@
     justify-content: center;
     padding: 80px 20px;
     gap: 16px;
-    color: #888;
+    color: var(--texto-suave);
     font-size: 14px;
 }
 
 .busca-spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid #ececec;
+    border: 3px solid var(--borda);
     border-top-color: #7c3aed;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
@@ -438,7 +438,7 @@
    CARD EVENTO COMPLETO (com descrição, preço, botões)
 ================================================== */
 .card-evento-busca {
-    background: #fff;
+    background: var(--card);
     border-radius: 16px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.07);
     overflow: hidden;
@@ -497,14 +497,14 @@
 .card-evento-busca .evento-content h3 {
     font-size: 16px;
     font-weight: 700;
-    color: #111;
+    color: var(--texto);
     margin: 0 0 6px;
     line-height: 1.3;
 }
 
 .card-evento-busca .evento-descricao {
     font-size: 12.5px;
-    color: #888;
+    color: var(--texto-suave);
     margin: 0 0 10px;
     line-height: 1.5;
     display: -webkit-box;
@@ -522,7 +522,7 @@
 
 .card-evento-busca .evento-meta {
     font-size: 12.5px;
-    color: #666;
+    color: var(--texto-suave);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -581,7 +581,7 @@
 }
 
 .btn-detalhes-busca:hover {
-    background: #f5f0ff;
+    background: var(--bg-secundario);
 }
 
 .btn-confirmar-busca,

@@ -3,6 +3,18 @@
 
 <head>
     <meta charset="UTF-8" />
+    <!-- TEMA CLARO/ESCURO: aplica o tema salvo antes de pintar (evita flash branco) -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('roles_tema') === 'dark' ? 'dark' : 'light'
+            );
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/frontend/css/tema.css">
+    <script src="/frontend/js/tema.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rolê.AI - Locais</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -237,25 +249,26 @@
             </section>
 
             <!-- Estatísticas -->
-            <section class="estatisticas">
-                <div class="item">
-                    <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
-                    <p>10+<br><span>Locais cadastrados</span></p>
-                </div>
-                <div class="item">
-                    <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
-                    <p>5<br><span>Categorias disponíveis</span></p>
-                </div>
-                <div class="item">
-                    <i class="fa-solid fa-star" aria-hidden="true"></i>
-                    <p>4.5<br><span>Avaliação média</span></p>
-                </div>
-            </section>
+<section class="estatisticas">
+    <div class="item">
+        <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+        <p><strong id="stat-locais">--</strong><br><span>Locais cadastrados</span></p>
+    </div>
+    <div class="item">
+        <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+        <p><strong id="stat-categorias">--</strong><br><span>Categorias disponíveis</span></p>
+    </div>
+    <div class="item">
+        <i class="fa-solid fa-star" aria-hidden="true"></i>
+        <p><strong id="stat-avaliacao">--</strong><br><span>Avaliação média</span></p>
+    </div>
+</section>
 
         </div>
     </main>
 
-    <script src="/frontend/js/config.js"></script>
+      <script src="/frontend/js/config.js"></script>
+   <script src="/frontend/js/feedback.js"></script>
     <script src="../js/footer.js" defer></script>
     <script src="../js/loadHeader.js"></script>
     <script src="../js/locais.js"></script>

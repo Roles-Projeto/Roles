@@ -3,12 +3,26 @@
 
 <head>
     <meta charset="UTF-8">
+    <!-- TEMA CLARO/ESCURO: aplica o tema salvo antes de pintar (evita flash branco) -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('roles_tema') === 'dark' ? 'dark' : 'light'
+            );
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/frontend/css/tema.css">
+    <script src="/frontend/js/tema.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="page-title">Detalhes do Local</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="../css/footer.css">
     <link rel="stylesheet" href="../css/detalheslocais.css">
+    <!-- Lotação do local (tarefa 183) -->
+    <link rel="stylesheet" href="../css/lotacaoLocal.css">
 </head>
 
 <body>
@@ -225,6 +239,18 @@
                             <span class="sidebar-price-value" id="sidebar-price-symbol">—</span>
                         </div>
 
+                        <!-- Lotação agora (tarefa 183): fica oculta até a API devolver dados válidos -->
+                        <div class="lotacao-local" id="lotacao-local" hidden>
+                            <div class="lotacao-local-topo">
+                                <span class="lotacao-local-rotulo"><i class="fas fa-users"></i> Lotação agora</span>
+                                <span class="lotacao-local-status" id="lotacao-local-status"></span>
+                            </div>
+                            <div class="lotacao-local-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Lotação do local">
+                                <div class="lotacao-local-preenchimento" id="lotacao-local-preenchimento"></div>
+                            </div>
+                            <p class="lotacao-local-detalhe" id="lotacao-local-detalhe"></p>
+                        </div>
+
                         <hr>
 
                         <!-- Contato -->
@@ -258,6 +284,19 @@
                         <a id="btn-ligar" href="tel:" class="btn-secondary" style="text-decoration:none;">
                             <i class="fas fa-phone-alt"></i> Ligar Agora
                         </a>
+
+                        <!-- Rodapé do card: botão discreto de denúncia -->
+                        <div class="rodape-card-local">
+                            <button
+                                type="button"
+                                class="link-denuncia"
+                                id="btn-denunciar-local"
+                                aria-label="Denunciar este local"
+                                aria-haspopup="dialog"
+                            >
+                                <i class="fa-regular fa-flag"></i> Denunciar local
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Card info compacto -->
@@ -286,20 +325,101 @@
                         </div>
                     </div>
 
+                    <!-- Painel do dono (tarefa 183): só aparece para quem é dono deste local -->
+                    <div class="info-card lotacao-gestao" id="lotacao-gestao" hidden>
+                        <h3>Lotação do seu local</h3>
+                        <p class="lotacao-gestao-ajuda" id="lotacao-gestao-ajuda"></p>
+                        <div class="lotacao-gestao-controle">
+                            <button type="button" id="lotacao-menos" aria-label="Diminuir uma pessoa">-</button>
+                            <input type="number" id="lotacao-valor" min="0" step="1" inputmode="numeric" aria-label="Pessoas no local agora" />
+                            <button type="button" id="lotacao-mais" aria-label="Aumentar uma pessoa">+</button>
+                        </div>
+                        <button type="button" class="btn-primary" id="lotacao-salvar">
+                            <i class="fas fa-check"></i> Salvar lotação
+                        </button>
+                        <p class="lotacao-gestao-msg" id="lotacao-gestao-msg" role="status"></p>
+                    </div>
+
                 </div>
             </aside>
 
         </div>
     </main>
 
+    <!-- MODAL: Denunciar local -->
+    <div class="denuncia-overlay" id="denuncia-overlay" hidden>
+        <div class="denuncia-modal" role="dialog" aria-modal="true" aria-labelledby="denuncia-titulo">
+            <button type="button" class="denuncia-fechar" id="denuncia-fechar" aria-label="Fechar">
+                <i class="fas fa-xmark"></i>
+            </button>
+
+            <div class="denuncia-cabecalho">
+                <div class="denuncia-icone"><i class="fa-regular fa-flag"></i></div>
+                <div>
+                    <h3 id="denuncia-titulo">Denunciar local</h3>
+                    <p id="denuncia-nome-local">Conte o que está errado com este local.</p>
+                </div>
+            </div>
+
+            <form id="form-denuncia" novalidate>
+                <fieldset class="denuncia-motivos">
+                    <legend>Qual é o problema?</legend>
+                    <label class="denuncia-opcao">
+                        <input type="radio" name="motivo" value="informacoes_incorretas" />
+                        <span>Informações incorretas (endereço, horário, telefone)</span>
+                    </label>
+                    <label class="denuncia-opcao">
+                        <input type="radio" name="motivo" value="local_fechado" />
+                        <span>O local fechou ou não existe</span>
+                    </label>
+                    <label class="denuncia-opcao">
+                        <input type="radio" name="motivo" value="conteudo_improprio" />
+                        <span>Fotos ou conteúdo impróprio</span>
+                    </label>
+                    <label class="denuncia-opcao">
+                        <input type="radio" name="motivo" value="golpe_fraude" />
+                        <span>Golpe ou fraude</span>
+                    </label>
+                    <label class="denuncia-opcao">
+                        <input type="radio" name="motivo" value="outro" />
+                        <span>Outro motivo</span>
+                    </label>
+                </fieldset>
+
+                <label class="denuncia-label" for="denuncia-descricao">
+                    Detalhes <span class="denuncia-opcional">(opcional)</span>
+                </label>
+                <textarea
+                    id="denuncia-descricao"
+                    rows="4"
+                    maxlength="500"
+                    placeholder="Descreva o que aconteceu para nos ajudar a analisar."
+                ></textarea>
+                <div class="denuncia-contador"><span id="denuncia-contador-valor">0</span>/500</div>
+
+                <p class="denuncia-erro" id="denuncia-erro" role="alert" hidden></p>
+
+                <div class="denuncia-acoes">
+                    <button type="button" class="denuncia-btn-cancelar" id="denuncia-cancelar">Cancelar</button>
+                    <button type="submit" class="denuncia-btn-enviar" id="denuncia-enviar">
+                        <i class="fas fa-paper-plane"></i> Enviar denúncia
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div id="toast-notification"></div>
-
-    <script src="/frontend/js/config.js"></script>
+   <script src="/frontend/js/config.js"></script>
+   <script src="/frontend/js/feedback.js"></script>
     <script src="../js/footer.js" defer></script>
     <script src="../js/loadheader.js"></script>
     <script src="../js/detalheslocais.js"></script>
     <script src="../js/detalhes-funcionalidades.js"></script>
+    <script src="../js/denunciarLocal.js?v=2"></script>
+    <!-- Lotação do local (tarefa 183): barra pública + painel do dono -->
+    <script src="../js/lotacaoLocal.js"></script>
 
 </body>
 </html>

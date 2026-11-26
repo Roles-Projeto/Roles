@@ -1,4 +1,4 @@
-// Frontend/js/Evento.js
+// Frontend/js/evento.js
 const isLocal =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1";
@@ -23,6 +23,13 @@ const coresPorCategoria = {
   'gastronomia': '#ff8a65',
   'workshop':    '#43a047',
 };
+
+// =========================================================
+// UTILITÁRIO: normaliza texto (minúsculas, sem acentos)
+// =========================================================
+function norm(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
 
 // =========================================================
 // HERO
@@ -72,7 +79,8 @@ function criarDropdown(botao, itens, onSelect) {
       box-shadow: 0 8px 28px rgba(60,30,140,0.14);
       z-index: 999;
       min-width: 200px;
-      overflow: hidden;
+      max-height: 320px;
+      overflow-y: auto;
       font-family: 'DM Sans', sans-serif;
     `;
 
@@ -126,6 +134,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let quantidadeVisiveis   = EVENTOS_POR_PAGINA;
   let filtroData           = 'todas';
   let filtroCategoria      = 'todas';
+  let filtroCidade         = 'todas';   // valor normalizado (norm) da cidade
 
   // Clique no card inteiro
   container.addEventListener("click", e => {
@@ -174,51 +183,70 @@ document.addEventListener("DOMContentLoaded", async () => {
       aplicarFiltros();
     });
   }
-// -------------------------------------------------------
-// ESTATÍSTICAS DA BARRA
-// -------------------------------------------------------
-function atualizarEstatisticaEventos(eventos) {
-  const elTotal     = document.getElementById("stat-eventos");
-  const elSemana    = document.getElementById("stat-semana");
-  const elGratuitos = document.getElementById("stat-gratuitos");
 
-  // Total
-  if (elTotal) elTotal.textContent = eventos.length;
+  // -------------------------------------------------------
+  // DROPDOWN DE CIDADE (montado com as cidades dos dados)
+  // -------------------------------------------------------
+  function montarDropdownCidades(eventos) {
+    const btn = document.getElementById('btnDropdownCidade');
+    if (!btn) return;
 
-  // Próximos 7 dias (mesma regra do filtro "Esta semana")
-  if (elSemana) {
-    const hoje      = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    const fimSemana = new Date(hoje);
-    fimSemana.setDate(fimSemana.getDate() + 7);
+    const cidades = [...new Set(
+      eventos.map(e => (e.cidade || '').trim()).filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
-    const daSemana = eventos.filter(e => {
-      if (!e.data_inicio) return false;
-      const d = new Date(e.data_inicio);
-      return d >= hoje && d <= fimSemana;
+    criarDropdown(btn, [
+      { label: 'Todas as cidades', valor: 'todas' },
+      ...cidades.map(c => ({ label: c, valor: norm(c) })),
+    ], (item) => {
+      filtroCidade = item.valor;
+      aplicarFiltros();
     });
-    elSemana.textContent = daSemana.length;
   }
 
-  // Gratuitos (mesma regra do card: sem preço mínimo ou zero)
-  if (elGratuitos) {
-    const gratuitos = eventos.filter(
-      e => !e.preco_minimo || parseFloat(e.preco_minimo) === 0
-    );
-    elGratuitos.textContent = gratuitos.length;
+  // -------------------------------------------------------
+  // ESTATÍSTICAS DA BARRA
+  // -------------------------------------------------------
+  function atualizarEstatisticaEventos(eventos) {
+    const elTotal     = document.getElementById("stat-eventos");
+    const elSemana    = document.getElementById("stat-semana");
+    const elGratuitos = document.getElementById("stat-gratuitos");
+
+    if (elTotal) elTotal.textContent = eventos.length;
+
+    if (elSemana) {
+      const hoje      = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const fimSemana = new Date(hoje);
+      fimSemana.setDate(fimSemana.getDate() + 7);
+
+      const daSemana = eventos.filter(e => {
+        if (!e.data_inicio) return false;
+        const d = new Date(e.data_inicio);
+        return d >= hoje && d <= fimSemana;
+      });
+      elSemana.textContent = daSemana.length;
+    }
+
+    if (elGratuitos) {
+      const gratuitos = eventos.filter(
+        e => !e.preco_minimo || parseFloat(e.preco_minimo) === 0
+      );
+      elGratuitos.textContent = gratuitos.length;
+    }
   }
-}
 
   // -------------------------------------------------------
   // CARREGAR EVENTOS
   // -------------------------------------------------------
   async function carregarEventos() {
-  try {
-    const res  = await fetch(API_URL);
-    const data = await res.json();
-    atualizarEstatisticaEventos(data); 
-    document.querySelectorAll(".evento-card").forEach(c => c.remove());
-    if (data.length === 0) {
+    try {
+      const res  = await fetch(API_URL);
+      const data = await res.json();
+      atualizarEstatisticaEventos(data);
+      montarDropdownCidades(data);
+      document.querySelectorAll(".evento-card").forEach(c => c.remove());
+      if (data.length === 0) {
         container.insertAdjacentHTML("afterbegin",
           `<p style="grid-column:1/-1;text-align:center;padding:40px;color:#888;">Nenhum evento encontrado.</p>`);
         atualizarContador();
@@ -240,18 +268,20 @@ function atualizarEstatisticaEventos(eventos) {
   function criarCard(evento) {
     const article = document.createElement("article");
     article.classList.add("evento-card");
-   const mapCategoria = {
-  'festas': 'festa', 'festa': 'festa',
-  'shows': 'show', 'show': 'show',
-  'festivais': 'festival', 'festival': 'festival',
-  'gastronomia': 'gastronomia',
-  'workshop': 'workshop', 'workshops': 'workshop',
-};
-const catNormalizada = mapCategoria[(evento.assunto || "").toLowerCase()] || (evento.assunto || "").toLowerCase();
-article.setAttribute("data-categoria", catNormalizada);
+    const mapCategoria = {
+      'festas': 'festa', 'festa': 'festa',
+      'shows': 'show', 'show': 'show',
+      'festivais': 'festival', 'festival': 'festival',
+      'gastronomia': 'gastronomia',
+      'workshop': 'workshop', 'workshops': 'workshop',
+    };
+    const catNormalizada = mapCategoria[(evento.assunto || "").toLowerCase()] || (evento.assunto || "").toLowerCase();
+    article.setAttribute("data-categoria", catNormalizada);
     article.setAttribute("data-nome",      evento.nome);
     article.setAttribute("data-id",        evento.id);
     article.setAttribute("data-data",      evento.data_inicio || "");
+    article.setAttribute("data-cidade",    evento.cidade || "");
+    article.setAttribute("data-local",     evento.local_nome || "");
 
     const dataFormatada = formatarData(evento.data_inicio);
     const isGratuito    = !evento.preco_minimo || parseFloat(evento.preco_minimo) === 0;
@@ -337,18 +367,36 @@ article.setAttribute("data-categoria", catNormalizada);
     const categoriaAtiva = filtroCategoria !== 'todas'
       ? filtroCategoria
       : (document.querySelector(".pill.active")?.getAttribute("data-cat") || "todas");
-    const termoBusca = (searchInput?.value || "").toLowerCase().trim();
+    const termoBusca = norm(searchInput?.value);
     const todos      = document.querySelectorAll(".evento-card");
+
+    // Se o texto digitado for exatamente o nome de uma cidade, filtra só por ela
+    // (evita que "Goiânia" traga também "Aparecida de Goiânia")
+    const cidadesNorm   = new Set([...todos].map(c => norm(c.getAttribute("data-cidade"))).filter(Boolean));
+    const buscaEhCidade = termoBusca !== "" && cidadesNorm.has(termoBusca);
 
     eventosFiltrados = [];
     todos.forEach(card => {
-      const cat  = (card.getAttribute("data-categoria") || "").toLowerCase();
-      const nome = card.querySelector("h3")?.textContent.toLowerCase()         || "";
-      const desc = card.querySelector(".descricao")?.textContent.toLowerCase() || "";
-      const data = card.getAttribute("data-data") || "";
-      const ok   = (termoBusca === "" || nome.includes(termoBusca) || desc.includes(termoBusca))
-                && (categoriaAtiva === "todas" || cat.includes(categoriaAtiva))
-                && dentroDoFiltroData(data);
+      const cat    = (card.getAttribute("data-categoria") || "").toLowerCase();
+      const cidade = norm(card.getAttribute("data-cidade"));
+      const data   = card.getAttribute("data-data") || "";
+
+      // A busca agora também considera local e cidade
+      const textoCard = norm([
+        card.querySelector("h3")?.textContent,
+        card.querySelector(".descricao")?.textContent,
+        card.getAttribute("data-local"),
+        card.getAttribute("data-cidade"),
+      ].join(" "));
+
+      const passaTexto = termoBusca === ""
+        || (buscaEhCidade ? cidade === termoBusca : textoCard.includes(termoBusca));
+
+      const ok = passaTexto
+              && (categoriaAtiva === "todas" || cat.includes(categoriaAtiva))
+              && (filtroCidade === "todas" || cidade === filtroCidade)
+              && dentroDoFiltroData(data);
+
       if (ok) eventosFiltrados.push(card);
       card.style.display = "none";
     });
@@ -390,9 +438,17 @@ article.setAttribute("data-categoria", catNormalizada);
     }
   }
 
+  // Contador correto (0 quando não há resultado) + mensagem de vazio
   function atualizarContador() {
     const el = document.getElementById("qtdEventos");
-    if (el) el.textContent = eventosFiltrados.length || document.querySelectorAll(".evento-card").length;
+    if (el) el.textContent = eventosFiltrados.length;
+
+    const ID = 'eventos-sem-resultado';
+    document.getElementById(ID)?.remove();
+    if (eventosFiltrados.length === 0 && document.querySelector(".evento-card")) {
+      container.insertAdjacentHTML("afterbegin",
+        `<p id="${ID}" style="grid-column:1/-1;text-align:center;padding:40px;color:#888;">Nenhum evento encontrado para esses filtros.</p>`);
+    }
   }
 
   const btnCarregarEl = document.getElementById('carregarMais');
@@ -414,7 +470,7 @@ article.setAttribute("data-categoria", catNormalizada);
     });
   }
 
-  if (searchInput) searchInput.addEventListener("keyup", aplicarFiltros);
+  if (searchInput) searchInput.addEventListener("input", aplicarFiltros);
 
   if (pillsContainer) {
     pillsContainer.addEventListener("click", e => {

@@ -180,7 +180,7 @@ body {
   border: 1.5px solid var(--p200);
   box-shadow: var(--shadow-sm);
 }
-.btn-seguir.seguindo:hover { background: #fff1f2; border-color: #fca5a5; color: #b91c1c; }
+.btn-seguir.seguindo:hover { background: var(--bg-secundario); border-color: #fca5a5; color: #b91c1c; }
 
 /* ─── GRADE ─── */
 .grade-principal {
@@ -355,7 +355,7 @@ body {
   width: 100%; padding: 10px 14px; margin-bottom: 10px;
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   font-family: 'Inter', sans-serif; font-size: 14px;
-  color: var(--text-dark); background: #fdfcff; outline: none;
+  color: var(--text-dark); background: var(--bg-secundario); outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .input-avaliacao:focus { border-color: var(--p600); box-shadow: 0 0 0 3px rgba(124,58,237,0.12); }
@@ -364,7 +364,7 @@ body {
   width: 100%; padding: 10px 14px; margin-bottom: 14px;
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   font-family: 'Inter', sans-serif; font-size: 14px;
-  color: var(--text-dark); background: #fdfcff; outline: none;
+  color: var(--text-dark); background: var(--bg-secundario); outline: none;
   resize: vertical; transition: border-color 0.2s, box-shadow 0.2s;
 }
 .textarea-avaliacao:focus { border-color: var(--p600); box-shadow: 0 0 0 3px rgba(124,58,237,0.12); }

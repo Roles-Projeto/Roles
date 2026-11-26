@@ -135,6 +135,7 @@ const beneficiosRoutes       = require("./routes/beneficios");
 const denunciasRoutes        = require("./routes/denuncias");   // 🚩 Denúncias de eventos e locais
 const publicoRoutes          = require("./routes/publico");      // ← NOVO
 const candidaturasRoutes     = require("./routes/candidaturas"); // ← NOVO (Trabalhe conosco)
+const lotacaoRoutes          = require("./routes/lotacao");      // 📊 Lotação do evento (tarefa 183)
 
 // 🤖 Chat Gemini
 const chatRoutes             = require("./routes/chat");
@@ -168,7 +169,9 @@ app.use("/eventos",          eventosRoutes);
 app.use("/estabelecimentos", estabelecimentosRoutes);
 app.use("/contato",          contatoRoutes);
 app.use("/avaliacoes",       avaliacoesRoutes);
-app.use("/admin",            adminRoutes);
+  const { rotas: adminAcessoRotas, autorizar: adminAutorizar } = require("./routes/adminAcesso");
+const adminArquivoRoutes = require("./routes/adminArquivo");
+app.use("/admin", adminAcessoRotas, adminAutorizar, adminArquivoRoutes, adminRoutes);
 app.use("/ingressos",        ingressosRouter);
 app.use("/pedidos",          pedidosRouter);
 
@@ -181,6 +184,7 @@ app.use("/denuncias",        denunciasRoutes);                  // 🚩 POST /de
 app.use("/publico",          publicoRoutes);                     // ← NOVO
 app.use("/fila",             require("./routes/filaRoutes"));           // ← NOVO (fila de espera)
 app.use("/candidaturas",     candidaturasRoutes);                // ← NOVO (Trabalhe conosco)
+app.use("/lotacao",          lotacaoRoutes);                     // 📊 GET /lotacao/:eventoId (tarefa 183)
 
 // 🤖 POST /api/chat
 app.use("/api", chatRoutes);
@@ -219,6 +223,7 @@ const API_PREFIXES = [
   "/publico",                                                     // ← NOVO
   "/candidaturas",                                                // ← NOVO (Trabalhe conosco)
   "/fila",                                                        // ← NOVO (fila de espera)
+  "/lotacao",                                                     // 📊 Lotação do evento (tarefa 183)
 ];
 
 

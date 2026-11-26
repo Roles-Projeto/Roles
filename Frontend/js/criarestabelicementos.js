@@ -433,7 +433,14 @@ confirmarBtn.addEventListener("click", async () => {
         localStorage.removeItem("rascunhoEstabelecimento");
         modal.style.display = "none";
         stepNavigation.style.display = "flex";
-        alert(`✅ "${nome}" publicado com sucesso!`);
+        // Cadastro de quem não é admin entra como pendente de aprovação. Em vez de
+        // mandar o usuário pra lista pública (onde o estabelecimento ainda não
+        // aparece), leva ele pra uma página que explica o que acontece agora.
+        if (resultado.status_aprovacao === "pendente") {
+            window.location.href = `../aprovacao/aguardando.html?tipo=estabelecimento&nome=${encodeURIComponent(nome)}`;
+            return;
+        }
+        alert(resultado.mensagem || `"${nome}" cadastrado com sucesso!`);
         window.location.href = "../locais/locais.html";
 
     } catch (err) {

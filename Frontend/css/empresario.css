@@ -19,7 +19,7 @@ h4,
     --color-text-light: #fff;
     --color-text-dark: #333;
     --color-card-shadow: rgba(0, 0, 0, 0.05);
-    --color-light-background: #f5f5f5;
+    --color-light-background: var(--bg-secundario);
     --color-success: #4CAF50;
     --color-quote: #999;
     --color-divider: #383747;
@@ -81,7 +81,7 @@ body {
 
 .empresario-page .subtitle {
     font-size: 1.5em;
-    color: #888;
+    color: var(--texto-suave);
     margin-bottom: 3em;
     font-weight: 400;
 }
@@ -158,7 +158,7 @@ body {
 }
 
 .empresario-page .btn-primary:hover {
-    background-color: #f0f0f0;
+    background-color: var(--bg-secundario);
     border-color: #f0f0f0;
 }
 
@@ -172,7 +172,7 @@ body {
 }
 
 .empresario-page .btn-white-cta:hover {
-    background-color: #f0f0f0;
+    background-color: var(--bg-secundario);
 }
 
 /* ====================================================================== */
@@ -231,7 +231,7 @@ body {
     border-radius: 0.8em;
     text-align: left;
     box-shadow: 0 0.5em 1.5em var(--color-card-shadow), 0 0.1em 0.2em rgba(0, 0, 0, 0.03);
-    border: 1px solid #eee;
+    border: 1px solid var(--borda);
     transition: transform 0.3s ease;
 }
 
@@ -242,14 +242,14 @@ body {
 .empresario-page .feature-card p {
     font-size: 1.25em;
     line-height: 1.4;
-    color: #777;
+    color: var(--texto-suave);
     margin-bottom: 0;
 }
 
 .empresario-page .icon-box {
     width: 4em;
     height: 4em;
-    background-color: #f0f0f0;
+    background-color: var(--bg-secundario);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -258,7 +258,7 @@ body {
 }
 
 .empresario-page .icon-box i {
-    color: #555;
+    color: var(--texto-medio);
     font-size: 2.2em;
 }
 
@@ -301,7 +301,7 @@ body {
 
 .empresario-page .resource-list li {
     font-weight: 500;
-    color: #555;
+    color: var(--texto-medio);
     display: flex;
     align-items: flex-start;
 }
@@ -343,7 +343,7 @@ body {
 
 .empresario-page .data-card span {
     font-size: 1.3em;
-    color: #666;
+    color: var(--texto-suave);
     font-weight: 400;
 }
 
@@ -399,7 +399,7 @@ body {
 }
 
 .empresario-page .author-info {
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--borda);
     padding-top: 1.2em;
 }
 
@@ -411,7 +411,7 @@ body {
 
 .empresario-page .author-role {
     font-size: 1.2em;
-    color: #777;
+    color: var(--texto-suave);
     margin-top: 0.1em;
 }
 
@@ -486,7 +486,7 @@ body {
 }
 
 .empresario-page .back-btn:hover {
-    background: #fff;
+    background: var(--card);
     transform: translateX(-2px);
 }
 

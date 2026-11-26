@@ -390,7 +390,7 @@ body {
     font-family: 'Inter', sans-serif;
     font-size: 14px;
     color: var(--text);
-    background: #f9f7ff;
+    background: var(--bg-secundario);
     outline: none;
     transition: all 0.2s ease;
 }
@@ -418,7 +418,7 @@ body {
 .input-wrap input.invalido,
 .input-wrap select.invalido {
     border-color: #e53e3e;
-    background: #fff5f5;
+    background: var(--bg-secundario);
 }
 
 /* select */
@@ -449,7 +449,7 @@ body {
     padding: 14px 16px;
     border: 2px dashed rgba(108,29,206,0.30);
     border-radius: var(--r-md);
-    background: #faf8ff;
+    background: var(--bg-secundario);
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -505,7 +505,7 @@ body {
     min-width: 32px;
     border: 1px solid var(--border);
     border-radius: 50%;
-    background: #fff;
+    background: var(--card);
     color: var(--p2);
     display: flex;
     align-items: center;

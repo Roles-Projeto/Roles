@@ -331,6 +331,25 @@ const { tipo_mapa, mapa_config } = montarDadosMapa(mapaImagemUrl);
         if (!response.ok) { confirmarBtn.disabled = false; confirmarBtn.textContent = "Confirmar publicação"; throw new Error(data.erro + " | " + (data.detalhes || "")); }
         localStorage.removeItem("rascunhoEvento");
         modal.style.display = "none";
+        // Cadastro de quem não é admin entra como pendente de aprovação. Em vez de
+        // mandar o usuário pra lista pública (onde o evento ainda não aparece),
+        // leva ele pra uma página que explica o que acontece agora.
+        if (data.status_aprovacao === "pendente") {
+    try {
+        sessionStorage.setItem("eventoEnviado", JSON.stringify({
+            id: data.id || (data.evento && data.evento.id) || null,
+            nome: evento.nome,
+            data_inicio: evento.data_inicio,
+            data_fim: evento.data_fim,
+            local_nome: evento.local_nome,
+            cidade: evento.cidade,
+            estado: evento.estado,
+            imagem: evento.imagem
+        }));
+    } catch (e) {}
+    window.location.replace(`../aprovacao/aguardando.html?tipo=evento&nome=${encodeURIComponent(evento.nome || "")}`);
+    return;
+}
         window.location.replace("../eventos/eventos.html");
     } catch (err) {
         console.error(err);

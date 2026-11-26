@@ -2,6 +2,18 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <!-- TEMA CLARO/ESCURO: aplica o tema salvo antes de pintar (evita flash branco) -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('roles_tema') === 'dark' ? 'dark' : 'light'
+            );
+        } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/frontend/css/tema.css">
+    <script src="/frontend/js/tema.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Detalhes do Evento | Rolês</title>
     <link
@@ -14,6 +26,8 @@
     />
     <link rel="stylesheet" href="/frontend/css/footer.css" />
     <link rel="stylesheet" href="/frontend/css/detalheseventos.css" />
+    <!-- Barra de lotação do evento (tarefa 183) -->
+    <link rel="stylesheet" href="/frontend/css/lotacaoEvento.css" />
 
     <!-- AJUSTE DE LAYOUT (desktop): ingressos, mapa, sobre e organizador empilhados
          na coluna da esquerda; checkout fixo na direita. Elimina o espaço vazio.
@@ -92,7 +106,7 @@
         align-items: flex-start;
         gap: 18px;
         padding: 22px 26px !important;
-        background: #f6f1ff !important;
+        background: var(--bg-secundario) !important;
         border: 1px solid #e4dcf7 !important;
         border-radius: 16px !important;
       }
@@ -127,7 +141,7 @@
       /* ===== CHECKOUT: cartão com fonte um pouco menor ===== */
       .ev-layout .compra-ingresso .card-garantia-ingresso {
         padding: 26px 26px 20px;
-        background: #fff;
+        background: var(--card);
         border: 1px solid #ebe5f7;
         border-radius: 22px;
         box-shadow: 0 14px 40px rgba(60, 30, 120, 0.10);
@@ -249,6 +263,19 @@
           <span class="por-pessoas">por pessoa</span>
         </div>
         <button class="botao-comprar-topo" type="button">Comprar ingresso</button>
+      </section>
+
+      <!-- LOTAÇÃO DO EVENTO (tarefa 183)
+           Fica oculta até o script lotacaoEvento.js receber os dados da API. -->
+      <section class="lotacao-evento" id="lotacao-evento" hidden>
+        <div class="lotacao-topo">
+          <span class="lotacao-rotulo"><i class="fa-solid fa-ticket"></i> Lotação do evento</span>
+          <span class="lotacao-status" id="lotacao-status"></span>
+        </div>
+        <div class="lotacao-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Lotação do evento">
+          <div class="lotacao-preenchimento" id="lotacao-preenchimento"></div>
+        </div>
+        <p class="lotacao-percentual" id="lotacao-percentual"></p>
       </section>
 
       <!-- CONTEÚDO -->
@@ -427,9 +454,11 @@
     </main>
 
     <!-- Scripts — apenas uma vez, ordem correta -->
-       <script src="/frontend/js/config.js"></script>
+    <script src="/frontend/js/config.js"></script>
+    <!-- Barra de lotação (tarefa 183): precisa do config.js carregado antes -->
+    <script src="/frontend/js/lotacaoEvento.js"></script>
     <script src="/frontend/js/filaEspera.js"></script>
-   <script src="/frontend/js/feedback.js"></script>
+    <script src="/frontend/js/feedback.js"></script>
     <script src="/frontend/js/footer.js" defer></script>
     <script src="/frontend/js/loadHeader.js"></script>
     <script src="/frontend/js/beneficios.js"></script>

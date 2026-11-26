@@ -1,9 +1,16 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     margin: 0;
     padding: 0;
     width: 100%;
-    background-color: #ffffff;
+    background-color: var(--card);
 }
 
 /* --------------------------------- CONTAINER PRINCIPAL --------------------------------- */
@@ -24,7 +31,7 @@ body {
 
 .subtitulo {
     font-size: 16px;
-    color: #666;
+    color: var(--texto-suave);
     margin-bottom: 40px;
 }
 
@@ -38,8 +45,8 @@ body {
 }
 
 .card {
-    background: #fff;
-    border: 1px solid #e5e5e5;
+    background: var(--card);
+    border: 1px solid var(--borda);
     border-radius: 8px;
     padding: 20px;
     text-align: left;
@@ -57,12 +64,12 @@ body {
     font-size: 15px;
     font-weight: 500;
     margin: 0;
-    color: #333;
+    color: var(--texto);
 }
 
 .card p {
     font-size: 13px;
-    color: #555;
+    color: var(--texto-medio);
     line-height: 1.5;
     margin: 0;
 }
@@ -95,7 +102,7 @@ textarea {
     width: 100%;
     padding: 10px;
     font-size: 14px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--borda);
     border-radius: 6px;
     box-sizing: border-box;
 }
@@ -166,7 +173,7 @@ button {
 .faq .subtitulo-faq {
     font-size: 13px;
     margin-bottom: 15px;
-    color: #555;
+    color: var(--texto-medio);
 }
 
 .lista-faq {
@@ -187,7 +194,7 @@ button {
 
 .icone-faq {
     font-size: 18px;
-    color: #777;
+    color: var(--texto-suave);
     margin-top: 2px;
     flex-shrink: 0;
 }
@@ -197,7 +204,7 @@ button {
     margin-bottom: 2px;
     font-size: 14px;
     font-weight: 500;
-    color: #333;
+    color: var(--texto);
 }
 
 .texto-faq p {
@@ -223,7 +230,7 @@ button {
 
 .informacoes-importantes p b {
     font-weight: 600;
-    color: #333;
+    color: var(--texto);
 }
 
 /* RESPONSIVIDADE */
@@ -255,7 +262,7 @@ iframe {
     padding: 40px;
     border: 2px solid #0c0c1d;
     border-radius: 10px;
-    background-color: #ffffff;
+    background-color: var(--card);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -267,7 +274,7 @@ iframe {
 
 .mensagem-sucesso p {
     font-size: 16px;
-    color: #555;
+    color: var(--texto-medio);
     line-height: 1.6;
 }
 

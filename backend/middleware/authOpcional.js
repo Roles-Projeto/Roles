@@ -24,3 +24,6 @@ function authOpcional(req, res, next) {
 }
 
 module.exports = authOpcional;
+
+
+

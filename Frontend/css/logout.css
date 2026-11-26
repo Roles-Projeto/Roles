@@ -1,9 +1,16 @@
+
+h1, h2, h3, h4,
+.logo, .kicker, .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+}
+
 /* ==================================================
 ==================== Logout-usuario ==========================
 ================================================== */
 
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 /* Reset básico */
@@ -11,12 +18,12 @@ body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 .search {
   padding: 6px 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--borda);
   border-radius: 6px;
 }
 
@@ -42,15 +49,15 @@ body {
 
 .login-box {
   text-align: center;
-  border: 1px solid #ddd;
+  border: 1px solid var(--borda);
   padding: 30px;
   border-radius: 8px;
-  background: #fff;
+  background: var(--card);
 }
 
 .login-box p {
   margin-bottom: 15px;
-  color: #555;
+  color: var(--texto-medio);
 }
 
 

@@ -1,6 +1,15 @@
 "use strict";
 
 // ====================================================
+// CONFIG DA API
+// ====================================================
+
+const API_URL = window.API_BASE
+    || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3000'
+        : 'https://projeto-integrador-roles.onrender.com');
+
+// ====================================================
 // VARIÁVEIS GLOBAIS
 // ====================================================
 
@@ -336,6 +345,14 @@ cancelarBtn.addEventListener("click", () => {
 // ====================================================
 
 confirmarBtn.addEventListener("click", async () => {
+    // ── Verifica se o usuário está logado antes de publicar ──
+    const token = localStorage.getItem("token");
+    if (!token) {
+        alert("Você precisa estar logado para cadastrar um estabelecimento.");
+        window.location.href = "/frontend/login/login.html";
+        return;
+    }
+
     const nome        = document.getElementById("estab-name")?.value?.trim() || "";
     const tipo        = document.getElementById("tipo")?.value || "";
     const especialidade = document.getElementById("especialidade")?.value || "";
@@ -402,9 +419,12 @@ confirmarBtn.addEventListener("click", async () => {
         confirmarBtn.disabled     = true;
         confirmarBtn.textContent  = "Publicando...";
 
-        const res      = await fetch("http://127.0.0.1:3000/estabelecimentos", {
+        const res = await fetch(`${API_URL}/estabelecimentos`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
             body: JSON.stringify(body)
         });
         const resultado = await res.json();
@@ -413,7 +433,14 @@ confirmarBtn.addEventListener("click", async () => {
         localStorage.removeItem("rascunhoEstabelecimento");
         modal.style.display = "none";
         stepNavigation.style.display = "flex";
-        alert(`✅ "${nome}" publicado com sucesso!`);
+        // Cadastro de quem não é admin entra como pendente de aprovação. Em vez de
+        // mandar o usuário pra lista pública (onde o estabelecimento ainda não
+        // aparece), leva ele pra uma página que explica o que acontece agora.
+        if (resultado.status_aprovacao === "pendente") {
+            window.location.href = `../aprovacao/aguardando.html?tipo=estabelecimento&nome=${encodeURIComponent(nome)}`;
+            return;
+        }
+        alert(resultado.mensagem || `"${nome}" cadastrado com sucesso!`);
         window.location.href = "../locais/locais.html";
 
     } catch (err) {

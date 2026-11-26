@@ -380,7 +380,7 @@ body {
     font-family: 'Inter', sans-serif;
     font-size: 14px;
     color: var(--text);
-    background: #f9f7ff;
+    background: var(--bg-secundario);
     outline: none;
     transition: all 0.2s ease;
 }
@@ -576,7 +576,7 @@ body {
     border-color: var(--bord-h);
     transform: translateY(-2px);
     box-shadow: var(--sh-md);
-    background: #fdfbff;
+    background: var(--bg-secundario);
 }
 
 .btn-social .social-icon {
@@ -709,7 +709,7 @@ body {
     gap: 12px;
     padding: 13px;
     border-radius: var(--r-md);
-    background: #faf8ff;
+    background: var(--bg-secundario);
     border: 1px solid var(--border);
 }
 
@@ -761,7 +761,7 @@ body {
     width: 190px;
     height: 190px;
     padding: 10px;
-    background: #fff;
+    background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--r-md);
     box-shadow: var(--sh-sm);
@@ -817,7 +817,7 @@ body {
     padding: 10px 10px 10px 13px;
     border: 1px solid var(--border);
     border-radius: var(--r-sm);
-    background: #f9f7ff;
+    background: var(--bg-secundario);
 }
 
 .setup-secret-box code {
@@ -840,7 +840,7 @@ body {
     min-width: 34px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: #fff;
+    background: var(--card);
     color: var(--p2);
     display: flex;
     align-items: center;
@@ -851,7 +851,7 @@ body {
 
 .setup-copy-btn:hover {
     border-color: var(--bord-h);
-    background: #f7f2ff;
+    background: var(--bg-secundario);
     transform: translateY(-1px);
 }
 
@@ -875,7 +875,7 @@ body {
     font-size: 24px;
     font-weight: 700;
     color: var(--text);
-    background: #f9f7ff;
+    background: var(--bg-secundario);
     border: 1.5px solid var(--border);
     border-radius: var(--r-sm);
     outline: none;
@@ -903,7 +903,7 @@ body {
 
 .setup-otp-input.invalido {
     border-color: #e53e3e;
-    background: #fff5f5;
+    background: var(--bg-secundario);
     animation: otpShake 0.35s ease;
 }
 
@@ -912,7 +912,7 @@ body {
 .setup-recovery-codes {
     padding: 14px;
     border-radius: var(--r-md);
-    background: #f8f5ff;
+    background: var(--bg-secundario);
     border: 1px solid rgba(108,29,206,0.20);
     animation: fadeIn 0.3s ease;
 }
@@ -940,7 +940,7 @@ body {
     display: block;
     padding: 8px 6px;
     border-radius: 8px;
-    background: #fff;
+    background: var(--card);
     border: 1px solid var(--border);
     color: var(--p2);
     text-align: center;
@@ -970,7 +970,7 @@ body {
     font-size: 24px;
     font-weight: 700;
     color: var(--text);
-    background: #f9f7ff;
+    background: var(--bg-secundario);
     border: 1.5px solid var(--border);
     border-radius: var(--r-sm);
     outline: none;
@@ -998,7 +998,7 @@ body {
 
 .otp-input.invalido {
     border-color: #e53e3e;
-    background: #fff5f5;
+    background: var(--bg-secundario);
     animation: otpShake 0.35s ease;
 }
 
@@ -1032,7 +1032,7 @@ body {
     font-family: 'Inter', sans-serif;
     font-size: 14px;
     color: var(--text);
-    background: #f9f7ff;
+    background: var(--bg-secundario);
     outline: none;
     transition: all 0.2s ease;
 }

@@ -1,3 +1,11 @@
+// Carrega o tema claro/escuro em todas as páginas que usam o header
+(function () {
+    if (window.__rolesTemaIniciado) return;
+    const s = document.createElement('script');
+    s.src = '/frontend/js/tema.js';
+    document.head.appendChild(s);
+})();
+
 document.addEventListener("DOMContentLoaded", () => {
     fetch("/frontend/header/header.html")
         .then(response => response.text())

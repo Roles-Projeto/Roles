@@ -5,10 +5,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rolês - Home</title>
+
+    <!-- TEMA: aplica o tema salvo ANTES da página pintar (evita flash branco) -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('roles_tema') === 'dark' ? 'dark' : 'light'
+            );
+        } catch (e) {}
+    </script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/frontend/css/footer.css">
     <link rel="stylesheet" href="/frontend/css/header.css">
+    <link rel="stylesheet" href="/frontend/css/tema.css">
     <link rel="stylesheet" href="/frontend/css/style.css">
+    <link rel="stylesheet" href="/frontend/css/tema-home.css">
+
+    <!-- TEMA: script que troca claro/escuro -->
+    <script src="/frontend/js/tema.js"></script>
 </head>
 
 <body>
